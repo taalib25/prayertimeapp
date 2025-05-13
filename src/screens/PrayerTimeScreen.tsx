@@ -1,12 +1,55 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet, FlatList, SafeAreaView} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  SafeAreaView,
+  ActivityIndicator,
+  Button,
+} from 'react-native';
+import PermissionButton from '../components/permissionBtn';
+import {PermissionType} from '../services/permissions/initPermissions';
+import {initDatabase, getPrayerTimes} from '../services/db';
+import {PrayerTimes as PrayerTimesFromDB} from '../models/PrayerTimes'; // Assuming a model like this
 
-const initialPrayerTimesData = [
-  {id: '1', name: 'Fajr', time: '05:00 AM', isNext: false},
-  {id: '2', name: 'Dhuhr', time: '01:00 PM', isNext: false},
-  {id: '3', name: 'Asr', time: '04:30 PM', isNext: true}, // Example: Asr is the next prayer
-  {id: '4', name: 'Maghrib', time: '07:00 PM', isNext: false},
-  {id: '5', name: 'Isha', time: '08:30 PM', isNext: false},
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../App'; // Adjust path as necessary
+
+// Helper to get current date in YYYY-MM-DD format
+const getCurrentDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const day = today.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper to format "HH:MM" (24-hour) to "hh:mm AM/PM"
+const formatTo12Hour = (time24: string | undefined): string => {
+  if (!time24) return 'N/A';
+  const [hours, minutes] = time24.split(':');
+  let h = parseInt(hours, 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  h = h || 12; // Convert 0 to 12
+  return `${h.toString().padStart(2, '0')}:${minutes} ${ampm}`;
+};
+
+interface PrayerTimeDisplayItem {
+  id: string;
+  name: string;
+  time: string;
+  isNext: boolean;
+}
+
+const PRAYER_DEFINITIONS = [
+  {key: 'fajr', displayName: 'Fajr'},
+  {key: 'dhuhr', displayName: 'Dhuhr'},
+  {key: 'asr', displayName: 'Asr'},
+  {key: 'maghrib', displayName: 'Maghrib'},
+  {key: 'isha', displayName: 'Isha'},
 ];
 
 interface PrayerItemProps {
@@ -30,45 +73,122 @@ const PrayerItem: React.FC<PrayerItemProps> = ({name, time, isNext}) => (
   </View>
 );
 
+type PrayerTimeScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'MainApp' // Current screen's name in the stack
+>;
+
 const PrayerTimeScreen = () => {
-  const [prayerTimes, setPrayerTimes] = useState(initialPrayerTimesData);
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimeDisplayItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation<PrayerTimeScreenNavigationProp>();
+
+  const loadPrayerTimes = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await initDatabase();
+      const todayStr = getCurrentDateString();
+      const dbData = (await getPrayerTimes(
+        todayStr,
+      )) as PrayerTimesFromDB | null;
+
+      if (dbData) {
+        const now = new Date();
+        let nextPrayerFound = false;
+
+        const processedTimes = PRAYER_DEFINITIONS.map((prayerDef, index) => {
+          const prayerTime24 = dbData[
+            prayerDef.key as keyof PrayerTimesFromDB
+          ] as string | undefined;
+
+          let isThisNext = false;
+          if (prayerTime24 && !nextPrayerFound) {
+            const [hours, minutes] = prayerTime24.split(':').map(Number);
+            const prayerDateTime = new Date(now); // Use current date
+            prayerDateTime.setHours(hours, minutes, 0, 0);
+
+            if (prayerDateTime > now) {
+              isThisNext = true;
+              nextPrayerFound = true;
+            }
+          }
+
+          return {
+            id: String(index + 1),
+            name: prayerDef.displayName,
+            time: formatTo12Hour(prayerTime24),
+            isNext: isThisNext,
+          };
+        });
+        setPrayerTimes(processedTimes);
+      } else {
+        setError(
+          `No prayer times found for ${todayStr}. Please add them using the Database Test Screen or ensure your data source is configured.`,
+        );
+        setPrayerTimes([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch prayer times:', err);
+      setError(
+        `Failed to load prayer times: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      setPrayerTimes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // TODO: Fetch prayer times from SQL database and update state
-    // Example:
-    // const fetchPrayers = async () => {
-    //   try {
-    //     // const dataFromDb = await yourDbQueryFunction();
-    //     // const processedData = dataFromDb.map(item => ({...item, isNext: determineIfNext(item.time)}));
-    //     // setPrayerTimes(processedData);
-    //   } catch (error) {
-    //     console.error("Failed to fetch prayer times:", error);
-    //   }
-    // };
-    // fetchPrayers();
-
-    // For now, we can simulate determining the next prayer if not hardcoded
-    // This logic would ideally be more robust, considering current time
-    const currentTime = new Date();
-    // Placeholder: find the first prayer time after current time or mark one manually as in initialPrayerTimesData
+    loadPrayerTimes();
   }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>Prayer Times</Text>
-        <FlatList
-          data={prayerTimes}
-          keyExtractor={item => item.id}
-          renderItem={({item}) => (
-            <PrayerItem
-              name={item.name}
-              time={item.time}
-              isNext={item.isNext}
-            />
-          )}
-          contentContainerStyle={styles.listContentContainer}
-        />
+        <View style={{marginVertical: 10}}>
+          <Button
+            title="Go to Database Test"
+            onPress={() => navigation.navigate('DatabaseTest')}
+          />
+        </View>
+        <View style={{marginVertical: 10}}>
+          <Button title="Refresh Times" onPress={loadPrayerTimes} />
+        </View>
+        <View style={{marginBottom: 20}}>
+          <PermissionButton
+            permissionType={PermissionType.LOCATION}
+            buttonText="Allow Location Access"
+            onPermissionGranted={() => console.log('Location granted!')}
+            // Consider adding onPermissionDenied or onAlreadyGranted handlers
+          />
+        </View>
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#1a5276" />
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : prayerTimes.length === 0 && !error ? (
+          <Text style={styles.infoText}>
+            No prayer times available for today.
+          </Text>
+        ) : (
+          <FlatList
+            data={prayerTimes}
+            keyExtractor={item => item.id}
+            renderItem={({item}) => (
+              <PrayerItem
+                name={item.name}
+                time={item.time}
+                isNext={item.isNext}
+              />
+            )}
+            contentContainerStyle={styles.listContentContainer}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -114,8 +234,8 @@ const styles = StyleSheet.create({
   },
   nextPrayerItemContainer: {
     backgroundColor: '#1abc9c', // Teal for next prayer
-    borderColor: '#16a085',
-    borderWidth: 1,
+    borderColor: '#16a085', // Darker teal border
+    borderWidth: 1, // Add a border for emphasis
   },
   prayerName: {
     fontSize: 20, // Larger name
@@ -123,12 +243,24 @@ const styles = StyleSheet.create({
     color: '#2c3e50', // Dark grey
   },
   prayerTime: {
-    fontSize: 18,
+    fontSize: 18, // Keep consistent with name or slightly smaller
     fontWeight: 'bold', // Bolder time
     color: '#2980b9', // Blue for time
   },
   nextPrayerText: {
     color: '#ffffff', // White text for next prayer
+  },
+  errorText: {
+    textAlign: 'center',
+    color: 'red',
+    fontSize: 16,
+    marginVertical: 20,
+  },
+  infoText: {
+    textAlign: 'center',
+    color: '#555',
+    fontSize: 16,
+    marginVertical: 20,
   },
 });
 

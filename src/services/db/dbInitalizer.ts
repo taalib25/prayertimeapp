@@ -9,7 +9,6 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
     return database;
   }
   
-  // Lazy initialization if not already initialized
   return initDatabase();
 };
 

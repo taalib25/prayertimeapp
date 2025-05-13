@@ -1,21 +1,16 @@
-import {initDatabase, closeDatabase} from './dbInitalizer';
+import {initDatabase, closeDatabase, getDatabase} from './dbInitalizer';
 import {
   savePrayerTimes,
   getPrayerTimes,
   getPrayerTimesRange,
 } from './prayertimes_services';
-import {saveSetting, getSetting, getSettings} from './settings_services';
 
 // Re-export everything for easy imports
 export {
   // Core database operations
   initDatabase,
   closeDatabase,
-
-  // Settings operations
-  saveSetting,
-  getSetting,
-  getSettings,
+  getDatabase, // Export getDatabase
 
   // Prayer times operations
   savePrayerTimes,
