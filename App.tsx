@@ -5,57 +5,45 @@
  * @format
  */
 
-import React, {useState} from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { PropsWithChildren } from 'react';
+
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  Text,
+  
   useColorScheme,
   View,
   TouchableOpacity,
+  Text,
 } from 'react-native';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import LoginScreen from './src/screens/LoginScreen'; // Import LoginScreen
+import LoginScreen from './src/screens/LoginScreen';
 import PrayerTimeScreen from './src/screens/PrayerTimeScreen';
+import DatabaseTestScreen from './src/screens/DatabaseTestScreen'; // Import DatabaseTestScreen
 import {DatabaseProvider} from './src/services/db/databaseProvider';
+
+import {NavigationContainer} from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
+
+// Define screen names and their params
+export type RootStackParamList = {
+  Login: undefined;
+  MainApp: undefined; 
+  DatabaseTest: undefined;
+};
+
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-// Define screen names
-type ScreenName = 'Home' | 'Prayers' | 'Settings' | 'Login'; // Add 'Login'
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-// Placeholder for Top Navigation Bar
+// Placeholder for Top Navigation Bar (can be used as a header in stack navigator)
 const TopNavBar = () => {
   const isDarkMode = useColorScheme() === 'dark';
   // Placeholder action for language change
@@ -90,59 +78,52 @@ const TopNavBar = () => {
   );
 };
 
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-  const [currentScreen, setCurrentScreen] = useState<ScreenName>('Login'); // Start with Login screen
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add isLoggedIn state
 
   const backgroundStyle = {
     flex: 1,
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  }
 
-  const navigateTo = (screen: ScreenName) => {
-    setCurrentScreen(screen);
-  };
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentScreen('Prayers');
-  };
-
-  const renderScreenContent = () => {
-    switch (currentScreen) {
-      case 'Login': // Add case for Login
-        return <LoginScreen onLogin={handleLogin} />;
-      case 'Prayers':
-        return <PrayerTimeScreen />;
-      default:
-        return null;
-    }
-  };
-
-  if (!isLoggedIn) {
-    return (
-      <DatabaseProvider>
+  return (
+    <DatabaseProvider>
+      <NavigationContainer>
         <SafeAreaView style={backgroundStyle}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={backgroundStyle.backgroundColor}
           />
-          {renderScreenContent()}
+          <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{
+              headerShown: false, 
+            }}>
+            <Stack.Screen name="Login">
+              {props => <LoginScreen {...props} />}
+            </Stack.Screen>
+            <Stack.Screen
+              name="MainApp"
+              component={PrayerTimeScreen}
+              options={{
+                headerShown: true, 
+                header: () => <TopNavBar />, 
+              }}
+            />
+            <Stack.Screen
+              name="DatabaseTest"
+              component={DatabaseTestScreen}
+              options={{
+                headerShown: true,
+                title: 'Database Test',
+              }}
+            />
+          </Stack.Navigator>
         </SafeAreaView>
-      </DatabaseProvider>
-    );
-  }
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <TopNavBar />
-      <View style={styles.contentContainer}>{renderScreenContent()}</View>
-    </SafeAreaView>
+      </NavigationContainer>
+    </DatabaseProvider>
   );
 }
 

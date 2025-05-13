@@ -1,13 +1,26 @@
 import React from 'react';
 import {View, Text, StyleSheet, TextInput} from 'react-native';
 import CustomButton from '../components/CustomButton';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
 
-// Define props for LoginScreen
-interface LoginScreenProps {
-  onLogin: () => void;
+
+type LoginScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Login'
+>;
+
+interface Props {
+  navigation: LoginScreenNavigationProp;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
+const LoginScreen: React.FC<Props> = ({navigation}) => {
+  const handleLoginPress = () => {
+    // Perform login logic here
+    // If login is successful:
+    navigation.replace('MainApp'); // Use replace to prevent going back to Login
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
@@ -19,7 +32,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({onLogin}) => {
       <TextInput style={styles.input} placeholder="Password" secureTextEntry />
       <CustomButton
         title="Login"
-        onPress={onLogin} // Use the onLogin prop
+        onPress={handleLoginPress} // Use the handleLoginPress function
       />
     </View>
   );
