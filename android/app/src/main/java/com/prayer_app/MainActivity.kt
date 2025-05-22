@@ -5,6 +5,7 @@ import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import android.os.Bundle;
+import com.github.wumke.RNImmediatePhoneCall.RNImmediatePhoneCallPackage
 
 class MainActivity : ReactActivity() {
 
@@ -16,6 +17,13 @@ class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(null)
   }
+
+  // @Override
+  // public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+  //     RNImmediatePhoneCallPackage.onRequestPermissionsResult(requestCode, permissions, grantResults); // very important event callback
+  //     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+  // }
+
   override fun getMainComponentName(): String = "prayer_app"
 
   /**

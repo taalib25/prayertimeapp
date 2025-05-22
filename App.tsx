@@ -5,13 +5,12 @@
  * @format
  */
 
-import React, { PropsWithChildren } from 'react';
+import React, {PropsWithChildren, useEffect} from 'react';
 
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  
   useColorScheme,
   View,
   TouchableOpacity,
@@ -24,24 +23,31 @@ import PrayerTimeScreen from './src/screens/PrayerTimeScreen';
 import DatabaseTestScreen from './src/screens/DatabaseTestScreen'; // Import DatabaseTestScreen
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 
-import {NavigationContainer} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  NavigationContainerRef,
+} from '@react-navigation/native';
 import {
   createNativeStackNavigator,
-  NativeStackNavigationProp,
 } from '@react-navigation/native-stack';
+import CallScreen from './src/screens/CallScreen';
+import FakeCallScreen from './src/screens/FakeCallScreen'; // Import FakeCallScreen
+import notifee, {
+  EventType,
+} from '@notifee/react-native';
 
 // Define screen names and their params
 export type RootStackParamList = {
   Login: undefined;
-  MainApp: undefined; 
+  MainApp: undefined;
   DatabaseTest: undefined;
+  CallScreen: undefined;
+  FakeCallScreen: undefined; // Add FakeCallScreen to the stack
 };
-
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
-
 
 // Placeholder for Top Navigation Bar (can be used as a header in stack navigator)
 const TopNavBar = () => {
@@ -80,17 +86,73 @@ const TopNavBar = () => {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Global navigation ref
+export const navigationRef =
+  React.createRef<NavigationContainerRef<RootStackParamList>>();
+
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     flex: 1,
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  }
+  };
+
+  useEffect(() => {
+    async function bootstrapApp() {
+      try {
+        await notifee.requestPermission();
+        const initialNotification = await notifee.getInitialNotification();
+        if (
+          initialNotification &&
+          initialNotification.notification.data?.screen === 'FakeCallScreen'
+        ) {
+          console.log(
+            'App opened by initial notification for FakeCallScreen:',
+            initialNotification.notification,
+          );
+          // Queue navigation until the navigator is ready
+          const interval = setInterval(() => {
+            if (navigationRef.current) {
+              navigationRef.current.navigate('FakeCallScreen');
+              clearInterval(interval);
+            }
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error during bootstrapApp: ', error);
+      }
+    }
+
+    bootstrapApp();
+
+    const unsubscribeForeground = notifee.onForegroundEvent(
+      ({type, detail}) => {
+        switch (type) {
+          case EventType.DISMISSED:
+            console.log('User dismissed notification', detail.notification);
+            break;
+          case EventType.PRESS:
+            console.log('User pressed notification', detail.notification);
+            if (detail.notification?.data?.screen === 'FakeCallScreen') {
+              if (navigationRef.current) {
+                navigationRef.current.navigate('FakeCallScreen');
+              }
+            }
+            break;
+        }
+      },
+    );
+    return () => {
+      unsubscribeForeground();
+    };
+  }, []);
 
   return (
     <DatabaseProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
+        {' '}
+        {/* Assign ref to NavigationContainer */}
         <SafeAreaView style={backgroundStyle}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -99,7 +161,7 @@ function App(): React.JSX.Element {
           <Stack.Navigator
             initialRouteName="Login"
             screenOptions={{
-              headerShown: false, 
+              headerShown: false,
             }}>
             <Stack.Screen name="Login">
               {props => <LoginScreen {...props} />}
@@ -108,8 +170,8 @@ function App(): React.JSX.Element {
               name="MainApp"
               component={PrayerTimeScreen}
               options={{
-                headerShown: true, 
-                header: () => <TopNavBar />, 
+                headerShown: true,
+                header: () => <TopNavBar />,
               }}
             />
             <Stack.Screen
@@ -119,6 +181,19 @@ function App(): React.JSX.Element {
                 headerShown: true,
                 title: 'Database Test',
               }}
+            />
+            <Stack.Screen
+              name="CallScreen"
+              component={CallScreen}
+              options={{
+                headerShown: true,
+                title: 'Schedule Prayer Call', // Changed title
+              }}
+            />
+            <Stack.Screen
+              name="FakeCallScreen"
+              component={FakeCallScreen}
+              options={{headerShown: false}} // Typically no header for a call screen
             />
           </Stack.Navigator>
         </SafeAreaView>

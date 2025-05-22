@@ -140,6 +140,7 @@ const PrayerTimeScreen = () => {
     } finally {
       setIsLoading(false);
     }
+    
   };
 
   useEffect(() => {
@@ -154,6 +155,10 @@ const PrayerTimeScreen = () => {
           <Button
             title="Go to Database Test"
             onPress={() => navigation.navigate('DatabaseTest')}
+          />
+           <Button
+            title="Go to Call Screen"
+            onPress={() => navigation.navigate('CallScreen')}
           />
         </View>
         <View style={{marginVertical: 10}}>
