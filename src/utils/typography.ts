@@ -1,0 +1,88 @@
+import {TextStyle} from 'react-native';
+
+export const fontWeights = {
+  light: '300',
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+  extrabold: '800',
+} as const;
+
+export const typography: Record<string, TextStyle> = {
+  // Headers
+  h1: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.bold,
+    fontSize: 32,
+    lineHeight: 40,
+  },
+  h2: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.semibold,
+    fontSize: 24,
+    lineHeight: 32,
+  },
+  h3: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.semibold,
+    fontSize: 20,
+    lineHeight: 28,
+  },
+
+  // Body text
+  body: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.regular,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  bodyMedium: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.medium,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+
+  // Prayer specific styles
+  prayerName: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.semibold,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  prayerTime: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.medium,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+
+  // UI elements
+  button: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.semibold,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  caption: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.regular,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+
+  // Stats and numbers
+  statNumber: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.bold,
+    fontSize: 28,
+    lineHeight: 32,
+  },
+  statLabel: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.medium,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+};
