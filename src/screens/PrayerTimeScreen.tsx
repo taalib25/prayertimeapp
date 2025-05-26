@@ -20,6 +20,7 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import StatsCard from '../components/PrayerWidgets/StatsCard';
 import TaskProgressItem from '../components/TaskProgressItem';
 import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
+import Challenge40Card from '../components/PrayerWidgets/Challenge40Card';
 
 // Dummy prayer times data to match the image
 const DUMMY_PRAYER_TIMES = [
@@ -63,6 +64,7 @@ const PrayerTimeScreen = () => {
           userName="Mohamed Hijaz"
           mosqueName="Masjid Ul Jabbar Jumma Masjid"
           mosqueLocation="Gothatuwa"
+          avatarImage={require('../assets/images/profile.png')} // Optional: add your local image
         />
 
         {isLoading ? (
@@ -93,12 +95,14 @@ const PrayerTimeScreen = () => {
             {/* Stats Cards Row */}
             <View style={styles.statsCardsRow}>
               {/* Challenge 40 Card */}
-              <StatsCard
+              <Challenge40Card
                 title="Challenge 40"
-                stats={[]}
+                subtitle="Fajr"
+                current={134}
+                total={175}
                 backgroundColor="#e4fbff"
-                progressValue={154}
-                progressTotal={175}
+                progressColor="#00C2CB"
+                textColor="#3C4A9B"
               />
 
               {/* Wake up Calls Card */}
@@ -174,8 +178,8 @@ const PrayerTimeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
-    paddingTop: 0,
+    backgroundColor: '#242A4E',
+    paddingTop: 20,
   },
   scrollContainer: {
     flex: 1,
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 14,
     overflow: 'hidden',
   },
   loader: {

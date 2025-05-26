@@ -8,6 +8,7 @@ interface HeaderProps {
   userName: string;
   mosqueName: string;
   mosqueLocation: string;
+  avatarImage?: any; // Optional local image path
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -15,6 +16,7 @@ const Header: React.FC<HeaderProps> = ({
   userName,
   mosqueName,
   mosqueLocation,
+  avatarImage,
 }) => {
   return (
     <View style={styles.container}>
@@ -42,16 +44,24 @@ const Header: React.FC<HeaderProps> = ({
         {/* User Info */}
         <View style={styles.userContainer}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>MH</Text>
+            {avatarImage ? (
+              <Image
+                source={avatarImage}
+                style={styles.avatarImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={styles.avatarText}>MH</Text>
+            )}
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>Assalamu Alaikum!</Text>
             <Text style={styles.userName}>{userName}</Text>
             <Text style={styles.welcomeBack}>Welcome Back!</Text>
-             
           </View>
         </View>
- <View style={styles.underline} />
+        <View style={styles.underline} />
+
         {/* Mosque Info */}
         <View style={styles.mosqueContainer}>
           <SvgIcon
@@ -60,8 +70,9 @@ const Header: React.FC<HeaderProps> = ({
             color="#42D0D3"
             style={styles.mosqueIcon}
           />
-          <Text style={styles.mosqueName}>{mosqueName}, {mosqueLocation}</Text>
-     
+          <Text style={styles.mosqueName}>
+            {mosqueName}, {mosqueLocation}
+          </Text>
         </View>
       </View>
     </View>
@@ -80,6 +91,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
+  avatarImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
   avatarText: {
     ...typography.h3,
     color: '#fff',
@@ -89,6 +105,8 @@ const styles = StyleSheet.create({
     height: 230,
     position: 'relative',
     overflow: 'hidden',
+    marginBottom: 14,
+    marginTop: 10,
   },
   backgroundImage: {
     position: 'absolute',
@@ -146,7 +164,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.h3,
-    color: '#5CE5D5',
+    color: '#2ABCBE',
   },
   userName: {
     ...typography.headerProfile,
@@ -173,7 +191,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   mosqueIcon: {
-    marginRight: 16,
+    marginRight: 12,
   },
   mosqueName: {
     ...typography.bodySmall,
