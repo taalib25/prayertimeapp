@@ -21,25 +21,21 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => (
       <View
         key={index}
         style={[styles.prayerCard, prayer.isActive && styles.activeCard]}>
-        <Text style={[styles.prayerName, prayer.isActive && styles.activeText]}></Text>
-          <Text
-            style={[styles.prayerName, prayer.isActive && styles.activeText]}>
-            {prayer.displayName}
-          </Text>
+        <Text style={styles.prayerName}>{prayer.displayName}</Text>
 
-          <View style={styles.iconContainer}>
-            <SvgIcon
-              name={prayer.name.toLowerCase() as IconName}
-              size={22}
-              color={'#42D0D3'}
-            />
-          </View>
-
-          <Text style={styles.prayerTime}>{prayer.time}</Text>
+        <View style={styles.iconContainer}>
+          <SvgIcon
+            name={prayer.name.toLowerCase() as IconName}
+            size={22}
+            color={'#42D0D3'}
+          />
         </View>
-      ))}
-    </View>
-  );
+
+        <Text style={styles.prayerTime}>{prayer.time}</Text>
+      </View>
+    ))}
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -65,20 +61,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   prayerName: {
-    ...typography.bodyMedium,
+    ...typography.prayerCard,
     color: '#29476F',
-    marginTop: -16,
     marginBottom: 13,
     textAlign: 'center',
   },
   prayerTime: {
-    ...typography.bodySmall,
+    ...typography.prayerCard,
     color: '#29476F',
-    marginTop: 17,
+    marginTop: 12,
     textAlign: 'center',
-  },
-  activeText: {
-    fontWeight: '700',
   },
   iconContainer: {
     height: 24,

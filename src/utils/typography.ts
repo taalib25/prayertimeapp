@@ -63,13 +63,7 @@ export const typography: Record<string, TextStyle> = {
     fontSize: 18,
   },
 
-  // Prayer specific styles
-  prayerName: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.semibold,
-    fontSize: 18,
-  },
-  prayerTime: {
+  prayerCard: {
     fontFamily: 'Sora-VariableFont_wght',
     fontWeight: fontWeights.bold,
     fontSize: 16,
