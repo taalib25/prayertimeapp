@@ -16,8 +16,9 @@ import {typography} from '../utils/typography';
 // Import new components
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
-import StatsCard from '../components/StatsCard';
+import StatsCard from '../components/PrayerWidgets/StatsCard';
 import TaskProgressItem from '../components/TaskProgressItem';
+import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
 
 // Dummy prayer times data to match the image
 const DUMMY_PRAYER_TIMES = [
@@ -120,14 +121,7 @@ const PrayerTimeScreen = () => {
               />
 
               {/* Zikr Card */}
-              <StatsCard
-                title="Zikr"
-                stats={[
-                  {label: 'Today Zikr', value: 267},
-                  {label: 'Total Zikr', value: 23000},
-                ]}
-                backgroundColor="#ffeef2"
-              />
+              <ZikrCounter todayCount={267} totalCount={23000} />
             </View>
 
             {/* Tasks Progress */}
@@ -217,7 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyCard: {
-    height: 120,
+    height: 240,
     width: '48%',
     backgroundColor: '#fff',
     borderRadius: 15,
