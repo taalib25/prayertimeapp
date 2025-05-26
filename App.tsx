@@ -5,23 +5,25 @@
  * @format
  */
 
-import React, { PropsWithChildren } from 'react';
-
+import React, {PropsWithChildren, useState, useEffect} from 'react';
 import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  
   useColorScheme,
   View,
   TouchableOpacity,
   Text,
 } from 'react-native';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
+import SplashScreen from './src/screens/SplashScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import OTPScreen from './src/screens/OTPScreen';
 import PrayerTimeScreen from './src/screens/PrayerTimeScreen';
-import DatabaseTestScreen from './src/screens/DatabaseTestScreen'; // Import DatabaseTestScreen
+import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
+import PrayerChallengeScreen from './src/screens/PrayerChallengeScreen';
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 
 import {NavigationContainer} from '@react-navigation/native';
@@ -32,60 +34,51 @@ import {
 
 // Define screen names and their params
 export type RootStackParamList = {
+  Onboarding: undefined;
   Login: undefined;
-  MainApp: undefined; 
+  OTP: {email: string};
+  MainApp: undefined;
   DatabaseTest: undefined;
-};
-
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-
-// Placeholder for Top Navigation Bar (can be used as a header in stack navigator)
-const TopNavBar = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-  // Placeholder action for language change
-  const handleChangeLanguage = () => {
-    console.log('Change language pressed');
-    // Here you would implement logic to change the language
-    // e.g., update a context, state, or use a localization library
-  };
-
-  return (
-    <View style={styles.topNavContainer}>
-      <View style={styles.topNavTitleContainer}>
-        {/* You can add a dynamic title here if needed */}
-      </View>
-      <TouchableOpacity
-        onPress={handleChangeLanguage}
-        style={styles.translateButton}>
-        {/* Using "T" as a placeholder for a 2D grey icon */}
-        <Text
-          style={[
-            styles.translateButtonText,
-            {
-              color: isDarkMode
-                ? Colors.light
-                : Colors.darkGray /* Adjusted for grey icon */,
-            },
-          ]}>
-          T
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+  PrayerChallenge: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
+  const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [isShowingSplash, setIsShowingSplash] = useState(true);
+
+  useEffect(() => {
+    checkOnboardingStatus();
+  }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+      setInitialRoute(hasSeenOnboarding ? 'Login' : 'Onboarding');
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setInitialRoute('Onboarding');
+    }
+  };
+
+  const handleSplashComplete = () => {
+    setIsShowingSplash(false);
+  };
 
   const backgroundStyle = {
     flex: 1,
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  };
+
+  // Show splash screen first
+  if (isShowingSplash) {
+    return <SplashScreen onAnimationComplete={handleSplashComplete} />;
+  }
+
+  if (!initialRoute) {
+    return <></>; // empty fragment instead of null
   }
 
   return (
@@ -97,19 +90,26 @@ function App(): React.JSX.Element {
             backgroundColor={backgroundStyle.backgroundColor}
           />
           <Stack.Navigator
-            initialRouteName="Login"
+            initialRouteName={initialRoute as keyof RootStackParamList}
             screenOptions={{
-              headerShown: false, 
+              headerShown: false,
             }}>
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             <Stack.Screen name="Login">
               {props => <LoginScreen {...props} />}
             </Stack.Screen>
             <Stack.Screen
+              name="OTP"
+              component={OTPScreen}
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
               name="MainApp"
               component={PrayerTimeScreen}
               options={{
-                headerShown: true, 
-                header: () => <TopNavBar />, 
+                headerShown: false,
               }}
             />
             <Stack.Screen
@@ -118,6 +118,14 @@ function App(): React.JSX.Element {
               options={{
                 headerShown: true,
                 title: 'Database Test',
+              }}
+            />
+            <Stack.Screen
+              name="PrayerChallenge"
+              component={PrayerChallengeScreen}
+              options={{
+                headerShown: true,
+                title: 'Prayer Challenge',
               }}
             />
           </Stack.Navigator>
