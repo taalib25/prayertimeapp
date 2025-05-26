@@ -104,6 +104,8 @@ const PrayerTimeScreen = () => {
                   {label: 'Confirmed', value: 2},
                 ]}
                 backgroundColor="#fff3e4"
+                showDividers={true}
+                dividerColor="#EFDDC1"
               />
             </View>
 
@@ -118,6 +120,7 @@ const PrayerTimeScreen = () => {
                   {label: 'Remaining', value: 2},
                 ]}
                 backgroundColor="#eaffed"
+                showDividers={false}
               />
 
               {/* Zikr Card */}

@@ -292,8 +292,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   dataText: {
-    ...typography.body,
-    fontFamily: 'monospace',
+    ...typography.bodySmall,
     backgroundColor: '#fff',
     padding: 10,
     borderRadius: 5,

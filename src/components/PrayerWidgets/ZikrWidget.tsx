@@ -1,5 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
+import {typography} from '../../utils/typography';
 
 interface ZikrCounterProps {
   todayCount: number;
@@ -10,18 +11,18 @@ interface ZikrCounterProps {
 const ZikrCounter: React.FC<ZikrCounterProps> = ({
   todayCount,
   totalCount,
-  backgroundColor = '#FFF2F2', // Default light pink color as shown in the image
+  backgroundColor = '#FFE6E6',
 }) => {
   return (
     <View style={[styles.container, {backgroundColor}]}>
       <Text style={styles.title}>Zikr</Text>
-      
+
       <View style={styles.countContainer}>
         <View style={styles.countItem}>
           <Text style={styles.countLabel}>Today Zikr</Text>
           <Text style={styles.countValue}>{todayCount}</Text>
         </View>
-        
+
         <View style={styles.countItem}>
           <Text style={styles.countLabel}>Total Zikr</Text>
           <Text style={styles.countValue}>{totalCount}</Text>
@@ -34,39 +35,37 @@ const ZikrCounter: React.FC<ZikrCounterProps> = ({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    width: '100%',
+    flex: 1, // Makes it flexible within parent
+    margin: 6, // Adds consistent spacing
+    minHeight: 120, // Ensures minimum height
   },
   title: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 18,
-    fontWeight: '600',
+    ...typography.prayerCard,
     color: '#3C4A9B', // Purple color as shown in the image
     marginBottom: 12,
   },
   countContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
     alignItems: 'flex-end',
   },
   countItem: {
-    marginVertical: 4,
+    marginVertical: 2,
     alignItems: 'flex-end',
   },
   countLabel: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.body,
     color: '#3C4A9B',
     marginBottom: 2,
   },
   countValue: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 28,
-    fontWeight: '700',
+    ...typography.count,
     color: '#3C4A9B',
   },
 });

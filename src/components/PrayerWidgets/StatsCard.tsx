@@ -13,6 +13,8 @@ interface StatsCardProps {
   backgroundColor: string;
   progressValue?: number;
   progressTotal?: number;
+  showDividers?: boolean;
+  dividerColor?: string;
 }
 
 // Title component for the stats card
@@ -46,11 +48,25 @@ const StatRow: React.FC<{stat: StatItem}> = ({stat}) => (
   </View>
 );
 
+// Divider component
+const Divider: React.FC<{color?: string}> = ({color = '#E0E0E0'}) => (
+  <View style={[styles.divider, {backgroundColor: color}]} />
+);
+
 // Stats list component
-const StatsList: React.FC<{stats: StatItem[]}> = ({stats}) => (
+const StatsList: React.FC<{
+  stats: StatItem[];
+  showDividers?: boolean;
+  dividerColor?: string;
+}> = ({stats, showDividers, dividerColor}) => (
   <>
     {stats.map((stat, index) => (
-      <StatRow key={index} stat={stat} />
+      <React.Fragment key={index}>
+        <StatRow stat={stat} />
+        {showDividers && index < stats.length - 1 && (
+          <Divider color={dividerColor} />
+        )}
+      </React.Fragment>
     ))}
   </>
 );
@@ -61,6 +77,8 @@ const StatsCard: React.FC<StatsCardProps> = ({
   backgroundColor,
   progressValue,
   progressTotal,
+  showDividers,
+  dividerColor,
 }) => {
   return (
     <View style={[styles.container, {backgroundColor}]}>
@@ -70,7 +88,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
         <ProgressIndicator value={progressValue} total={progressTotal} />
       )}
 
-      <StatsList stats={stats} />
+      <StatsList
+        stats={stats}
+        showDividers={showDividers}
+        dividerColor={dividerColor}
+      />
     </View>
   );
 };
@@ -88,9 +110,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.prayerCard,
     color: '#3C4A9B',
     marginBottom: 16,
   },
@@ -102,15 +122,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statLabel: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 14,
-    fontWeight: '400',
+    ...typography.bodySmall,
     color: '#3C4A9B',
   },
   statValue: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontSize: 14,
-    fontWeight: '700',
+    ...typography.bodyMedium,
     color: '#3C4A9B',
   },
   progressContainer: {
@@ -136,6 +152,11 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: '#3BACB6',
     borderRadius: 3,
+  },
+  divider: {
+    height: 2,
+    marginVertical: 2,
+    marginHorizontal: 3,
   },
 });
 

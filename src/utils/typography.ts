@@ -1,100 +1,102 @@
 import {TextStyle} from 'react-native';
 
-export const fontWeights = {
-  light: '300',
-  regular: '400',
-  medium: '500',
-  semibold: '600',
-  bold: '700',
-  extrabold: '800',
-} as const;
+// export const fontWeights = {
+//   light: '300' as const,
+//   regular: '400' as const,
+//   medium: '500' as const,
+//   semibold: '600' as const,
+//   bold: '700' as const,
+//   extrabold: '800' as const,
+// };
+
+// Static font families for different weights
+const fontFamilies = {
+  light: 'Sora-Light',
+  regular: 'Sora-Regular',
+  medium: 'Sora-Medium',
+  semibold: 'Sora-SemiBold',
+  bold: 'Sora-Bold',
+  extrabold: 'Sora-ExtraBold',
+};
 
 export const typography: Record<string, TextStyle> = {
   // Headers
   h1: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.bold,
+    fontFamily: fontFamilies.bold,
     fontSize: 32,
     lineHeight: 40,
   },
   h2: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.semibold,
+    fontFamily: fontFamilies.bold,
     fontSize: 24,
     lineHeight: 32,
   },
   h3: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.semibold,
+    fontFamily: fontFamilies.semibold,
     fontSize: 20,
     lineHeight: 28,
   },
 
   // Body text
   body: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.regular,
+    fontFamily: fontFamilies.regular,
     fontSize: 16,
     lineHeight: 24,
   },
   bodyMedium: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.medium,
+    fontFamily: fontFamilies.medium,
     fontSize: 16,
     lineHeight: 24,
   },
   bodySmall: {
-    fontFamily: 'Sora-VariableFont_wght',  
-    fontWeight: fontWeights.regular,
+    fontFamily: fontFamilies.regular,
     fontSize: 15,
     lineHeight: 16,
   },
   bodyTiny: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.regular,
+    fontFamily: fontFamilies.regular,
     fontSize: 13,
     lineHeight: 16,
   },
 
   //Header Profile
   headerProfile: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.semibold,
+    fontFamily: fontFamilies.semibold,
     fontSize: 18,
   },
 
-
   prayerCard: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.bold,
+    fontFamily: fontFamilies.bold,
     fontSize: 16,
     lineHeight: 20,
   },
 
   // UI elements
   button: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.semibold,
+    fontFamily: fontFamilies.semibold,
     fontSize: 16,
     lineHeight: 20,
   },
   caption: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.regular,
+    fontFamily: fontFamilies.regular,
     fontSize: 12,
     lineHeight: 16,
   },
 
+   count:{
+    fontFamily: fontFamilies.semibold,
+    fontSize: 32,
+    lineHeight: 40,
+  },
+
   // Stats and numbers
   statNumber: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.bold,
+    fontFamily: fontFamilies.bold,
     fontSize: 28,
     lineHeight: 32,
   },
   statLabel: {
-    fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.medium,
+    fontFamily: fontFamilies.medium,
     fontSize: 12,
     lineHeight: 16,
   },
