@@ -3,193 +3,167 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   SafeAreaView,
   ActivityIndicator,
-  Button,
+  TouchableOpacity,
 } from 'react-native';
-import PermissionButton from '../components/permissionBtn';
-import {PermissionType} from '../services/permissions/initPermissions';
-import {initDatabase, getPrayerTimes} from '../services/db';
-import {PrayerTimes as PrayerTimesFromDB} from '../models/PrayerTimes'; // Assuming a model like this
-
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App'; // Adjust path as necessary
+import {RootStackParamList} from '../../App';
+import {typography} from '../utils/typography';
 
-// Helper to get current date in YYYY-MM-DD format
-const getCurrentDateString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = (today.getMonth() + 1).toString().padStart(2, '0');
-  const day = today.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+// Import new components
+import Header from '../components/Header';
+import PrayerTimeCards from '../components/PrayerTimeCards';
+import StatsCard from '../components/StatsCard';
+import TaskProgressItem from '../components/TaskProgressItem';
 
-// Helper to format "HH:MM" (24-hour) to "hh:mm AM/PM"
-const formatTo12Hour = (time24: string | undefined): string => {
-  if (!time24) return 'N/A';
-  const [hours, minutes] = time24.split(':');
-  let h = parseInt(hours, 10);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12;
-  h = h || 12; // Convert 0 to 12
-  return `${h.toString().padStart(2, '0')}:${minutes} ${ampm}`;
-};
-
-interface PrayerTimeDisplayItem {
-  id: string;
-  name: string;
-  time: string;
-  isNext: boolean;
-}
-
-const PRAYER_DEFINITIONS = [
-  {key: 'fajr', displayName: 'Fajr'},
-  {key: 'dhuhr', displayName: 'Dhuhr'},
-  {key: 'asr', displayName: 'Asr'},
-  {key: 'maghrib', displayName: 'Maghrib'},
-  {key: 'isha', displayName: 'Isha'},
+// Dummy prayer times data to match the image
+const DUMMY_PRAYER_TIMES = [
+  {name: 'fajr', displayName: 'Fajr', time: '04:41', isActive: false},
+  {name: 'dhuhr', displayName: 'Dhuhr', time: '12:10', isActive: false},
+  {name: 'asr', displayName: 'Asr', time: '03:23', isActive: false},
+  {name: 'maghrib', displayName: 'Maghrib', time: '06:20', isActive: true},
+  {name: 'isha', displayName: 'Isha', time: '07:30', isActive: false},
 ];
-
-interface PrayerItemProps {
-  name: string;
-  time: string;
-  isNext?: boolean;
-}
-
-const PrayerItem: React.FC<PrayerItemProps> = ({name, time, isNext}) => (
-  <View
-    style={[
-      styles.prayerItemContainer,
-      isNext && styles.nextPrayerItemContainer,
-    ]}>
-    <Text style={[styles.prayerName, isNext && styles.nextPrayerText]}>
-      {name}
-    </Text>
-    <Text style={[styles.prayerTime, isNext && styles.nextPrayerText]}>
-      {time}
-    </Text>
-  </View>
-);
 
 type PrayerTimeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'MainApp' // Current screen's name in the stack
+  'MainApp'
 >;
 
 const PrayerTimeScreen = () => {
-  const [prayerTimes, setPrayerTimes] = useState<PrayerTimeDisplayItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation<PrayerTimeScreenNavigationProp>();
 
-  const loadPrayerTimes = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await initDatabase();
-      const todayStr = getCurrentDateString();
-      const dbData = (await getPrayerTimes(
-        todayStr,
-      )) as PrayerTimesFromDB | null;
-
-      if (dbData) {
-        const now = new Date();
-        let nextPrayerFound = false;
-
-        const processedTimes = PRAYER_DEFINITIONS.map((prayerDef, index) => {
-          const prayerTime24 = dbData[
-            prayerDef.key as keyof PrayerTimesFromDB
-          ] as string | undefined;
-
-          let isThisNext = false;
-          if (prayerTime24 && !nextPrayerFound) {
-            const [hours, minutes] = prayerTime24.split(':').map(Number);
-            const prayerDateTime = new Date(now); // Use current date
-            prayerDateTime.setHours(hours, minutes, 0, 0);
-
-            if (prayerDateTime > now) {
-              isThisNext = true;
-              nextPrayerFound = true;
-            }
-          }
-
-          return {
-            id: String(index + 1),
-            name: prayerDef.displayName,
-            time: formatTo12Hour(prayerTime24),
-            isNext: isThisNext,
-          };
-        });
-        setPrayerTimes(processedTimes);
-      } else {
-        setError(
-          `No prayer times found for ${todayStr}. Please add them using the Database Test Screen or ensure your data source is configured.`,
-        );
-        setPrayerTimes([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch prayer times:', err);
-      setError(
-        `Failed to load prayer times: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
-      setPrayerTimes([]);
-    } finally {
-      setIsLoading(false);
-    }
+  // Format prayer times for the cards component
+  const formatPrayerTimesForCards = () => {
+    return DUMMY_PRAYER_TIMES.map(prayer => ({
+      name: prayer.name.toLowerCase(),
+      displayName: prayer.displayName,
+      time: prayer.time,
+      isActive: prayer.isActive,
+    }));
   };
-
-  useEffect(() => {
-    loadPrayerTimes();
-  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Prayer Times</Text>
-        <View style={{marginVertical: 10}}>
-          <Button
-            title="Go to Database Test"
-            onPress={() => navigation.navigate('DatabaseTest')}
-          />
-        </View>
-        <View style={{marginVertical: 10}}>
-          <Button title="Refresh Times" onPress={loadPrayerTimes} />
-        </View>
-        <View style={{marginBottom: 20}}>
-          <PermissionButton
-            permissionType={PermissionType.LOCATION}
-            buttonText="Allow Location Access"
-            onPermissionGranted={() => console.log('Location granted!')}
-            // Consider adding onPermissionDenied or onAlreadyGranted handlers
-          />
-        </View>
+      <ScrollView style={styles.container}>
+        {/* Header with user profile and mosque info */}
+        <Header
+          location="Colombo, Sri Lanka"
+          userName="Mohamed Hijaz"
+          mosqueName="Masjid Ul Jabbar Jumma Masjid"
+          mosqueLocation="Gothatuwa"
+        />
+
         {isLoading ? (
-          <ActivityIndicator size="large" color="#1a5276" />
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : prayerTimes.length === 0 && !error ? (
-          <Text style={styles.infoText}>
-            No prayer times available for today.
-          </Text>
-        ) : (
-          <FlatList
-            data={prayerTimes}
-            keyExtractor={item => item.id}
-            renderItem={({item}) => (
-              <PrayerItem
-                name={item.name}
-                time={item.time}
-                isNext={item.isNext}
-              />
-            )}
-            contentContainerStyle={styles.listContentContainer}
+          <ActivityIndicator
+            size="large"
+            color="#3BACB6"
+            style={styles.loader}
           />
+        ) : (
+          <View>
+            {/* Prayer Time Cards */}
+            <PrayerTimeCards prayers={DUMMY_PRAYER_TIMES} />
+
+            {/* New Today Section */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>New Today</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Empty cards placeholder */}
+            <View style={styles.emptyCardsRow}>
+              <View style={styles.emptyCard} />
+              <View style={styles.emptyCard} />
+            </View>
+
+            {/* Stats Cards Row */}
+            <View style={styles.statsCardsRow}>
+              {/* Challenge 40 Card */}
+              <StatsCard
+                title="Challenge 40"
+                stats={[]}
+                backgroundColor="#e4fbff"
+                progressValue={154}
+                progressTotal={175}
+              />
+
+              {/* Wake up Calls Card */}
+              <StatsCard
+                title="Wake up Calls"
+                stats={[
+                  {label: 'Called', value: 5},
+                  {label: 'Cancelled', value: 3},
+                  {label: 'Confirmed', value: 2},
+                ]}
+                backgroundColor="#fff3e4"
+              />
+            </View>
+
+            {/* Second Row of Stats Cards */}
+            <View style={styles.statsCardsRow}>
+              {/* Personal Meeting Card */}
+              <StatsCard
+                title="Personal Meeting"
+                stats={[
+                  {label: 'Assigned', value: 5},
+                  {label: 'Visited', value: 4},
+                  {label: 'Remaining', value: 2},
+                ]}
+                backgroundColor="#eaffed"
+              />
+
+              {/* Zikr Card */}
+              <StatsCard
+                title="Zikr"
+                stats={[
+                  {label: 'Today Zikr', value: 267},
+                  {label: 'Total Zikr', value: 23000},
+                ]}
+                backgroundColor="#ffeef2"
+              />
+            </View>
+
+            {/* Tasks Progress */}
+            <View style={styles.tasksSection}>
+              <TaskProgressItem
+                title="Fajr Jamath Today"
+                current={16}
+                total={30}
+                color="#B3D964"
+              />
+
+              <TaskProgressItem
+                title="Quran Thilawath Today"
+                current={19}
+                total={30}
+                color="#64D98A"
+              />
+
+              <TaskProgressItem
+                title="Isthighfar Today"
+                current={16}
+                total={30}
+                color="#64D98A"
+                completed={true}
+              />
+
+              <TaskProgressItem
+                title="Zikr Today"
+                current={16}
+                total={30}
+                color="#F0964A"
+              />
+            </View>
+          </View>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -197,70 +171,62 @@ const PrayerTimeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#eef2f3', // Lighter background
+    backgroundColor: '#F8F9FA',
   },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
   },
-  title: {
-    fontSize: 28, // Slightly larger title
-    fontWeight: 'bold',
-    marginBottom: 30, // Increased margin
+  loader: {
+    marginTop: 40,
+  },
+  errorText: {
+    ...typography.body,
     textAlign: 'center',
-    color: '#1a5276', // Darker blue
+    color: 'red',
+    marginVertical: 20,
+    paddingHorizontal: 20,
   },
-  listContentContainer: {
-    paddingBottom: 20,
-  },
-  prayerItemContainer: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 20, // Increased padding
-    paddingHorizontal: 20, // Increased padding
-    backgroundColor: '#ffffff',
-    borderRadius: 12, // Smoother radius
-    marginBottom: 15, // Increased margin
+    paddingHorizontal: 16,
+    marginVertical: 16,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: '#333',
+  },
+  seeAllText: {
+    ...typography.bodyMedium,
+    color: '#3BACB6',
+  },
+  emptyCardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  emptyCard: {
+    height: 120,
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 15,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3, // Slightly more shadow
-    },
-    shadowOpacity: 0.15, // Slightly more shadow
-    shadowRadius: 4.65,
-    elevation: 6,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  nextPrayerItemContainer: {
-    backgroundColor: '#1abc9c', // Teal for next prayer
-    borderColor: '#16a085', // Darker teal border
-    borderWidth: 1, // Add a border for emphasis
+  statsCardsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    marginBottom: 12,
   },
-  prayerName: {
-    fontSize: 20, // Larger name
-    fontWeight: 'bold', // Bolder name
-    color: '#2c3e50', // Dark grey
-  },
-  prayerTime: {
-    fontSize: 18, // Keep consistent with name or slightly smaller
-    fontWeight: 'bold', // Bolder time
-    color: '#2980b9', // Blue for time
-  },
-  nextPrayerText: {
-    color: '#ffffff', // White text for next prayer
-  },
-  errorText: {
-    textAlign: 'center',
-    color: 'red',
-    fontSize: 16,
-    marginVertical: 20,
-  },
-  infoText: {
-    textAlign: 'center',
-    color: '#555',
-    fontSize: 16,
-    marginVertical: 20,
+  tasksSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    marginTop: 8,
   },
 });
 
