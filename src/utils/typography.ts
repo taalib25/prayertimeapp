@@ -43,13 +43,31 @@ export const typography: Record<string, TextStyle> = {
     fontSize: 16,
     lineHeight: 24,
   },
+  bodySmall: {
+    fontFamily: 'Sora-VariableFont_wght',  
+    fontWeight: fontWeights.regular,
+    fontSize: 15,
+    lineHeight: 16,
+  },
+  bodyTiny: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.regular,
+    fontSize: 13,
+    lineHeight: 16,
+  },
+
+  //Header Profile
+  headerProfile: {
+    fontFamily: 'Sora-VariableFont_wght',
+    fontWeight: fontWeights.semibold,
+    fontSize: 18,
+  },
 
   // Prayer specific styles
   prayerName: {
     fontFamily: 'Sora-VariableFont_wght',
     fontWeight: fontWeights.semibold,
     fontSize: 18,
-    lineHeight: 24,
   },
   prayerTime: {
     fontFamily: 'Sora-VariableFont_wght',

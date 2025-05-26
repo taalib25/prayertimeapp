@@ -49,7 +49,7 @@ const PrayerTimeScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
           location="Colombo, Sri Lanka"
@@ -65,7 +65,7 @@ const PrayerTimeScreen = () => {
             style={styles.loader}
           />
         ) : (
-          <View>
+          <View style={styles.container}>
             {/* Prayer Time Cards */}
             <PrayerTimeCards prayers={DUMMY_PRAYER_TIMES} />
 
@@ -173,8 +173,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
+  scrollContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    overflow: 'hidden',
   },
   loader: {
     marginTop: 40,
@@ -194,7 +203,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   sectionTitle: {
-    ...typography.sectionTitle,
+    ...typography.bodyMedium,
     color: '#333',
   },
   seeAllText: {
