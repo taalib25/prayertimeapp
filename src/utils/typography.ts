@@ -104,8 +104,8 @@ export const typography: Record<string, TextStyle> = {
   // Task Progress
   taskTitle: {
     fontFamily: fontFamilies.semibold,
-    fontSize: 17,
-    lineHeight: 14.7, // 105% of 14px
-    letterSpacing: 0.07, // 0.5% of 14px
+    fontSize: 14,
+    lineHeight: 18,
+    letterSpacing: 0.07,
   },
 };
