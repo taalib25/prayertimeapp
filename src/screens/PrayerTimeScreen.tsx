@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   sectionTitle: {
-    ...typography.h3,
+    ...typography.sectionTitle,
     color: '#333',
   },
   seeAllText: {

@@ -82,23 +82,24 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}>
         <View style={styles.content}>
-          <Image 
-            source={require('../assets/icons/fajr-council.png')} 
+          <Image
+            source={require('../assets/icons/fajr-council.png')}
             style={styles.logo}
           />
-          
+
           <Text style={styles.title}>OTP Verfication</Text>
-          
+
           <Text style={styles.subtitle}>
-            Enter the OTP sent to <Text style={styles.phoneNumber}>{phoneNumber}</Text>
+            Enter the OTP sent to{' '}
+            <Text style={styles.phoneNumber}>{phoneNumber}</Text>
           </Text>
 
           <View style={styles.otpContainer}>
-            {[0, 1, 2, 3].map((index) => (
+            {[0, 1, 2, 3].map(index => (
               <TextInput
                 key={index}
                 ref={ref => {
@@ -121,7 +122,10 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
           <View style={styles.resendContainer}>
             <Text style={styles.resendText}>
-              Didn't receive the OPT ? <Text onPress={handleResendOTP} style={styles.resendLink}>Resend</Text>
+              Didn't receive the OPT ?{' '}
+              <Text onPress={handleResendOTP} style={styles.resendLink}>
+                Resend
+              </Text>
             </Text>
           </View>
         </View>
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    ...typography.h2,
+    ...typography.otpTitle,
     color: '#3C4A9B',
     marginBottom: 12,
   },

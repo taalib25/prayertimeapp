@@ -41,9 +41,13 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* User Info */}
         <View style={styles.userContainer}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>MH</Text>
+          </View>
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>Assalamu Alaikum!</Text>
             <Text style={styles.userName}>{userName}</Text>
+            <View style={styles.underline} />
             <Text style={styles.welcomeBack}>Welcome Back!</Text>
           </View>
         </View>
@@ -67,6 +71,22 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 const styles = StyleSheet.create({
+  avatar: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    height: 60,
+    width: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    ...typography.h3,
+    color: '#fff',
+    fontWeight: '700',
+  },
   container: {
     height: 230,
     position: 'relative',
@@ -127,17 +147,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    ...typography.body,
+    ...typography.greeting,
     color: '#5CE5D5',
     marginBottom: 4,
+    fontWeight: '700',
   },
   userName: {
-    ...typography.h2,
+    ...typography.userName,
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: 6,
+    fontWeight: '800',
+    fontSize: 20,
+  },
+  underline: {
+    height: 2,
+    backgroundColor: '#5CE5D5',
+    width: 40,
+    marginBottom: 6,
+    borderRadius: 1,
   },
   welcomeBack: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: '#B3B8D3',
   },
   mosqueContainer: {

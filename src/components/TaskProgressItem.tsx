@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    ...typography.bodyMedium,
+    ...typography.taskTitle,
     color: '#333',
   },
   completedBadge: {

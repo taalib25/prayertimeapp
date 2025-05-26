@@ -75,19 +75,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   prayerName: {
-    ...typography.caption,
+    ...typography.prayerName,
     color: '#3C4A9B',
     marginBottom: 6,
     textAlign: 'center',
-    fontWeight: '600',
   },
   prayerTime: {
-    ...typography.bodyMedium,
+    ...typography.prayerTime,
     color: '#3C4A9B',
     marginTop: 6,
     textAlign: 'center',
-    fontWeight: '700',
-    fontSize: 14,
   },
   activeText: {
     color: '#3C4A9B',

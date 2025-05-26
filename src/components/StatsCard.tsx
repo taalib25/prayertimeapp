@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     margin: 6,
   },
   title: {
-    ...typography.bodyMedium,
+    ...typography.cardTitle,
     marginBottom: 10,
     color: '#333',
   },
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   statLabel: {
-    ...typography.body,
+    ...typography.statLabel,
     color: '#555',
   },
   statValue: {
