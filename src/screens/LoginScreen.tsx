@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -53,58 +54,62 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-       <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            keyboardShouldPersistTaps="handled">
-            <View style={styles.container}>
-             
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled">
+          <View style={styles.container}>
+            <View style={styles.formContainer}>
+              <Image
+                source={require('../assets/icons/fajr-council.png')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
 
-              <View style={styles.formContainer}>
-                 <Text style={styles.title}>Assalamu Alaikum!</Text>
+              <Text style={styles.title}>Assalamu Alaikum!</Text>
               <Text style={styles.subtitle}>
                 Please login to access your account
               </Text>
-                <Text style={styles.inputLabel}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email address"
-                  placeholderTextColor="#A0A0A0"
-                  keyboardType="email-address"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                />
+              <Text style={styles.inputLabel}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email address"
+                placeholderTextColor="#A0A0A0"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+              />
 
-                <Text style={styles.inputLabel}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#A0A0A0"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
+              <Text style={styles.inputLabel}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                placeholderTextColor="#A0A0A0"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
 
-                <Text style={styles.forgotPassword}>Forgot Password?</Text>
+              <Text style={styles.forgotPassword}>Forgot Password?</Text>
 
-                <CustomButton
-                  title={isLoading ? 'Logging in...' : 'Login'}
-                  onPress={handleLoginPress}
-                  disabled={isLoading}
-                  style={styles.loginButton}
-                />
+              <CustomButton
+                title={isLoading ? 'Logging in...' : 'Login'}
+                onPress={handleLoginPress}
+                disabled={isLoading}
+                style={styles.loginButton}
+              />
 
-                <Text style={styles.registerText}>
-                  Don't have an account?{' '}
-                  <Text style={styles.registerLink}>Register Now</Text>
-                </Text>
-              </View>
+              <Text style={styles.registerText}>
+                Don't have an account?{' '}
+                <Text style={styles.registerLink}>Register Now</Text>
+              </Text>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -130,17 +135,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 40,
+    alignSelf: 'flex-start',
+  },
   title: {
     ...typography.h1,
     color: '#3C4A9B',
-    marginBottom: 12,
-    textAlign: 'center',
+    marginBottom: 1,
+    textAlign: 'left',
   },
   subtitle: {
     ...typography.body,
     color: '#666',
     marginBottom: 40,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   formContainer: {
     width: '100%',

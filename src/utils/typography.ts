@@ -108,4 +108,11 @@ export const typography: Record<string, TextStyle> = {
     lineHeight: 18,
     letterSpacing: 0.07,
   },
+
+  // OTP Screen typography
+  otpTitle: {
+    fontFamily: fontFamilies.bold,
+    fontSize: 28,
+    lineHeight: 34,
+  },
 };

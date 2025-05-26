@@ -158,6 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    marginTop: 8,
   },
   userInfo: {
     flex: 1,

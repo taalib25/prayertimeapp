@@ -143,21 +143,21 @@ const PrayerTimeScreen = () => {
                 title="Fajr Jamath Today"
                 current={16}
                 total={30}
-                color="#B3D964"
+                color="#D8DE66"
               />
 
               <TaskProgressItem
                 title="Quran Thilawath Today"
                 current={19}
                 total={30}
-                color="#64D98A"
+                color="#9EDE66"
               />
 
               <TaskProgressItem
                 title="Isthighfar Today"
                 current={16}
                 total={30}
-                color="#64D98A"
+                color="#2CD17C"
                 completed={true}
               />
 
@@ -165,7 +165,7 @@ const PrayerTimeScreen = () => {
                 title="Zikr Today"
                 current={16}
                 total={30}
-                color="#F0964A"
+                color="#F48F47"
               />
             </View>
           </View>

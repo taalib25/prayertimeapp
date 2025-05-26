@@ -3,17 +3,19 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  GestureResponderEvent,
+  ActivityIndicator,
+  StyleProp,
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { typography } from '../utils/typography';
+import {typography} from '../utils/typography';
 
 interface CustomButtonProps {
   title: string;
-  onPress: (event: GestureResponderEvent) => void;
-  style?: ViewStyle | ViewStyle[];
-  textStyle?: TextStyle | TextStyle[];
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  loading?: boolean;
   disabled?: boolean;
 }
 
@@ -22,48 +24,42 @@ const CustomButton: React.FC<CustomButtonProps> = ({
   onPress,
   style,
   textStyle,
-  disabled,
+  loading = false,
+  disabled = false,
 }) => {
   return (
     <TouchableOpacity
-      style={[styles.button, style, disabled && styles.disabledButton]}
+      style={[
+        styles.button,
+        style,
+        (disabled || loading) && styles.disabledButton,
+      ]}
       onPress={onPress}
-      disabled={disabled}>
-      <Text style={[styles.text, textStyle, disabled && styles.disabledText]}>
-        {title}
-      </Text>
+      disabled={disabled || loading}>
+      {loading ? (
+        <ActivityIndicator color="#FFFFFF" size="small" />
+      ) : (
+        <Text style={[styles.buttonText, textStyle]}>{title}</Text>
+      )}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#3498db',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
+    backgroundColor: '#3C4A9B',
     borderRadius: 8,
-    alignItems: 'center',
+    height: 48,
     justifyContent: 'center',
-    marginVertical: 10,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.23,
-    shadowRadius: 2.62,
-    elevation: 4,
+    alignItems: 'center',
   },
-  text: {
-    color: '#ffffff',
-   ...typography.prayerCard,
+  buttonText: {
+    ...typography.prayerCard,
+    color: '#FFFFFF',
   },
   disabledButton: {
-    backgroundColor: '#bdc3c7',
-  },
-  disabledText: {
-    color: '#7f8c8d',
+    backgroundColor: '#A0A0A0',
+    opacity: 0.7,
   },
 });
 
