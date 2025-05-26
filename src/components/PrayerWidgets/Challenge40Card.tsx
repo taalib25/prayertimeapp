@@ -25,7 +25,7 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
   // Calculate percentage for the progress ring
   const percentage = (current / total) * 100;
   const strokeWidth = 8;
-  const radius = 50;
+  const radius = 40; // Adjusted from 50 to 40 for better proportion
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
@@ -39,7 +39,7 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
       </View>
 
       <View style={styles.progressContainer}>
-        <Svg height="100" width="100" viewBox="0 0 100 100">
+        <Svg height="140" width="140" viewBox="0 0 100 100">
           {/* Background Circle */}
           <Circle
             cx="50"
@@ -67,8 +67,8 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
         <View style={styles.progressTextContainer}>
           <Text style={[styles.progressValue, {color: textColor}]}>
             {current}
+            <Text style={styles.progressTotal}>/{total}</Text>
           </Text>
-          <Text style={styles.progressTotal}>/{total}</Text>
         </View>
       </View>
     </View>
@@ -104,11 +104,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    marginTop: 4,
   },
   progressTextContainer: {
     position: 'absolute',
     flexDirection: 'row',
     alignItems: 'baseline',
+    justifyContent: 'center',
   },
   progressValue: {
     ...typography.statNumber,
@@ -116,8 +118,8 @@ const styles = StyleSheet.create({
   },
   progressTotal: {
     ...typography.body,
-    color: '#999',
-    fontSize: 16,
+    color: '#3C4A9B',
+    fontSize: 18,
   },
 });
 

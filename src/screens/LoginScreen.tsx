@@ -60,12 +60,13 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
             contentContainerStyle={styles.scrollContainer}
             keyboardShouldPersistTaps="handled">
             <View style={styles.container}>
-              <Text style={styles.title}>Assalamu Alaikum!</Text>
+             
+
+              <View style={styles.formContainer}>
+                 <Text style={styles.title}>Assalamu Alaikum!</Text>
               <Text style={styles.subtitle}>
                 Please login to access your account
               </Text>
-
-              <View style={styles.formContainer}>
                 <Text style={styles.inputLabel}>Email</Text>
                 <TextInput
                   style={styles.input}
@@ -143,14 +144,10 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // backgroundColor: 'white',
+    // padding: 24,
+    // borderRadius: 16,
+    // elevation: 3,
   },
   inputLabel: {
     ...typography.bodyMedium,

@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#ffffff',
-   ...typography.prayerName,
+   ...typography.prayerCard,
   },
   disabledButton: {
     backgroundColor: '#bdc3c7',
