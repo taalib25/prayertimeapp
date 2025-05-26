@@ -19,28 +19,31 @@ const TaskProgressItem: React.FC<TaskProgressItemProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.contentContainer}>
         <Text style={styles.title}>{title}</Text>
-        {completed && (
+
+        {completed ? (
           <View style={styles.completedBadge}>
             <Text style={styles.checkmark}>✓</Text>
           </View>
+        ) : (
+          <View style={styles.emptyCircle} />
         )}
       </View>
 
-      <View style={styles.progressDetails}>
-        <Text style={styles.progressText}>
+      <View style={[styles.progressSection, {flexDirection: 'row', alignItems: 'center', marginTop: 0}]}>
+        <Text style={[styles.progressText, {marginBottom: 0, marginRight: 13}]}>
           {current}/{total}
         </Text>
-      </View>
 
-      <View style={styles.progressBarContainer}>
-        <View
-          style={[
-            styles.progressBar,
-            {width: `${(current / total) * 100}%`, backgroundColor: color},
-          ]}
-        />
+        <View style={[styles.progressBarContainer, {flex: 1}]}>
+          <View
+        style={[
+          styles.progressBar,
+          {width: `${(current / total) * 100}%`, backgroundColor: color},
+        ]}
+          />
+        </View>
       </View>
     </View>
   );
@@ -49,56 +52,67 @@ const TaskProgressItem: React.FC<TaskProgressItemProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    borderRadius: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     padding: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 14,
+    marginVertical: 6,
   },
-  header: {
+  contentContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    padding:1,
   },
   title: {
     ...typography.taskTitle,
-    color: '#333',
+    marginBottom:1,
+    color: '#3C4A9B',
+    flex: 1,
+  },
+  progressSection: {
+    marginTop: 4,
+  },
+  progressText: {
+    ...typography.prayerCard,
+    fontSize: 14,
+    color: '#3C4A9B',
+    marginBottom: 6,
+  },
+  progressBarContainer: {
+    height: 11, // Increased from 6 to 8
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: 11, // Increased from 6 to 8
+    borderRadius: 4,
   },
   completedBadge: {
-    backgroundColor: '#4CD964',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    backgroundColor: '#10B981',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkmark: {
     color: '#fff',
+    fontSize: 12,
     fontWeight: '700',
   },
-  progressDetails: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginBottom: 8,
-  },
-  progressText: {
-    ...typography.caption,
-    color: '#777',
-  },
-  progressBarContainer: {
-    height: 6,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-  },
+  emptyCircle:{
+    borderColor:'#CBCBCB',
+    borderWidth: 1, 
+    borderRadius: 100,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  }
 });
 
 export default TaskProgressItem;

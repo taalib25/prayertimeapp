@@ -66,7 +66,7 @@ export const typography: Record<string, TextStyle> = {
   },
 
   prayerCard: {
-    fontFamily: fontFamilies.bold,
+    fontFamily: fontFamilies.semibold,
     fontSize: 16,
     lineHeight: 20,
   },
@@ -83,7 +83,7 @@ export const typography: Record<string, TextStyle> = {
     lineHeight: 16,
   },
 
-   count:{
+  count: {
     fontFamily: fontFamilies.semibold,
     fontSize: 32,
     lineHeight: 40,
@@ -99,5 +99,13 @@ export const typography: Record<string, TextStyle> = {
     fontFamily: fontFamilies.medium,
     fontSize: 12,
     lineHeight: 16,
+  },
+
+  // Task Progress
+  taskTitle: {
+    fontFamily: fontFamilies.semibold,
+    fontSize: 17,
+    lineHeight: 14.7, // 105% of 14px
+    letterSpacing: 0.07, // 0.5% of 14px
   },
 };

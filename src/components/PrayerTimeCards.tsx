@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   prayerTime: {
     ...typography.prayerCard,
     color: '#29476F',
-    marginTop: 12,
+    marginTop: 15,
     textAlign: 'center',
   },
   iconContainer: {
