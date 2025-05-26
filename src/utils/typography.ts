@@ -53,7 +53,7 @@ export const typography: Record<string, TextStyle> = {
   },
   prayerTime: {
     fontFamily: 'Sora-VariableFont_wght',
-    fontWeight: fontWeights.medium,
+    fontWeight: fontWeights.bold,
     fontSize: 16,
     lineHeight: 20,
   },
