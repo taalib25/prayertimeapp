@@ -7,12 +7,13 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { typography } from '../utils/typography';
 
 interface CustomButtonProps {
   title: string;
   onPress: (event: GestureResponderEvent) => void;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
   disabled?: boolean;
 }
 
@@ -56,8 +57,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+   ...typography.prayerName,
   },
   disabledButton: {
     backgroundColor: '#bdc3c7',
