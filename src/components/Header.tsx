@@ -47,23 +47,21 @@ const Header: React.FC<HeaderProps> = ({
           <View style={styles.userInfo}>
             <Text style={styles.greeting}>Assalamu Alaikum!</Text>
             <Text style={styles.userName}>{userName}</Text>
-            <View style={styles.underline} />
             <Text style={styles.welcomeBack}>Welcome Back!</Text>
+             
           </View>
         </View>
-
+ <View style={styles.underline} />
         {/* Mosque Info */}
         <View style={styles.mosqueContainer}>
           <SvgIcon
             name="masjid"
-            size={24}
+            size={34}
             color="#42D0D3"
             style={styles.mosqueIcon}
           />
-          <View>
-            <Text style={styles.mosqueName}>{mosqueName}</Text>
-            <Text style={styles.mosqueLocation}>{mosqueLocation}</Text>
-          </View>
+          <Text style={styles.mosqueName}>{mosqueName}, {mosqueLocation}</Text>
+     
         </View>
       </View>
     </View>
@@ -108,8 +106,8 @@ const styles = StyleSheet.create({
   locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingVertical: 8,
+    backgroundColor: '#28999BE5',
+    paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 20,
     marginBottom: 16,
@@ -141,54 +139,47 @@ const styles = StyleSheet.create({
   userContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   userInfo: {
     flex: 1,
   },
   greeting: {
-    ...typography.greeting,
+    ...typography.h3,
     color: '#5CE5D5',
-    marginBottom: 4,
-    fontWeight: '700',
+    marginBottom: 1,
   },
   userName: {
-    ...typography.userName,
+    ...typography.headerProfile,
     color: '#fff',
-    marginBottom: 6,
-    fontWeight: '800',
-    fontSize: 20,
+    marginBottom: 1,
   },
   underline: {
-    height: 2,
-    backgroundColor: '#5CE5D5',
-    width: 40,
-    marginBottom: 6,
+    height: 1.5,
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+    width: '60%',
     borderRadius: 1,
   },
   welcomeBack: {
-    ...typography.bodySmall,
+    ...typography.bodyTiny,
     color: '#B3B8D3',
   },
   mosqueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(66, 78, 141, 0.5)',
     padding: 12,
     borderRadius: 10,
-    marginTop: 8,
+    marginTop: 1,
     width: '100%',
   },
   mosqueIcon: {
-    marginRight: 10,
+    marginRight: 16,
   },
   mosqueName: {
-    ...typography.bodyMedium,
-    color: '#fff',
-  },
-  mosqueLocation: {
-    ...typography.caption,
-    color: '#B3B8D3',
+    ...typography.bodySmall,
+    color: '#5CE5D5',
+    width: '55%',
   },
 });
 
