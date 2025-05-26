@@ -36,7 +36,7 @@
 	<key>NSMotionUsageDescription</key>
 	<string>Motion data is used to determine Qibla direction.</string>
 	<key>UILaunchStoryboardName</key>
-	<string></string>
+	<string/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>
@@ -51,7 +51,14 @@
 	<false/>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Sora-VariableFont_wght.ttf</string>
+		<string>Sora-Light.ttf</string>
+		<string>Sora-Regular.ttf</string>
+		<string>Sora-Medium.ttf</string>
+		<string>Sora-SemiBold.ttf</string>
+		<string>Sora-Bold.ttf</string>
+		<string>Sora-ExtraBold.ttf</string>
+		<string>Sora-ExtraLight.ttf</string>
+		<string>Sora-Thin.ttf</string>
 	</array>
 	<key>UIStatusBarStyle</key>
 	<string>UIStatusBarStyleDefault</string>
