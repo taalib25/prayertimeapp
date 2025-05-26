@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -49,7 +50,12 @@ const PrayerTimeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
@@ -161,7 +167,7 @@ const PrayerTimeScreen = () => {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -169,6 +175,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+    paddingTop: 0,
   },
   scrollContainer: {
     flex: 1,
@@ -200,12 +207,12 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   sectionTitle: {
-    ...typography.bodyMedium,
-    color: '#333',
+    ...typography.h3,
+    color: '#3C4A9B',
   },
   seeAllText: {
     ...typography.bodyMedium,
-    color: '#3BACB6',
+    color: '#3C4A9B',
   },
   emptyCardsRow: {
     flexDirection: 'row',

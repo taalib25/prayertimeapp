@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      {/* Background PNG instead of SVG */}
+      {/* Background PNG */}
       <Image
         source={require('../assets/images/profileSection.png')}
         style={styles.backgroundImage}
@@ -147,7 +147,6 @@ const styles = StyleSheet.create({
   greeting: {
     ...typography.h3,
     color: '#5CE5D5',
-    marginBottom: 1,
   },
   userName: {
     ...typography.headerProfile,

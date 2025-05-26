@@ -34,7 +34,7 @@ export const typography: Record<string, TextStyle> = {
   h3: {
     fontFamily: fontFamilies.semibold,
     fontSize: 20,
-    lineHeight: 28,
+    lineHeight: 18,
   },
 
   // Body text
@@ -62,7 +62,7 @@ export const typography: Record<string, TextStyle> = {
   //Header Profile
   headerProfile: {
     fontFamily: fontFamilies.semibold,
-    fontSize: 18,
+    fontSize: 22,
   },
 
   prayerCard: {
