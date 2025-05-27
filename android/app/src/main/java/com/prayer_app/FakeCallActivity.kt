@@ -2,7 +2,6 @@ package com.prayer_app
 
 import android.os.Bundle
 import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -10,10 +9,10 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class FakeCallActivity : ReactActivity() {
 
-    override fun getMainComponentName(): String = "FakeCallScreen" // This should match the name you register in JS
+    override fun getMainComponentName(): String = "FakeCallScreen"
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(null) // Use null for savedInstanceState if not using fabric
+        super.onCreate(savedInstanceState)
 
         // These flags are important to show the activity over the lock screen and turn the screen on
         window.addFlags(
@@ -25,12 +24,17 @@ class FakeCallActivity : ReactActivity() {
         )
     }
 
-    // Optional: If you need to pass initial props to your React component
-    // override fun createReactActivityDelegate(): ReactActivityDelegate {
-    //     return DefaultReactActivityDelegate(
-    //         this,
-    //         mainComponentName,
-    //         fabricEnabled
-    //     )
-    // }
+    override fun createReactActivityDelegate(): ReactActivityDelegate {
+        return DefaultReactActivityDelegate(
+            this,
+            mainComponentName,
+            BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
+        )
+    }
+
+    override fun onBackPressed() {
+        // Override back button to make it harder to dismiss
+        // You can customize this behavior
+        finishAndRemoveTask()
+    }
 }

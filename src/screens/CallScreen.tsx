@@ -7,19 +7,19 @@ import {
   Platform,
   Alert,
   TextInput,
+  Vibration,
 } from 'react-native';
 import notifee, {
-  TimestampTrigger,
-  TriggerType,
   AndroidImportance,
+  AndroidVisibility,
+  TriggerType,
   AndroidStyle,
   AndroidCategory,
-  AndroidVisibility,
 } from '@notifee/react-native';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import {DateTimePickerAndroid} from '@react-native-community/datetimepicker'; // Import for Android
+import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 
 const CallScreen: React.FC = () => {
   const [date, setDate] = useState(new Date(Date.now() + 60000)); // Default to 1 minute in future
@@ -71,125 +71,222 @@ const CallScreen: React.FC = () => {
       setShowPicker(true); // Show iOS picker component
     }
   };
+  // Internal function to schedule notification (used by both regular and test functions)
+  const scheduleFakeCallNotificationInternal = async (
+    targetDate: Date,
+    message: string,
+  ) => {
+    if (targetDate.getTime() <= Date.now()) {
+      throw new Error('Please select a future time for the reminder.');
+    } // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'fake-call-channel',
+      name: 'Fake Call Channel',
+      importance: AndroidImportance.HIGH,
+      sound: 'ringtone',
+      vibrationPattern: [300, 500, 300, 500],
+      visibility: AndroidVisibility.PUBLIC,
+      bypassDnd: true, // Bypass Do Not Disturb
+    }); // Create a trigger notification
+    const trigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: targetDate.getTime(),
+    } as const;
 
-  async function scheduleFakeCallNotification() {
-    if (date.getTime() <= Date.now()) {
-      Alert.alert(
-        'Invalid Time',
-        'Please select a future time for the reminder.',
-      );
-      return;
-    }
+    // Display a notification
+    await notifee.createTriggerNotification(
+      {
+        title: 'Incoming Call',
+        body: message || 'Prayer Reminder',
+        data: {screen: 'FakeCallScreen', message: message},
+        android: {
+          channelId,
+          importance: AndroidImportance.HIGH,
+          style: {
+            type: AndroidStyle.BIGTEXT,
+            text: message || 'Prayer Reminder. Tap to answer.',
+          },
+          category: AndroidCategory.CALL,
+          pressAction: {
+            id: 'default',
+          },
+          fullScreenAction: {
+            id: 'default',
+          },
+          sound: 'ringtone',
+          visibility: AndroidVisibility.PUBLIC,
+          vibrationPattern: [300, 500, 300, 500],
+          ongoing: true, // Makes it harder to dismiss
+          autoCancel: false,
+          actions: [
+            {
+              title: 'Answer',
+              pressAction: {
+                id: 'answer-call',
+              },
+            },
+            {
+              title: 'Decline',
+              pressAction: {
+                id: 'decline-call',
+              },
+            },
+          ],
+        },
+        ios: {
+          sound: 'ringtone.caf',
+          categoryId: 'reminder',
+          interruptionLevel: 'timeSensitive',
+          critical: true,
+          criticalVolume: 1.0,
+        },
+      },
+      trigger,
+    );
+  };
+
+  // Quick test function for 1 minute timer
+  const scheduleQuickTest = async () => {
+    const testDate = new Date(Date.now() + 60000); // 1 minute from now
+    setDate(testDate);
 
     try {
-      // Create a channel (required for Android)
-      const channelId = await notifee.createChannel({
-        id: 'fake-call-channel',
-        name: 'Fake Call Channel',
-        importance: AndroidImportance.HIGH,
-        sound: 'ringtone', 
-        visibility: AndroidVisibility.PUBLIC,
-      });
-
-      // Create a trigger notification
-      const trigger: TimestampTrigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: date.getTime(),
-        // repeatFrequency: RepeatFrequency.DAILY, // Optional: for repeating
-      };
-
-      // Display a notification
-      await notifee.createTriggerNotification(
-        {
-          title: 'Incoming Call',
-          body: reminderText || 'Prayer Reminder',
-          data: {screen: 'FakeCallScreen'}, // Custom data to identify the notification
-          android: {
-            channelId,
-            importance: AndroidImportance.HIGH,
-            style: {
-              type: AndroidStyle.BIGTEXT,
-              text: reminderText || 'Prayer Reminder. Tap to answer.',
-            },
-            category: AndroidCategory.CALL, // Important for call-like appearance
-            pressAction: {
-              id: 'default',
-              // On Android, this will launch FakeCallActivity if configured correctly
-              // For full screen intent, the mainComponent in FakeCallActivity will be launched
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
-            fullScreenAction: {
-              id: 'default',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
-            sound: 'ringtone', // Make sure this matches your sound file name without extension
-            visibility: AndroidVisibility.PUBLIC,
-            // actions: [
-            //   {
-            //     title: 'Accept',
-            //     pressAction: { id: 'accept-call' }, // Handle this in your background/foreground event listeners
-            //   },
-            //   {
-            //     title: 'Decline',
-            //     pressAction: { id: 'decline-call' },
-            //   },
-            // ],
-          },
-          ios: {
-            sound: 'ringtone.caf', // Ensure you have ringtone.caf in your iOS project bundle
-            // On iOS, you'll handle the notification press in App.tsx and navigate
-            categoryId: 'reminder',
-            interruptionLevel: 'timeSensitive', // Ensures the notification is delivered immediately
-          },
-        },
-        trigger,
+      await scheduleFakeCallNotificationInternal(
+        testDate,
+        'Test Prayer Reminder - This is a 1 minute test!',
       );
+
+      // Add immediate vibration for feedback
+      Vibration.vibrate([100, 200, 100]);
 
       Alert.alert(
-        'Reminder Set',
+        'Test Scheduled ✅',
+        'Test fake call will trigger in 1 minute!\n\n🔒 Lock your phone now to test the full effect!\n📱 The call will appear even if phone is silent.',
+        [
+          {
+            text: 'OK',
+            onPress: () => console.log('Test scheduled'),
+          },
+        ],
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Could not schedule test reminder.');
+    }
+  };
+
+  // Regular schedule function
+  async function scheduleFakeCallNotification() {
+    try {
+      await scheduleFakeCallNotificationInternal(date, reminderText);
+
+      Alert.alert(
+        'Reminder Set ✅',
         `You will receive a fake call reminder at ${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`,
       );
-    } catch (e) {
-      console.error('Error scheduling notification:', e);
-      Alert.alert('Error', 'Could not schedule the reminder.');
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'Could not schedule the reminder.',
+      );
     }
   }
 
+  // Cancel all scheduled notifications
+  const cancelAllNotifications = async () => {
+    try {
+      await notifee.cancelAllNotifications();
+      Alert.alert(
+        'Cancelled',
+        'All scheduled fake call reminders have been cancelled.',
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Could not cancel notifications.');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Schedule Prayer Reminder</Text>
+      <Text style={styles.title}>🕌 Prayer Fake Call Setup</Text>
+      <Text style={styles.subtitle}>
+        Schedule a fake incoming call to remind you of prayer time
+      </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Reminder message (optional)"
-        value={reminderText}
-        onChangeText={setReminderText}
-      />
-
-      <View style={styles.pickerContainer}>
-        <Button onPress={pickerButtonHandler} title="Select Time" />
-        <Text
-          style={
-            styles.dateText
-          }>{`Selected: ${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`}</Text>
+      <View style={styles.testSection}>
+        <Text style={styles.sectionTitle}>🧪 Quick Test (1 Minute)</Text>
+        <Button
+          title="Start 1 Minute Test"
+          onPress={scheduleQuickTest}
+          color="#FF6B35"
+        />
+        <Text style={styles.testDescription}>
+          Perfect for testing! Lock your phone after pressing this button.
+        </Text>
       </View>
 
-      {/* Conditional rendering for iOS picker */}
-      {showPicker && Platform.OS === 'ios' && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={date}
-          mode={'datetime'} // 'datetime' is appropriate for iOS to pick both date and time
-          display="default" // Or "spinner" etc. as per your preference for iOS
-          onChange={onIOSChange} // Use the new iOS-specific handler
-          minimumDate={new Date()} // Prevent selecting past dates/times
-        />
-      )}
+      <View style={styles.divider} />
 
-      <Button
-        title="Schedule Fake Call Reminder"
-        onPress={scheduleFakeCallNotification}
-      />
+      <View style={styles.customSection}>
+        <Text style={styles.sectionTitle}>⏰ Custom Schedule</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Custom reminder message"
+          value={reminderText}
+          onChangeText={setReminderText}
+          multiline
+        />
+
+        <View style={styles.pickerContainer}>
+          <Button
+            onPress={pickerButtonHandler}
+            title="Select Time"
+            color="#4CAF50"
+          />
+          <Text style={styles.dateText}>
+            {`${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`}
+          </Text>
+        </View>
+
+        {/* Conditional rendering for iOS picker */}
+        {showPicker && Platform.OS === 'ios' && (
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={date}
+            mode={'datetime'}
+            display="default"
+            onChange={onIOSChange}
+            minimumDate={new Date()}
+          />
+        )}
+
+        <Button
+          title="Schedule Custom Reminder"
+          onPress={scheduleFakeCallNotification}
+          color="#2196F3"
+        />
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.controlSection}>
+        <Button
+          title="Cancel All Reminders"
+          onPress={cancelAllNotifications}
+          color="#F44336"
+        />
+      </View>
+
+      <View style={styles.infoSection}>
+        <Text style={styles.infoTitle}>ℹ️ How it works:</Text>
+        <Text style={styles.infoText}>
+          • Works even when phone is locked/silent{'\n'}• Custom ringtone plays
+          with vibration{'\n'}• Voice message speaks your reminder{'\n'}•
+          Appears as realistic incoming call{'\n'}• Accept/Decline buttons to
+          end call
+        </Text>
+      </View>
     </View>
   );
 };
@@ -197,32 +294,92 @@ const CallScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 5,
+    textAlign: 'center',
+    color: '#1a5276',
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#666',
     marginBottom: 20,
   },
-  input: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  testSection: {
+    backgroundColor: '#FFF3E0',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  testDescription: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
     textAlign: 'center',
   },
+  customSection: {
+    backgroundColor: '#E8F5E8',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  controlSection: {
+    backgroundColor: '#FFEBEE',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    backgroundColor: 'white',
+    fontSize: 16,
+    minHeight: 50,
+  },
   pickerContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
   },
   dateText: {
-    marginLeft: 10,
+    marginTop: 8,
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#ddd',
+    marginVertical: 10,
+  },
+  infoSection: {
+    backgroundColor: '#E3F2FD',
+    padding: 15,
+    borderRadius: 10,
+  },
+  infoTitle: {
     fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#1976D2',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
   },
 });
 

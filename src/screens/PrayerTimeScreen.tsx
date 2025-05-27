@@ -11,7 +11,8 @@ import {
 import PermissionButton from '../components/permissionBtn';
 import {PermissionType} from '../services/permissions/initPermissions';
 import {initDatabase, getPrayerTimes} from '../services/db';
-import {PrayerTimes as PrayerTimesFromDB} from '../models/PrayerTimes'; // Assuming a model like this
+import {PrayerTimes as PrayerTimesFromDB} from '../models/PrayerTimes';
+import DateSelector from '../components/DateSelector';
 
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -83,20 +84,49 @@ const PrayerTimeScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation<PrayerTimeScreenNavigationProp>();
+  const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const [dbInitialized, setDbInitialized] = useState(false);
 
-  const loadPrayerTimes = async () => {
+  // Initialize database when component mounts
+  useEffect(() => {
+    const initDb = async () => {
+      try {
+        await initDatabase();
+        setDbInitialized(true);
+      } catch (err) {
+        console.error('Failed to initialize database:', err);
+        setError(
+          `Database initialization failed: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+      }
+    };
+
+    initDb();
+  }, []);
+
+  // Load prayer times when database is initialized or selected date changes
+  useEffect(() => {
+    if (dbInitialized) {
+      loadPrayerTimes(selectedDate);
+    }
+  }, [dbInitialized, selectedDate]);
+
+  const loadPrayerTimes = async (dateStr: string = selectedDate) => {
     setIsLoading(true);
     setError(null);
     try {
-      await initDatabase();
-      const todayStr = getCurrentDateString();
       const dbData = (await getPrayerTimes(
-        todayStr,
+        dateStr,
       )) as PrayerTimesFromDB | null;
 
       if (dbData) {
         const now = new Date();
         let nextPrayerFound = false;
+
+        // Only show next prayer indicator for today's date
+        const isToday = dateStr === getCurrentDateString();
 
         const processedTimes = PRAYER_DEFINITIONS.map((prayerDef, index) => {
           const prayerTime24 = dbData[
@@ -104,7 +134,7 @@ const PrayerTimeScreen = () => {
           ] as string | undefined;
 
           let isThisNext = false;
-          if (prayerTime24 && !nextPrayerFound) {
+          if (prayerTime24 && !nextPrayerFound && isToday) {
             const [hours, minutes] = prayerTime24.split(':').map(Number);
             const prayerDateTime = new Date(now); // Use current date
             prayerDateTime.setHours(hours, minutes, 0, 0);
@@ -125,7 +155,7 @@ const PrayerTimeScreen = () => {
         setPrayerTimes(processedTimes);
       } else {
         setError(
-          `No prayer times found for ${todayStr}. Please add them using the Database Test Screen or ensure your data source is configured.`,
+          `No prayer times found for ${dateStr}. Please add them using the Database Test Screen or ensure your data source is configured.`,
         );
         setPrayerTimes([]);
       }
@@ -140,29 +170,37 @@ const PrayerTimeScreen = () => {
     } finally {
       setIsLoading(false);
     }
-    
   };
 
-  useEffect(() => {
-    loadPrayerTimes();
-  }, []);
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>Prayer Times</Text>
+        <Text style={styles.title}>Prayer Times</Text>{' '}
+        <View style={styles.dateSelector}>
+          <DateSelector
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+          />
+        </View>
         <View style={{marginVertical: 10}}>
           <Button
             title="Go to Database Test"
             onPress={() => navigation.navigate('DatabaseTest')}
           />
-           <Button
+          <Button
             title="Go to Call Screen"
             onPress={() => navigation.navigate('CallScreen')}
           />
         </View>
         <View style={{marginVertical: 10}}>
-          <Button title="Refresh Times" onPress={loadPrayerTimes} />
+          <Button
+            title="Refresh Times"
+            onPress={() => loadPrayerTimes(selectedDate)}
+          />
         </View>
         <View style={{marginBottom: 20}}>
           <PermissionButton
@@ -215,6 +253,9 @@ const styles = StyleSheet.create({
     marginBottom: 30, // Increased margin
     textAlign: 'center',
     color: '#1a5276', // Darker blue
+  },
+  dateSelector: {
+    marginBottom: 15,
   },
   listContentContainer: {
     paddingBottom: 20,
