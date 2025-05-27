@@ -154,8 +154,8 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 resizeMode="contain"
               />
 
-              <Text style={styles.title}>Enter verification code</Text>
-              <Text style={styles.subtitle}>
+              <Text style={styles.title}>OTP Verification</Text>
+              <Text style={[styles.phoneNumberText, {marginTop: 80, marginBottom: 24,...typography.body, color: '#828283'}]}>
                 We've sent a code to{' '}
                 <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
               </Text>
@@ -177,7 +177,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
               </View>
 
               <CustomButton
-                title="Verify"
+                title="Submit"
                 onPress={handleVerifyOTP}
                 style={styles.submitButton}
                 loading={isLoading}
@@ -219,19 +219,17 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.h2,
     color: '#3C4A9B',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    ...typography.body,
     color: '#666',
     marginBottom: 24,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.bodyMedium,
     color: '#333',
     marginBottom: 8,
   },
@@ -242,13 +240,12 @@ const styles = StyleSheet.create({
     borderColor: '#E1E3E8',
     borderRadius: 8,
     paddingHorizontal: 16,
-    fontSize: 16,
+    ...typography.body,
     color: '#333',
     marginBottom: 24,
   },
   phoneNumberText: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.bodyMedium,
     color: '#3C4A9B',
   },
   otpContainer: {
@@ -280,12 +277,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   resendText: {
-    fontSize: 16,
+    ...typography.body,
     color: '#666',
   },
   resendLink: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.bodyMedium,
     color: '#3C4A9B',
   },
 });
