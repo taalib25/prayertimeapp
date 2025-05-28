@@ -5,17 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   BackHandler,
-  Image,
   Vibration,
 } from 'react-native';
-import {
-  useNavigation,
-  NavigationProp,
-  useFocusEffect,
-} from '@react-navigation/native';
+import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../../App';
-import {navigationRef} from '../../App';
 import notifee from '@notifee/react-native';
+import SoundPlayer from 'react-native-sound-player';
 
 const FakeCallScreen = () => {
   // Use a ref to store if we've tried to initialize navigation
@@ -43,6 +38,13 @@ const FakeCallScreen = () => {
 
     // Cancel all notifications related to fake calls when screen opens
     dismissAllCallNotifications();
+
+    // Start playing ringtone when screen appears
+    try {
+      SoundPlayer.playSoundFile('ringtone', 'mp3');
+    } catch (error) {
+      console.log('Error playing initial ringtone:', error);
+    }
 
     // Start vibration pattern for incoming call
     const vibrationPattern = [1000, 1000, 1000, 1000, 1000, 1000];
@@ -75,8 +77,13 @@ const FakeCallScreen = () => {
         clearInterval(durationIntervalRef.current);
       }
 
-      // Stop vibration
+      // Stop vibration and sound
       Vibration.cancel();
+      try {
+        SoundPlayer.stop();
+      } catch (error) {
+        console.log('Error stopping sound in cleanup:', error);
+      }
 
       backHandler.remove();
     };
@@ -89,19 +96,24 @@ const FakeCallScreen = () => {
     try {
       // Get all displayed notifications
       const notifications = await notifee.getDisplayedNotifications();
-      
+
       // Filter and cancel fake call notifications
       for (const notification of notifications) {
-        if (notification.notification.data?.screen === 'FakeCallScreen' ||
-            notification.notification.title === 'Incoming Call' ||
-            notification.notification.title === 'Connecting call...') {
+        if (
+          notification.notification.data?.screen === 'FakeCallScreen' ||
+          notification.notification.title === 'Incoming Call' ||
+          notification.notification.title === 'Connecting call...'
+        ) {
           if (notification.notification.id) {
             await notifee.cancelNotification(notification.notification.id);
-            console.log('Cancelled notification:', notification.notification.id);
+            console.log(
+              'Cancelled notification:',
+              notification.notification.id,
+            );
           }
         }
       }
-      
+
       // Also cancel by channel ID as a fallback
       await notifee.cancelAllNotifications(['fake-call-channel']);
       console.log('Dismissed all call notifications');
@@ -120,27 +132,43 @@ const FakeCallScreen = () => {
     // Stop vibration
     Vibration.cancel();
 
+    // Stop any playing sound
+    try {
+      SoundPlayer.stop();
+    } catch (error) {
+      console.log('Error stopping sound:', error);
+    }
+
     // Dismiss any remaining notifications
     dismissAllCallNotifications();
 
-    // Navigate back or close the app
-    setTimeout(() => {
-      try {
-        // If all else fails, use BackHandler
-        BackHandler.exitApp();
-      } catch (error) {
-        console.error('Navigation error:', error);
+    // Navigate back to main screen instead of closing app
+    try {
+      if (navigationInitialized.current && navigation) {
+        navigation.navigate('MainApp'); // Navigate to home screen
+      } else {
+        // Fallback: Go back or exit app
         BackHandler.exitApp();
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      BackHandler.exitApp();
+    }
   };
 
   const handleAcceptCall = async () => {
     console.log('Call accepted');
-    
+
+    // Stop the ringing sound first
+    try {
+      SoundPlayer.stop();
+    } catch (error) {
+      console.log('Error stopping ringing sound:', error);
+    }
+
     // Dismiss notifications immediately when call is accepted
     await dismissAllCallNotifications();
-    
+
     setCallStatus('connected');
 
     // Clear the timeout since call was answered
@@ -150,6 +178,13 @@ const FakeCallScreen = () => {
 
     // Stop vibration
     Vibration.cancel();
+
+    // Play a different sound or voice message when call is answered
+    try {
+      SoundPlayer.playSoundFile('ringtone', 'mp3');
+    } catch (error) {
+      console.log('Error playing answer sound:', error);
+    }
 
     // Start call duration timer
     durationIntervalRef.current = setInterval(() => {
@@ -164,29 +199,61 @@ const FakeCallScreen = () => {
 
   const handleRejectCall = async () => {
     console.log('Call rejected');
-    
+
+    // Stop ringing sound immediately
+    try {
+      SoundPlayer.stop();
+    } catch (error) {
+      console.log('Error stopping sound:', error);
+    }
+
     // Dismiss notifications immediately when call is rejected
     await dismissAllCallNotifications();
-    
+
     setCallStatus('ended');
-    cleanupAndExit();
+
+    // Navigate away immediately when call is rejected
+    try {
+      if (navigationInitialized.current && navigation) {
+        navigation.navigate('MainApp'); // Navigate back to home
+      } else {
+        BackHandler.exitApp();
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      BackHandler.exitApp();
+    }
   };
 
   const handleEndCall = async () => {
     console.log('Call ended');
-    
+
+    // Stop any playing sound
+    try {
+      SoundPlayer.stop();
+    } catch (error) {
+      console.log('Error stopping sound:', error);
+    }
+
     // Dismiss notifications when call is ended
     await dismissAllCallNotifications();
-    
+
     setCallStatus('ended');
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
     }
 
-    // Wait a moment before closing
-    setTimeout(() => {
-      cleanupAndExit();
-    }, 2000);
+    // Navigate away when call is ended
+    try {
+      if (navigationInitialized.current && navigation) {
+        navigation.navigate('MainApp'); // Navigate back to home
+      } else {
+        BackHandler.exitApp();
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      BackHandler.exitApp();
+    }
   };
 
   const formatCallDuration = (seconds: number): string => {

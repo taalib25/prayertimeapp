@@ -26,7 +26,7 @@ const CallScreen: React.FC = () => {
       sound: 'ringtone',
       vibrationPattern: [300, 500, 300, 500],
       visibility: AndroidVisibility.PUBLIC,
-      bypassDnd: true, // Bypass Do Not Disturb
+      bypassDnd: true,
     });
 
     // Create a trigger notification
@@ -150,7 +150,7 @@ const CallScreen: React.FC = () => {
           color="#FF6B35"
         />
         <Text style={styles.testDescription}>
-         Lock your phone after pressing this button.
+          Lock your phone after pressing this button.
         </Text>
       </View>
 
