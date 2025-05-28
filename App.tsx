@@ -27,14 +27,10 @@ import {
   NavigationContainer,
   NavigationContainerRef,
 } from '@react-navigation/native';
-import {
-  createNativeStackNavigator,
-} from '@react-navigation/native-stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import CallScreen from './src/screens/CallScreen';
 import FakeCallScreen from './src/screens/FakeCallScreen'; // Import FakeCallScreen
-import notifee, {
-  EventType,
-} from '@notifee/react-native';
+import notifee, {EventType} from '@notifee/react-native';
 
 // Define screen names and their params
 export type RootStackParamList = {
@@ -126,18 +122,23 @@ function App(): React.JSX.Element {
 
     bootstrapApp();
 
+    // Handle foreground notification events
     const unsubscribeForeground = notifee.onForegroundEvent(
       ({type, detail}) => {
+        const {notification, pressAction} = detail;
+
         switch (type) {
-          case EventType.DISMISSED:
-            console.log('User dismissed notification', detail.notification);
-            break;
           case EventType.PRESS:
-            console.log('User pressed notification', detail.notification);
-            if (detail.notification?.data?.screen === 'FakeCallScreen') {
-              if (navigationRef.current) {
-                navigationRef.current.navigate('FakeCallScreen');
-              }
+            console.log('User pressed notification', notification);
+            if (notification?.data?.screen === 'FakeCallScreen') {
+              navigationRef.current?.navigate('FakeCallScreen');
+            }
+            break;
+
+          case EventType.ACTION_PRESS:
+            if (pressAction?.id === 'answer-call') {
+              console.log('User accepted call from notification action');
+              navigationRef.current?.navigate('FakeCallScreen');
             }
             break;
         }
@@ -151,8 +152,6 @@ function App(): React.JSX.Element {
   return (
     <DatabaseProvider>
       <NavigationContainer ref={navigationRef}>
-        {' '}
-        {/* Assign ref to NavigationContainer */}
         <SafeAreaView style={backgroundStyle}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -193,7 +192,7 @@ function App(): React.JSX.Element {
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}
-              options={{headerShown: false}} // Typically no header for a call screen
+              options={{headerShown: false}} // No header for call screen
             />
           </Stack.Navigator>
         </SafeAreaView>

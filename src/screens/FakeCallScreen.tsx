@@ -8,59 +8,45 @@ import {
   Image,
   Vibration,
 } from 'react-native';
-import Tts from 'react-native-tts';
-import {useNavigation} from '@react-navigation/native';
+import {
+  useNavigation,
+  NavigationProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import {RootStackParamList} from '../../App';
+import {navigationRef} from '../../App';
+import notifee from '@notifee/react-native';
 
 const FakeCallScreen = () => {
-  const navigation = useNavigation();
+  // Use a ref to store if we've tried to initialize navigation
+  const navigationInitialized = useRef(false);
+
+  // Try to get navigation from useNavigation hook
+  let navigation: NavigationProp<RootStackParamList>;
+  try {
+    navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    navigationInitialized.current = true;
+  } catch (error) {
+    // If useNavigation fails, we'll use the global navigationRef instead
+    console.log('Navigation hook failed, will use global ref');
+  }
+
   const [callDuration, setCallDuration] = useState(0);
   const [callStatus, setCallStatus] = useState<
     'ringing' | 'connected' | 'ended'
   >('ringing');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const ttsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ttsSpeakingRef = useRef<boolean>(false);
 
   useEffect(() => {
     console.log('FakeCallScreen mounted');
 
+    // Cancel all notifications related to fake calls when screen opens
+    dismissAllCallNotifications();
+
     // Start vibration pattern for incoming call
     const vibrationPattern = [1000, 1000, 1000, 1000, 1000, 1000];
     Vibration.vibrate(vibrationPattern, true);
-
-    // Initialize TTS settings
-    Tts.setDefaultLanguage('en-US');
-    Tts.setDefaultRate(0.5);
-    Tts.setDefaultPitch(1.0);
-
-    // Speak prayer reminder after a few seconds
-    ttsTimeoutRef.current = setTimeout(() => {
-      if (callStatus === 'ringing') {
-        ttsSpeakingRef.current = true;
-        
-        // Set up TTS finish event listener
-        Tts.addEventListener('tts-finish', () => {
-          ttsSpeakingRef.current = false;
-          // After the initial announcement, repeat a shorter message every few seconds
-          const repeatMessage = () => {
-            if (callStatus === 'ringing') {
-              Tts.speak('Prayer reminder call. Please answer.');
-              setTimeout(() => {
-                if (callStatus === 'ringing') {
-                  setTimeout(repeatMessage, 5000); // Repeat every 5 seconds
-                }
-              }, 3000);
-            }
-          };
-          setTimeout(repeatMessage, 3000);
-        });
-        
-        Tts.speak(
-          'Assalamu Alaikum. This is your prayer reminder. It is time for prayer. Please answer this call to acknowledge.',
-        );
-      }
-    }, 3000); // Speak after 3 seconds
 
     // Auto timeout the call after 60 seconds (1 minute) if not answered
     timeoutRef.current = setTimeout(() => {
@@ -82,9 +68,6 @@ const FakeCallScreen = () => {
     return () => {
       console.log('FakeCallScreen cleanup');
 
-      if (ttsTimeoutRef.current) {
-        clearTimeout(ttsTimeoutRef.current);
-      }
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -95,11 +78,37 @@ const FakeCallScreen = () => {
       // Stop vibration
       Vibration.cancel();
 
-      // Stop TTS
-      Tts.stop();
       backHandler.remove();
     };
   }, []); // Removed callStatus dependency to prevent re-initializing
+
+  /**
+   * Dismiss all notifications related to fake calls
+   */
+  const dismissAllCallNotifications = async () => {
+    try {
+      // Get all displayed notifications
+      const notifications = await notifee.getDisplayedNotifications();
+      
+      // Filter and cancel fake call notifications
+      for (const notification of notifications) {
+        if (notification.notification.data?.screen === 'FakeCallScreen' ||
+            notification.notification.title === 'Incoming Call' ||
+            notification.notification.title === 'Connecting call...') {
+          if (notification.notification.id) {
+            await notifee.cancelNotification(notification.notification.id);
+            console.log('Cancelled notification:', notification.notification.id);
+          }
+        }
+      }
+      
+      // Also cancel by channel ID as a fallback
+      await notifee.cancelAllNotifications(['fake-call-channel']);
+      console.log('Dismissed all call notifications');
+    } catch (error) {
+      console.error('Error dismissing notifications:', error);
+    }
+  };
 
   const handleAutoTimeout = () => {
     console.log('Call auto-timeout');
@@ -108,27 +117,30 @@ const FakeCallScreen = () => {
   };
 
   const cleanupAndExit = () => {
-    // Stop TTS and vibration
-    Tts.stop();
+    // Stop vibration
     Vibration.cancel();
 
-    // Clear timeouts
-    if (ttsTimeoutRef.current) {
-      clearTimeout(ttsTimeoutRef.current);
-    }
+    // Dismiss any remaining notifications
+    dismissAllCallNotifications();
 
     // Navigate back or close the app
     setTimeout(() => {
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-      } else {
+      try {
+        // If all else fails, use BackHandler
+        BackHandler.exitApp();
+      } catch (error) {
+        console.error('Navigation error:', error);
         BackHandler.exitApp();
       }
     }, 1000);
   };
 
-  const handleAcceptCall = () => {
+  const handleAcceptCall = async () => {
     console.log('Call accepted');
+    
+    // Dismiss notifications immediately when call is accepted
+    await dismissAllCallNotifications();
+    
     setCallStatus('connected');
 
     // Clear the timeout since call was answered
@@ -136,39 +148,40 @@ const FakeCallScreen = () => {
       clearTimeout(timeoutRef.current);
     }
 
-    // Stop vibration and any ongoing TTS
+    // Stop vibration
     Vibration.cancel();
-    Tts.stop();
 
     // Start call duration timer
     durationIntervalRef.current = setInterval(() => {
       setCallDuration(prev => prev + 1);
     }, 1000);
 
-    // Speak prayer message when call is answered
-    Tts.speak(
-      'Assalamu Alaikum. This is your prayer reminder. May Allah bless you. It is time for your obligatory prayer. Please remember to perform your prayers on time. Barakallahu feeki.',
-    );
-
-    // End call automatically after TTS message (approximately 15 seconds)
+    // End call automatically after 15 seconds
     setTimeout(() => {
       handleEndCall();
     }, 15000);
   };
 
-  const handleRejectCall = () => {
+  const handleRejectCall = async () => {
     console.log('Call rejected');
+    
+    // Dismiss notifications immediately when call is rejected
+    await dismissAllCallNotifications();
+    
     setCallStatus('ended');
     cleanupAndExit();
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = async () => {
     console.log('Call ended');
+    
+    // Dismiss notifications when call is ended
+    await dismissAllCallNotifications();
+    
     setCallStatus('ended');
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
     }
-    Tts.speak('Call ended. Jazakallahu khair.');
 
     // Wait a moment before closing
     setTimeout(() => {
@@ -183,6 +196,7 @@ const FakeCallScreen = () => {
       .toString()
       .padStart(2, '0')}`;
   };
+
   const renderCallInterface = () => {
     if (callStatus === 'ringing') {
       return (
@@ -237,9 +251,6 @@ const FakeCallScreen = () => {
       return (
         <View style={styles.callerInfo}>
           <Text style={styles.callerName}>Call Ended</Text>
-          <Text style={styles.callerSubtitle}>
-            May Allah accept your prayers
-          </Text>
         </View>
       );
     }

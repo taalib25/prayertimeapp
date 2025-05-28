@@ -12,7 +12,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
     <!-- For background notifications/alarms -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />    
+    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -29,6 +30,8 @@
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:supportsRtl="true">
+      
+      <!-- Main activity -->
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -40,7 +43,10 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
-      </activity>      <activity
+      </activity>
+      
+      <!-- Fake call activity with proper intent filters -->
+      <activity
         android:name="com.prayer_app.FakeCallActivity"
         android:exported="true"
         android:launchMode="singleTask"
@@ -52,6 +58,12 @@
         <intent-filter>
           <action android:name="android.intent.action.MAIN" />
           <category android:name="android.intent.category.DEFAULT" />
+        </intent-filter>
+        <!-- Add an intent filter for direct launch from notifications -->
+        <intent-filter>
+          <action android:name="android.intent.action.VIEW" />
+          <category android:name="android.intent.category.DEFAULT" />
+          <data android:scheme="prayerapp" android:host="fakecall" />
         </intent-filter>
       </activity>
       

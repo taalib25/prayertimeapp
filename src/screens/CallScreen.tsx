@@ -1,14 +1,5 @@
-import React, {useState} from 'react';
-import {
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  Platform,
-  Alert,
-  TextInput,
-  Vibration,
-} from 'react-native';
+import React from 'react';
+import {View, Text, Button, StyleSheet, Alert, Vibration} from 'react-native';
 import notifee, {
   AndroidImportance,
   AndroidVisibility,
@@ -16,69 +7,18 @@ import notifee, {
   AndroidStyle,
   AndroidCategory,
 } from '@notifee/react-native';
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
-import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 
 const CallScreen: React.FC = () => {
-  const [date, setDate] = useState(new Date(Date.now() + 60000)); // Default to 1 minute in future
-  const [showPicker, setShowPicker] = useState(false); // Used for iOS picker visibility
-  const [reminderText, setReminderText] = useState('Time for prayer!');
-
-  // onChange handler for iOS DateTimePicker component
-  const onIOSChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-    setShowPicker(false); // Always hide picker after interaction on iOS
-    if (event.type === 'set' && selectedDate) {
-      setDate(selectedDate);
-    }
-    // If dismissed, picker is hidden, date remains unchanged.
-  };
-
-  // Function to show Android date picker then time picker
-  const showAndroidDateTimePicker = () => {
-    DateTimePickerAndroid.open({
-      value: date,
-      onChange: (event, selectedDateValue) => {
-        if (event.type === 'set' && selectedDateValue) {
-          const datePart = selectedDateValue;
-          // Now open time picker
-          DateTimePickerAndroid.open({
-            value: datePart, // Use selected date to initialize time picker
-            mode: 'time',
-            is24Hour: true, // You can set this based on preference or locale
-            display: 'default',
-            onChange: (timeEvent, selectedTimeValue) => {
-              if (timeEvent.type === 'set' && selectedTimeValue) {
-                // selectedTimeValue will have the date from datePart and the new time
-                setDate(selectedTimeValue);
-              }
-            },
-          });
-        }
-      },
-      mode: 'date',
-      display: 'default',
-      minimumDate: new Date(), // Minimum date for the date picker
-    });
-  };
-
-  // Main handler for the "Select Time" button
-  const pickerButtonHandler = () => {
-    if (Platform.OS === 'android') {
-      showAndroidDateTimePicker();
-    } else {
-      setShowPicker(true); // Show iOS picker component
-    }
-  };
-  // Internal function to schedule notification (used by both regular and test functions)
+  // Internal function to schedule notification
   const scheduleFakeCallNotificationInternal = async (
     targetDate: Date,
     message: string,
   ) => {
     if (targetDate.getTime() <= Date.now()) {
       throw new Error('Please select a future time for the reminder.');
-    } // Create a channel (required for Android)
+    }
+
+    // Create a channel (required for Android)
     const channelId = await notifee.createChannel({
       id: 'fake-call-channel',
       name: 'Fake Call Channel',
@@ -87,7 +27,9 @@ const CallScreen: React.FC = () => {
       vibrationPattern: [300, 500, 300, 500],
       visibility: AndroidVisibility.PUBLIC,
       bypassDnd: true, // Bypass Do Not Disturb
-    }); // Create a trigger notification
+    });
+
+    // Create a trigger notification
     const trigger = {
       type: TriggerType.TIMESTAMP,
       timestamp: targetDate.getTime(),
@@ -98,7 +40,11 @@ const CallScreen: React.FC = () => {
       {
         title: 'Incoming Call',
         body: message || 'Prayer Reminder',
-        data: {screen: 'FakeCallScreen', message: message},
+        data: {
+          screen: 'FakeCallScreen',
+          message: message,
+          launchTimestamp: Date.now(),
+        },
         android: {
           channelId,
           importance: AndroidImportance.HIGH,
@@ -109,20 +55,23 @@ const CallScreen: React.FC = () => {
           category: AndroidCategory.CALL,
           pressAction: {
             id: 'default',
+            launchActivity: 'com.prayer_app.FakeCallActivity',
           },
           fullScreenAction: {
-            id: 'default',
+            id: 'full-screen',
+            launchActivity: 'com.prayer_app.FakeCallActivity',
           },
           sound: 'ringtone',
           visibility: AndroidVisibility.PUBLIC,
           vibrationPattern: [300, 500, 300, 500],
-          ongoing: true, // Makes it harder to dismiss
+          ongoing: true,
           autoCancel: false,
           actions: [
             {
               title: 'Answer',
               pressAction: {
                 id: 'answer-call',
+                launchActivity: 'com.prayer_app.FakeCallActivity',
               },
             },
             {
@@ -148,7 +97,6 @@ const CallScreen: React.FC = () => {
   // Quick test function for 1 minute timer
   const scheduleQuickTest = async () => {
     const testDate = new Date(Date.now() + 60000); // 1 minute from now
-    setDate(testDate);
 
     try {
       await scheduleFakeCallNotificationInternal(
@@ -174,25 +122,6 @@ const CallScreen: React.FC = () => {
     }
   };
 
-  // Regular schedule function
-  async function scheduleFakeCallNotification() {
-    try {
-      await scheduleFakeCallNotificationInternal(date, reminderText);
-
-      Alert.alert(
-        'Reminder Set ✅',
-        `You will receive a fake call reminder at ${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`,
-      );
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error instanceof Error
-          ? error.message
-          : 'Could not schedule the reminder.',
-      );
-    }
-  }
-
   // Cancel all scheduled notifications
   const cancelAllNotifications = async () => {
     try {
@@ -214,79 +143,18 @@ const CallScreen: React.FC = () => {
       </Text>
 
       <View style={styles.testSection}>
-        <Text style={styles.sectionTitle}>🧪 Quick Test (1 Minute)</Text>
+        <Text style={styles.sectionTitle}>⏰ Set Timer (1 Minute)</Text>
         <Button
           title="Start 1 Minute Test"
           onPress={scheduleQuickTest}
           color="#FF6B35"
         />
         <Text style={styles.testDescription}>
-          Perfect for testing! Lock your phone after pressing this button.
+         Lock your phone after pressing this button.
         </Text>
       </View>
 
       <View style={styles.divider} />
-
-      <View style={styles.customSection}>
-        <Text style={styles.sectionTitle}>⏰ Custom Schedule</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Custom reminder message"
-          value={reminderText}
-          onChangeText={setReminderText}
-          multiline
-        />
-
-        <View style={styles.pickerContainer}>
-          <Button
-            onPress={pickerButtonHandler}
-            title="Select Time"
-            color="#4CAF50"
-          />
-          <Text style={styles.dateText}>
-            {`${date.toLocaleTimeString()} on ${date.toLocaleDateString()}`}
-          </Text>
-        </View>
-
-        {/* Conditional rendering for iOS picker */}
-        {showPicker && Platform.OS === 'ios' && (
-          <DateTimePicker
-            testID="dateTimePicker"
-            value={date}
-            mode={'datetime'}
-            display="default"
-            onChange={onIOSChange}
-            minimumDate={new Date()}
-          />
-        )}
-
-        <Button
-          title="Schedule Custom Reminder"
-          onPress={scheduleFakeCallNotification}
-          color="#2196F3"
-        />
-      </View>
-
-      <View style={styles.divider} />
-
-      <View style={styles.controlSection}>
-        <Button
-          title="Cancel All Reminders"
-          onPress={cancelAllNotifications}
-          color="#F44336"
-        />
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>ℹ️ How it works:</Text>
-        <Text style={styles.infoText}>
-          • Works even when phone is locked/silent{'\n'}• Custom ringtone plays
-          with vibration{'\n'}• Voice message speaks your reminder{'\n'}•
-          Appears as realistic incoming call{'\n'}• Accept/Decline buttons to
-          end call
-        </Text>
-      </View>
     </View>
   );
 };
@@ -328,37 +196,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textAlign: 'center',
   },
-  customSection: {
-    backgroundColor: '#E8F5E8',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
   controlSection: {
     backgroundColor: '#FFEBEE',
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    backgroundColor: 'white',
-    fontSize: 16,
-    minHeight: 50,
-  },
-  pickerContainer: {
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  dateText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
   },
   divider: {
     height: 1,

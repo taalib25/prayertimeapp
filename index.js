@@ -5,7 +5,7 @@
 import {AppRegistry} from 'react-native';
 import App from './App';
 import {name as appName} from './app.json';
-import FakeCallScreen from './src/screens/FakeCallScreen'; // Import FakeCallScreen
+import FakeCallScreen from './src/screens/FakeCallScreen';
 import notifee, { EventType } from '@notifee/react-native';
 
 // Handle background notification events
@@ -13,31 +13,48 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   const { notification, pressAction } = detail;
   console.log('[BACKGROUND EVENT]', EventType[type], detail);
 
+  // Handle notification press
   if (notification && type === EventType.PRESS && notification.data && notification.data.screen === 'FakeCallScreen') {
     console.log('[BACKGROUND EVENT] FakeCallScreen notification pressed.');
-    // IMPORTANT: Deep linking or a global navigation service is typically needed here
-    // to navigate to the FakeCallScreen when the app opens from a background press.
-    // For now, this log confirms the event is caught.
-    // You might set a flag in AsyncStorage that App.tsx reads on launch.
+    // The app will check for pending navigation when it launches
+    await notifee.cancelNotification(notification.id);
   }
 
-  // Handle background actions (if you add them to notifications later)
-  if (type === EventType.ACTION_PRESS && pressAction && pressAction.id === 'accept-call') {
-    console.log('[BACKGROUND ACTION] Accept call action pressed');
-    // Perform task... e.g., clear notification, navigate
-    if (notification && notification.id) {
-      await notifee.cancelNotification(notification.id); // Clear the notification
+  // Handle action presses
+  if (type === EventType.ACTION_PRESS && pressAction) {
+    if (pressAction.id === 'answer-call' && notification) {
+      console.log('[BACKGROUND ACTION] Accept call action pressed');
+      await notifee.cancelNotification(notification.id);
+      
+      // Create a new notification that will launch the app with deep link info
+      await notifee.displayNotification({
+        title: 'Connecting call...',
+        body: 'Opening prayer call screen',
+        data: {
+          screen: 'FakeCallScreen',
+          launchReason: 'answer-call',
+          timestamp: Date.now()
+        },
+        android: {
+          channelId: 'fake-call-channel',
+          pressAction: {
+            id: 'default',
+            launchActivity: 'default',
+          },
+          fullScreenAction: {
+            id: 'default',
+            launchActivity: 'com.prayer_app.FakeCallActivity',
+          },
+        }
+      });
     }
-  }
 
-  if (type === EventType.ACTION_PRESS && pressAction && pressAction.id === 'decline-call') {
-    console.log('[BACKGROUND ACTION] Decline call action pressed');
-    if (notification && notification.id) {
-      await notifee.cancelNotification(notification.id); // Clear the notification
+    if (pressAction.id === 'decline-call' && notification) {
+      console.log('[BACKGROUND ACTION] Decline call action pressed');
+      await notifee.cancelNotification(notification.id);
     }
   }
 });
 
 AppRegistry.registerComponent(appName, () => App);
-// Register the FakeCallScreen component
 AppRegistry.registerComponent('FakeCallScreen', () => FakeCallScreen);
