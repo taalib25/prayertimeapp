@@ -8,7 +8,7 @@ workflows:
         instance_type: mac_mini_m2
         environment:
           android_signing:
-            - keystore_reference
+            - prayerappref
           vars:
             PACKAGE_NAME: "com.prayer_app" # <-- Put your package name here e.g. com.domain.myapp
           node: v19.7.0
