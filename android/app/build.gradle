@@ -92,6 +92,13 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file("prayerapp.jks")
+            storePassword "prayerapp"
+            keyAlias "prayerapp"
+            keyPassword "prayerapp"
+        }
+
     }
     buildTypes {
         debug {
