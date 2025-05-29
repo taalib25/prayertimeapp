@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Button,
+  Platform,
 } from 'react-native';
 import PermissionButton from '../components/permissionBtn';
 import {PermissionType} from '../services/permissions/initPermissions';
@@ -207,8 +208,25 @@ const PrayerTimeScreen = () => {
             permissionType={PermissionType.LOCATION}
             buttonText="Allow Location Access"
             onPermissionGranted={() => console.log('Location granted!')}
-            // Consider adding onPermissionDenied or onAlreadyGranted handlers
           />
+
+          {Platform.OS === 'android' && (
+            <>
+              <PermissionButton
+                permissionType={PermissionType.SYSTEM_ALERT_WINDOW}
+                buttonText="Allow System Alert Window"
+                onPermissionGranted={() =>
+                  console.log('System Alert Window granted!')
+                }
+              />
+
+              <PermissionButton
+                permissionType={PermissionType.DND_ACCESS}
+                buttonText="Allow Do Not Disturb Access"
+                onPermissionGranted={() => console.log('DND Access granted!')}
+              />
+            </>
+          )}
         </View>
         {isLoading ? (
           <ActivityIndicator size="large" color="#1a5276" />

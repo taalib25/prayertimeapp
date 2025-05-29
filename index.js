@@ -7,6 +7,7 @@ import App from './App';
 import {name as appName} from './app.json';
 import FakeCallScreen from './src/screens/FakeCallScreen';
 import notifee, { EventType } from '@notifee/react-native';
+import BackgroundFetch from 'react-native-background-fetch';
 
 // Handle background notification events
 notifee.onBackgroundEvent(async ({ type, detail }) => {
@@ -55,6 +56,28 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     }
   }
 });
+
+// BackgroundFetch headless task for Android
+const MyHeadlessTask = async (event) => {
+  let taskId = event.taskId;
+  let isTimeout = event.timeout;
+  
+  if (isTimeout) {
+    console.log('[BackgroundFetch] Headless TIMEOUT:', taskId);
+    BackgroundFetch.finish(taskId);
+    return;
+  }
+  
+  console.log('[BackgroundFetch HeadlessTask] start:', taskId);
+  
+  // Check if we should trigger fake call
+  // This would check your scheduled call logic
+  
+  BackgroundFetch.finish(taskId);
+};
+
+// Register the BackgroundFetch HeadlessTask
+BackgroundFetch.registerHeadlessTask(MyHeadlessTask);
 
 AppRegistry.registerComponent(appName, () => App);
 AppRegistry.registerComponent('FakeCallScreen', () => FakeCallScreen);

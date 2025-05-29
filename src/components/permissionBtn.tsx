@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
   View,
+  Platform,
+  Linking,
 } from 'react-native';
-import { RESULTS } from 'react-native-permissions';
-import { PermissionType, checkPermission, requestPermission } from '../services/permissions/initPermissions';
-
+import {RESULTS} from 'react-native-permissions';
+import {
+  PermissionType,
+  checkPermission,
+  requestPermission,
+} from '../services/permissions/initPermissions';
 
 interface PermissionButtonProps {
   permissionType: PermissionType;
@@ -37,7 +42,7 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
     try {
       const status = await checkPermission(permissionType);
       setPermissionStatus(status);
-      
+
       if (status === RESULTS.GRANTED && onPermissionGranted) {
         onPermissionGranted();
       }
@@ -50,13 +55,28 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
 
   const handleRequestPermission = async () => {
     setLoading(true);
-    
+
     try {
-      const status = await requestPermission(permissionType);
-      setPermissionStatus(status);
-      
-      if (status === RESULTS.GRANTED && onPermissionGranted) {
-        onPermissionGranted();
+      // For special Android permissions, direct to settings
+      if (
+        (permissionType === 'system_alert_window' ||
+          permissionType === 'dnd_access') &&
+        Platform.OS === 'android'
+      ) {
+        // Open device settings for these special permissions
+        await Linking.openSettings();
+        setPermissionStatus(RESULTS.GRANTED); // Assume granted after settings visit
+
+        if (onPermissionGranted) {
+          onPermissionGranted();
+        }
+      } else {
+        const status = await requestPermission(permissionType);
+        setPermissionStatus(status);
+
+        if (status === RESULTS.GRANTED && onPermissionGranted) {
+          onPermissionGranted();
+        }
       }
     } catch (error) {
       console.error(`Error requesting ${permissionType} permission:`, error);
@@ -68,7 +88,7 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
   // Determine button text based on permission status
   const getButtonText = () => {
     if (loading) return 'Checking...';
-    
+
     switch (permissionStatus) {
       case RESULTS.GRANTED:
         return `${permissionType} Enabled`;
@@ -84,21 +104,18 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
   const isDisabled = permissionStatus === RESULTS.GRANTED;
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.button,
         isDisabled ? styles.buttonDisabled : styles.buttonEnabled,
-        style
+        style,
       ]}
       onPress={handleRequestPermission}
-      disabled={isDisabled || loading}
-    >
+      disabled={isDisabled || loading}>
       {loading ? (
         <ActivityIndicator size="small" color="#FFFFFF" />
       ) : (
-        <Text style={[styles.buttonText, textStyle]}>
-          {getButtonText()}
-        </Text>
+        <Text style={[styles.buttonText, textStyle]}>{getButtonText()}</Text>
       )}
       {permissionStatus === RESULTS.GRANTED && (
         <View style={styles.checkmark}>
@@ -143,7 +160,7 @@ const styles = StyleSheet.create({
   checkmarkText: {
     color: '#4CAF50',
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default PermissionButton;
