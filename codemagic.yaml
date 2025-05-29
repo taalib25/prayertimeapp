@@ -13,9 +13,9 @@ workflows:
             PACKAGE_NAME: "com.prayer_app" # <-- Put your package name here e.g. com.domain.myapp
           node: v19.7.0
         scripts:
-            - name: Install yarn dependencies
+            - name: Install npm dependencies
               script: |
-                yarn install
+                npm install
             - name: Set Android SDK location
               script: |
                 echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"            
