@@ -212,14 +212,14 @@ const CallScreen: React.FC = () => {
     // Implementation depends on your storage solution
   };
 
-  // Quick test function for 1 minute timer
+  // Quick test function for 20 second timer
   const scheduleQuickTest = async () => {
-    const testDate = new Date(Date.now() + 60000); // 1 minute from now
+    const testDate = new Date(Date.now() + 20000); // 20 seconds from now
 
     try {
       await scheduleFakeCallNotificationInternal(
         testDate,
-        'Test Prayer Reminder - This is a 1 minute test!',
+        'Test Prayer Reminder - This is a 20 second test!',
       );
 
       // Add immediate vibration for feedback
@@ -227,8 +227,8 @@ const CallScreen: React.FC = () => {
 
       const platformMessage =
         Platform.OS === 'android'
-          ? 'Test fake call will appear in 1 minute!\n\n📱 The call screen will open directly.'
-          : 'Test fake call will trigger in 1 minute!\n\n🔒 Lock your phone now to test the full effect!\n📱 The call will appear even if phone is silent.';
+          ? 'Test fake call will appear in 20 seconds!\n\n📱 The call screen will open directly.'
+          : 'Test fake call will trigger in 20 seconds!\n\n🔒 Lock your phone now to test the full effect!\n📱 The call will appear even if phone is silent.';
 
       Alert.alert('Test Scheduled ✅', platformMessage, [
         {
@@ -262,28 +262,20 @@ const CallScreen: React.FC = () => {
       </Text>
 
       <View style={styles.testSection}>
-        <Text style={styles.sectionTitle}>⏰ Set Timer (1 Minute)</Text>
+        <Text style={styles.sectionTitle}>⏰ Set Timer (20 Seconds)</Text>
         <Button
-          title="Start 1 Minute Test"
+          title="Start 20 Second Test"
           onPress={scheduleQuickTest}
           color="#FF6B35"
         />
         <Text style={styles.testDescription}>
           {Platform.OS === 'android'
-            ? 'Test will show fake call in 1 minute.'
+            ? 'Test will show fake call in 20 seconds.'
             : 'Lock your phone after pressing this button.'}
         </Text>
       </View>
 
       <View style={styles.divider} />
-
-      <View style={styles.controlSection}>
-        <Button
-          title="Cancel All Reminders"
-          onPress={cancelAllNotifications}
-          color="#F44336"
-        />
-      </View>
     </View>
   );
 };

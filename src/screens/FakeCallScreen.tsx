@@ -62,11 +62,11 @@ const FakeCallScreen = () => {
     const vibrationPattern = [200, 300, 200, 300, 200, 300, 200, 300, 200, 300];
     Vibration.vibrate(vibrationPattern, true);
 
-    // Auto timeout the call after 60 seconds (1 minute) if not answered
+    // Auto timeout the call after 20 seconds if not answered
     timeoutRef.current = setTimeout(() => {
-      console.log('Call auto-timeout after 1 minute');
+      console.log('Call auto-timeout after 20 seconds');
       handleAutoTimeout();
-    }, 60000); // 60 seconds timeout
+    }, 20000); // 20 seconds timeout
 
     // Handle Android back button to prevent easily dismissing
     const backAction = () => {
