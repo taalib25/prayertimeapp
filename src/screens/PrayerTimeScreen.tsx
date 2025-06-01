@@ -22,6 +22,7 @@ import StatsCard from '../components/PrayerWidgets/StatsCard';
 import TaskProgressItem from '../components/TaskProgressItem';
 import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
 import Challenge40Card from '../components/PrayerWidgets/Challenge40Card';
+import DailyTasksSelector from '../components/DailyTasksSelector';
 
 // Dummy prayer times data to match the image
 const DUMMY_PRAYER_TIMES = [
@@ -137,6 +138,12 @@ const PrayerTimeScreen = () => {
               <ZikrCounter todayCount={267} totalCount={23000} />
             </View>
 
+
+
+            {/* Section Header for Tasks */}
+            <DailyTasksSelector/>
+
+            
             {/* Tasks Progress */}
             <View style={styles.tasksSection}>
               {' '}
