@@ -1,7 +1,7 @@
-import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
-import Svg, {Circle} from 'react-native-svg';
-import {typography} from '../../utils/typography';
+import { View, Text, StyleSheet } from "react-native";
+import Svg, { Circle } from "react-native-svg";
+import { colors } from "../../utils/theme";
+import { typography } from "../../utils/typography";
 
 interface Challenge40CardProps {
   title: string;
@@ -13,14 +13,13 @@ interface Challenge40CardProps {
   textColor?: string;
 }
 
-const Challenge40Card: React.FC<Challenge40CardProps> = ({
-  title,
+const Challenge40Card: React.FC<Challenge40CardProps> = ({  title,
   subtitle = 'Fajr',
   current,
   total,
-  backgroundColor = '#e4fbff',
-  progressColor = '#00C2CB',
-  textColor = '#3C4A9B',
+  backgroundColor = colors.background.surface,
+  progressColor = colors.accent,
+  textColor = colors.primary,
 }) => {
   // Calculate percentage for the progress ring
   const percentage = (current / total) * 100;
@@ -39,13 +38,12 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
       </View>
 
       <View style={styles.progressContainer}>
-        <Svg height="140" width="140" viewBox="0 0 100 100">
-          {/* Background Circle */}
+        <Svg height="140" width="140" viewBox="0 0 100 100">          {/* Background Circle */}
           <Circle
             cx="50"
             cy="50"
             r={radius}
-            stroke="#E0F7F8"
+            stroke={colors.background.surface}
             strokeWidth={strokeWidth}
             fill="transparent"
           />
@@ -115,10 +113,9 @@ const styles = StyleSheet.create({
   progressValue: {
     ...typography.statNumber,
     fontSize: 28,
-  },
-  progressTotal: {
+  },  progressTotal: {
     ...typography.body,
-    color: '#3C4A9B',
+    color: colors.primary,
     fontSize: 18,
   },
 });
