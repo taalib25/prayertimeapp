@@ -7,6 +7,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import SvgIcon from '../components/SvgIcon';
+import {colors} from '../utils/theme';
 
 interface SplashScreenProps {
   onAnimationComplete: () => void;
@@ -39,14 +40,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAnimationComplete}) => {
 
   return (
     <>
+      {' '}
       <StatusBar
         barStyle="dark-content"
-        backgroundColor="#FFFFFF"
+        backgroundColor={colors.white}
         translucent={false}
       />
       <View style={styles.container}>
         <Animated.View style={[styles.logoContainer, animatedStyle]}>
-          <SvgIcon name="fajrlogo" size={220} color="#3C4A9B" />
+          <SvgIcon name="fajrlogo" size={220} color={colors.primary} />
         </Animated.View>
       </View>
     </>
@@ -56,7 +58,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAnimationComplete}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
   },

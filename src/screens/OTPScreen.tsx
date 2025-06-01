@@ -14,6 +14,7 @@ import {
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 import CustomButton from '../components/CustomButton';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
@@ -153,13 +154,20 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 style={styles.logo}
                 resizeMode="contain"
               />
-
-              <Text style={styles.title}>OTP Verification</Text>
-              <Text style={[styles.phoneNumberText, {marginTop: 80, marginBottom: 24,...typography.body, color: '#828283'}]}>
+              <Text style={styles.title}>OTP Verification</Text>{' '}
+              <Text
+                style={[
+                  styles.phoneNumberText,
+                  {
+                    marginTop: 80,
+                    marginBottom: 24,
+                    ...typography.body,
+                    color: colors.accent,
+                  },
+                ]}>
                 We've sent a code to{' '}
                 <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
               </Text>
-
               <View style={styles.otpContainer}>
                 {[0, 1, 2, 3].map(index => (
                   <TextInput
@@ -175,14 +183,12 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                   />
                 ))}
               </View>
-
               <CustomButton
                 title="Submit"
                 onPress={handleVerifyOTP}
                 style={styles.submitButton}
                 loading={isLoading}
               />
-
               <View style={styles.resendContainer}>
                 <Text style={styles.resendText}>
                   Didn't receive the code?{' '}
@@ -220,24 +226,24 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 4,
   },
   subtitle: {
     ...typography.body,
-    color: '#666',
+    color: colors.text.muted,
     marginBottom: 24,
   },
   inputLabel: {
     ...typography.bodyMedium,
-    color: '#333',
+    color: colors.primary,
     marginBottom: 8,
   },
   phoneInput: {
     width: '100%',
     height: 56,
     borderWidth: 1,
-    borderColor: '#E1E3E8',
+    borderColor: colors.text.muted,
     borderRadius: 8,
     paddingHorizontal: 16,
     ...typography.body,
@@ -246,7 +252,7 @@ const styles = StyleSheet.create({
   },
   phoneNumberText: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
   otpContainer: {
     flexDirection: 'row',
@@ -258,16 +264,16 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderWidth: 1,
-    borderColor: '#E1E3E8',
+    borderColor: colors.text.muted,
     borderRadius: 8,
     fontSize: 24,
     textAlign: 'center',
-    color: '#3C4A9B',
+    color: colors.primary,
     backgroundColor: '#fff',
   },
   submitButton: {
     width: '100%',
-    backgroundColor: '#3C4A9B',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     height: 56,
     marginBottom: 24,
@@ -278,11 +284,11 @@ const styles = StyleSheet.create({
   },
   resendText: {
     ...typography.body,
-    color: '#666',
+    color: colors.text.muted,
   },
   resendLink: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
 });
 

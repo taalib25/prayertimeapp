@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {typography} from '../../utils/typography';
+import {colors} from '../../utils/theme';
 
 interface StatItem {
   label: string;
@@ -49,9 +50,9 @@ const StatRow: React.FC<{stat: StatItem}> = ({stat}) => (
 );
 
 // Divider component
-const Divider: React.FC<{color?: string}> = ({color = '#E0E0E0'}) => (
-  <View style={[styles.divider, {backgroundColor: color}]} />
-);
+const Divider: React.FC<{color?: string}> = ({
+  color = colors.background.surface,
+}) => <View style={[styles.divider, {backgroundColor: color}]} />;
 
 // Stats list component
 const StatsList: React.FC<{
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.prayerCard,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 16,
   },
   statRow: {
@@ -123,11 +124,11 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     ...typography.bodySmall,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
   statValue: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
   progressContainer: {
     marginVertical: 10,
@@ -135,22 +136,22 @@ const styles = StyleSheet.create({
   },
   progressText: {
     ...typography.statNumber,
-    color: '#3BACB6',
+    color: colors.accent,
   },
   progressTotalText: {
     ...typography.body,
-    color: '#999',
+    color: colors.text.muted,
   },
   progressBarBackground: {
     height: 6,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: colors.background.surface,
     borderRadius: 3,
     width: '100%',
     marginTop: 10,
   },
   progressBar: {
     height: 6,
-    backgroundColor: '#3BACB6',
+    backgroundColor: colors.accent,
     borderRadius: 3,
   },
   divider: {

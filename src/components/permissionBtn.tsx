@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,9 +6,13 @@ import {
   ActivityIndicator,
   View,
 } from 'react-native';
-import { RESULTS } from 'react-native-permissions';
-import { PermissionType, checkPermission, requestPermission } from '../services/permissions/initPermissions';
-
+import {RESULTS} from 'react-native-permissions';
+import {
+  PermissionType,
+  checkPermission,
+  requestPermission,
+} from '../services/permissions/initPermissions';
+import {colors} from '../utils/theme';
 
 interface PermissionButtonProps {
   permissionType: PermissionType;
@@ -37,7 +41,7 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
     try {
       const status = await checkPermission(permissionType);
       setPermissionStatus(status);
-      
+
       if (status === RESULTS.GRANTED && onPermissionGranted) {
         onPermissionGranted();
       }
@@ -50,11 +54,11 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
 
   const handleRequestPermission = async () => {
     setLoading(true);
-    
+
     try {
       const status = await requestPermission(permissionType);
       setPermissionStatus(status);
-      
+
       if (status === RESULTS.GRANTED && onPermissionGranted) {
         onPermissionGranted();
       }
@@ -68,7 +72,7 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
   // Determine button text based on permission status
   const getButtonText = () => {
     if (loading) return 'Checking...';
-    
+
     switch (permissionStatus) {
       case RESULTS.GRANTED:
         return `${permissionType} Enabled`;
@@ -84,21 +88,19 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
   const isDisabled = permissionStatus === RESULTS.GRANTED;
 
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[
         styles.button,
         isDisabled ? styles.buttonDisabled : styles.buttonEnabled,
-        style
+        style,
       ]}
       onPress={handleRequestPermission}
-      disabled={isDisabled || loading}
-    >
+      disabled={isDisabled || loading}>
+      {' '}
       {loading ? (
-        <ActivityIndicator size="small" color="#FFFFFF" />
+        <ActivityIndicator size="small" color={colors.white} />
       ) : (
-        <Text style={[styles.buttonText, textStyle]}>
-          {getButtonText()}
-        </Text>
+        <Text style={[styles.buttonText, textStyle]}>{getButtonText()}</Text>
       )}
       {permissionStatus === RESULTS.GRANTED && (
         <View style={styles.checkmark}>
@@ -120,10 +122,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   buttonEnabled: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.accent,
   },
   buttonDisabled: {
-    backgroundColor: '#A5D6A7',
+    backgroundColor: colors.text.secondary,
   },
   buttonText: {
     color: 'white',
@@ -141,9 +143,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkmarkText: {
-    color: '#4CAF50',
+    color: colors.accent,
     fontWeight: 'bold',
-  }
+  },
 });
 
 export default PermissionButton;

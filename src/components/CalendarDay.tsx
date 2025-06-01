@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {DayPrayerStatus} from '../services/db/prayer_tracking_services';
+import {colors} from '../utils/theme';
 
 interface CalendarDayProps {
   date: Date;
@@ -21,19 +22,18 @@ const CalendarDay: React.FC<CalendarDayProps> = ({
   const completionRate = dayStatus
     ? dayStatus.completedCount / dayStatus.totalCount
     : 0;
-
   const getBackgroundColor = () => {
-    if (isSelected) return '#1a5276';
-    if (completionRate === 1) return '#4BB543';
-    if (completionRate > 0.6) return '#FFA500';
-    if (completionRate > 0) return '#FFD700';
+    if (isSelected) return colors.primary;
+    if (completionRate === 1) return colors.success;
+    if (completionRate > 0.6) return colors.accent;
+    if (completionRate > 0) return colors.accentLight;
     return 'transparent';
   };
 
   const getTextColor = () => {
     if (isSelected || completionRate > 0.6) return 'white';
-    if (isToday) return '#1a5276';
-    return '#333';
+    if (isToday) return colors.primary;
+    return colors.text.dark;
   };
 
   return (
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   todayBorder: {
     borderWidth: 2,
-    borderColor: '#1a5276',
+    borderColor: colors.primary,
   },
   dayText: {
     fontSize: 16,

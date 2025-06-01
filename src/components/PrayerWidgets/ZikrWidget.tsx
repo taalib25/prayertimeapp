@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {typography} from '../../utils/typography';
+import {colors} from '../../utils/theme';
 
 interface ZikrCounterProps {
   todayCount: number;
@@ -11,7 +12,7 @@ interface ZikrCounterProps {
 const ZikrCounter: React.FC<ZikrCounterProps> = ({
   todayCount,
   totalCount,
-  backgroundColor = '#FFE6E6',
+  backgroundColor = colors.background.surface,
 }) => {
   return (
     <View style={[styles.container, {backgroundColor}]}>
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.prayerCard,
-    color: '#3C4A9B', // Purple color as shown in the image
+    color: colors.primary, // Purple color as shown in the image
     marginBottom: 12,
   },
   countContainer: {
@@ -61,12 +62,12 @@ const styles = StyleSheet.create({
   },
   countLabel: {
     ...typography.body,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 2,
   },
   countValue: {
     ...typography.count,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
 });
 

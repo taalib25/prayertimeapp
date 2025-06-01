@@ -9,6 +9,7 @@ import {
   TextStyle,
 } from 'react-native';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 interface CustomButtonProps {
   title: string;
@@ -36,8 +37,9 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       ]}
       onPress={onPress}
       disabled={disabled || loading}>
+      {' '}
       {loading ? (
-        <ActivityIndicator color="#FFFFFF" size="small" />
+        <ActivityIndicator color={colors.white} size="small" />
       ) : (
         <Text style={[styles.buttonText, textStyle]}>{title}</Text>
       )}
@@ -47,7 +49,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#3C4A9B',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     height: 48,
     justifyContent: 'center',
@@ -55,10 +57,10 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     ...typography.prayerCard,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   disabledButton: {
-    backgroundColor: '#A0A0A0',
+    backgroundColor: colors.text.muted,
     opacity: 0.7,
   },
 });

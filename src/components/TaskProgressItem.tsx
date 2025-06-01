@@ -8,6 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 interface TaskProgressItemProps {
   title: string;
@@ -127,10 +128,10 @@ const TaskProgressItem: React.FC<TaskProgressItemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.background.surface,
     padding: 16,
     paddingVertical: 14,
     marginVertical: 6,
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.taskTitle,
-    color: '#3C4A9B',
+    color: colors.primary,
     flex: 1,
     marginRight: 8,
     lineHeight: 18,
@@ -155,12 +156,12 @@ const styles = StyleSheet.create({
   progressText: {
     ...typography.prayerCard,
     fontSize: 14,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 6,
   },
   progressBarContainer: {
     height: 11, // Increased from 6 to 8
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.background.surface,
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -169,20 +170,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   completedBadge: {
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     borderRadius: 10,
     width: 20,
     height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkmark: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
+  checkmark: {color: colors.white, fontSize: 12, fontWeight: '700'},
   emptyCircle: {
-    borderColor: '#CBCBCB',
+    borderColor: colors.text.muted,
     borderWidth: 1,
     borderRadius: 100,
     width: 20,
@@ -197,7 +194,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 20,
     width: '80%',
@@ -210,32 +207,32 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     ...typography.h3,
-    color: '#3C4A9B',
+    color: colors.primary,
     textAlign: 'center',
     marginBottom: 20,
   },
   optionButton: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background.light,
     borderRadius: 12,
     padding: 16,
     marginVertical: 4,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.background.surface,
   },
   optionText: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
     textAlign: 'center',
   },
   cancelButton: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.background.surface,
     borderRadius: 12,
     padding: 16,
     marginTop: 12,
   },
   cancelText: {
     ...typography.bodyMedium,
-    color: '#6B7280',
+    color: colors.text.muted,
     textAlign: 'center',
   },
 });

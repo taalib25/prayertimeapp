@@ -20,6 +20,7 @@ import PrayerChecklistItem from '../components/PrayerChecklistItem';
 import CalendarDay from '../components/CalendarDay';
 import CustomButton from '../components/CustomButton';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 const PRAYER_NAMES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 const PRAYER_DISPLAY_NAMES = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -328,7 +329,7 @@ const PrayerChallengeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.light,
   },
   loadingText: {
     ...typography.bodyLarge,
@@ -347,11 +348,11 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     ...typography.h2,
-    color: '#1a5276',
+    color: colors.primary,
   },
   statLabel: {
     ...typography.caption,
-    color: '#666',
+    color: colors.text.muted,
     marginTop: 4,
   },
   calendar: {
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     ...typography.h3,
-    color: '#333',
+    color: colors.text.primary,
   },
   weekDays: {
     flexDirection: 'row',
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
   },
   weekDayText: {
     ...typography.caption,
-    color: '#666',
+    color: colors.text.muted,
     width: 40,
     textAlign: 'center',
   },
@@ -401,11 +402,11 @@ const styles = StyleSheet.create({
   },
   selectedDateText: {
     ...typography.bodyMedium,
-    color: '#333',
+    color: colors.text.primary,
   },
   progressText: {
     ...typography.caption,
-    color: '#666',
+    color: colors.text.muted,
     marginTop: 4,
   },
   checklistContainer: {

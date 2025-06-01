@@ -13,6 +13,7 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 // Import new components
 import Header from '../components/Header';
@@ -65,12 +66,11 @@ const PrayerTimeScreen = () => {
           mosqueName="Masjid Ul Jabbar Jumma Masjid"
           mosqueLocation="Gothatuwa"
           avatarImage={require('../assets/images/profile.png')} // Optional: add your local image
-        />
-
+        />{' '}
         {isLoading ? (
           <ActivityIndicator
             size="large"
-            color="#3BACB6"
+            color={colors.accent}
             style={styles.loader}
           />
         ) : (
@@ -100,9 +100,9 @@ const PrayerTimeScreen = () => {
                 subtitle="Fajr"
                 current={134}
                 total={175}
-                backgroundColor="#e4fbff"
-                progressColor="#00C2CB"
-                textColor="#3C4A9B"
+                backgroundColor={colors.background.surface}
+                progressColor={colors.accent}
+                textColor={colors.primary}
               />
 
               {/* Wake up Calls Card */}
@@ -113,9 +113,9 @@ const PrayerTimeScreen = () => {
                   {label: 'Cancelled', value: 3},
                   {label: 'Confirmed', value: 2},
                 ]}
-                backgroundColor="#fff3e4"
+                backgroundColor={colors.background.light}
                 showDividers={true}
-                dividerColor="#EFDDC1"
+                dividerColor={colors.background.surface}
               />
             </View>
 
@@ -129,7 +129,7 @@ const PrayerTimeScreen = () => {
                   {label: 'Visited', value: 4},
                   {label: 'Remaining', value: 2},
                 ]}
-                backgroundColor="#eaffed"
+                backgroundColor={colors.background.surface}
                 showDividers={false}
               />
 
@@ -139,33 +139,31 @@ const PrayerTimeScreen = () => {
 
             {/* Tasks Progress */}
             <View style={styles.tasksSection}>
+              {' '}
               <TaskProgressItem
                 title="Fajr Jamath Today"
                 current={16}
                 total={30}
-                color="#D8DE66"
-              />
-
+                color={colors.emerald}
+              />{' '}
               <TaskProgressItem
                 title="Quran Thilawath Today"
                 current={19}
                 total={30}
-                color="#9EDE66"
-              />
-
+                color={colors.jade}
+              />{' '}
               <TaskProgressItem
                 title="Isthighfar Today"
                 current={16}
                 total={30}
-                color="#2CD17C"
+                color={colors.success}
                 completed={true}
-              />
-
+              />{' '}
               <TaskProgressItem
                 title="Zikr Today"
                 current={16}
                 total={30}
-                color="#F48F47"
+                color={colors.accent}
               />
             </View>
           </View>
@@ -178,7 +176,7 @@ const PrayerTimeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#242A4E',
+    backgroundColor: colors.background.dark,
     paddingTop: 20,
   },
   scrollContainer: {
@@ -212,11 +210,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...typography.h3,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
   seeAllText: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
   emptyCardsRow: {
     flexDirection: 'row',

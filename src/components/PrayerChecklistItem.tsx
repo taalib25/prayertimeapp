@@ -1,5 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {colors} from '../utils/theme';
 
 interface PrayerChecklistItemProps {
   prayerName: string;
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.white,
     padding: 16,
     marginVertical: 4,
     marginHorizontal: 16,
@@ -64,9 +65,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   completedContainer: {
-    backgroundColor: '#f8fffe',
+    backgroundColor: colors.background.surface,
     borderLeftWidth: 4,
-    borderLeftColor: '#4BB543',
+    borderLeftColor: colors.success,
   },
   leftSection: {
     flexDirection: 'row',
@@ -84,8 +85,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   checkedBox: {
-    backgroundColor: '#4BB543',
-    borderColor: '#4BB543',
+    backgroundColor: colors.success,
+    borderColor: colors.success,
   },
   checkmark: {
     color: 'white',
@@ -98,21 +99,21 @@ const styles = StyleSheet.create({
   prayerName: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.dark,
   },
   completedText: {
-    color: '#4BB543',
+    color: colors.success,
   },
   time: {
     fontSize: 14,
-    color: '#666',
+    color: colors.text.muted,
     marginTop: 2,
   },
   completedTime: {
-    color: '#4BB543',
+    color: colors.success,
   },
   completedBadge: {
-    backgroundColor: '#4BB543',
+    backgroundColor: colors.success,
     width: 30,
     height: 30,
     borderRadius: 15,

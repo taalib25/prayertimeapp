@@ -16,6 +16,7 @@ import notifee, {
   RepeatFrequency,
   TimestampTrigger,
 } from '@notifee/react-native';
+import {colors} from '../utils/theme';
 
 interface PrayerReminderModalProps {
   visible: boolean;
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#DDDDDD',
+    backgroundColor: colors.text.muted,
     marginBottom: 10,
   },
   modalTitle: {
@@ -313,7 +314,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#1a5276',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButton: {
-    backgroundColor: '#1a5276',
+    backgroundColor: colors.primary,
   },
   buttonText: {
     fontSize: 16,

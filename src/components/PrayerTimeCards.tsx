@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 import {IconName} from './SvgIcon';
 
@@ -24,10 +25,11 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => (
         <Text style={styles.prayerName}>{prayer.displayName}</Text>
 
         <View style={styles.iconContainer}>
+          {' '}
           <SvgIcon
             name={prayer.name.toLowerCase() as IconName}
             size={22}
-            color={'#42D0D3'}
+            color={colors.accent}
           />
         </View>
 
@@ -41,7 +43,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#D8F9FC',
+    backgroundColor: colors.background.surface,
     borderRadius: 20,
     padding: 10,
     marginHorizontal: 8,
@@ -57,18 +59,18 @@ const styles = StyleSheet.create({
   },
   activeCard: {
     borderRadius: 12,
-    borderColor: '#42D0D3',
+    borderColor: colors.accent,
     borderWidth: 2,
   },
   prayerName: {
     ...typography.prayerCard,
-    color: '#29476F',
+    color: colors.primary,
     marginBottom: 13,
     textAlign: 'center',
   },
   prayerTime: {
     ...typography.prayerCard,
-    color: '#29476F',
+    color: colors.primary,
     marginTop: 15,
     textAlign: 'center',
   },

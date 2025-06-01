@@ -12,6 +12,7 @@ import {
 import {savePrayerTimes, getPrayerTimes, closeDatabase} from '../services/db';
 import {PrayerTimes} from '../models/PrayerTimes';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 // Helper to get current date in YYYY-MM-DD format
 const getCurrentDateString = () => {
@@ -273,7 +274,7 @@ const DatabaseTestScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background.light,
   },
   container: {
     padding: 20,
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   dateButton: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: colors.background.surface,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 20,
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDateButton: {
-    backgroundColor: '#1abc9c',
+    backgroundColor: colors.accent,
   },
   dateButtonText: {
     ...typography.bodyMedium,

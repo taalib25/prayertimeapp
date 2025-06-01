@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import {colors} from '../utils/theme';
 
 interface DateSelectorProps {
   selectedDate: string;
@@ -116,22 +117,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     marginHorizontal: 5,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.background.surface,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 70,
   },
   selectedDateItem: {
-    backgroundColor: '#1abc9c',
+    backgroundColor: colors.accent,
   },
   dateText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: colors.primary,
   },
   selectedDateText: {
-    color: '#ffffff',
+    color: colors.white,
   },
 });
 

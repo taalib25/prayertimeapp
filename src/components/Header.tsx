@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 
 interface HeaderProps {
@@ -40,7 +41,6 @@ const Header: React.FC<HeaderProps> = ({
           <Text style={styles.locationText}>{location}</Text>
           <View style={styles.chevronIcon} />
         </TouchableOpacity>
-
         {/* User Info */}
         <View style={styles.userContainer}>
           <View style={styles.avatar}>
@@ -61,13 +61,12 @@ const Header: React.FC<HeaderProps> = ({
           </View>
         </View>
         <View style={styles.underline} />
-
-        {/* Mosque Info */}
+        {/* Mosque Info */}{' '}
         <View style={styles.mosqueContainer}>
           <SvgIcon
             name="masjid"
             size={34}
-            color="#42D0D3"
+            color={colors.accent}
             style={styles.mosqueIcon}
           />
           <Text style={styles.mosqueName}>
@@ -124,7 +123,7 @@ const styles = StyleSheet.create({
   locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#28999BE5',
+    backgroundColor: colors.accent + 'E5',
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -165,7 +164,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.h3,
-    color: '#2ABCBE',
+    color: colors.accent,
   },
   userName: {
     ...typography.headerProfile,
@@ -175,13 +174,13 @@ const styles = StyleSheet.create({
   underline: {
     height: 1.5,
     marginTop: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     width: '60%',
     borderRadius: 1,
   },
   welcomeBack: {
     ...typography.bodyTiny,
-    color: '#B3B8D3',
+    color: colors.text.secondary,
   },
   mosqueContainer: {
     flexDirection: 'row',
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
   },
   mosqueName: {
     ...typography.bodySmall,
-    color: '#5CE5D5',
+    color: colors.accent,
     width: '55%',
   },
 });

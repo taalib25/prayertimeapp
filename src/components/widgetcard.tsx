@@ -14,6 +14,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Progress from 'react-native-progress';
+import {colors} from '../utils/theme';
 // import {
 //   Menu,
 //   MenuOptions,
@@ -99,12 +100,13 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
                   </View>
                 </View>
                 <View style={styles.progressContainer}>
+                  {' '}
                   <Progress.Bar
                     progress={progress}
                     width={null}
                     height={8}
-                    color="#4BB543"
-                    unfilledColor="#e0e0e0"
+                    color={colors.success}
+                    unfilledColor={colors.background.surface}
                     borderWidth={0}
                     borderRadius={4}
                   />
@@ -152,17 +154,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   smallCountContainer: {
-    backgroundColor: '#f2f7ff',
+    backgroundColor: colors.background.light,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e6ff',
+    borderColor: colors.accentLight,
   },
   smallCountText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#2e7df7',
+    color: colors.primary,
   },
   contentContainer: {
     flex: 1,
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.dark,
     flex: 1,
   },
   progressContainer: {
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: '#888888',
+    color: colors.text.muted,
     marginTop: 4,
   },
 });

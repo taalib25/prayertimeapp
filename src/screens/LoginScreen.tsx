@@ -16,6 +16,7 @@ import CustomButton from '../components/CustomButton';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -67,41 +68,36 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
                 style={styles.logo}
                 resizeMode="contain"
               />
-
               <Text style={styles.title}>Assalamu Alaikum!</Text>
               <Text style={styles.subtitle}>
                 Please login to access your account
               </Text>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>Email</Text>{' '}
               <TextInput
                 style={styles.input}
                 placeholder="Enter your email address"
-                placeholderTextColor="#A0A0A0"
+                placeholderTextColor={colors.text.muted}
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
               />
-
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text style={styles.inputLabel}>Password</Text>{' '}
               <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
-                placeholderTextColor="#A0A0A0"
+                placeholderTextColor={colors.text.muted}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
               />
-
               <Text style={styles.forgotPassword}>Forgot Password?</Text>
-
               <CustomButton
                 title={isLoading ? 'Logging in...' : 'Login'}
                 onPress={handleLoginPress}
                 disabled={isLoading}
                 style={styles.loginButton}
               />
-
               <Text style={styles.registerText}>
                 Don't have an account?{' '}
                 <Text style={styles.registerLink}>Register Now</Text>
@@ -143,13 +139,13 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h1,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 1,
     textAlign: 'left',
   },
   subtitle: {
     ...typography.body,
-    color: '#666',
+    color: colors.text.muted,
     marginBottom: 40,
     textAlign: 'left',
   },
@@ -162,13 +158,13 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
     marginBottom: 8,
   },
   input: {
     height: 56,
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E1E3E8',
+    backgroundColor: colors.background.light,
+    borderColor: colors.text.muted,
     borderWidth: 1,
     borderRadius: 12,
     marginBottom: 20,
@@ -178,12 +174,12 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
     textAlign: 'right',
     marginBottom: 24,
   },
   loginButton: {
-    backgroundColor: '#3C4A9B',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     height: 56,
     marginBottom: 24,
@@ -195,7 +191,7 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     ...typography.bodyMedium,
-    color: '#3C4A9B',
+    color: colors.primary,
   },
 });
 
