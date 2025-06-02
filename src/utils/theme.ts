@@ -1,5 +1,5 @@
 export const colors = {
-  primary: '#1B5E20', // Dark green
+  primary: '#2C9B28', // Dark green
   primaryLight: '#2E7D32', // Medium green
   accent: '#6DA54F', // Green
   accentLight: '#66BB6A', // Light green
@@ -17,11 +17,11 @@ export const colors = {
     primary: '#FFFFFF',
     secondary: '#A5D6A7', // Light green for secondary text
     accent: '#81C784', // Light green accent
-    dark: '#1F2937', // Dark text
+    dark: '#464646', // Dark text
     muted: '#6B7280', // Muted text
   },
   background: {
-    dark: '#1B4332', // Dark forest green
+    dark: '#135719E5', // Dark forest green
     card: 'rgba(255, 255, 255, 0.15)',
     overlay: 'rgba(27, 94, 32, 0.5)', // Green overlay
     light: '#F0FDF4', // Very light green

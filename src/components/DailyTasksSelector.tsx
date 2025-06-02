@@ -129,6 +129,7 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
     <View style={styles.dayViewContainer}>
       <Text style={styles.dayLabel}>{dayTasks.dayLabel}</Text>
       <ScrollView
+        style={{flex: 1}} // Added to ensure ScrollView takes available vertical space
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.tasksScrollContainer}>
         {dayTasks.tasks.map(task => (
@@ -256,8 +257,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md, // Increased from sm
-    marginHorizontal: spacing.sm, // Increased from xs to prevent cutoff
+    marginBottom: spacing.lg, // Increased from sm
+    marginRight: spacing.sm, // Increased from xs to prevent cutoff
     shadowColor: colors.text.dark,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,

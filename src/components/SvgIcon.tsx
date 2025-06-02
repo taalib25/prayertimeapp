@@ -42,7 +42,7 @@ const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
   }
 
   return (
-    <IconComponent width={size} height={size} fill={color} style={style} />
+    <IconComponent width={size} height={size} style={style} />
   );
 };
 

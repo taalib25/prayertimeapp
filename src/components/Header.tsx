@@ -31,16 +31,28 @@ const Header: React.FC<HeaderProps> = ({
       {/* Content Container */}
       <View style={styles.contentContainer}>
         {/* Location Bar */}
-        <TouchableOpacity style={styles.locationBar}>
-          <SvgIcon
-            name="map"
-            size={12}
-            color="#fff"
-            style={styles.locationIcon}
-          />
-          <Text style={styles.locationText}>{location}</Text>
-          <View style={styles.chevronIcon} />
-        </TouchableOpacity>
+
+        <View style={{flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 16, marginTop: 8}}>
+          <TouchableOpacity style={styles.locationBar}>
+            <SvgIcon
+              name="map"
+              size={12}
+              color="#fff"
+              style={styles.locationIcon}
+            />
+            <Text style={styles.locationText}>{location}</Text>
+            <View style={styles.chevronIcon} />
+          </TouchableOpacity>
+          <Text style={{...typography.body, color: '#fff', fontSize: 14,marginLeft:14,justifyContent: 'flex-end'}}>
+            {new Date().toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            }).replace(',', '')}
+          </Text>
+        </View>
+
+
         {/* User Info */}
         <View style={styles.userContainer}>
           <View style={styles.avatar}>
@@ -125,7 +137,7 @@ const styles = StyleSheet.create({
   locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accent + 'E5',
+    backgroundColor: colors.background.dark,
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 20,
@@ -166,7 +178,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.h3,
-    color: colors.accent,
+    color: colors.text.dark,
   },
   userName: {
     ...typography.headerProfile,
@@ -189,7 +201,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
     borderRadius: 10,
-    marginTop: 1,
+    marginTop: -4,
     width: '100%',
   },
   mosqueIcon: {
@@ -197,7 +209,7 @@ const styles = StyleSheet.create({
   },
   mosqueName: {
     ...typography.bodySmall,
-    color: colors.accent,
+    color: colors.text.dark,
     width: '55%',
   },
 });

@@ -183,8 +183,9 @@ const PrayerTimeScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.background.dark,
+    backgroundColor: colors.background.profilebg,
     paddingTop: 20,
+    marginBottom: 80,
   },
   scrollContainer: {
     flex: 1,
