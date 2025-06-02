@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md, // Increased from sm
-    marginHorizontal: spacing.lg, // Increased from xs to prevent cutoff
+    marginHorizontal: spacing.sm, // Increased from xs to prevent cutoff
     shadowColor: colors.text.dark,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,

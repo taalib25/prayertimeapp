@@ -10,6 +10,9 @@ import IshaIcon from '../assets/icons/Isha.svg';
 import MasjidIcon from '../assets/icons/Masjid.svg';
 import MapIcon from '../assets/icons/map.svg';
 import FajrLogo from '../assets/icons/fajr-logo.svg';
+import HomeIcon from '../assets/icons/home.svg';
+import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
+import UserIcon from '../assets/icons/user.svg';
 
 export type IconName =
   | 'fajr'
@@ -19,7 +22,10 @@ export type IconName =
   | 'isha'
   | 'masjid'
   | 'map'
-  | 'fajrlogo';
+  | 'fajrlogo'
+  | 'home'
+  | 'prayer-beads'
+  | 'user';
 
 interface SvgIconProps {
   name: IconName;
@@ -49,7 +55,10 @@ const getIconComponent = (name: IconName) => {
     isha: IshaIcon,
     masjid: MasjidIcon,
     map: MapIcon,
-    fajrlogo : FajrLogo,
+    fajrlogo: FajrLogo,
+    home: HomeIcon,
+    'prayer-beads': PrayerBeadsIcon,
+    user: UserIcon,
   };
 
   return icons[name];

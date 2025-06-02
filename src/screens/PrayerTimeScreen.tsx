@@ -145,7 +145,7 @@ const PrayerTimeScreen = () => {
 
             
             {/* Tasks Progress */}
-            <View style={styles.tasksSection}>
+            {/* <View style={styles.tasksSection}>
               {' '}
               <TaskProgressItem
                 title="Fajr Jamath Today"
@@ -172,7 +172,7 @@ const PrayerTimeScreen = () => {
                 total={30}
                 color={colors.accent}
               />
-            </View>
+            </View> */}
           </View>
         )}
       </ScrollView>

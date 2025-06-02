@@ -24,6 +24,7 @@ import OTPScreen from './src/screens/OTPScreen';
 import PrayerTimeScreen from './src/screens/PrayerTimeScreen';
 import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import PrayerChallengeScreen from './src/screens/PrayerChallengeScreen';
+import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 
 import {NavigationContainer} from '@react-navigation/native';
@@ -107,7 +108,7 @@ function App(): React.JSX.Element {
             />
             <Stack.Screen
               name="MainApp"
-              component={PrayerTimeScreen}
+              component={BottomTabNavigator}
               options={{
                 headerShown: false,
               }}
