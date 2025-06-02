@@ -23,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({
     <View style={styles.container}>
       {/* Background PNG */}
       <Image
-        source={require('../assets/images/profileSection.png')}
+        source={require('../assets/images/profileSection2.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
@@ -51,7 +51,9 @@ const Header: React.FC<HeaderProps> = ({
                 resizeMode="cover"
               />
             ) : (
-              <Text style={styles.avatarText}>MH</Text>
+              <Text style={styles.avatarText}>
+                {userName ? userName.charAt(0).toUpperCase() : 'U'}
+              </Text>
             )}
           </View>
           <View style={styles.userInfo}>

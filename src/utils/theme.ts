@@ -1,7 +1,7 @@
 export const colors = {
   primary: '#1B5E20', // Dark green
   primaryLight: '#2E7D32', // Medium green
-  accent: '#4CAF50', // Green
+  accent: '#6DA54F', // Green
   accentLight: '#66BB6A', // Light green
   white: '#FFFFFF',
 
@@ -26,6 +26,7 @@ export const colors = {
     overlay: 'rgba(27, 94, 32, 0.5)', // Green overlay
     light: '#F0FDF4', // Very light green
     surface: '#ECFDF5', // Light green surface
+    profilebg: '#6DA54F', // Sage green for profile background
   },
 
   // Status colors in green theme

@@ -29,7 +29,8 @@
     "react-native-sqlite-storage": "npm:@boltcode/react-native-sqlite-storage",
     "react-native-svg": "^15.12.0",
     "react-native-svg-transformer": "^1.5.1",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "zod": "^3.25.46"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

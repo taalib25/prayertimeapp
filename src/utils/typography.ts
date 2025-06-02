@@ -67,7 +67,7 @@ export const typography: Record<string, TextStyle> = {
 
   prayerCard: {
     fontFamily: fontFamilies.semibold,
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 20,
   },
 
