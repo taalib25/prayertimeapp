@@ -19,6 +19,8 @@ export const colors = {
     accent: '#81C784', // Light green accent
     dark: '#464646', // Dark text
     muted: '#6B7280', // Muted text
+    blue: '#3C4A9B', // Blue for links and highlights
+    prayerBlue: '#29476F', // Prayer blue
   },
   background: {
     dark: '#135719E5', // Dark forest green
@@ -27,6 +29,7 @@ export const colors = {
     light: '#F0FDF4', // Very light green
     surface: '#ECFDF5', // Light green surface
     profilebg: '#6DA54F', // Sage green for profile background
+    prayerCard: '#E1FFD1', // Light green for prayer cards
   },
 
   // Status colors in green theme

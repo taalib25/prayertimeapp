@@ -1,10 +1,9 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
   StatusBar,
@@ -18,10 +17,6 @@ import {colors} from '../utils/theme';
 // Import new components
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
-import StatsCard from '../components/PrayerWidgets/StatsCard';
-import TaskProgressItem from '../components/TaskProgressItem';
-import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
-import Challenge40Card from '../components/PrayerWidgets/Challenge40Card';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 

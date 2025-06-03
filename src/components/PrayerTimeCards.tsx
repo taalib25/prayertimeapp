@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: colors.background.surface,
+    backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
     padding: 8,
     marginHorizontal: 8,
@@ -64,13 +64,13 @@ const styles = StyleSheet.create({
   },
   prayerName: {
     ...typography.prayerCard,
-    color: colors.primary,
+    color: colors.text.prayerBlue,
     marginBottom: 13,
     textAlign: 'center',
   },
   prayerTime: {
     ...typography.prayerCard,
-    color: colors.primary,
+    color: colors.text.prayerBlue,
     marginTop: 15,
     textAlign: 'center',
   },

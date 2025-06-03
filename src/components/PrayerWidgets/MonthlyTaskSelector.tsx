@@ -117,9 +117,7 @@ const CompactChallengeCard: React.FC<{
   return (
     <View style={[styles.compactCard, {backgroundColor}]}>
       <Text style={[styles.compactTitle, {color: textColor}]}>{title} </Text>
-      <Text style={[styles.compactSubtitle, {color: textColor}]}>
-        {subtitle}
-      </Text>
+     
 
       <View style={styles.compactProgressContainer}>
         <Svg height="150" width="150" viewBox="0 0 80 80">
@@ -174,6 +172,9 @@ const CompactChallengeCard: React.FC<{
           </Text>
         </View>
       </View>
+       <Text style={[styles.compactSubtitle, {color: textColor}]}>
+        {subtitle}
+      </Text>
     </View>
   );
 };
@@ -214,18 +215,18 @@ const MonthlyChallengeSelector: React.FC = () => {
             total={monthData.zikr.total}
             backgroundColor="#E8F5E8"
             progressColor={colors.emerald}
-            textColor={colors.forest}
+            textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
 
           <CompactChallengeCard
             title="Quran"
-            subtitle="Pages"
+            subtitle="Minutes"
             current={monthData.quran.current}
             total={monthData.quran.total}
             backgroundColor="#E3F2FD"
             progressColor={colors.accent}
-            textColor={colors.primary}
+            textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
 
@@ -236,7 +237,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             total={monthData.fajr.total}
             backgroundColor="#FFF3E0"
             progressColor={colors.success}
-            textColor={colors.forest}
+            textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
 
@@ -247,7 +248,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             total={monthData.isha.total}
             backgroundColor="#FCE4EC"
             progressColor={colors.error}
-            textColor={colors.primary}
+            textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
         </View>

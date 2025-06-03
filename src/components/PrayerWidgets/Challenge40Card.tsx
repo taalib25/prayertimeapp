@@ -20,7 +20,7 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
   total,
   backgroundColor = colors.background.surface,
   progressColor = colors.accent,
-  textColor = colors.primary,
+  textColor = colors.text.prayerBlue,
 }) => {
   // Calculate percentage for the progress ring
   const percentage = (current / total) * 100;

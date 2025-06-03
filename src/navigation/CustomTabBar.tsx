@@ -1,32 +1,35 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Platform} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
-import {BlurView} from '@react-native-community/blur';
 import {colors, spacing} from '../utils/theme';
-import TabIcon from './TabIcon'; // We'll extract the TabIcon to its own file
+import {typography} from '../utils/typography';
+import SvgIcon, {IconName} from '../components/SvgIcon';
 
 const CustomTabBar: React.FC<BottomTabBarProps> = ({
   state,
   descriptors,
   navigation,
 }) => {
+  // Map route names to icon names
+  const getIconName = (routeName: string): IconName => {
+    switch (routeName) {
+      case 'Home':
+        return 'home';
+      case 'Zikr':
+        return 'prayer-beads';
+      case 'Salah':
+        return 'salah';
+      case 'Profile':
+        return 'user';
+      default:
+        return 'home';
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {Platform.OS === 'ios' ? (
-        <BlurView
-          style={styles.absolute}
-          blurType="light"
-          blurAmount={20}
-          reducedTransparencyFallbackColor={colors.white}
-        />
-      ) : (
-        <View style={[styles.absolute, styles.androidBlurFallback]} />
-      )}
-
       <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
-          const {options} = descriptors[route.key];
-          const label = options.tabBarLabel || options.title || route.name;
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -41,21 +44,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
             }
           };
 
-          // Map route names to icon names
-          const getIconName = (routeName: string): string => {
-            switch (routeName) {
-              case 'Home':
-                return 'home';
-              case 'Zikr':
-                return 'prayer-beads';
-              case 'Salah':
-                return 'masjid';
-              case 'Profile':
-                return 'user';
-              default:
-                return 'home';
-            }
-          };
+          const iconName = getIconName(route.name);
 
           return (
             <TouchableOpacity
@@ -64,11 +53,15 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               accessibilityState={isFocused ? {selected: true} : {}}
               onPress={onPress}
               style={styles.tabButton}>
-              <TabIcon
-                iconName={getIconName(route.name) as any}
-                focused={isFocused}
-                label={route.name}
+              <SvgIcon
+                name={iconName}
+                size={24}
+                style={isFocused ? styles.activeIcon : styles.inactiveIcon}
               />
+              <Text
+                style={[styles.tabLabel, isFocused && styles.focusedTabLabel]}>
+                {route.name}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -83,38 +76,41 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
-  },
-  absolute: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  androidBlurFallback: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // For Android fallback
   },
   tabBar: {
     flexDirection: 'row',
-    height: 80,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-    borderTopWidth: 0.5,
+    backgroundColor: colors.white,
+    height: 60,
+    borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
-    shadowColor: 'rgba(0,0,0,0.1)',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 5,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  activeIcon: {
+    opacity: 1,
+    // We can't directly change the SVG fill color, but we can modify opacity
+  },
+  inactiveIcon: {
+    opacity: 0.6,
+  },
+  tabLabel: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  focusedTabLabel: {
+    color: colors.text.blue,
+
   },
 });
 

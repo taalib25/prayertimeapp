@@ -12,6 +12,7 @@ import MapIcon from '../assets/icons/map.svg';
 import FajrLogo from '../assets/icons/fajr-logo.svg';
 import HomeIcon from '../assets/icons/home.svg';
 import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
+import SalahIcon from '../assets/icons/salah.svg';
 import UserIcon from '../assets/icons/user.svg';
 
 export type IconName =
@@ -25,6 +26,7 @@ export type IconName =
   | 'fajrlogo'
   | 'home'
   | 'prayer-beads'
+  | 'salah'
   | 'user';
 
 interface SvgIconProps {
@@ -57,6 +59,7 @@ const getIconComponent = (name: IconName) => {
     map: MapIcon,
     fajrlogo: FajrLogo,
     home: HomeIcon,
+    salah : SalahIcon,
     'prayer-beads': PrayerBeadsIcon,
     user: UserIcon,
   };

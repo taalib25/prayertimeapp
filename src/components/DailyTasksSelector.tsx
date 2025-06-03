@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   pageContainer: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   dayViewContainer: {
     flex: 1,
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     ...typography.h3,
-    color: colors.primary,
+    color: colors.text.prayerBlue,
     marginBottom: spacing.sm, // Reduced for more compact layout
     marginLeft: spacing.xs,
     lineHeight: 26, // Reduced line height for more compact text
@@ -299,8 +299,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   taskItemText: {
-    ...typography.body,
-    color: colors.text.dark,
+    ...typography.bodyMedium,
+    color: colors.text.blue,
     flex: 1,
     marginRight: spacing.sm, // Reduced margin for more compact layout
     lineHeight: 18, // Reduced line height for more compact text
