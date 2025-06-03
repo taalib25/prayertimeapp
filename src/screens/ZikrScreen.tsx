@@ -36,27 +36,9 @@ const ZikrScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Dhikr</Text>
+     <View style={styles.header}>
+          <Text style={styles.headerTitle}>Zikr Screen</Text>
         </View>
-
-        <MeetingCard
-          title={dailyZikr.title}
-          subtitle={dailyZikr.subtitle}
-          persons={dailyZikr.persons}
-          stats={dailyZikr.stats}
-          onPersonPress={handleZikrPress}
-        />
-
-        <MeetingCard
-          title={recommendedZikr.title}
-          subtitle={recommendedZikr.subtitle}
-          stats={recommendedZikr.stats}
-        />
-
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -65,13 +47,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     marginBottom: spacing.md,
+    justifyContent: 'center',
+  
+    alignItems: 'center',
+
   },
   headerTitle: {
     ...typography.h1,
-    color: colors.text.primary,
+    color: colors.text.dark,
     marginBottom: spacing.md,
   },
   content: {

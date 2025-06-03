@@ -23,7 +23,7 @@ import TaskProgressItem from '../components/TaskProgressItem';
 import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
 import Challenge40Card from '../components/PrayerWidgets/Challenge40Card';
 import DailyTasksSelector from '../components/DailyTasksSelector';
-import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyChallengeSelector';
+import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 
 // Dummy prayer times data to match the image
 const DUMMY_PRAYER_TIMES = [
