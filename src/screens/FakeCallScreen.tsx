@@ -12,6 +12,9 @@ import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../../App';
 import notifee from '@notifee/react-native';
 import SoundPlayer from 'react-native-sound-player';
+import SvgIcon from '../components/SvgIcon';
+import {colors, spacing} from '../utils/theme';
+import {typography} from '../utils/typography';
 
 const FakeCallScreen = () => {
   // Use a ref to store if we've tried to initialize navigation
@@ -191,11 +194,14 @@ const FakeCallScreen = () => {
     // Stop vibration
     Vibration.cancel();
 
-    // Play a different sound when call is answered
+    // Play the fajr sound in loop mode when call is answered
     try {
-      SoundPlayer.playSoundFile('ringtone', 'mp3');
+      SoundPlayer.playSoundFile('fajr', 'mp3');
+      SoundPlayer.setVolume(1.0);
+      SoundPlayer.setNumberOfLoops(-1); // -1 means infinite loop
+      SoundPlayer.play();
     } catch (error) {
-      console.log('Error playing answer sound:', error);
+      console.log('Error playing answer sound in loop:', error);
     }
 
     // Start call duration timer
@@ -203,10 +209,8 @@ const FakeCallScreen = () => {
       setCallDuration(prev => prev + 1);
     }, 1000);
 
-    // End call automatically after 15 seconds
-    setTimeout(() => {
-      handleEndCall();
-    }, 15000);
+    // Don't automatically end the call - let user end it
+    // The automatic timeout has been removed
   };
 
   const handleRejectCall = async () => {
@@ -281,11 +285,9 @@ const FakeCallScreen = () => {
       return (
         <>
           <View style={styles.callerInfo}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>🕌</Text>
-            </View>
+            <SvgIcon name="fajrlogo" size={160} color={colors.primary} />
             <Text style={styles.callerName}>Prayer Reminder</Text>
-            <Text style={styles.callerSubtitle}>Islamic Prayer Call</Text>
+            <Text style={styles.callerSubtitle}>Time for prayer</Text>
             <Text style={styles.incomingText}>Incoming call...</Text>
           </View>
 
@@ -293,12 +295,12 @@ const FakeCallScreen = () => {
             <TouchableOpacity
               style={styles.rejectButton}
               onPress={handleRejectCall}>
-              <Text style={styles.buttonText}>📞</Text>
+              <Text style={styles.buttonText}>Decline</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.acceptButton}
               onPress={handleAcceptCall}>
-              <Text style={styles.buttonText}>📞</Text>
+              <Text style={styles.buttonText}>Accept</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -307,9 +309,7 @@ const FakeCallScreen = () => {
       return (
         <>
           <View style={styles.callerInfo}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>🕌</Text>
-            </View>
+            <SvgIcon name="fajrlogo" size={160} color={colors.primary} />
             <Text style={styles.callerName}>Prayer Reminder</Text>
             <Text style={styles.callerSubtitle}>Connected</Text>
             <Text style={styles.callDuration}>
@@ -335,7 +335,11 @@ const FakeCallScreen = () => {
     }
   };
 
-  return <View style={styles.container}>{renderCallInterface()}</View>;
+  return (
+    <View style={styles.container}>
+      {renderCallInterface()}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -343,58 +347,44 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#000', // Black background like real call screen
     paddingTop: 80,
     paddingBottom: 50,
+    backgroundColor: '#ffffff', // White background
   },
   callerInfo: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
   },
-  avatarContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#1abc9c',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 3,
-    borderColor: '#fff',
-  },
-  avatarText: {
-    fontSize: 60,
-  },
   callerName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
+    ...typography.h2,
+    color: colors.primary,
+    marginTop: 30,
     marginBottom: 8,
     textAlign: 'center',
   },
   callerSubtitle: {
-    fontSize: 18,
-    color: '#ccc',
+    ...typography.bodyLarge,
+    color: colors.text.secondary,
     marginBottom: 15,
     textAlign: 'center',
   },
   incomingText: {
-    fontSize: 16,
-    color: '#1abc9c',
+    ...typography.bodyMedium,
+    color: '#4CAF50', // Green color for incoming text
     marginTop: 20,
     textAlign: 'center',
   },
   callDuration: {
-    fontSize: 18,
-    color: '#1abc9c',
+    ...typography.h3,
+    color: '#4CAF50', // Green color for duration
     marginTop: 10,
     textAlign: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    width: '80%',
+    width: '90%',
     alignItems: 'center',
   },
   connectedButtonContainer: {
@@ -402,67 +392,53 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   acceptButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#4CAF50',
+    width: 150,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#4CAF50', // Green accept button
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   rejectButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F44336',
+    width: 150,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#F44336', // Red reject button
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   endCallButton: {
-    width: 100,
+    width: 180,
     height: 50,
     borderRadius: 25,
     backgroundColor: '#F44336',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   buttonText: {
-    fontSize: 30,
+    ...typography.button,
     color: 'white',
+    fontWeight: '600',
   },
   endCallButtonText: {
-    fontSize: 16,
+    ...typography.button,
     color: 'white',
-    fontWeight: 'bold',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 20,
+    fontWeight: '600',
   },
 });
 

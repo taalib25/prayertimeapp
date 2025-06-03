@@ -2,11 +2,11 @@ import React, {useEffect} from 'react';
 import {
   View,
   Text,
-  Button,
   StyleSheet,
   Alert,
   Vibration,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
 import {RootStackParamList} from '../../App';
@@ -18,6 +18,8 @@ import notifee, {
   AndroidCategory,
 } from '@notifee/react-native';
 import BackgroundFetch from 'react-native-background-fetch';
+import {colors, spacing, borderRadius} from '../utils/theme';
+import {typography} from '../utils/typography';
 
 const CallScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -227,15 +229,10 @@ const CallScreen: React.FC = () => {
 
       const platformMessage =
         Platform.OS === 'android'
-          ? 'Test fake call will appear in 20 seconds!\n\n📱 The call screen will open directly.'
-          : 'Test fake call will trigger in 20 seconds!\n\n🔒 Lock your phone now to test the full effect!\n📱 The call will appear even if phone is silent.';
+          ? 'Test fake call will appear in 20 seconds!'
+          : 'Test fake call will trigger in 20 seconds! Lock your phone to test the full effect.';
 
-      Alert.alert('Test Scheduled ✅', platformMessage, [
-        {
-          text: 'OK',
-          onPress: () => console.log('Test scheduled'),
-        },
-      ]);
+      Alert.alert('Test Scheduled ✅', platformMessage);
     } catch (error) {
       Alert.alert('Error', 'Could not schedule test reminder.');
     }
@@ -245,10 +242,7 @@ const CallScreen: React.FC = () => {
   const cancelAllNotifications = async () => {
     try {
       await notifee.cancelAllNotifications();
-      Alert.alert(
-        'Cancelled',
-        'All scheduled fake call reminders have been cancelled.',
-      );
+      Alert.alert('All scheduled calls cancelled');
     } catch (error) {
       Alert.alert('Error', 'Could not cancel notifications.');
     }
@@ -256,26 +250,18 @@ const CallScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🕌 Prayer Fake Call Setup</Text>
+      <Text style={styles.title}>Prayer Reminder Call</Text>
       <Text style={styles.subtitle}>
-        Schedule a fake incoming call to remind you of prayer time
+        Schedule a fake incoming call for prayer times
       </Text>
 
-      <View style={styles.testSection}>
-        <Text style={styles.sectionTitle}>⏰ Set Timer (20 Seconds)</Text>
-        <Button
-          title="Start 20 Second Test"
-          onPress={scheduleQuickTest}
-          color="#FF6B35"
-        />
-        <Text style={styles.testDescription}>
-          {Platform.OS === 'android'
-            ? 'Test will show fake call in 20 seconds.'
-            : 'Lock your phone after pressing this button.'}
-        </Text>
+      <View style={styles.cardContainer}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={scheduleQuickTest}>
+          <Text style={styles.buttonText}>Start 20 Second Test Call</Text>
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.divider} />
     </View>
   );
 };
@@ -283,66 +269,49 @@ const CallScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: spacing.lg,
+    backgroundColor: colors.background.light,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    ...typography.h2,
+    color: colors.primary,
+    marginBottom: spacing.xs,
     textAlign: 'center',
-    color: '#1a5276',
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  testSection: {
-    backgroundColor: '#FFF3E0',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  testDescription: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 5,
+    ...typography.body,
+    color: colors.text.secondary,
+    marginBottom: spacing.lg,
     textAlign: 'center',
   },
-  controlSection: {
-    backgroundColor: '#FFEBEE',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+  cardContainer: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#ddd',
-    marginVertical: 10,
+  actionButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  infoSection: {
-    backgroundColor: '#E3F2FD',
-    padding: 15,
-    borderRadius: 10,
+  secondaryButton: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#1976D2',
+  buttonText: {
+    ...typography.button,
+    color: colors.white,
   },
-  infoText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
+  secondaryButtonText: {
+    color: colors.primary,
   },
 });
 
