@@ -58,6 +58,11 @@ const getMockData = (): DayTasks[] => {
         {id: 'db1', title: 'FAJR at Masjid', completed: true},
         {id: 'db2', title: 'Read Surah Al-Kahf', completed: false},
         {id: 'db3', title: 'Give Charity', completed: true},
+        {id: 'db4', title: 'Evening Zikr', completed: false},
+        {id: 'db5', title: 'Help a neighbor', completed: true},
+        {id: 'db6', title: 'Study Islamic history', completed: false},
+        {id: 'db7', title: 'Dua after Maghrib', completed: true},
+        {id: 'db8', title: 'Read Hadith collection', completed: false},
       ],
     },
     {
@@ -68,6 +73,11 @@ const getMockData = (): DayTasks[] => {
         {id: 'y2', title: 'Call Parents', completed: true},
         {id: 'y3', title: '100 x Asthagfirullah', completed: false},
         {id: 'y4', title: 'Plan for tomorrow', completed: true},
+        {id: 'y5', title: 'Read Hadith', completed: false},
+        {id: 'y6', title: 'Dua before sleep', completed: true},
+        {id: 'y7', title: 'Listen to Quran recitation', completed: false},
+        {id: 'y8', title: 'Practice patience', completed: true},
+        {id: 'y9', title: 'Reflect on blessings', completed: false},
       ],
     },
     {
@@ -83,6 +93,11 @@ const getMockData = (): DayTasks[] => {
         {id: 't3', title: '100 x Asthagfirullah', completed: false},
         {id: 't4', title: '15 mins of Quran', completed: false},
         {id: 't5', title: 'ISHA at Masjid', completed: false},
+        {id: 't6', title: 'Make Dua for family', completed: false},
+        {id: 't7', title: 'Reflect on day', completed: false},
+        {id: 't8', title: 'Seek forgiveness', completed: false},
+        {id: 't9', title: 'Practice gratitude', completed: false},
+        {id: 't10', title: 'Help someone in need', completed: false},
       ],
     },
   ];
@@ -125,13 +140,23 @@ interface DayViewProps {
 }
 
 const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
+  const shouldScroll = dayTasks.tasks.length > 5;
+
   return (
     <View style={styles.dayViewContainer}>
       <Text style={styles.dayLabel}>{dayTasks.dayLabel}</Text>
       <ScrollView
-        style={{flex: 1}} // Added to ensure ScrollView takes available vertical space
+        style={[
+          styles.scrollViewStyle,
+          !shouldScroll && {maxHeight: undefined},
+        ]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.tasksScrollContainer}>
+        contentContainerStyle={[
+          styles.tasksScrollContainer,
+          !shouldScroll && {minHeight: undefined},
+        ]}
+        scrollEnabled={shouldScroll}
+        nestedScrollEnabled={shouldScroll}>
         {dayTasks.tasks.map(task => (
           <TaskItem
             key={task.id}
@@ -221,52 +246,57 @@ const borderRadius = {
 
 const styles = StyleSheet.create({
   container: {
-    height: 380, // Increased from 350 to accommodate better spacing
+    height: 450, // Increased height for better scrolling
     backgroundColor: colors.background.light,
     borderRadius: 20,
     marginVertical: spacing.md,
-    paddingVertical: spacing.md, // Increased from sm
+    paddingVertical: spacing.sm,
   },
   pagerView: {
     flex: 1,
   },
   pageContainer: {
-    width: SCREEN_WIDTH,
-    paddingHorizontal: spacing.sm, // Add padding to prevent cutoff
+    flex: 1,
+    paddingHorizontal: spacing.md,
   },
   dayViewContainer: {
     flex: 1,
-    paddingHorizontal: spacing.md, // Reduced to account for pageContainer padding
-    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  scrollViewStyle: {
+    flex: 1,
+    maxHeight: 320, // Set max height to ensure scrolling
   },
   tasksScrollContainer: {
-    paddingBottom: spacing.lg, // Increased from md
-    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
+    minHeight: 340, // Ensure content is taller than container to enable scrolling
   },
   dayLabel: {
     ...typography.h3,
     color: colors.primary,
-    marginBottom: spacing.md, // Increased from sm
-    marginLeft: spacing.sm,
+    marginBottom: spacing.sm, // Reduced for more compact layout
+    marginLeft: spacing.xs,
   },
   taskItemContainer: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.lg, // Increased from md
-    paddingHorizontal: spacing.lg, // Increased from md
+    borderRadius: borderRadius.md, // Reduced for more compact look
+    paddingVertical: spacing.md, // Reduced for more compact layout
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg, // Increased from sm
-    marginRight: spacing.sm, // Increased from xs to prevent cutoff
+    marginBottom: spacing.sm, // Reduced spacing between items
+    marginHorizontal: spacing.xs, // Added to prevent cutoff
     shadowColor: colors.text.dark,
     shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOpacity: 0.08, // Reduced shadow for cleaner look
+    shadowRadius: 2,
+    elevation: 1,
   },
   taskItemCompleted: {
-    backgroundColor: colors.sage, // Light green for completed tasks
+    backgroundColor: colors.sage,
     borderColor: colors.success,
     borderWidth: 1,
   },
@@ -274,18 +304,19 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text.dark,
     flex: 1,
-    marginRight: spacing.md, // Added margin between text and radio button
-    lineHeight: 20, // Added line height for better readability
+    marginRight: spacing.sm, // Reduced margin for more compact layout
+    lineHeight: 18, // Reduced line height for more compact text
+    fontSize: 14, // Slightly smaller font for more compact layout
   },
   taskItemTextCompleted: {
     textDecorationLine: 'line-through',
-    color: colors.forest, // Darker green for completed text
+    color: colors.forest,
     opacity: 0.8,
   },
   taskRadioCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20, // Reduced size for more compact layout
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
     borderColor: colors.primary,
     justifyContent: 'center',
@@ -295,17 +326,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   taskRadioInnerCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6, // Reduced size proportionally
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.white,
   },
   paginationContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.xs, // Reduced for more compact layout
+    paddingBottom: spacing.sm,
   },
   paginationDot: {
     width: 8,

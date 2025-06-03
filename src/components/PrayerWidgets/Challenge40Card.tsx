@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet } from "react-native";
-import Svg, { Circle } from "react-native-svg";
-import { colors } from "../../utils/theme";
-import { typography } from "../../utils/typography";
+import {View, Text, StyleSheet} from 'react-native';
+import Svg, {Circle} from 'react-native-svg';
+import {colors} from '../../utils/theme';
+import {typography} from '../../utils/typography';
 
 interface Challenge40CardProps {
   title: string;
@@ -13,7 +13,8 @@ interface Challenge40CardProps {
   textColor?: string;
 }
 
-const Challenge40Card: React.FC<Challenge40CardProps> = ({  title,
+const Challenge40Card: React.FC<Challenge40CardProps> = ({
+  title,
   subtitle = 'Fajr',
   current,
   total,
@@ -38,7 +39,9 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({  title,
       </View>
 
       <View style={styles.progressContainer}>
-        <Svg height="140" width="140" viewBox="0 0 100 100">          {/* Background Circle */}
+        <Svg height="140" width="140" viewBox="0 0 100 100">
+          {' '}
+          {/* Background Circle */}
           <Circle
             cx="50"
             cy="50"
@@ -81,28 +84,32 @@ const styles = StyleSheet.create({
     margin: 6,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
   },
   header: {
-    marginBottom: 8,
+    marginBottom: 12,
+    alignItems: 'flex-start',
   },
   title: {
-    ...typography.bodyMedium,
-    fontSize: 14,
+    ...typography.h3,
+    letterSpacing: 0.5,
+    lineHeight: 24,
+    textAlign: 'left',
   },
   subtitle: {
-    ...typography.bodyTiny,
-    fontSize: 12,
-    marginTop: 2,
+    ...typography.bodyMedium,
+    marginTop: 4,
     opacity: 0.8,
+    lineHeight: 18,
+    textAlign: 'left',
   },
   progressContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginTop: 4,
+    marginTop: 8,
   },
   progressTextContainer: {
     position: 'absolute',
@@ -112,11 +119,12 @@ const styles = StyleSheet.create({
   },
   progressValue: {
     ...typography.statNumber,
-    fontSize: 28,
-  },  progressTotal: {
-    ...typography.body,
+    lineHeight: 36,
+  },
+  progressTotal: {
+    ...typography.bodyMedium,
     color: colors.primary,
-    fontSize: 18,
+    lineHeight: 24,
   },
 });
 

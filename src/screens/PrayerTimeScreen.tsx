@@ -81,7 +81,7 @@ const PrayerTimeScreen = () => {
 
             {/* New Today Section */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>New Today</Text>
+              <Text style={styles.sectionTitle}>Daily Reminders</Text>
               <TouchableOpacity>
                 <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
@@ -93,57 +93,60 @@ const PrayerTimeScreen = () => {
               <View style={styles.emptyCard} />
             </View>
 
+            {/* Section Header for Tasks */}
+            <DailyTasksSelector />
+
             {/* Stats Cards Row */}
+           
+
+          
+
+            {/* Third Row - Zikr and Quran Cards */}
             <View style={styles.statsCardsRow}>
-              {/* Challenge 40 Card */}
               <Challenge40Card
-                title="Challenge 40"
-                subtitle="Fajr"
-                current={134}
-                total={175}
+                title="Daily Zikr"
+                subtitle="Subhan Allah"
+                current={89}
+                total={100}
+                backgroundColor={colors.background.light}
+                progressColor={colors.emerald}
+                textColor={colors.forest}
+              />
+
+              <Challenge40Card
+                title="Quran Reading"
+                subtitle="Pages Today"
+                current={7}
+                total={10}
                 backgroundColor={colors.background.surface}
                 progressColor={colors.accent}
                 textColor={colors.primary}
               />
-
-              {/* Wake up Calls Card */}
-              <StatsCard
-                title="Wake up Calls"
-                stats={[
-                  {label: 'Called', value: 5},
-                  {label: 'Cancelled', value: 3},
-                  {label: 'Confirmed', value: 2},
-                ]}
-                backgroundColor={colors.background.light}
-                showDividers={true}
-                dividerColor={colors.background.surface}
-              />
             </View>
 
-            {/* Second Row of Stats Cards */}
+            {/* Fourth Row - Fajr and Isha Cards */}
             <View style={styles.statsCardsRow}>
-              {/* Personal Meeting Card */}
-              <StatsCard
-                title="Personal Meeting"
-                stats={[
-                  {label: 'Assigned', value: 5},
-                  {label: 'Visited', value: 4},
-                  {label: 'Remaining', value: 2},
-                ]}
-                backgroundColor={colors.background.surface}
-                showDividers={false}
+              <Challenge40Card
+                title="Fajr Tracker"
+                subtitle="This Week"
+                current={5}
+                total={7}
+                backgroundColor={colors.background.light}
+                progressColor={colors.success}
+                textColor={colors.forest}
               />
 
-              {/* Zikr Card */}
-              <ZikrCounter todayCount={267} totalCount={23000} />
+              <Challenge40Card
+                title="Isha Tracker"
+                subtitle="This Week"
+                current={6}
+                total={7}
+                backgroundColor={colors.background.surface}
+                progressColor={colors.error}
+                textColor={colors.primary}
+              />
             </View>
 
-
-
-            {/* Section Header for Tasks */}
-            <DailyTasksSelector/>
-
-            
             {/* Tasks Progress */}
             {/* <View style={styles.tasksSection}>
               {' '}
@@ -254,3 +257,50 @@ const styles = StyleSheet.create({
 });
 
 export default PrayerTimeScreen;
+
+
+
+//  <View style={styles.statsCardsRow}>
+//               Challenge 40 Card
+//               <Challenge40Card
+//                 title="Challenge 40"
+//                 subtitle="Fajr"
+//                 current={134}
+//                 total={175}
+//                 backgroundColor={colors.background.surface}
+//                 progressColor={colors.primary}
+//                 textColor={colors.primary}
+//               />
+
+//               Wake up Calls Card
+//               <StatsCard
+//                 title="Wake up Calls"
+//                 stats={[
+//                   {label: 'Called', value: 5},
+//                   {label: 'Cancelled', value: 3},
+//                   {label: 'Confirmed', value: 2},
+//                 ]}
+//                 backgroundColor={colors.background.light}
+//                 showDividers={true}
+//                 dividerColor={colors.background.surface}
+//               />
+//             </View>
+
+
+  {/* Second Row of Stats Cards */}
+            // <View style={styles.statsCardsRow}>
+            //   {/* Personal Meeting Card */}
+            //   <StatsCard
+            //     title="Personal Meeting"
+            //     stats={[
+            //       {label: 'Assigned', value: 5},
+            //       {label: 'Visited', value: 4},
+            //       {label: 'Remaining', value: 2},
+            //     ]}
+            //     backgroundColor={colors.background.surface}
+            //     showDividers={false}
+            //   />
+
+            //   {/* Zikr Card */}
+            //   <ZikrCounter todayCount={267} totalCount={23000} />
+            // </View>

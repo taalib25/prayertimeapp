@@ -17,6 +17,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
+import {loginSchema, LoginFormData} from '../utils/validation';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,10 +32,26 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+
+  const validateForm = (): boolean => {
+    try {
+      loginSchema.parse({email, password});
+      setErrors({});
+      return true;
+    } catch (error: any) {
+      const fieldErrors: {email?: string; password?: string} = {};
+      error.errors.forEach((err: any) => {
+        const field = err.path[0] as keyof LoginFormData;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      return false;
+    }
+  };
 
   const handleLoginPress = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+    if (!validateForm()) {
       return;
     }
 
@@ -72,9 +89,9 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
               <Text style={styles.subtitle}>
                 Please login to access your account
               </Text>
-              <Text style={styles.inputLabel}>Email</Text>{' '}
+              <Text style={styles.inputLabel}>Email</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.email && styles.inputError]}
                 placeholder="Enter your email address"
                 placeholderTextColor={colors.text.muted}
                 keyboardType="email-address"
@@ -82,15 +99,23 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
                 onChangeText={setEmail}
                 autoCapitalize="none"
               />
-              <Text style={styles.inputLabel}>Password</Text>{' '}
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              )}
+
+              <Text style={styles.inputLabel}>Password</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.password && styles.inputError]}
                 placeholder="Enter your password"
                 placeholderTextColor={colors.text.muted}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
               />
+              {errors.password && (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              )}
+
               <Text style={styles.forgotPassword}>Forgot Password?</Text>
               <CustomButton
                 title={isLoading ? 'Logging in...' : 'Login'}
@@ -171,6 +196,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     ...typography.body,
     color: '#333',
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  errorText: {
+    ...typography.caption,
+    color: colors.error,
+    marginTop: -16,
+    marginBottom: 16,
+    marginLeft: 4,
   },
   forgotPassword: {
     ...typography.bodyMedium,

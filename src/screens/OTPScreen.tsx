@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-  Dimensions,
   Image,
 } from 'react-native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -16,6 +15,10 @@ import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import CustomButton from '../components/CustomButton';
+import {
+  phoneVerificationSchema,
+  otpVerificationSchema,
+} from '../utils/validation';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,6 +39,9 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Phone verification, 2: OTP verification
+  const [errors, setErrors] = useState<{phoneNumber?: string; otp?: string}>(
+    {},
+  );
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null]);
 
   // Animation values
@@ -48,21 +54,50 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setTimeout(() => phoneInputRef.current?.focus(), 300);
   }, []);
 
-  const handlePhoneSubmit = () => {
-    if (phoneNumber && phoneNumber.length >= 10) {
-      setIsLoading(true);
-
-      // Simulate API request
-      setTimeout(() => {
-        setIsLoading(false);
-        // Simply change step without complex animation
-        setStep(2);
-        // Focus on first OTP input after a short delay
-        setTimeout(() => {
-          inputRefs.current[0]?.focus();
-        }, 100);
-      }, 1000);
+  const validatePhoneNumber = (): boolean => {
+    try {
+      phoneVerificationSchema.parse({phoneNumber});
+      setErrors(prev => ({...prev, phoneNumber: undefined}));
+      return true;
+    } catch (error: any) {
+      const phoneError = error.errors.find(
+        (err: any) => err.path[0] === 'phoneNumber',
+      );
+      setErrors(prev => ({...prev, phoneNumber: phoneError?.message}));
+      return false;
     }
+  };
+
+  const validateOTP = (): boolean => {
+    const otpString = otp.join('');
+    try {
+      otpVerificationSchema.parse({otp: otpString});
+      setErrors(prev => ({...prev, otp: undefined}));
+      return true;
+    } catch (error: any) {
+      const otpError = error.errors.find((err: any) => err.path[0] === 'otp');
+      setErrors(prev => ({...prev, otp: otpError?.message}));
+      return false;
+    }
+  };
+
+  const handlePhoneSubmit = () => {
+    if (!validatePhoneNumber()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Simulate API request
+    setTimeout(() => {
+      setIsLoading(false);
+      // Simply change step without complex animation
+      setStep(2);
+      // Focus on first OTP input after a short delay
+      setTimeout(() => {
+        inputRefs.current[0]?.focus();
+      }, 100);
+    }, 1000);
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -82,8 +117,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
   };
 
   const handleVerifyOTP = async () => {
-    const otpString = otp.join('');
-    if (otpString.length !== 4) {
+    if (!validateOTP()) {
       return;
     }
 
@@ -130,12 +164,18 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
               <Text style={styles.inputLabel}>Phone number</Text>
               <TextInput
                 ref={phoneInputRef}
-                style={styles.phoneInput}
+                style={[
+                  styles.phoneInput,
+                  errors.phoneNumber && styles.inputError,
+                ]}
                 keyboardType="phone-pad"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
                 placeholder="Enter your mobile number"
               />
+              {errors.phoneNumber && (
+                <Text style={styles.errorText}>{errors.phoneNumber}</Text>
+              )}
 
               <CustomButton
                 title="Request OTP"
@@ -175,7 +215,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                     ref={ref => {
                       inputRefs.current[index] = ref;
                     }}
-                    style={styles.otpInput}
+                    style={[styles.otpInput, errors.otp && styles.inputError]}
                     keyboardType="numeric"
                     maxLength={1}
                     value={otp[index]}
@@ -183,6 +223,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                   />
                 ))}
               </View>
+              {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
               <CustomButton
                 title="Submit"
                 onPress={handleVerifyOTP}
@@ -289,6 +330,17 @@ const styles = StyleSheet.create({
   resendLink: {
     ...typography.bodyMedium,
     color: colors.primary,
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 2,
+  },
+  errorText: {
+    ...typography.caption,
+    color: colors.error,
+    marginTop: 8,
+    marginBottom: 16,
+    marginLeft: 4,
   },
 });
 
