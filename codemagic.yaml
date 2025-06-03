@@ -29,7 +29,7 @@ workflows:
                   -PversionCode=$BUILD_NUMBER \
                   -PversionName=1.0.$BUILD_NUMBER
         artifacts:
-            - android/app/build/outputs/**/*.apk
+            - android/app/build/outputs/**/*.adb
         publishing:
           email:
             recipients:
