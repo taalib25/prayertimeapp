@@ -45,7 +45,9 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
       const fieldErrors: {email?: string; password?: string} = {};
       error.errors.forEach((err: any) => {
         const field = err.path[0] as keyof LoginFormData;
-        fieldErrors[field] = err.message;
+        if (field === 'email' || field === 'password') {
+          fieldErrors[field] = err.message;
+        }
       });
       setErrors(fieldErrors);
       return false;

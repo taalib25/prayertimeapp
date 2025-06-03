@@ -10,6 +10,7 @@ import {
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
+import CallScreen from './CallScreen';
 
 const ProfileScreen: React.FC = () => {
   // Sample data for the meeting cards
@@ -62,6 +63,8 @@ const ProfileScreen: React.FC = () => {
           subtitle={meetingAttendance.subtitle}
           stats={meetingAttendance.stats}
         />
+
+        <CallScreen/>
 
         <TouchableOpacity style={styles.logoutButton}>
           <Text style={styles.logoutText}>Logout</Text>

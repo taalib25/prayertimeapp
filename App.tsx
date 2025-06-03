@@ -21,8 +21,9 @@ import OTPScreen from './src/screens/OTPScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
+import FakeCallScreen from './src/screens/FakeCallScreen';
 
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 // Define screen names and their params
@@ -33,6 +34,7 @@ export type RootStackParamList = {
   MainApp: undefined;
   DatabaseTest: undefined;
   PrayerChallenge: undefined;
+  FakeCallScreen : undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,7 +87,7 @@ function AppNavigator() {
         {!hasSeenOnboarding ? (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         ) : isAuthenticated ? (
-          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+          <><Stack.Screen name="MainApp" component={BottomTabNavigator} /><Stack.Screen name="FakeCallScreen" component={FakeCallScreen} /></>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

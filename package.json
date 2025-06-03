@@ -19,6 +19,7 @@
     "android": "^0.0.8",
     "react": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-background-fetch": "^4.2.8",
     "react-native-gesture-handler": "^2.25.0",
     "react-native-otp-entry": "^1.8.4",
     "react-native-pager-view": "^6.8.1",
@@ -27,14 +28,13 @@
     "react-native-reanimated": "^3.17.5",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "^4.10.0",
+    "react-native-sound-player": "^0.14.5",
     "react-native-sqlite-storage": "npm:@boltcode/react-native-sqlite-storage",
     "react-native-svg": "^15.12.0",
     "react-native-svg-transformer": "^1.5.1",
+    "react-native-tts": "^4.1.1",
     "react-native-vector-icons": "^10.2.0",
     "zod": "^3.25.46"
-    "react-native-sound-player": "^0.14.5",
-    "react-native-sqlite-storage": "npm:@boltcode/react-native-sqlite-storage",
-    "react-native-tts": "^4.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

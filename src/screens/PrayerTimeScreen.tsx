@@ -241,6 +241,11 @@ export default PrayerTimeScreen;
 {
   /* Second Row of Stats Cards */
 }
+function getCurrentDateString(): string {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+}
+
 // <View style={styles.statsCardsRow}>
 //   {/* Personal Meeting Card */}
 //   <StatsCard
