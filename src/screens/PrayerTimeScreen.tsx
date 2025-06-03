@@ -23,6 +23,7 @@ import TaskProgressItem from '../components/TaskProgressItem';
 import ZikrCounter from '../components/PrayerWidgets/ZikrWidget';
 import Challenge40Card from '../components/PrayerWidgets/Challenge40Card';
 import DailyTasksSelector from '../components/DailyTasksSelector';
+import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyChallengeSelector';
 
 // Dummy prayer times data to match the image
 const DUMMY_PRAYER_TIMES = [
@@ -96,56 +97,8 @@ const PrayerTimeScreen = () => {
             {/* Section Header for Tasks */}
             <DailyTasksSelector />
 
-            {/* Stats Cards Row */}
-           
-
-          
-
-            {/* Third Row - Zikr and Quran Cards */}
-            <View style={styles.statsCardsRow}>
-              <Challenge40Card
-                title="Daily Zikr"
-                subtitle="Subhan Allah"
-                current={89}
-                total={100}
-                backgroundColor={colors.background.light}
-                progressColor={colors.emerald}
-                textColor={colors.forest}
-              />
-
-              <Challenge40Card
-                title="Quran Reading"
-                subtitle="Pages Today"
-                current={7}
-                total={10}
-                backgroundColor={colors.background.surface}
-                progressColor={colors.accent}
-                textColor={colors.primary}
-              />
-            </View>
-
-            {/* Fourth Row - Fajr and Isha Cards */}
-            <View style={styles.statsCardsRow}>
-              <Challenge40Card
-                title="Fajr Tracker"
-                subtitle="This Week"
-                current={5}
-                total={7}
-                backgroundColor={colors.background.light}
-                progressColor={colors.success}
-                textColor={colors.forest}
-              />
-
-              <Challenge40Card
-                title="Isha Tracker"
-                subtitle="This Week"
-                current={6}
-                total={7}
-                backgroundColor={colors.background.surface}
-                progressColor={colors.error}
-                textColor={colors.primary}
-              />
-            </View>
+            {/* Monthly Challenge Cards */}
+            <MonthlyChallengeSelector />
 
             {/* Tasks Progress */}
             {/* <View style={styles.tasksSection}>
@@ -258,8 +211,6 @@ const styles = StyleSheet.create({
 
 export default PrayerTimeScreen;
 
-
-
 //  <View style={styles.statsCardsRow}>
 //               Challenge 40 Card
 //               <Challenge40Card
@@ -286,21 +237,22 @@ export default PrayerTimeScreen;
 //               />
 //             </View>
 
+{
+  /* Second Row of Stats Cards */
+}
+// <View style={styles.statsCardsRow}>
+//   {/* Personal Meeting Card */}
+//   <StatsCard
+//     title="Personal Meeting"
+//     stats={[
+//       {label: 'Assigned', value: 5},
+//       {label: 'Visited', value: 4},
+//       {label: 'Remaining', value: 2},
+//     ]}
+//     backgroundColor={colors.background.surface}
+//     showDividers={false}
+//   />
 
-  {/* Second Row of Stats Cards */}
-            // <View style={styles.statsCardsRow}>
-            //   {/* Personal Meeting Card */}
-            //   <StatsCard
-            //     title="Personal Meeting"
-            //     stats={[
-            //       {label: 'Assigned', value: 5},
-            //       {label: 'Visited', value: 4},
-            //       {label: 'Remaining', value: 2},
-            //     ]}
-            //     backgroundColor={colors.background.surface}
-            //     showDividers={false}
-            //   />
-
-            //   {/* Zikr Card */}
-            //   <ZikrCounter todayCount={267} totalCount={23000} />
-            // </View>
+//   {/* Zikr Card */}
+//   <ZikrCounter todayCount={267} totalCount={23000} />
+// </View>
