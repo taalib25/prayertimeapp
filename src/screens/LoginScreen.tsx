@@ -18,6 +18,7 @@ import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import {loginSchema, LoginFormData} from '../utils/validation';
+import {useAuth} from '../contexts/AuthContext';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -33,6 +34,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const {login} = useAuth();
 
   const validateForm = (): boolean => {
     try {
@@ -58,10 +60,8 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
     setIsLoading(true);
 
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Navigate to OTP screen with email
+      // Navigate to OTP for verification
+      // We'll complete the login process after OTP is verified
       navigation.navigate('OTP', {email});
     } catch (error) {
       Alert.alert('Error', 'Login failed. Please try again.');

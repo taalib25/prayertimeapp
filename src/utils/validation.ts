@@ -19,10 +19,8 @@ export const passwordSchema = z
 export const phoneSchema = z
   .string()
   .min(1, 'Phone number is required')
-  .regex(/^[\+]?[1-9][\d]{8,14}$/, 'Please enter a valid phone number')
-  .min(10, 'Phone number must be at least 10 digits')
-  .max(15, 'Phone number cannot exceed 15 digits')
-  .transform(val => val.replace(/\s+/g, '')); // Remove spaces
+  .regex(/^0\d{9}$/, 'Please enter a valid phone number (10 digits starting with 0)')
+  .length(10, 'Phone number must be exactly 10 digits');
 
 // OTP validation schema
 export const otpSchema = z

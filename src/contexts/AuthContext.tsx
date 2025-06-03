@@ -17,7 +17,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
-  checkAuthState: () => Promise<void>;
+  checkAuthState: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,18 +34,21 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     checkAuthState();
   }, []);
 
-  const checkAuthState = async () => {
+  const checkAuthState = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       const userData = await AsyncStorage.getItem(USER_STORAGE_KEY);
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error checking auth state:', error);
       // Clear invalid stored data
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      return false;
     } finally {
       setIsLoading(false);
     }

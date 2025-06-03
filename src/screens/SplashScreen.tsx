@@ -1,70 +1,69 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet, StatusBar} from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
-import SvgIcon from '../components/SvgIcon';
+import {View, StyleSheet, Animated} from 'react-native';
 import {colors} from '../utils/theme';
+import {useAuth} from '../contexts/AuthContext';
+import SvgIcon from '../components/SvgIcon';
 
 interface SplashScreenProps {
-  onAnimationComplete: () => void;
+  onAuthCheck: (isAuthenticated: boolean) => void;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({onAnimationComplete}) => {
-  const opacity = useSharedValue(0);
+const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
+  const {checkAuthState} = useAuth();
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Simple fade-in animation
-    const startAnimation = () => {
-      opacity.value = withTiming(1, {duration: 400});
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
 
-      // After animation completes, trigger callback
-      setTimeout(() => {
-        runOnJS(onAnimationComplete)();
-      }, 1500);
+    // Check authentication status while splash screen is displayed
+    const checkAuth = async () => {
+      try {
+        // Wait for minimum splash screen time and authentication check
+        await Promise.all([
+          new Promise(resolve => setTimeout(resolve, 2000)), // 2 seconds minimum display time
+          checkAuthState().then(isAuthenticated => {
+            onAuthCheck(isAuthenticated);
+          }),
+        ]);
+      } catch (error) {
+        console.error('Error in auth check:', error);
+        onAuthCheck(false); // Default to not authenticated if error
+      }
     };
 
-    // Small delay before starting animation
-    const timer = setTimeout(startAnimation, 200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
+    checkAuth();
+  }, [fadeAnim, checkAuthState, onAuthCheck]);
 
   return (
-    <>
-      {' '}
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor={colors.white}
-        translucent={false}
-      />
-      <View style={styles.container}>
-        <Animated.View style={[styles.logoContainer, animatedStyle]}>
-          <SvgIcon name="fajrlogo" size={220} color={colors.primary} />
-        </Animated.View>
-      </View>
-    </>
+    <View style={styles.container}>
+      <Animated.View style={[styles.logoContainer, {opacity: fadeAnim}]}>
+        <SvgIcon name="fajrlogo" size={220} color={colors.primary} />
+      </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.white,
   },
   logoContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.primary,
   },
 });
 

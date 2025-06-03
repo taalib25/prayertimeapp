@@ -19,6 +19,7 @@ import {
   phoneVerificationSchema,
   otpVerificationSchema,
 } from '../utils/validation';
+import {useAuth} from '../contexts/AuthContext';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -116,6 +117,9 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     }
   };
 
+  const {login} = useAuth();
+  const email = route.params?.email || '';
+
   const handleVerifyOTP = async () => {
     if (!validateOTP()) {
       return;
@@ -124,11 +128,17 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setIsLoading(true);
 
     try {
-      // Simulate OTP verification
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // For demo purposes, accept any complete OTP
-      navigation.replace('MainApp');
+      // In a real app, verify with your backend
+
+      // Complete the login process
+      await login(email, phoneNumber);
+
+      // Navigate to main app
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'MainApp'}],
+      });
     } catch (error) {
       // Error handling would go here
     } finally {

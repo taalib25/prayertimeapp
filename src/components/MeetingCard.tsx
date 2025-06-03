@@ -65,7 +65,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.background.light,
+    backgroundColor: colors.background.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -75,13 +75,12 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
-    color: colors.primary,
+    color: colors.text.prayerBlue,
     marginBottom: spacing.xs / 2,
   },
   subtitle: {
-    ...typography.body,
+    ...typography.bodyMedium,
     color: colors.error,
-    fontWeight: 'bold',
   },
   personRow: {
     flexDirection: 'row',
@@ -89,13 +88,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colors.white,
     borderRadius: 50,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   personText: {
-    ...typography.body,
-    color: colors.primary,
+    ...typography.bodyMedium,
+    color: colors.text.prayerBlue,
     fontWeight: '500',
   },
   circle: {
@@ -118,7 +117,7 @@ const styles = StyleSheet.create({
   },
   statText: {
     ...typography.body,
-    color: colors.primary,
+    color: colors.text.prayerBlue,
   },
 });
 
