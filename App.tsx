@@ -4,8 +4,8 @@
  *
  * @format
  */
-
 import React, {useState, useEffect} from 'react';
+
 import {
   SafeAreaView,
   StatusBar,
@@ -63,6 +63,7 @@ function AppNavigator() {
 
   const handleAuthCheck = (authenticated: boolean) => {
     setShowingSplash(false);
+
   };
 
   // Show splash screen while checking auth and onboarding
@@ -96,6 +97,10 @@ function AppNavigator() {
   );
 }
 
+// Global navigation ref
+export const navigationRef =
+  React.createRef<NavigationContainerRef<RootStackParamList>>();
+
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -107,12 +112,14 @@ function App(): React.JSX.Element {
   return (
     <DatabaseProvider>
       <AuthProvider>
+
         <SafeAreaView style={backgroundStyle}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={backgroundStyle.backgroundColor}
           />
           <AppNavigator />
+
         </SafeAreaView>
       </AuthProvider>
     </DatabaseProvider>

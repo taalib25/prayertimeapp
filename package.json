@@ -16,6 +16,7 @@
     "@react-navigation/bottom-tabs": "^7.3.14",
     "@react-navigation/native": "^7.1.9",
     "@react-navigation/native-stack": "^7.3.13",
+    "android": "^0.0.8",
     "react": "19.0.0",
     "react-native": "0.79.2",
     "react-native-gesture-handler": "^2.25.0",
@@ -31,6 +32,9 @@
     "react-native-svg-transformer": "^1.5.1",
     "react-native-vector-icons": "^10.2.0",
     "zod": "^3.25.46"
+    "react-native-sound-player": "^0.14.5",
+    "react-native-sqlite-storage": "npm:@boltcode/react-native-sqlite-storage",
+    "react-native-tts": "^4.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

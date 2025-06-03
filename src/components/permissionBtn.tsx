@@ -5,6 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   View,
+  Platform,
+  Linking,
 } from 'react-native';
 import {RESULTS} from 'react-native-permissions';
 import {
@@ -13,6 +15,7 @@ import {
   requestPermission,
 } from '../services/permissions/initPermissions';
 import {colors} from '../utils/theme';
+
 
 interface PermissionButtonProps {
   permissionType: PermissionType;
@@ -56,11 +59,26 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
     setLoading(true);
 
     try {
-      const status = await requestPermission(permissionType);
-      setPermissionStatus(status);
+      // For special Android permissions, direct to settings
+      if (
+        (permissionType === 'system_alert_window' ||
+          permissionType === 'dnd_access') &&
+        Platform.OS === 'android'
+      ) {
+        // Open device settings for these special permissions
+        await Linking.openSettings();
+        setPermissionStatus(RESULTS.GRANTED); // Assume granted after settings visit
 
-      if (status === RESULTS.GRANTED && onPermissionGranted) {
-        onPermissionGranted();
+        if (onPermissionGranted) {
+          onPermissionGranted();
+        }
+      } else {
+        const status = await requestPermission(permissionType);
+        setPermissionStatus(status);
+
+        if (status === RESULTS.GRANTED && onPermissionGranted) {
+          onPermissionGranted();
+        }
       }
     } catch (error) {
       console.error(`Error requesting ${permissionType} permission:`, error);
@@ -96,7 +114,6 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
       ]}
       onPress={handleRequestPermission}
       disabled={isDisabled || loading}>
-      {' '}
       {loading ? (
         <ActivityIndicator size="small" color={colors.white} />
       ) : (

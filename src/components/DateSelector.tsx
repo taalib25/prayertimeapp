@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
   },
   selectedDateText: {
     color: colors.white,
+
   },
 });
 

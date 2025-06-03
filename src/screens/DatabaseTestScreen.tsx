@@ -9,11 +9,15 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import {savePrayerTimes, getPrayerTimes, closeDatabase} from '../services/db';
 import {PrayerTimes} from '../models/PrayerTimes';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
-
+import {
+  savePrayerTimes,
+  getPrayerTimes,
+  closeDatabase,
+  initDatabase,
+} from '../services/db';
 // Helper to get current date in YYYY-MM-DD format
 const getCurrentDateString = () => {
   const today = new Date();
@@ -53,6 +57,15 @@ const DatabaseTestScreen = () => {
     setLog(prevLog => [message, ...prevLog]);
   };
 
+
+  const handleInitDB = async () => {
+    try {
+      await initDatabase();
+      addToLog('Database initialized successfully.');
+    } catch (error) {
+      addToLog(`Database initialization failed: ${error}`);
+    }
+  };
   const handleSaveData = async () => {
     const prayerData: PrayerTimes = {
       date: selectedDate,
@@ -92,6 +105,43 @@ const DatabaseTestScreen = () => {
     } catch (error) {
       addToLog(`Failed to fetch data: ${error}`);
     }
+  };
+
+  // Add prayer times for multiple days
+  const handleAddMultipleDays = async () => {
+    try {
+      for (let i = 0; i < 7; i++) {
+        const date = addDays(getCurrentDateString(), i);
+        // Slightly vary prayer times for each day
+        const prayerData: PrayerTimes = {
+          date: date,
+          fajr: adjustTime(fajr, i),
+          sunrise: adjustTime(sunrise, i),
+          dhuhr: adjustTime(dhuhr, i),
+          asr: adjustTime(asr, i),
+          maghrib: adjustTime(maghrib, i),
+          isha: adjustTime(isha, i),
+        };
+        await savePrayerTimes(date, prayerData);
+      }
+      addToLog('Added prayer times for the next 7 days');
+    } catch (error) {
+      addToLog(`Failed to add multiple days: ${error}`);
+    }
+  };
+
+  // Helper to adjust time slightly for demo purposes
+  const adjustTime = (time: string, dayOffset: number): string => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const minuteAdjust = dayOffset * 2; // 2 minutes later each day
+
+    const date = new Date();
+    date.setHours(hours, minutes + minuteAdjust, 0, 0);
+
+    return `${date.getHours().toString().padStart(2, '0')}:${date
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   const handleCloseDB = async () => {
@@ -140,6 +190,7 @@ const DatabaseTestScreen = () => {
       .padStart(2, '0')}`;
   };
 
+
   // Date selector buttons
   const renderDateSelector = () => {
     const dates = [];
@@ -177,7 +228,12 @@ const DatabaseTestScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Database Test</Text>
+        <Text style={styles.title}>Database Test</Text> {renderDateSelector()}
+        {/* Prayer Time Input Section */}
+        <View style={styles.inputSection}>
+          <Text style={styles.sectionTitle}>
+            🕌 Prayer Times for {selectedDate}
+          </Text>
 
         <Text style={styles.subHeader}>Selected Date: {selectedDate}</Text>
         {renderDateSelector()}
@@ -192,6 +248,7 @@ const DatabaseTestScreen = () => {
               placeholder="05:00"
             />
           </View>
+
           <View style={styles.inputRow}>
             <Text style={styles.inputLabel}>Sunrise:</Text>
             <TextInput
@@ -238,10 +295,13 @@ const DatabaseTestScreen = () => {
             />
           </View>
         </View>
-
         <View style={styles.buttonContainer}>
           <Button title="Save Prayer Times" onPress={handleSaveData} />
         </View>
+        <View style={styles.buttonContainer}>
+
+          <Button title="Save Prayer Times" onPress={handleSaveData} />
+        </View>{' '}
         <View style={styles.buttonContainer}>
           <Button title="Get Prayer Times" onPress={handleGetData} />
         </View>
@@ -254,10 +314,8 @@ const DatabaseTestScreen = () => {
         <View style={styles.buttonContainer}>
           <Button title="Close Database" onPress={handleCloseDB} />
         </View>
-
         <Text style={styles.subHeader}>Fetched Data:</Text>
         <Text style={styles.dataText}>{fetchedData || 'None'}</Text>
-
         <Text style={styles.subHeader}>Logs:</Text>
         <ScrollView style={styles.logContainer} nestedScrollEnabled={true}>
           {log.map((item, index) => (
@@ -342,6 +400,40 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 15,
     marginVertical: 10,
+=======
+    marginBottom: 20,
+  },
+  dateButton: {
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  selectedDateButton: {
+    backgroundColor: '#0056b3',
+  },
+  dateButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  selectedDateButtonText: {
+    textDecorationLine: 'underline',
+  },
+  inputSection: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+    textAlign: 'center',
+
   },
   inputRow: {
     flexDirection: 'row',
@@ -351,14 +443,18 @@ const styles = StyleSheet.create({
   inputLabel: {
     ...typography.bodyMedium,
     width: 70,
+
+
   },
   timeInput: {
     flex: 1,
     borderWidth: 1,
     borderColor: '#ddd',
+
     borderRadius: 4,
     padding: 8,
     ...typography.body,
+    backgroundColor: '#f9f9f9',
   },
 });
 

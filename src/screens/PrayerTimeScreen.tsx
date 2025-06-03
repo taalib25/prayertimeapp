@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
@@ -37,6 +38,9 @@ type PrayerTimeScreenNavigationProp = NativeStackNavigationProp<
 const PrayerTimeScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation<PrayerTimeScreenNavigationProp>();
+  const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const [dbInitialized, setDbInitialized] = useState(false);
+
 
   // Format prayer times for the cards component
   const formatPrayerTimesForCards = () => {
@@ -64,6 +68,7 @@ const PrayerTimeScreen = () => {
           mosqueLocation="Gothatuwa"
           avatarImage={require('../assets/images/profile.png')} // Optional: add your local image
         />{' '}
+
         {isLoading ? (
           <ActivityIndicator
             size="large"
@@ -159,6 +164,7 @@ const styles = StyleSheet.create({
     color: 'red',
     marginVertical: 20,
     paddingHorizontal: 20,
+
   },
   sectionHeader: {
     flexDirection: 'row',
