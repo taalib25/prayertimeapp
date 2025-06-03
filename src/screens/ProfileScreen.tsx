@@ -45,10 +45,7 @@ const ProfileScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-        </View>
-
+       
         <MeetingCard
           title={personalizedMeeting.title}
           subtitle={personalizedMeeting.subtitle}

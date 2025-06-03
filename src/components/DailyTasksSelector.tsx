@@ -95,9 +95,6 @@ const getMockData = (): DayTasks[] => {
         {id: 't5', title: 'ISHA at Masjid', completed: false},
         {id: 't6', title: 'Make Dua for family', completed: false},
         {id: 't7', title: 'Reflect on day', completed: false},
-        {id: 't8', title: 'Seek forgiveness', completed: false},
-        {id: 't9', title: 'Practice gratitude', completed: false},
-        {id: 't10', title: 'Help someone in need', completed: false},
       ],
     },
   ];
@@ -278,6 +275,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginBottom: spacing.sm, // Reduced for more compact layout
     marginLeft: spacing.xs,
+    lineHeight: 26, // Reduced line height for more compact text
   },
   taskItemContainer: {
     backgroundColor: colors.white,

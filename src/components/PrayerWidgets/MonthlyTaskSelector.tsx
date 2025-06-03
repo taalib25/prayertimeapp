@@ -9,18 +9,13 @@ import {
 import PagerView from 'react-native-pager-view';
 import Animated, {
   useSharedValue,
-  useAnimatedStyle,
   useAnimatedProps,
-  withSpring,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
 import Svg, {Circle} from 'react-native-svg';
 import {colors} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface MonthData {
   monthLabel: string;
@@ -93,20 +88,23 @@ const CompactChallengeCard: React.FC<{
   isVisible,
 }) => {
   const progress = useSharedValue(0);
+  const exceededGoal = current > total;
+  const actualProgressColor = exceededGoal ? colors.success : progressColor;
 
   React.useEffect(() => {
     if (isVisible) {
-      progress.value = withTiming((current / total) * 100, {
+      // Calculate appropriate percentage, but cap at 100% for the circle visual
+      const progressPercentage = exceededGoal ? 100 : (current / total) * 100;
+      progress.value = withTiming(progressPercentage, {
         duration: 1200,
       });
     } else {
       progress.value = 0;
     }
-  }, [current, total, isVisible]);
+  }, [current, total, isVisible, exceededGoal]);
 
   const animatedProps = useAnimatedProps(() => {
     const percentage = progress.value;
-    const strokeWidth = 8;
     const radius = 35;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -118,27 +116,39 @@ const CompactChallengeCard: React.FC<{
 
   return (
     <View style={[styles.compactCard, {backgroundColor}]}>
-      <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
+      <Text style={[styles.compactTitle, {color: textColor}]}>{title} </Text>
       <Text style={[styles.compactSubtitle, {color: textColor}]}>
         {subtitle}
       </Text>
 
       <View style={styles.compactProgressContainer}>
-        <Svg height="90" width="90" viewBox="0 0 80 80">
+        <Svg height="150" width="150" viewBox="0 0 80 80">
           <Circle
             cx="40"
             cy="40"
             r="35"
             stroke={colors.background.surface}
-            strokeWidth="8"
+            strokeWidth="6"
             fill="transparent"
           />
+          {/* Show completed circle when exceeding goal */}
+          {exceededGoal && (
+            <Circle
+              cx="40"
+              cy="40"
+              r="35"
+              stroke={colors.background.surface}
+              strokeWidth="6"
+              strokeDasharray="3,3"
+              fill="transparent"
+            />
+          )}
           <AnimatedCircle
             cx="40"
             cy="40"
             r="35"
-            stroke={progressColor}
-            strokeWidth="8"
+            stroke={actualProgressColor}
+            strokeWidth="6"
             strokeDasharray={`${2 * Math.PI * 35}`}
             strokeLinecap="round"
             fill="transparent"
@@ -148,9 +158,17 @@ const CompactChallengeCard: React.FC<{
         </Svg>
 
         <View style={styles.compactProgressText}>
-          <Text style={[styles.compactProgressValue, {color: textColor}]}>
+          <Text
+            style={[
+              styles.compactProgressValue,
+              {color: exceededGoal ? colors.success : textColor},
+            ]}>
             {current}
-            <Text style={[styles.compactProgressTotal, {color: textColor}]}>
+            <Text
+              style={[
+                styles.compactProgressTotal,
+                {color: exceededGoal ? colors.success : textColor},
+              ]}>
               /{total}
             </Text>
           </Text>
@@ -283,7 +301,7 @@ const spacing = {
 
 const styles = StyleSheet.create({
   container: {
-    height: 400,
+    height: 550,
     backgroundColor: colors.background.light,
     borderRadius: 20,
     marginVertical: spacing.md,
@@ -322,8 +340,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.sm,
     marginBottom: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    // alignItems: 'flex-start',
+    // justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
@@ -331,9 +349,10 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   compactTitle: {
-    ...typography.bodyMedium,
-    textAlign: 'center',
-    marginBottom: 2,
+    ...typography.h3,
+    textAlign: 'left',
+    lineHeight: 24,
+    marginBottom: 6,
   },
   compactSubtitle: {
     ...typography.body,
@@ -356,7 +375,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   compactProgressTotal: {
-    ...typography.body,
+    ...typography.bodySmall,
+  },
+  exceededText: {
+    ...typography.caption,
+    color: colors.success,
+    position: 'absolute',
+    bottom: -18,
+    textAlign: 'center',
   },
   paginationContainer: {
     flexDirection: 'row',
