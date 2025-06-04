@@ -135,10 +135,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
       await login(email, phoneNumber);
 
       // Navigate to main app
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'MainApp'}],
-      });
+      navigation.replace('MainApp');
     } catch (error) {
       // Error handling would go here
     } finally {

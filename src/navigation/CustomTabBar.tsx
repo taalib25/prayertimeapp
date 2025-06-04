@@ -45,6 +45,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
           };
 
           const iconName = getIconName(route.name);
+          const iconColor = isFocused ? colors.accent : colors.text.secondary; // Determine color based on focus
 
           return (
             <TouchableOpacity
@@ -56,10 +57,13 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               <SvgIcon
                 name={iconName}
                 size={24}
-                style={isFocused ? styles.activeIcon : styles.inactiveIcon}
+                color={iconColor} // Pass the determined color to SvgIcon
               />
               <Text
-                style={[styles.tabLabel, isFocused && styles.focusedTabLabel]}>
+                style={[
+                  styles.tabLabel,
+                  isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel, // Apply appropriate label style
+                ]}>
                 {route.name}
               </Text>
             </TouchableOpacity>
@@ -95,22 +99,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
   },
-  activeIcon: {
-    opacity: 1,
-    // We can't directly change the SVG fill color, but we can modify opacity
-  },
-  inactiveIcon: {
-    opacity: 0.6,
-  },
   tabLabel: {
     ...typography.caption,
     fontSize: 10,
-    color: colors.text.muted,
     marginTop: 2,
   },
   focusedTabLabel: {
-    color: colors.text.blue,
-
+    color: colors.accent, // Match focused icon color
+  },
+  unfocusedTabLabel: {
+    color: colors.text.secondary, // Match unfocused icon color
   },
 });
 

@@ -18,6 +18,11 @@ import {
   closeDatabase,
   initDatabase,
 } from '../services/db';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Helper to get current date in YYYY-MM-DD format
 const getCurrentDateString = () => {
@@ -39,6 +44,7 @@ const addDays = (dateStr: string, days: number): string => {
 };
 
 const DatabaseTestScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [log, setLog] = useState<string[]>([]);
   const [fetchedData, setFetchedData] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -191,9 +197,16 @@ const DatabaseTestScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Database Test</Text>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Database Test</Text>
+        </View>
         {renderDateSelector()}
-        
+
         {/* Prayer Time Input Section */}
         <View style={styles.inputSection}>
           <Text style={styles.sectionTitle}>
@@ -278,10 +291,10 @@ const DatabaseTestScreen = () => {
         <View style={styles.buttonContainer}>
           <Button title="Close Database" onPress={handleCloseDB} />
         </View>
-        
+
         <Text style={styles.subHeader}>Fetched Data:</Text>
         <Text style={styles.dataText}>{fetchedData || 'None'}</Text>
-        
+
         <Text style={styles.subHeader}>Logs:</Text>
         <ScrollView style={styles.logContainer} nestedScrollEnabled={true}>
           {log.map((item, index) => (
@@ -303,9 +316,22 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    padding: 10,
+    marginRight: 10,
+  },
+  backButtonText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
+  },
   title: {
     ...typography.h2,
-    marginBottom: 20,
+    flex: 1,
     textAlign: 'center',
   },
   buttonContainer: {

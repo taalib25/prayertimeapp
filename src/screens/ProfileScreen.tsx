@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   bottomSpacing: {
+    marginBottom:80,
     height: spacing.xxl,
   },
 });

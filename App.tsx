@@ -22,6 +22,7 @@ import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import FakeCallScreen from './src/screens/FakeCallScreen';
+import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 
 import {
   NavigationContainer,
@@ -110,6 +111,7 @@ function AppNavigator() {
         ) : isAuthenticated ? (
           <>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+            <Stack.Screen name="DatabaseTest" component={DatabaseTestScreen} />
             <Stack.Screen name="FakeCallScreen" component={FakeCallScreen} />
           </>
         ) : (

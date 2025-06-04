@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet, Animated} from 'react-native';
+import {View, StyleSheet, Animated, Text} from 'react-native';
 import {colors} from '../utils/theme';
 import {useAuth} from '../contexts/AuthContext';
 import SvgIcon from '../components/SvgIcon';

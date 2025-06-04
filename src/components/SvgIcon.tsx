@@ -43,8 +43,21 @@ const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
     return null;
   }
 
+  // Pass the color prop to the SVG component, typically as 'fill'
+  // If your SVGs use 'stroke' for color, you might need to adjust this
+  // or pass both fill and stroke if necessary.
+  const iconProps: { width: number; height: number; style?: ViewStyle; fill?: string } = {
+    width: size,
+    height: size,
+    style: style,
+  };
+
+  if (color) {
+    iconProps.fill = color;
+  }
+
   return (
-    <IconComponent width={size} height={size} style={style} />
+    <IconComponent {...iconProps} />
   );
 };
 
