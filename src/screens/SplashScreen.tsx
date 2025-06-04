@@ -25,7 +25,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
       try {
         // Wait for minimum splash screen time and authentication check
         await Promise.all([
-          new Promise(resolve => setTimeout(resolve, 2000)), // 2 seconds minimum display time
+          new Promise(resolve => setTimeout(resolve, 6000)), // 2 seconds minimum display time
           checkAuthState().then(isAuthenticated => {
             onAuthCheck(isAuthenticated);
           }),
@@ -42,7 +42,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, {opacity: fadeAnim}]}>
-        <SvgIcon name="fajrlogo" size={220} color={colors.primary} />
+        <SvgIcon name="fajrlogo" size={240} color={colors.accent} />
       </Animated.View>
     </View>
   );

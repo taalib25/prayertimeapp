@@ -7,11 +7,11 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomButton from '../components/CustomButton';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
+import {colors} from '../utils/theme';
 
 type OnboardingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -20,15 +20,21 @@ type OnboardingScreenNavigationProp = NativeStackNavigationProp<
 
 interface Props {
   navigation: OnboardingScreenNavigationProp;
+  onOnboardingComplete: () => Promise<void>; // New prop
 }
 
-const OnboardingScreen: React.FC<Props> = ({navigation}) => {
+const OnboardingScreen: React.FC<Props> = ({
+  navigation,
+  onOnboardingComplete,
+}) => {
   const handleStartNow = async () => {
     try {
-      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      navigation.replace('Login');
+      await onOnboardingComplete();
+      // No explicit navigation.replace needed here.
+      // AppNavigator will re-render and display the appropriate screen (Login).
     } catch (error) {
-      console.error('Error saving onboarding status:', error);
+      console.error('Error during onOnboardingComplete:', error);
+      // Handle error if the callback itself throws one, though unlikely with current setup.
     }
   };
 
@@ -74,7 +80,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   startButton: {
-    backgroundColor: '#1B5E20',
+    backgroundColor: colors.accent,
     borderRadius: 12,
     height: 56,
   },

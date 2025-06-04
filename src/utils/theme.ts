@@ -12,6 +12,7 @@ export const colors = {
   sage: '#A7F3D0', // Sage green
   forest: '#064E3B', // Forest green
   lime: '#84CC16', // Lime green
+  lightBlue :"#04BFDA",
 
   text: {
     primary: '#FFFFFF',

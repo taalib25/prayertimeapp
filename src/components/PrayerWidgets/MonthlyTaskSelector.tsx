@@ -214,7 +214,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             current={monthData.zikr.current}
             total={monthData.zikr.total}
             backgroundColor="#E8F5E8"
-            progressColor={colors.emerald}
+            progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
@@ -225,7 +225,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             current={monthData.quran.current}
             total={monthData.quran.total}
             backgroundColor="#E3F2FD"
-            progressColor={colors.accent}
+            progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
@@ -236,7 +236,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             current={monthData.fajr.current}
             total={monthData.fajr.total}
             backgroundColor="#FFF3E0"
-            progressColor={colors.success}
+            progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
@@ -247,7 +247,7 @@ const MonthlyChallengeSelector: React.FC = () => {
             current={monthData.isha.current}
             total={monthData.isha.total}
             backgroundColor="#FCE4EC"
-            progressColor={colors.error}
+            progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
           />
@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   monthTitle: {
-    ...typography.h3,
-    color: colors.primary,
+    ...typography.h2,
+    color: colors.text.prayerBlue,
     textAlign: 'left',
   },
   compactCardsGrid: {

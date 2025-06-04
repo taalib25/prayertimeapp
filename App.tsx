@@ -4,7 +4,7 @@
  *
  * @format
  */
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 
 import {
   SafeAreaView,
@@ -23,7 +23,10 @@ import {DatabaseProvider} from './src/services/db/databaseProvider';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import FakeCallScreen from './src/screens/FakeCallScreen';
 
-import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  NavigationContainerRef,
+} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 // Define screen names and their params
@@ -34,7 +37,7 @@ export type RootStackParamList = {
   MainApp: undefined;
   DatabaseTest: undefined;
   PrayerChallenge: undefined;
-  FakeCallScreen : undefined;
+  FakeCallScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,9 +66,20 @@ function AppNavigator() {
     }
   };
 
+  const handleOnboardingFinish = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      setHasSeenOnboarding(true);
+    } catch (error) {
+      console.error('Failed to save onboarding status:', error);
+      // Optionally, handle the error, e.g., show an alert
+      // For now, we'll update the state to proceed in the current session
+      setHasSeenOnboarding(true);
+    }
+  }, [setHasSeenOnboarding]);
+
   const handleAuthCheck = (authenticated: boolean) => {
     setShowingSplash(false);
-
   };
 
   // Show splash screen while checking auth and onboarding
@@ -79,15 +93,25 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
         }}>
         {!hasSeenOnboarding ? (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Onboarding">
+            {props => (
+              <OnboardingScreen
+                {...props}
+                onOnboardingComplete={handleOnboardingFinish}
+              />
+            )}
+          </Stack.Screen>
         ) : isAuthenticated ? (
-          <><Stack.Screen name="MainApp" component={BottomTabNavigator} /><Stack.Screen name="FakeCallScreen" component={FakeCallScreen} /></>
+          <>
+            <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+            <Stack.Screen name="FakeCallScreen" component={FakeCallScreen} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
@@ -114,14 +138,12 @@ function App(): React.JSX.Element {
   return (
     <DatabaseProvider>
       <AuthProvider>
-
         <SafeAreaView style={backgroundStyle}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={backgroundStyle.backgroundColor}
           />
           <AppNavigator />
-
         </SafeAreaView>
       </AuthProvider>
     </DatabaseProvider>

@@ -271,11 +271,11 @@ const styles = StyleSheet.create({
     minHeight: 340, // Ensure content is taller than container to enable scrolling
   },
   dayLabel: {
-    ...typography.h3,
+    ...typography.h2,
     color: colors.text.prayerBlue,
-    marginBottom: spacing.sm, // Reduced for more compact layout
+    marginBottom: spacing.md, // Reduced for more compact layout
     marginLeft: spacing.xs,
-    lineHeight: 26, // Reduced line height for more compact text
+    lineHeight: 30, // Reduced line height for more compact text
   },
   taskItemContainer: {
     backgroundColor: colors.white,
