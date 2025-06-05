@@ -15,7 +15,7 @@ const adapter = new SQLiteAdapter({
     maxVersion: 1,
     sortedMigrations: [],
   },
-  jsi: true, // Enable JSI for better performance
+  jsi: false, // Enable JSI for better performance
   onSetUpError: error => {
     console.error('Database setup error:', error);
   },
