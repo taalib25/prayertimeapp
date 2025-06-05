@@ -19,7 +19,8 @@ import {
   bulkImportPrayerTimes,
   PrayerTimesData,
   getAvailableDates,
-} from '../services/db/watermelonServices';
+  import2025PrayerTimes,
+} from '../services/db/PrayerServices';
 import database from '../services/db';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -57,42 +58,14 @@ const DatabaseTestScreen = () => {
     }
   };
 
-  // Test data import
-  const handleTestImport = async () => {
+  // Import complete 2025 prayer times
+  const handleImport2025Data = async () => {
     try {
-      addToLog('📥 Testing data import...');
-
-      const sampleData = [
-        {
-          date: '2025-06-01',
-          day: 'Sunday',
-          fajr: '4:09',
-          shuruq: '5:23',
-          dhuha: '5:48',
-          dhuhr: '11:42',
-          asr: '15:05',
-          maghrib: '17:55',
-          isha: '19:06',
-          qibla_hour: '14:27',
-        },
-        {
-          date: '2025-06-06',
-          day: 'Friday',
-          fajr: '4:09',
-          shuruq: '5:24',
-          dhuha: '5:49',
-          dhuhr: '11:43',
-          asr: '15:07',
-          maghrib: '17:56',
-          isha: '19:08',
-          qibla_hour: '14:40',
-        },
-      ];
-
-      const result = await bulkImportPrayerTimes(sampleData);
-      addToLog(`✅ Imported ${result.imported} records`);
+      addToLog('📥 Importing complete 2025 prayer times...');
+      const result = await import2025PrayerTimes();
+      addToLog(`✅ Successfully imported ${result.imported} records for 2025`);
     } catch (error) {
-      addToLog(`❌ Import error: ${error}`);
+      addToLog(`❌ Error importing 2025 data: ${error}`);
     }
   };
 
@@ -102,9 +75,10 @@ const DatabaseTestScreen = () => {
       addToLog(`🔍 Getting prayer times for ${selectedDate}...`);
 
       const prayerTime = await getPrayerTimesForDate(selectedDate);
+
       if (prayerTime) {
         setCustomPrayerTimes(prayerTime);
-        addToLog(`✅ Found prayer times: Fajr ${prayerTime.fajr}`);
+        addToLog(`✅ Found prayer times: Fajr ${prayerTime.shuruq}`);
       } else {
         addToLog(`❌ No prayer times found for ${selectedDate}`);
         setCustomPrayerTimes(null);
@@ -154,8 +128,8 @@ const DatabaseTestScreen = () => {
 
             <TouchableOpacity
               style={styles.testButton}
-              onPress={handleTestImport}>
-              <Text style={styles.buttonText}>Import Sample Data</Text>
+              onPress={handleImport2025Data}>
+              <Text style={styles.buttonText}>Import 2025 Data</Text>
             </TouchableOpacity>
           </View>
 

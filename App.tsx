@@ -29,6 +29,7 @@ import {
   NavigationContainerRef,
 } from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { initializePrayerTimesDatabase } from './src/services/db/dbInitalizer';
 
 // Define screen names and their params
 export type RootStackParamList = {
@@ -53,6 +54,7 @@ function AppNavigator() {
 
   useEffect(() => {
     checkOnboardingStatus();
+    initializePrayerTimesDatabase();
   }, []);
 
   const checkOnboardingStatus = async () => {

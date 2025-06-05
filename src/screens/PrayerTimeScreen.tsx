@@ -9,9 +9,6 @@ import {
   StatusBar,
 } from 'react-native';
 
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 
@@ -20,38 +17,12 @@ import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
-
-// Dummy prayer times data to match the image
-const DUMMY_PRAYER_TIMES = [
-  {name: 'fajr', displayName: 'Fajr', time: '04:41', isActive: false},
-  {name: 'dhuhr', displayName: 'Dhuhr', time: '12:10', isActive: false},
-  {name: 'asr', displayName: 'Asr', time: '03:23', isActive: false},
-  {name: 'maghrib', displayName: 'Maghrib', time: '06:20', isActive: true},
-  {name: 'isha', displayName: 'Isha', time: '07:30', isActive: false},
-];
-
-type PrayerTimeScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'MainApp'
->;
+import { usePrayerTimes } from '../hooks/usePrayerTimes';
 
 const PrayerTimeScreen = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const navigation = useNavigation<PrayerTimeScreenNavigationProp>();
-  const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
-  const [dbInitialized, setDbInitialized] = useState(false);
-
-
-  // Format prayer times for the cards component
-  const formatPrayerTimesForCards = () => {
-    return DUMMY_PRAYER_TIMES.map(prayer => ({
-      name: prayer.name.toLowerCase(),
-      displayName: prayer.displayName,
-      time: prayer.time,
-      isActive: prayer.isActive,
-    }));
-  };
-
+  // const [isLoading, setIsLoading] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const {prayerTimes, isLoading, error} = usePrayerTimes(selectedDate);
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -67,7 +38,7 @@ const PrayerTimeScreen = () => {
           mosqueName="Masjid Ul Jabbar Jumma Masjid"
           mosqueLocation="Gothatuwa"
           avatarImage={require('../assets/images/profile.png')} // Optional: add your local image
-        />{' '}
+        />
 
         {isLoading ? (
           <ActivityIndicator
@@ -78,7 +49,7 @@ const PrayerTimeScreen = () => {
         ) : (
           <View style={styles.container}>
             {/* Prayer Time Cards */}
-            <PrayerTimeCards prayers={DUMMY_PRAYER_TIMES} />
+            <PrayerTimeCards prayers={prayerTimes} />
 
             {/* New Today Section */}
             <View style={styles.sectionHeader}>
