@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,12 @@ import {
 import PagerView from 'react-native-pager-view';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {useDailyTasks} from '../hooks/useDailyTasks';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// Mock user ID - in real app, get from auth context
+const MOCK_USER_ID = 1;
 
 interface Task {
   id: string;
@@ -167,27 +171,47 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
 };
 
 const DailyTasksSelector: React.FC = () => {
-  const [dailyData, setDailyData] = useState<DayTasks[]>(getMockData());
+  const today = new Date().toISOString().split('T')[0];
+  const {dailyTasks, isLoading, toggleSpecialTask} = useDailyTasks({
+    uid: MOCK_USER_ID,
+    date: today,
+  });
+
+  const handleTaskToggle = useCallback(
+    (dateISO: string, taskId: string) => {
+      if (dateISO === today) {
+        toggleSpecialTask(taskId);
+      } else {
+        // Handle historical data differently if needed
+        console.log(`Historical task toggle for ${dateISO}: ${taskId}`);
+      }
+    },
+    [today, toggleSpecialTask],
+  );
+
+  // Transform dailyTasks to match existing component structure
+  const transformedDailyData = useMemo(() => {
+    if (!dailyTasks) return getMockData();
+
+    const todayData = {
+      dateISO: today,
+      dayLabel: 'Today',
+      tasks: dailyTasks.specialTasks.map(task => ({
+        id: task.id,
+        title: task.title,
+        completed: task.completed,
+      })),
+    };
+
+    // Keep mock data for yesterday and day before for now
+    const mockData = getMockData();
+    return [mockData[0], mockData[1], todayData];
+  }, [dailyTasks, today]);
+
   const [currentPage, setCurrentPage] = useState(
-    dailyData.length > 0 ? dailyData.length - 1 : 0,
+    transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0,
   );
   const pagerRef = useRef<PagerView>(null);
-
-  const handleTaskToggle = (dateISO: string, taskId: string) => {
-    setDailyData(prevData =>
-      prevData.map(day => {
-        if (day.dateISO === dateISO) {
-          return {
-            ...day,
-            tasks: day.tasks.map(task =>
-              task.id === taskId ? {...task, completed: !task.completed} : task,
-            ),
-          };
-        }
-        return day;
-      }),
-    );
-  };
 
   const handlePageSelected = (e: any) => {
     setCurrentPage(e.nativeEvent.position);
@@ -198,9 +222,11 @@ const DailyTasksSelector: React.FC = () => {
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={dailyData.length > 0 ? dailyData.length - 1 : 0}
+        initialPage={
+          transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0
+        }
         onPageSelected={handlePageSelected}>
-        {dailyData.map((dayTasks, index) => (
+        {transformedDailyData.map((dayTasks, index) => (
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
             <DayView dayTasks={dayTasks} onTaskToggle={handleTaskToggle} />
           </View>
@@ -209,7 +235,7 @@ const DailyTasksSelector: React.FC = () => {
 
       {/* Pagination Indicator */}
       <View style={styles.paginationContainer}>
-        {dailyData.map((_, index) => (
+        {transformedDailyData.map((_, index) => (
           <TouchableOpacity
             key={index}
             style={[

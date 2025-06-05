@@ -55,3 +55,48 @@ export interface PrayerNotificationSettings {
   calculation_method: string;
   reminder_minutes_before: number;
 }
+
+/**
+ * Daily task interfaces
+ */
+export interface DailyTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface DailyTasksSummary {
+  date: string;
+  dayLabel: string;
+  totalTasks: number;
+  completedTasks: number;
+  prayers: {
+    fajr: PrayerCompletionStatus;
+    dhuhr: PrayerCompletionStatus;
+    asr: PrayerCompletionStatus;
+    maghrib: PrayerCompletionStatus;
+    isha: PrayerCompletionStatus;
+  };
+  specialTasks: DailyTask[];
+  zikrCount: number;
+  quranMinutes: number;
+  completionPercentage: number;
+}
+
+export interface PrayerCompletionStatus {
+  status: 'pending' | 'completed' | 'missed' | 'jamath' | 'individual' | 'qaza';
+  time?: string;
+  completedAt?: Date;
+}
+
+/**
+ * Monthly challenge data
+ */
+export interface MonthlyGoals {
+  zikr: {current: number; total: number};
+  quran: {current: number; total: number};
+  fajr: {current: number; total: number};
+  isha: {current: number; total: number};
+  charity: {current: number; total: number};
+  fasting: {current: number; total: number};
+}

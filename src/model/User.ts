@@ -4,6 +4,7 @@ import {field, date, readonly} from '@nozbe/watermelondb/decorators';
 export default class UserModel extends Model {
   static table = 'users';
 
+  @field('uid') uid!: number;
   @field('username') username!: string;
   @field('email') email?: string;
   @field('phone_number') phoneNumber?: string;
@@ -20,17 +21,4 @@ export default class UserModel extends Model {
 
   @readonly @date('created_at') createdAt!: Date;
   @readonly @date('updated_at') updatedAt!: Date;
-
-  // Helper methods
-  get parsedPrayerSettings(): any {
-    try {
-      return JSON.parse(this.prayerSettings);
-    } catch {
-      return {};
-    }
-  }
-
-  updatePrayerSettings(settings: any): void {
-    this.prayerSettings = JSON.stringify(settings);
-  }
 }
