@@ -1,8 +1,6 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import PrayerTimesModel from '../../model/PrayerTimes';
-import PrayerTrackingModel from '../../model/PrayerTracking';
-
 export interface PrayerTimesData {
   date: string;
   day: string;
