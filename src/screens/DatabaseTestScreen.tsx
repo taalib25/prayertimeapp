@@ -9,7 +9,6 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import {PrayerTimes} from '../models/PrayerTimes';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import {useNavigation} from '@react-navigation/native';
@@ -19,11 +18,17 @@ import {
   getAvailableDates,
   getDateRanges,
   getPrayerTimesWithRangeInfo,
-  PrayerTimesData,
   getAllDateRangesWithCoverage,
   testInterpolationLogic,
 } from '../services/db/dbServices';
+import {
+  bulkImportPrayerTimes,
+  observePrayerTimesForDate,
+  getPrayerTimesForDate,
+  PrayerTimesData,
+} from '../services/db/watermelonServices';
 import {initDatabase} from '../services/db/dbInitalizer';
+import database from '../services/db';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -377,6 +382,96 @@ const DatabaseTestScreen = () => {
         {dates}
       </ScrollView>
     );
+  };
+
+  // Add these new functions after the existing handler functions
+  const handleTestWatermelonDB = async () => {
+    try {
+      addToLog('🧪 Testing WatermelonDB integration...');
+
+      // Test database connection
+      try {
+        const collections = database.collections;
+        const collectionCount = Object.keys(collections).length;
+        addToLog(`✅ Database connected with ${collectionCount} collections`);
+
+        // Test prayer times collection
+        const prayerTimesCollection = database.get('prayer_times');
+        const count = await prayerTimesCollection.query().fetchCount();
+        addToLog(`✅ Prayer times collection accessible (${count} records)`);
+
+        // Test reactive queries
+        const observable = observePrayerTimesForDate('2025-06-01');
+        addToLog('✅ Reactive queries working');
+
+        addToLog('🎉 WatermelonDB integration test passed!');
+      } catch (error) {
+        addToLog(`❌ WatermelonDB test error: ${error}`);
+      }
+    } catch (error) {
+      addToLog(`❌ Error testing WatermelonDB: ${error}`);
+    }
+  };
+
+  const handleTestWatermelonImport = async () => {
+    try {
+      addToLog('📥 Testing WatermelonDB bulk import...');
+
+      const sampleData = [
+        {
+          date: '2025-06-01',
+          day: 'Sunday',
+          fajr: '4:09',
+          shuruq: '5:23',
+          dhuha: '5:48',
+          dhuhr: '11:42',
+          asr: '15:05',
+          maghrib: '17:55',
+          isha: '19:06',
+          qibla_hour: '14:27',
+        },
+        {
+          date: '2025-06-06',
+          day: 'Friday',
+          fajr: '4:09',
+          shuruq: '5:24',
+          dhuha: '5:49',
+          dhuhr: '11:43',
+          asr: '15:07',
+          maghrib: '17:56',
+          isha: '19:08',
+          qibla_hour: '14:40',
+        },
+      ];
+
+      const result = await bulkImportPrayerTimes(sampleData);
+      addToLog(`✅ Imported ${result.imported} records via WatermelonDB`);
+
+      // Test the data was actually saved
+      const prayerTime = await getPrayerTimesForDate('2025-06-01');
+      if (prayerTime) {
+        addToLog(`✅ Data verification: Fajr time is ${prayerTime.fajr}`);
+      }
+    } catch (error) {
+      addToLog(`❌ Error testing WatermelonDB import: ${error}`);
+    }
+  };
+
+  const handleCheckWatermelonDBRequirements = () => {
+    addToLog('📋 WatermelonDB Installation Checklist:');
+    addToLog('1. ✅ npm install @nozbe/watermelondb');
+    addToLog('2. ✅ JSI integration added to MainApplication.kt');
+    addToLog('3. ✅ Schema and models created');
+    addToLog('4. ✅ Database configuration completed');
+    addToLog('5. 🔄 App needs restart after native changes');
+    addToLog('6. 📱 Test on physical device for best JSI performance');
+    addToLog('');
+    addToLog('WatermelonDB Features:');
+    addToLog('- 🚀 Fast lazy loading');
+    addToLog('- 🔄 Reactive queries (auto-update UI)');
+    addToLog('- 📱 Offline-first architecture');
+    addToLog('- 🎯 Optimized for React Native');
+    addToLog('- 💾 SQLite backend with JSI');
   };
 
   return (

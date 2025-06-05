@@ -1,19 +1,9 @@
 import {getDatabase} from './dbInitalizer';
-
-export interface PrayerTimesData {
-  date: string;
-  day: string;
-  fajr: string;
-  shuruq: string;
-  dhuha: string;
-  dhuhr: string;
-  asr: string;
-  maghrib: string;
-  isha: string;
-  qibla_hour: string | null;
-  originalDate?: string;
-  isInterpolated?: boolean;
-}
+import {
+  getPrayerTimesForDate as getWatermelonPrayerTimes,
+  getAvailableDates as getWatermelonAvailableDates,
+  PrayerTimesData,
+} from './watermelonServices';
 
 /**
  * Get prayer times for a specific date with correct range-based lookup
@@ -121,12 +111,12 @@ export const getPrayerTimesForDate = async (
 };
 
 /**
- * Get prayer times with detailed range information - FIXED VERSION
+ * Get prayer times with detailed range information - Updated for WatermelonDB
  */
 export const getPrayerTimesWithRangeInfo = async (
   targetDate: string,
 ): Promise<{
-  prayerTimes: PrayerTimesData | null;
+  prayerTimes: any | null;
   rangeInfo: {
     startDate: string;
     endDate: string | null;
@@ -136,10 +126,8 @@ export const getPrayerTimesWithRangeInfo = async (
 }> => {
   try {
     console.log(`🔍 Getting range info for ${targetDate}`);
-    const db = await getDatabase();
 
-    // Get the prayer times for the target date
-    const prayerTimes = await getPrayerTimesForDate(targetDate);
+    const prayerTimes = await getWatermelonPrayerTimes(targetDate);
 
     if (!prayerTimes) {
       return {prayerTimes: null, rangeInfo: null};
@@ -151,16 +139,13 @@ export const getPrayerTimesWithRangeInfo = async (
     }
 
     // For interpolated results, get the range details
+    const availableDates = await getWatermelonAvailableDates();
     const startDate = prayerTimes.originalDate!;
-
-    // Find the next available date after the source date
-    const [nextResults] = await db.executeSql(
-      'SELECT date FROM prayer_times WHERE date > ? ORDER BY date ASC LIMIT 1',
-      [startDate],
-    );
-
+    const startIndex = availableDates.indexOf(startDate);
     const endDate =
-      nextResults.rows.length > 0 ? nextResults.rows.item(0).date : null;
+      startIndex < availableDates.length - 1
+        ? availableDates[startIndex + 1]
+        : null;
 
     console.log(
       `📊 Range Info - Start: ${startDate}, End: ${endDate || 'end of data'}`,
@@ -244,177 +229,113 @@ export const getAvailableDates = async (): Promise<string[]> => {
 };
 
 /**
- * Get date ranges and their coverage
+ * Legacy compatibility functions
  */
-export const getDateRanges = async (): Promise<
-  Array<{
-    startDate: string;
-    endDate: string | null;
-    daysInRange: number;
-  }>
-> => {
-  try {
-    const dates = await getAvailableDates();
-    const ranges = [];
+export const getDateRanges = async () => {
+  const dates = await getWatermelonAvailableDates();
+  const ranges = [];
 
-    for (let i = 0; i < dates.length; i++) {
-      const startDate = dates[i];
-      const endDate = i < dates.length - 1 ? dates[i + 1] : null;
+  for (let i = 0; i < dates.length; i++) {
+    const startDate = dates[i];
+    const endDate = i < dates.length - 1 ? dates[i + 1] : null;
 
-      let daysInRange = 1;
-      if (endDate) {
-        const start = new Date(startDate + 'T00:00:00');
-        const end = new Date(endDate + 'T00:00:00');
-        daysInRange = Math.floor(
-          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-        );
-      } else {
-        daysInRange = 999; // Ongoing range
-      }
-
-      ranges.push({
-        startDate,
-        endDate,
-        daysInRange,
-      });
+    let daysInRange = 1;
+    if (endDate) {
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T00:00:00');
+      daysInRange = Math.floor(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      );
+    } else {
+      daysInRange = 999; // Ongoing range
     }
 
-    console.log(`📊 Generated ${ranges.length} date ranges`);
-    return ranges;
-  } catch (error) {
-    console.error('❌ Error getting date ranges:', error);
-    throw error;
+    ranges.push({
+      startDate,
+      endDate,
+      daysInRange,
+    });
   }
+
+  return ranges;
 };
 
-/**
- * NEW: Get all date ranges with their coverage
- */
-export const getAllDateRangesWithCoverage = async (): Promise<
-  Array<{
-    startDate: string;
-    endDate: string | null;
-    daysInRange: number;
-    samplePrayerTimes: {
-      fajr: string;
-      dhuhr: string;
-      maghrib: string;
-    };
-  }>
-> => {
-  try {
-    const db = await getDatabase();
+export const getAllDateRangesWithCoverage = async () => {
+  const dates = await getWatermelonAvailableDates();
+  const ranges = [];
 
-    // Get all available dates with their prayer times
-    const [allResults] = await db.executeSql(
-      'SELECT * FROM prayer_times ORDER BY date',
-      [],
-    );
+  for (let i = 0; i < dates.length; i++) {
+    const startDate = dates[i];
+    const endDate = i < dates.length - 1 ? dates[i + 1] : null;
+    const prayerTimes = await getWatermelonPrayerTimes(startDate);
 
-    if (allResults.rows.length === 0) {
-      return [];
+    let daysInRange = 1;
+    if (endDate) {
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T00:00:00');
+      daysInRange = Math.floor(
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      );
+    } else {
+      daysInRange = 999; // Ongoing range
     }
 
-    const ranges = [];
-
-    for (let i = 0; i < allResults.rows.length; i++) {
-      const currentRow = allResults.rows.item(i);
-      const nextRow =
-        i < allResults.rows.length - 1 ? allResults.rows.item(i + 1) : null;
-
-      const startDate = currentRow.date;
-      const endDate = nextRow ? nextRow.date : null;
-
-      let daysInRange = 1;
-      if (endDate) {
-        const start = new Date(startDate + 'T00:00:00');
-        const end = new Date(endDate + 'T00:00:00');
-        daysInRange = Math.floor(
-          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-        );
-      } else {
-        daysInRange = 999; // Ongoing range
-      }
-
-      ranges.push({
-        startDate,
-        endDate,
-        daysInRange,
-        samplePrayerTimes: {
-          fajr: currentRow.fajr,
-          dhuhr: currentRow.dhuhr,
-          maghrib: currentRow.maghrib,
-        },
-      });
-    }
-
-    console.log(`📊 Generated ${ranges.length} date ranges with coverage`);
-    return ranges;
-  } catch (error) {
-    console.error('❌ Error getting date ranges with coverage:', error);
-    throw error;
+    ranges.push({
+      startDate,
+      endDate,
+      daysInRange,
+      samplePrayerTimes: {
+        fajr: prayerTimes?.fajr || '',
+        dhuhr: prayerTimes?.dhuhr || '',
+        maghrib: prayerTimes?.maghrib || '',
+      },
+    });
   }
+
+  return ranges;
 };
 
-/**
- * NEW: Test interpolation with specific examples
- */
-export const testInterpolationLogic = async (): Promise<{
-  availableDates: string[];
-  testResults: Array<{
-    testDate: string;
-    result: 'exact' | 'interpolated' | 'not_found';
-    sourceDate?: string;
-    rangeStart?: string;
-    rangeEnd?: string | null;
-  }>;
-}> => {
-  try {
-    const availableDates = await getAvailableDates();
+export const testInterpolationLogic = async () => {
+  const availableDates = await getWatermelonAvailableDates();
 
-    // Test various dates
-    const testDates = [
-      '2025-06-01', // Should be exact if exists
-      '2025-06-02', // Should interpolate from June 1
-      '2025-06-03', // Should interpolate from June 1
-      '2025-06-05', // Should interpolate from June 1
-      '2025-06-07', // Should interpolate from June 6 (if exists)
-      '2025-12-31', // Should interpolate from last available
-    ];
+  const testDates = [
+    '2025-06-01',
+    '2025-06-02',
+    '2025-06-03',
+    '2025-06-05',
+    '2025-06-07',
+    '2025-12-31',
+  ];
 
-    const testResults = [];
+  const testResults = [];
 
-    for (const testDate of testDates) {
-      console.log(`\n🧪 Testing interpolation for ${testDate}`);
-      const result = await getPrayerTimesWithRangeInfo(testDate);
+  for (const testDate of testDates) {
+    console.log(`\n🧪 Testing interpolation for ${testDate}`);
+    const result = await getPrayerTimesWithRangeInfo(testDate);
 
-      if (!result.prayerTimes) {
-        testResults.push({
-          testDate,
-          result: 'not_found' as const,
-        });
-      } else if (!result.prayerTimes.isInterpolated) {
-        testResults.push({
-          testDate,
-          result: 'exact' as const,
-          sourceDate: result.prayerTimes.date,
-        });
-      } else {
-        testResults.push({
-          testDate,
-          result: 'interpolated' as const,
-          sourceDate: result.prayerTimes.originalDate,
-          rangeStart: result.rangeInfo?.startDate,
-          rangeEnd: result.rangeInfo?.endDate,
-        });
-      }
+    if (!result.prayerTimes) {
+      testResults.push({
+        testDate,
+        result: 'not_found',
+      });
+    } else if (!result.prayerTimes.isInterpolated) {
+      testResults.push({
+        testDate,
+        result: 'exact',
+        sourceDate: result.prayerTimes.date,
+      });
+    } else {
+      testResults.push({
+        testDate,
+        result: 'interpolated',
+        sourceDate: result.prayerTimes.originalDate,
+        rangeStart: result.rangeInfo?.startDate,
+        rangeEnd: result.rangeInfo?.endDate,
+      });
     }
-
-    return {availableDates, testResults};
-  } catch (error) {
-    console.error('❌ Error testing interpolation logic:', error);
-    throw error;
   }
+
+  return {availableDates, testResults};
 };
 
 /**
