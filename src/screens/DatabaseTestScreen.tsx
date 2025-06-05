@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,18 @@ import {
 import {PrayerTimes} from '../models/PrayerTimes';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
-import {
-  savePrayerTimes,
-  getPrayerTimes,
-  closeDatabase,
-  initDatabase,
-} from '../services/db';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
+import {
+  getAvailableDates,
+  getDateRanges,
+  getPrayerTimesWithRangeInfo,
+  PrayerTimesData,
+  getAllDateRangesWithCoverage,
+  testInterpolationLogic,
+} from '../services/db/dbServices';
+import {initDatabase} from '../services/db/dbInitalizer';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -50,6 +53,9 @@ const DatabaseTestScreen = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     getCurrentDateString(),
   );
+  const [sqlCommand, setSqlCommand] = useState<string>('');
+  const [sqlResults, setSqlResults] = useState<string>('');
+  const [dbConnection, setDbConnection] = useState<any>(null);
 
   // Prayer time state
   const [fajr, setFajr] = useState<string>('05:00');
@@ -59,9 +65,188 @@ const DatabaseTestScreen = () => {
   const [maghrib, setMaghrib] = useState<string>('18:00');
   const [isha, setIsha] = useState<string>('19:30');
 
+  const [customPrayerTimes, setCustomPrayerTimes] =
+    useState<PrayerTimesData | null>(null);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [rangeInfo, setRangeInfo] = useState<any>(null);
+  const [dateRanges, setDateRanges] = useState<any[]>([]);
+
   const addToLog = (message: string) => {
     console.log(message);
     setLog(prevLog => [message, ...prevLog]);
+  };
+
+  // Update the handleGetData function to use the new service
+  const handleGetData = async () => {
+    try {
+      addToLog(`🔍 Searching for prayer times for ${selectedDate}...`);
+
+      const result = await getPrayerTimesWithRangeInfo(selectedDate);
+      const {prayerTimes, rangeInfo: range} = result;
+
+      if (prayerTimes) {
+        setCustomPrayerTimes(prayerTimes);
+        setRangeInfo(range);
+        setFetchedData(JSON.stringify(prayerTimes, null, 2));
+
+        if (prayerTimes.isInterpolated) {
+          addToLog(
+            `📅 Using prayer times from ${prayerTimes.originalDate} for ${selectedDate}`,
+          );
+          if (range) {
+            addToLog(
+              `📊 Range: ${range.startDate} to ${range.endDate || 'end'} (${
+                range.daysInRange
+              } days)`,
+            );
+          }
+        } else {
+          addToLog(`✅ Found exact match for ${selectedDate}`);
+        }
+      } else {
+        setCustomPrayerTimes(null);
+        setRangeInfo(null);
+        setFetchedData('No prayer times found in database');
+        addToLog(
+          `❌ No prayer times found for ${selectedDate} or any earlier date`,
+        );
+      }
+    } catch (error) {
+      addToLog(`❌ Error fetching prayer times: ${error}`);
+      setFetchedData(`Error: ${error}`);
+    }
+  };
+
+  // Add these new functions
+  const handleGetAvailableDates = async () => {
+    try {
+      const dates = await getAvailableDates();
+      setAvailableDates(dates);
+      addToLog(`📅 Found ${dates.length} available dates in database`);
+      addToLog(
+        `First: ${dates[0] || 'None'}, Last: ${
+          dates[dates.length - 1] || 'None'
+        }`,
+      );
+    } catch (error) {
+      addToLog(`❌ Error getting available dates: ${error}`);
+    }
+  };
+
+  const handleGetDateRanges = async () => {
+    try {
+      const ranges = await getDateRanges();
+      setDateRanges(ranges);
+      addToLog(`📊 Found ${ranges.length} date ranges`);
+      ranges.forEach((range, index) => {
+        addToLog(
+          `Range ${index + 1}: ${range.startDate} to ${
+            range.endDate || 'end'
+          } (${range.daysInRange} days)`,
+        );
+      });
+    } catch (error) {
+      addToLog(`❌ Error getting date ranges: ${error}`);
+    }
+  };
+
+  // Add these new functions after the existing handler functions
+  const handleTestInterpolation = async () => {
+    try {
+      addToLog('🧪 Testing interpolation logic...');
+      const result = await testInterpolationLogic();
+
+      addToLog(`Available dates: ${result.availableDates.join(', ')}`);
+      addToLog('');
+
+      result.testResults.forEach(test => {
+        if (test.result === 'exact') {
+          addToLog(`${test.testDate}: ✅ EXACT match`);
+        } else if (test.result === 'interpolated') {
+          addToLog(
+            `${test.testDate}: 📅 INTERPOLATED from ${
+              test.sourceDate
+            } (range: ${test.rangeStart} to ${test.rangeEnd || 'ongoing'})`,
+          );
+        } else {
+          addToLog(`${test.testDate}: ❌ NOT FOUND`);
+        }
+      });
+    } catch (error) {
+      addToLog(`❌ Error testing interpolation: ${error}`);
+    }
+  };
+
+  const handleShowAllRanges = async () => {
+    try {
+      addToLog('📊 Getting all date ranges...');
+      const ranges = await getAllDateRangesWithCoverage();
+
+      ranges.forEach((range, index) => {
+        addToLog(
+          `Range ${index + 1}: ${range.startDate} to ${
+            range.endDate || 'ongoing'
+          } (${range.daysInRange} days)`,
+        );
+        addToLog(
+          `  Prayer times: Fajr ${range.samplePrayerTimes.fajr}, Dhuhr ${range.samplePrayerTimes.dhuhr}, Maghrib ${range.samplePrayerTimes.maghrib}`,
+        );
+      });
+    } catch (error) {
+      addToLog(`❌ Error getting ranges: ${error}`);
+    }
+  };
+
+  // Auto-initialize database when screen loads
+  useEffect(() => {
+    const initializeDB = async () => {
+      try {
+        await initDatabase();
+        await openDatabaseConnection();
+        addToLog('Database auto-initialized successfully on screen load.');
+      } catch (error) {
+        addToLog(`Database auto-initialization failed: ${error}`);
+      }
+    };
+
+    initializeDB();
+
+    // Keep database open when component unmounts for inspection
+    return () => {
+      addToLog('Component unmounting - keeping database open for inspection');
+    };
+  }, []);
+
+  // Open and keep database connection for inspection
+  const openDatabaseConnection = async () => {
+    try {
+      const SQLite = require('react-native-sqlite-storage');
+
+      // Enable debugging
+      SQLite.DEBUG(true);
+      SQLite.enablePromise(true);
+
+      const db = await SQLite.openDatabase({
+        name: 'prayer_times.db',
+        location: 'default',
+        createFromLocation: '~prayer_times.db',
+      });
+
+      setDbConnection(db);
+      addToLog(
+        `Database opened for inspection at: ${
+          db._db_name || 'prayer_times.db'
+        }`,
+      );
+      addToLog(
+        'Database path: /data/data/com.prayerapp/databases/prayer_times.db',
+      );
+
+      return db;
+    } catch (error) {
+      addToLog(`Failed to open database connection: ${error}`);
+      throw error;
+    }
   };
 
   const handleInitDB = async () => {
@@ -73,45 +258,77 @@ const DatabaseTestScreen = () => {
     }
   };
 
-  const handleSaveData = async () => {
-    const prayerData: PrayerTimes = {
-      date: selectedDate,
-      fajr: fajr,
-      sunrise: sunrise,
-      dhuhr: dhuhr,
-      asr: asr,
-      maghrib: maghrib,
-      isha: isha,
-    };
+  // Execute SQL command using the persistent connection
+  const handleExecuteSQL = async () => {
+    if (!sqlCommand.trim()) {
+      addToLog('Please enter a SQL command');
+      return;
+    }
+
     try {
-      await savePrayerTimes(selectedDate, prayerData);
-      addToLog(`Saved prayer times for ${selectedDate}`);
-    } catch (error) {
-      addToLog(`Failed to save prayer data: ${error}`);
+      let db = dbConnection;
+      if (!db) {
+        db = await openDatabaseConnection();
+      }
+
+      const results = await db.executeSql(sqlCommand);
+      const [result] = results;
+
+      if (sqlCommand.trim().toLowerCase().startsWith('select')) {
+        const rows = result.rows;
+        const resultArray = [];
+        for (let i = 0; i < rows.length; i++) {
+          resultArray.push(rows.item(i));
+        }
+        setSqlResults(JSON.stringify(resultArray, null, 2));
+        addToLog(`Query executed. Returned ${rows.length} rows.`);
+      } else {
+        setSqlResults(`Query executed. Rows affected: ${result.rowsAffected}`);
+        addToLog(`Query executed. Rows affected: ${result.rowsAffected}`);
+      }
+    } catch (error: any) {
+      addToLog(`SQL Error: ${error.message}`);
+      setSqlResults(`Error: ${error.message}`);
     }
   };
 
-  const handleGetData = async () => {
+  // Function to show database info for inspection
+  const handleShowDatabaseInfo = async () => {
     try {
-      const data = await getPrayerTimes(selectedDate);
-      if (data) {
-        setFetchedData(JSON.stringify(data, null, 2));
-        addToLog(`Fetched data for ${selectedDate}`);
+      const SQLite = require('react-native-sqlite-storage');
+      const db = await SQLite.openDatabase({
+        name: 'prayer_times.db',
+        location: 'default',
+      });
 
-        // Update input fields with fetched data
-        setFajr(data.fajr || '05:00');
-        setSunrise(data.sunrise || '06:30');
-        setDhuhr(data.dhuhr || '12:30');
-        setAsr(data.asr || '15:45');
-        setMaghrib(data.maghrib || '18:00');
-        setIsha(data.isha || '19:30');
-      } else {
-        setFetchedData('No data found for selected date');
-        addToLog(`No data found for ${selectedDate}`);
+      addToLog('=== DATABASE INSPECTION INFO ===');
+      addToLog('Database Name: prayer_times.db');
+      addToLog('Location: default');
+      addToLog(
+        'Platform Path: /data/data/com.prayerapp/databases/prayer_times.db',
+      );
+      addToLog('Use Android Studio Device File Explorer to browse to:');
+      addToLog('data/data/com.prayerapp/databases/');
+      addToLog('=== END DATABASE INFO ===');
+
+      // Show all tables
+      const tableResults = await db.executeSql(
+        "SELECT name FROM sqlite_master WHERE type='table';",
+      );
+      const [tableResult] = tableResults;
+      const tables = [];
+      for (let i = 0; i < tableResult.rows.length; i++) {
+        tables.push(tableResult.rows.item(i).name);
       }
+      addToLog(`Available tables: ${tables.join(', ')}`);
     } catch (error) {
-      addToLog(`Failed to fetch data: ${error}`);
+      addToLog(`Failed to get database info: ${error}`);
     }
+  };
+
+  // Quick table view
+  const handleViewTable = (tableName: string) => {
+    setSqlCommand(`SELECT * FROM ${tableName} LIMIT 10;`);
   };
 
   // Helper to adjust time slightly for demo purposes
@@ -126,38 +343,6 @@ const DatabaseTestScreen = () => {
       .getMinutes()
       .toString()
       .padStart(2, '0')}`;
-  };
-
-  // Add prayer times for multiple days
-  const handleAddMultipleDays = async () => {
-    try {
-      for (let i = 0; i < 7; i++) {
-        const date = addDays(getCurrentDateString(), i);
-        // Slightly vary prayer times for each day
-        const prayerData: PrayerTimes = {
-          date: date,
-          fajr: adjustTime(fajr, i),
-          sunrise: adjustTime(sunrise, i),
-          dhuhr: adjustTime(dhuhr, i),
-          asr: adjustTime(asr, i),
-          maghrib: adjustTime(maghrib, i),
-          isha: adjustTime(isha, i),
-        };
-        await savePrayerTimes(date, prayerData);
-      }
-      addToLog('Added prayer times for the next 7 days');
-    } catch (error) {
-      addToLog(`Failed to add multiple days: ${error}`);
-    }
-  };
-
-  const handleCloseDB = async () => {
-    try {
-      await closeDatabase();
-      addToLog('Database closed successfully.');
-    } catch (error) {
-      addToLog(`Database close failed: ${error}`);
-    }
   };
 
   // Date selector buttons
@@ -205,95 +390,310 @@ const DatabaseTestScreen = () => {
           </TouchableOpacity>
           <Text style={styles.title}>Database Test</Text>
         </View>
-        {renderDateSelector()}
 
-        {/* Prayer Time Input Section */}
+        {/* Database Inspection Section */}
         <View style={styles.inputSection}>
-          <Text style={styles.sectionTitle}>
-            🕌 Prayer Times for {selectedDate}
-          </Text>
-
-          <View style={styles.prayerTimeInputContainer}>
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Fajr:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={fajr}
-                onChangeText={setFajr}
-                placeholder="05:00"
-              />
-            </View>
-
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Sunrise:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={sunrise}
-                onChangeText={setSunrise}
-                placeholder="06:30"
-              />
-            </View>
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Dhuhr:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={dhuhr}
-                onChangeText={setDhuhr}
-                placeholder="12:30"
-              />
-            </View>
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Asr:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={asr}
-                onChangeText={setAsr}
-                placeholder="15:45"
-              />
-            </View>
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Maghrib:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={maghrib}
-                onChangeText={setMaghrib}
-                placeholder="18:00"
-              />
-            </View>
-            <View style={styles.inputRow}>
-              <Text style={styles.inputLabel}>Isha:</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={isha}
-                onChangeText={setIsha}
-                placeholder="19:30"
-              />
-            </View>
+          <Text style={styles.sectionTitle}>🔍 Database Inspection</Text>
+          <View style={styles.quickButtonsContainer}>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={handleShowDatabaseInfo}>
+              <Text style={styles.quickButtonText}>Show DB Info</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={openDatabaseConnection}>
+              <Text style={styles.quickButtonText}>Open Connection</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(
+                  "SELECT name FROM sqlite_master WHERE type='table';",
+                )
+              }>
+              <Text style={styles.quickButtonText}>List Tables</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(
+                  "SELECT COUNT(*) as column_count FROM pragma_table_info('prayer_times');",
+                )
+              }>
+              <Text style={styles.quickButtonText}>Count Columns</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(
+                  "SELECT name, type FROM pragma_table_info('prayer_times');",
+                )
+              }>
+              <Text style={styles.quickButtonText}>List Columns</Text>
+            </TouchableOpacity>
           </View>
+        </View>
+
+        {/* SQL Command Section */}
+        <View style={styles.inputSection}>
+          <Text style={styles.sectionTitle}>💾 SQL Commands</Text>
+
+          {/* Quick Table Views */}
+          <View style={styles.quickButtonsContainer}>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() => handleViewTable('prayer_times')}>
+              <Text style={styles.quickButtonText}>View Prayer Times</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand('SELECT COUNT(*) as total FROM prayer_times;')
+              }>
+              <Text style={styles.quickButtonText}>Count Records</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() => setSqlCommand('PRAGMA table_info(prayer_times);')}>
+              <Text style={styles.quickButtonText}>Table Schema</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(
+                  "SELECT sql FROM sqlite_master WHERE type='table' AND name='prayer_times';",
+                )
+              }>
+              <Text style={styles.quickButtonText}>CREATE Statement</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(
+                  "SELECT name, type FROM pragma_table_info('prayer_times');",
+                )
+              }>
+              <Text style={styles.quickButtonText}>List Columns</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(`-- Users Table
+CREATE TABLE IF NOT EXISTS users (
+    uid INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT UNIQUE,
+    phone_number TEXT,
+    location TEXT,
+    masjid TEXT,
+    prayer_settings TEXT DEFAULT '{"notifications": true, "adhan_sound": "default", "calculation_method": "ISNA"}',
+    monthly_zikr_goal INTEGER DEFAULT 10000,
+    monthly_quran_pages_goal INTEGER DEFAULT 60,
+    monthly_charity_goal DECIMAL(10,2) DEFAULT 0,
+    monthly_fasting_days_goal INTEGER DEFAULT 0,
+    preferred_madhab TEXT DEFAULT 'Hanafi',
+    app_language TEXT DEFAULT 'en',
+    theme TEXT DEFAULT 'light',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);`)
+              }>
+              <Text style={styles.quickButtonText}>Create Users Table</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(`-- Daily Tasks Table
+CREATE TABLE IF NOT EXISTS daily_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uid INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    fajr_status TEXT DEFAULT 'no',
+    dhuhr_status TEXT DEFAULT 'no',
+    asr_status TEXT DEFAULT 'no',
+    maghrib_status TEXT DEFAULT 'no',
+    isha_status TEXT DEFAULT 'no',
+    tahajjud_completed BOOLEAN DEFAULT 0,
+    duha_completed BOOLEAN DEFAULT 0,
+    total_zikr_count INTEGER DEFAULT 0,
+    quran_minutes INTEGER DEFAULT 0,
+    quran_pages_read INTEGER DEFAULT 0,
+    is_fasting BOOLEAN DEFAULT 0,
+    fasting_type TEXT,
+    special_tasks TEXT DEFAULT '[]',
+    notes TEXT,
+    day_rating INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE,
+    UNIQUE(uid, date)
+);`)
+              }>
+              <Text style={styles.quickButtonText}>Create Daily Tasks</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TextInput
+            style={styles.sqlInput}
+            value={sqlCommand}
+            onChangeText={setSqlCommand}
+            placeholder="Enter SQL command..."
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
 
           <View style={styles.buttonContainer}>
-            <Button title="Save Prayer Times" onPress={handleSaveData} />
+            <Button title="Execute SQL" onPress={handleExecuteSQL} />
           </View>
+
+          <Text style={styles.subHeader}>SQL Results:</Text>
+          <ScrollView
+            style={styles.resultsContainer}
+            nestedScrollEnabled={true}>
+            <Text style={styles.resultsText}>{sqlResults || 'No results'}</Text>
+          </ScrollView>
         </View>
 
-        <View style={styles.buttonContainer}>
-          <Button title="Get Prayer Times" onPress={handleGetData} />
-        </View>
-        <View style={styles.buttonContainer}>
-          <Button
-            title="Add Prayer Times for Next 7 Days"
-            onPress={handleAddMultipleDays}
-          />
-        </View>
-        <View style={styles.buttonContainer}>
-          <Button title="Initialize Database" onPress={handleInitDB} />
-        </View>
-        <View style={styles.buttonContainer}>
-          <Button title="Close Database" onPress={handleCloseDB} />
-        </View>
+        {/* JSON Test Section */}
+        <View style={styles.inputSection}>
+          <Text style={styles.sectionTitle}>
+            🕌 Range-Based Prayer Times Lookup
+          </Text>
 
-        <Text style={styles.subHeader}>Fetched Data:</Text>
-        <Text style={styles.dataText}>{fetchedData || 'None'}</Text>
+          <Text style={styles.subHeader}>Selected Date: {selectedDate}</Text>
+          {renderDateSelector()}
+
+          <View style={styles.quickButtonsContainer}>
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={handleGetData}>
+              <Text style={styles.quickButtonText}>Get Prayer Times</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={handleGetAvailableDates}>
+              <Text style={styles.quickButtonText}>Show Available Dates</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={handleGetDateRanges}>
+              <Text style={styles.quickButtonText}>Show Date Ranges</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.quickButton}
+              onPress={() =>
+                setSqlCommand(`-- Insert sample prayer times data (5-day intervals)
+INSERT INTO prayer_times (date, day, fajr, shuruq, dhuha, dhuhr, asr, maghrib, isha, qibla_hour) VALUES
+('2025-06-01', 'Sunday', '4:09', '5:23', '5:48', '11:42', '15:05', '17:55', '19:06', '14:27'),
+('2025-06-06', 'Friday', '4:09', '5:24', '5:49', '11:43', '15:07', '17:56', '19:08', '14:40'),
+('2025-06-11', 'Wednesday', '4:10', '5:24', '5:50', '11:44', '15:09', '17:57', '19:09', '14:51'),
+('2025-06-16', 'Monday', '4:11', '5:25', '5:51', '11:45', '15:10', '17:58', '19:10', '14:58'),
+('2025-06-21', 'Saturday', '4:12', '5:26', '5:52', '11:46', '15:11', '18:00', '19:12', '15:02'),
+('2025-06-26', 'Thursday', '4:13', '5:27', '5:53', '11:47', '15:12', '18:01', '19:13', '15:02');`)
+              }>
+              <Text style={styles.quickButtonText}>Add Range Sample Data</Text>
+            </TouchableOpacity>
+          </View>
+
+          {customPrayerTimes && (
+            <View style={styles.prayerTimesDisplay}>
+              <Text style={styles.prayerTimesTitle}>
+                Prayer Times for {customPrayerTimes.date} (
+                {customPrayerTimes.day})
+              </Text>
+
+              {customPrayerTimes.isInterpolated && (
+                <View style={styles.interpolatedInfo}>
+                  <Text style={styles.interpolatedText}>
+                    📍 Using times from {customPrayerTimes.originalDate}
+                  </Text>
+                  {rangeInfo && (
+                    <>
+                      <Text style={styles.rangeText}>
+                        Valid from {rangeInfo.startDate} to{' '}
+                        {rangeInfo.endDate || 'end'} ({rangeInfo.daysInRange}{' '}
+                        days)
+                      </Text>
+                      <Text style={styles.rangeText}>
+                        Target in range:{' '}
+                        {rangeInfo.targetInRange ? '✅ Yes' : '❌ No'}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              )}
+
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Fajr:</Text>
+                <Text style={styles.prayerTime}>{customPrayerTimes.fajr}</Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Shuruq:</Text>
+                <Text style={styles.prayerTime}>
+                  {customPrayerTimes.shuruq}
+                </Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Dhuha:</Text>
+                <Text style={styles.prayerTime}>{customPrayerTimes.dhuha}</Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Dhuhr:</Text>
+                <Text style={styles.prayerTime}>{customPrayerTimes.dhuhr}</Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Asr:</Text>
+                <Text style={styles.prayerTime}>{customPrayerTimes.asr}</Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Maghrib:</Text>
+                <Text style={styles.prayerTime}>
+                  {customPrayerTimes.maghrib}
+                </Text>
+              </View>
+              <View style={styles.prayerTimeRow}>
+                <Text style={styles.prayerLabel}>Isha:</Text>
+                <Text style={styles.prayerTime}>{customPrayerTimes.isha}</Text>
+              </View>
+              {customPrayerTimes.qibla_hour && (
+                <View style={styles.prayerTimeRow}>
+                  <Text style={styles.prayerLabel}>Qibla Hour:</Text>
+                  <Text style={styles.prayerTime}>
+                    {customPrayerTimes.qibla_hour}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.subHeader}>Raw JSON Response:</Text>
+          <ScrollView
+            style={styles.resultsContainer}
+            nestedScrollEnabled={true}>
+            <Text style={styles.resultsText}>{fetchedData || 'No data'}</Text>
+          </ScrollView>
+
+          {dateRanges.length > 0 && (
+            <View>
+              <Text style={styles.subHeader}>Date Ranges Coverage:</Text>
+              <ScrollView
+                style={styles.rangesContainer}
+                nestedScrollEnabled={true}>
+                {dateRanges.map((range, index) => (
+                  <Text key={index} style={styles.rangeItem}>
+                    {range.startDate} → {range.endDate || 'end'} (
+                    {range.daysInRange} days)
+                  </Text>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
 
         <Text style={styles.subHeader}>Logs:</Text>
         <ScrollView style={styles.logContainer} nestedScrollEnabled={true}>
@@ -426,6 +826,116 @@ const styles = StyleSheet.create({
     padding: 8,
     ...typography.body,
     backgroundColor: '#f9f9f9',
+  },
+  sqlInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    ...typography.body,
+    backgroundColor: '#f9f9f9',
+    minHeight: 80,
+    marginBottom: 15,
+    fontFamily: 'monospace',
+  },
+  resultsContainer: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    marginBottom: 15,
+  },
+  resultsText: {
+    ...typography.caption,
+    fontFamily: 'monospace',
+    color: '#333',
+  },
+  quickButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+  },
+  quickButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 15,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  quickButtonText: {
+    ...typography.caption,
+    color: '#fff',
+    fontSize: 12,
+  },
+
+  // Add to your existing styles:
+  prayerTimesDisplay: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  prayerTimesTitle: {
+    ...typography.h3,
+    textAlign: 'center',
+    marginBottom: 15,
+    color: colors.primary,
+  },
+  interpolatedInfo: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  interpolatedText: {
+    ...typography.bodySmall,
+    color: '#856404',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  rangeText: {
+    ...typography.caption,
+    color: '#856404',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  prayerTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  prayerLabel: {
+    ...typography.bodyMedium,
+    fontWeight: 'bold',
+    color: '#495057',
+  },
+  prayerTime: {
+    ...typography.bodyMedium,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  rangesContainer: {
+    maxHeight: 150,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 10,
+  },
+  rangeItem: {
+    ...typography.caption,
+    color: '#666',
+    marginBottom: 3,
   },
 });
 
