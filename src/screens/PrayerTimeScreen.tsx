@@ -19,6 +19,7 @@ import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import { usePrayerTimes } from '../hooks/usePrayerTimes';
 import { useUser } from '../hooks/useUser';
+import { getCurrentDateString } from '../utils/helpers';
 
 const PrayerTimeScreen = () => {
   // const [isLoading, setIsLoading] = useState(false);
@@ -75,35 +76,7 @@ const PrayerTimeScreen = () => {
             {/* Monthly Challenge Cards */}
             <MonthlyChallengeSelector />
 
-            {/* Tasks Progress */}
-            {/* <View style={styles.tasksSection}>
-              {' '}
-              <TaskProgressItem
-                title="Fajr Jamath Today"
-                current={16}
-                total={30}
-                color={colors.emerald}
-              />{' '}
-              <TaskProgressItem
-                title="Quran Thilawath Today"
-                current={19}
-                total={30}
-                color={colors.jade}
-              />{' '}
-              <TaskProgressItem
-                title="Isthighfar Today"
-                current={16}
-                total={30}
-                color={colors.success}
-                completed={true}
-              />{' '}
-              <TaskProgressItem
-                title="Zikr Today"
-                current={16}
-                total={30}
-                color={colors.accent}
-              />
-            </View> */}
+            
           </View>
         )}
       </ScrollView>
@@ -186,54 +159,3 @@ const styles = StyleSheet.create({
 });
 
 export default PrayerTimeScreen;
-
-//  <View style={styles.statsCardsRow}>
-//               Challenge 40 Card
-//               <Challenge40Card
-//                 title="Challenge 40"
-//                 subtitle="Fajr"
-//                 current={134}
-//                 total={175}
-//                 backgroundColor={colors.background.surface}
-//                 progressColor={colors.primary}
-//                 textColor={colors.primary}
-//               />
-
-//               Wake up Calls Card
-//               <StatsCard
-//                 title="Wake up Calls"
-//                 stats={[
-//                   {label: 'Called', value: 5},
-//                   {label: 'Cancelled', value: 3},
-//                   {label: 'Confirmed', value: 2},
-//                 ]}
-//                 backgroundColor={colors.background.light}
-//                 showDividers={true}
-//                 dividerColor={colors.background.surface}
-//               />
-//             </View>
-
-{
-  /* Second Row of Stats Cards */
-}
-function getCurrentDateString(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
-}
-
-// <View style={styles.statsCardsRow}>
-//   {/* Personal Meeting Card */}
-//   <StatsCard
-//     title="Personal Meeting"
-//     stats={[
-//       {label: 'Assigned', value: 5},
-//       {label: 'Visited', value: 4},
-//       {label: 'Remaining', value: 2},
-//     ]}
-//     backgroundColor={colors.background.surface}
-//     showDividers={false}
-//   />
-
-//   {/* Zikr Card */}
-//   <ZikrCounter todayCount={267} totalCount={23000} />
-// </View>
