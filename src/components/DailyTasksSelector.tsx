@@ -176,7 +176,7 @@ const DailyTasksSelector: React.FC = () => {
     uid: MOCK_USER_ID,
     date: today,
   });
-
+  console.log("tasks >>>>>>>>>>>>",dailyTasks)
   const handleTaskToggle = useCallback(
     (dateISO: string, taskId: string) => {
       if (dateISO === today) {

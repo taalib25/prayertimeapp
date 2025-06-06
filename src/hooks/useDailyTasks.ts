@@ -28,6 +28,7 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
       await checkAndResetDailyTasks(uid);
 
       const tasks = await getDailyTasksForDate(uid, date);
+      // console.log("tasks", tasks)
       setDailyTasks(tasks);
     } catch (err) {
       setError('Failed to fetch daily tasks');
