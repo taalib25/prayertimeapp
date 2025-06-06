@@ -4,8 +4,7 @@ import {
   updateUserGoals,
   updateUserSettings,
   updateUserProfile,
-  getMonthlyUserTotals,
-  getUserPrayerStats,
+  initializeDummyUsersIfNeeded,
   UserData,
 } from '../services/db/UserServices';
 
@@ -39,8 +38,20 @@ export const useUser = ({uid}: UseUserProps) => {
       setIsLoading(true);
       setError(null);
 
+      console.log('Fetching user with uid:', uid);
+
+      // Initialize dummy users if database is empty
+      await initializeDummyUsersIfNeeded();
+
       const userData = await getUserById(uid);
-      setUser(userData);
+      console.log('Fetched User Data:', userData);
+
+      if (!userData) {
+        console.log('No user found with uid:', uid);
+        setError('User not found');
+      } else {
+        setUser(userData);
+      }
     } catch (err) {
       setError('Failed to fetch user data');
       console.error('Error fetching user:', err);
@@ -83,93 +94,13 @@ export const useUser = ({uid}: UseUserProps) => {
     }) => {
       try {
         await updateUserProfile(uid, profile);
-        await fetchUser(); // Refresh data
+        await fetchUser();
       } catch (err) {
         console.error('Error updating profile:', err);
         setError('Failed to update profile');
       }
     },
     [uid, fetchUser],
-  );
-
-  // Calculate monthly progress totals
-  const getMonthlyTotals = useCallback(async () => {
-    if (!user) return null;
-
-    try {
-      // Get current month's data
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-
-      const monthlyTotals = await getMonthlyUserTotals(uid, currentMonth);
-
-      return {
-        zikrProgress: {
-          current: monthlyTotals.totalZikr,
-          goal: user.monthlyZikrGoal,
-          percentage: Math.round(
-            (monthlyTotals.totalZikr / user.monthlyZikrGoal) * 100,
-          ),
-        },
-        quranProgress: {
-          current: monthlyTotals.totalQuranPages,
-          goal: user.monthlyQuranPagesGoal,
-          percentage: Math.round(
-            (monthlyTotals.totalQuranPages / user.monthlyQuranPagesGoal) * 100,
-          ),
-        },
-        charityProgress: {
-          current: monthlyTotals.totalCharity,
-          goal: user.monthlyCharityGoal,
-          percentage: Math.round(
-            (monthlyTotals.totalCharity / user.monthlyCharityGoal) * 100,
-          ),
-        },
-        fastingProgress: {
-          current: monthlyTotals.totalFastingDays,
-          goal: user.monthlyFastingDaysGoal,
-          percentage: Math.round(
-            (monthlyTotals.totalFastingDays / user.monthlyFastingDaysGoal) *
-              100,
-          ),
-        },
-      };
-    } catch (err) {
-      console.error('Error calculating monthly totals:', err);
-      return null;
-    }
-  }, [uid, user]);
-
-  // Get prayer statistics
-  const getPrayerStats = useCallback(
-    async (period: 'week' | 'month' | 'year' = 'month') => {
-      try {
-        const stats = await getUserPrayerStats(uid, period);
-        return {
-          fajrPercentage: Math.round(
-            (stats.fajrCompleted / stats.totalDays) * 100,
-          ),
-          dhuhrPercentage: Math.round(
-            (stats.dhuhrCompleted / stats.totalDays) * 100,
-          ),
-          asrPercentage: Math.round(
-            (stats.asrCompleted / stats.totalDays) * 100,
-          ),
-          maghribPercentage: Math.round(
-            (stats.maghribCompleted / stats.totalDays) * 100,
-          ),
-          ishaPercentage: Math.round(
-            (stats.ishaCompleted / stats.totalDays) * 100,
-          ),
-          overallPercentage: Math.round(
-            (stats.totalCompleted / (stats.totalDays * 5)) * 100,
-          ),
-        };
-      } catch (err) {
-        console.error('Error getting prayer stats:', err);
-        return null;
-      }
-    },
-    [uid],
   );
 
   useEffect(() => {
@@ -183,8 +114,6 @@ export const useUser = ({uid}: UseUserProps) => {
     updateGoals,
     updateSettings,
     updateProfile,
-    getMonthlyTotals,
-    getPrayerStats,
     refetch: fetchUser,
   };
 };

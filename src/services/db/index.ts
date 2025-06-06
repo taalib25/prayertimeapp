@@ -2,7 +2,7 @@ import {Database} from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import PrayerTimesModel from '../../model/PrayerTimes';
 import UserModel from '../../model/User';
-import prayerAppSchema from '../../model/schema';
+import prayerAppSchema from './schema';
 import DailyTasksModel from '../../model/DailyTasks';
 
 // First, create the adapter to the underlying database:

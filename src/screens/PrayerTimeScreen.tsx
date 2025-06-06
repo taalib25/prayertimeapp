@@ -18,11 +18,13 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import { usePrayerTimes } from '../hooks/usePrayerTimes';
+import { useUser } from '../hooks/useUser';
 
 const PrayerTimeScreen = () => {
   // const [isLoading, setIsLoading] = useState(false);
     const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading, error} = usePrayerTimes(selectedDate);
+  const {user} = useUser({uid: 1001}); 
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -31,13 +33,14 @@ const PrayerTimeScreen = () => {
         translucent={true}
       />
       <ScrollView style={styles.scrollContainer}>
+        
         {/* Header with user profile and mosque info */}
         <Header
-          location="Colombo, Sri Lanka"
-          userName="Mohamed Hijaz"
-          mosqueName="Masjid Ul Jabbar Jumma Masjid"
-          mosqueLocation="Gothatuwa"
-          avatarImage={require('../assets/images/profile.png')} // Optional: add your local image
+          location={user?.location}
+          userName={user?.username}
+          mosqueName={user?.masjid}
+          mosqueLocation={user?.masjid}
+          avatarImage={require('../assets/images/profile.png')} 
         />
 
         {isLoading ? (
@@ -48,6 +51,7 @@ const PrayerTimeScreen = () => {
           />
         ) : (
           <View style={styles.container}>
+            
             {/* Prayer Time Cards */}
             <PrayerTimeCards prayers={prayerTimes} />
 

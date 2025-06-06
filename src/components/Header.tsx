@@ -5,18 +5,18 @@ import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 
 interface HeaderProps {
-  location: string;
-  userName: string;
-  mosqueName: string;
-  mosqueLocation: string;
+  location?: string;
+  userName?: string;
+  mosqueName?: string;
+  mosqueLocation?: string;
   avatarImage?: any; // Optional local image path
 }
 
 const Header: React.FC<HeaderProps> = ({
-  location,
-  userName,
-  mosqueName,
-  mosqueLocation,
+  location = 'Colombo, Sri Lanka',
+  userName = 'User',
+  mosqueName = 'Local Mosque',
+  mosqueLocation = '',
   avatarImage,
 }) => {
   return (
@@ -32,7 +32,14 @@ const Header: React.FC<HeaderProps> = ({
       <View style={styles.contentContainer}>
         {/* Location Bar */}
 
-        <View style={{flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', marginBottom: 16, marginTop: 8}}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            marginBottom: 16,
+            marginTop: 8,
+          }}>
           <TouchableOpacity style={styles.locationBar}>
             <SvgIcon
               name="map"
@@ -43,15 +50,23 @@ const Header: React.FC<HeaderProps> = ({
             <Text style={styles.locationText}>{location}</Text>
             <View style={styles.chevronIcon} />
           </TouchableOpacity>
-          <Text style={{...typography.body, color: '#fff', fontSize: 14,marginLeft:14,justifyContent: 'flex-end'}}>
-            {new Date().toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-            }).replace(',', '')}
+          <Text
+            style={{
+              ...typography.body,
+              color: '#fff',
+              fontSize: 14,
+              marginLeft: 14,
+              justifyContent: 'flex-end',
+            }}>
+            {new Date()
+              .toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })
+              .replace(',', '')}
           </Text>
         </View>
-
 
         {/* User Info */}
         <View style={styles.userContainer}>
@@ -64,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({
               />
             ) : (
               <Text style={styles.avatarText}>
-                {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                {userName?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             )}
           </View>
@@ -75,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
           </View>
         </View>
         <View style={styles.underline} />
-        {/* Mosque Info */}{' '}
+        {/* Mosque Info */}
         <View style={styles.mosqueContainer}>
           <SvgIcon
             name="masjid"
@@ -84,7 +99,8 @@ const Header: React.FC<HeaderProps> = ({
             style={styles.mosqueIcon}
           />
           <Text style={styles.mosqueName}>
-            {mosqueName}, {mosqueLocation}
+            {mosqueName}
+            {mosqueLocation ? `, ${mosqueLocation}` : ''}
           </Text>
         </View>
       </View>

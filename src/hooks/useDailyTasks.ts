@@ -6,7 +6,7 @@ import {
   updateZikrCount,
   checkAndResetDailyTasks,
   DailyTaskData,
-} from '../services/db/dailyTasks';
+} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
 
 interface UseDailyTasksProps {

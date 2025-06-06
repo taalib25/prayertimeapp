@@ -22,15 +22,170 @@ export interface UserData {
   updatedAt: Date;
 }
 
+// Check if users exist in the database
+export const checkUsersExist = async (): Promise<boolean> => {
+  const usersCollection = database.get<UserModel>('users');
+
+  try {
+    const userCount = await usersCollection.query().fetchCount();
+    console.log('Users count in database:', userCount);
+    return userCount > 0;
+  } catch (error) {
+    console.error('Error checking users exist:', error);
+    return false;
+  }
+};
+
+// Create dummy users for testing
+export const createDummyUsers = async () => {
+  console.log('=== Creating dummy users ===');
+
+  try {
+    await database.write(async () => {
+      const usersCollection = database.get<UserModel>('users');
+
+      // Dummy User 1
+      const user1 = await usersCollection.create((user: UserModel) => {
+        user.uid = 1001;
+        user.username = 'Ahmed_Test';
+        user.email = 'ahmed@test.com';
+        user.phoneNumber = '+1234567890';
+        user.location = 'Cairo, Egypt';
+        user.masjid = 'Al-Azhar Mosque';
+        user.prayerSettings = JSON.stringify({
+          method: 'ISNA',
+          notifications: true,
+          sound: 'adhan1',
+        });
+        user.monthlyZikrGoal = 1000;
+        user.monthlyQuranPagesGoal = 30;
+        user.monthlyCharityGoal = 100;
+        user.monthlyFastingDaysGoal = 15;
+        user.preferredMadhab = 'Hanafi';
+        user.appLanguage = 'en';
+        user.theme = 'light';
+      });
+
+      // Dummy User 2
+      const user2 = await usersCollection.create((user: UserModel) => {
+        user.uid = 1002;
+        user.username = 'Fatima_Test';
+        user.email = 'fatima@test.com';
+        user.phoneNumber = '+0987654321';
+        user.location = 'Istanbul, Turkey';
+        user.masjid = 'Blue Mosque';
+        user.prayerSettings = JSON.stringify({
+          method: 'Turkey',
+          notifications: true,
+          sound: 'adhan2',
+        });
+        user.monthlyZikrGoal = 1500;
+        user.monthlyQuranPagesGoal = 60;
+        user.monthlyCharityGoal = 200;
+        user.monthlyFastingDaysGoal = 20;
+        user.preferredMadhab = 'Shafi';
+        user.appLanguage = 'ar';
+        user.theme = 'dark';
+      });
+
+      console.log('Created dummy user 1:', user1.id);
+      console.log('Created dummy user 2:', user2.id);
+    });
+
+    console.log('=== Dummy users created successfully ===');
+  } catch (error) {
+    console.error('Error creating dummy users:', error);
+    throw error;
+  }
+};
+
+// Initialize database with dummy users if empty
+export const initializeDummyUsersIfNeeded = async () => {
+  try {
+    const usersExist = await checkUsersExist();
+
+    if (!usersExist) {
+      console.log('No users found, creating dummy users...');
+      await createDummyUsers();
+    } else {
+      console.log('Users already exist, skipping dummy user creation');
+    }
+  } catch (error) {
+    console.error('Error initializing dummy users:', error);
+    throw error;
+  }
+};
+
+// Debug function to print all users in the table
+export const debugPrintAllUsers = async () => {
+  const usersCollection = database.get<UserModel>('users');
+
+  try {
+    console.log('=== DEBUG: Fetching all users ===');
+
+    // First initialize dummy users if needed
+    await initializeDummyUsersIfNeeded();
+
+    const allUsers = await usersCollection.query().fetch();
+    console.log('Total users found:', allUsers.length);
+
+    if (allUsers.length === 0) {
+      console.log('No users found in the database');
+    } else {
+        console.log('Users found:', allUsers.length);
+      allUsers.forEach((user, index) => {
+        console.log(`User ${index + 1}:`, {
+          id: user.id,
+          uid: user.uid,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          location: user.location,
+          masjid: user.masjid,
+          prayerSettings: user.prayerSettings,
+          monthlyZikrGoal: user.monthlyZikrGoal,
+          monthlyQuranPagesGoal: user.monthlyQuranPagesGoal,
+          monthlyCharityGoal: user.monthlyCharityGoal,
+          monthlyFastingDaysGoal: user.monthlyFastingDaysGoal,
+          preferredMadhab: user.preferredMadhab,
+          appLanguage: user.appLanguage,
+          theme: user.theme,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        });
+      });
+    }
+    console.log('=== END DEBUG ===');
+
+    return allUsers;
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    throw error;
+  }
+};
+
 export const getUserById = async (uid: number): Promise<UserData | null> => {
   const usersCollection = database.get<UserModel>('users');
 
   try {
-    const user = await usersCollection.query(Q.where('uid', uid)).fetch();
+    console.log('Querying for user with uid:', uid);
 
-    if (user.length === 0) return null;
+    // First ensure dummy users exist and print all users
+    await debugPrintAllUsers();
 
-    const userData = user[0];
+    // Use find() for single record or query with first() for better performance
+    const users = await usersCollection.query(Q.where('uid', uid)).fetch();
+
+    console.log('Query result:', users);
+
+    if (users.length === 0) {
+      console.log('No user found with uid:', uid);
+      return null;
+    }
+
+    const userData = users[0];
+    console.log('Raw user data:', userData);
+
     return {
       id: userData.id,
       uid: userData.uid,
@@ -170,119 +325,6 @@ export const updateUserProfile = async (
     });
   } catch (error) {
     console.error('Error updating user profile:', error);
-    throw error;
-  }
-};
-
-export const getUserPrayerStats = async (
-  uid: number,
-  period: 'week' | 'month' | 'year' = 'month',
-) => {
-  const prayerTracksCollection = database.get('prayer_tracks');
-
-  try {
-    let dateFilter;
-    const now = new Date();
-
-    switch (period) {
-      case 'week':
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        dateFilter = Q.where(
-          'date',
-          Q.gte(weekAgo.toISOString().split('T')[0]),
-        );
-        break;
-      case 'month':
-        const monthAgo = new Date(
-          now.getFullYear(),
-          now.getMonth() - 1,
-          now.getDate(),
-        );
-        dateFilter = Q.where(
-          'date',
-          Q.gte(monthAgo.toISOString().split('T')[0]),
-        );
-        break;
-      case 'year':
-        const yearAgo = new Date(
-          now.getFullYear() - 1,
-          now.getMonth(),
-          now.getDate(),
-        );
-        dateFilter = Q.where(
-          'date',
-          Q.gte(yearAgo.toISOString().split('T')[0]),
-        );
-        break;
-    }
-
-    const prayerTracks = await prayerTracksCollection
-      .query(Q.where('uid', uid), dateFilter)
-      .fetch();
-
-    const stats = prayerTracks.reduce(
-      (acc, track) => ({
-        fajrCompleted: acc.fajrCompleted + (track.fajrCompleted ? 1 : 0),
-        dhuhrCompleted: acc.dhuhrCompleted + (track.dhuhrCompleted ? 1 : 0),
-        asrCompleted: acc.asrCompleted + (track.asrCompleted ? 1 : 0),
-        maghribCompleted:
-          acc.maghribCompleted + (track.maghribCompleted ? 1 : 0),
-        ishaCompleted: acc.ishaCompleted + (track.ishaCompleted ? 1 : 0),
-        totalCompleted:
-          acc.totalCompleted +
-          (track.fajrCompleted ? 1 : 0) +
-          (track.dhuhrCompleted ? 1 : 0) +
-          (track.asrCompleted ? 1 : 0) +
-          (track.maghribCompleted ? 1 : 0) +
-          (track.ishaCompleted ? 1 : 0),
-        totalDays: acc.totalDays + 1,
-      }),
-      {
-        fajrCompleted: 0,
-        dhuhrCompleted: 0,
-        asrCompleted: 0,
-        maghribCompleted: 0,
-        ishaCompleted: 0,
-        totalCompleted: 0,
-        totalDays: 0,
-      },
-    );
-
-    return stats;
-  } catch (error) {
-    console.error('Error getting prayer stats:', error);
-    throw error;
-  }
-};
-
-export const getMonthlyUserTotals = async (uid: number, month: string) => {
-  // Query daily_tasks for the specified month and sum totals
-  const dailyTasksCollection = database.get('daily_tasks');
-
-  try {
-    const monthlyTasks = await dailyTasksCollection
-      .query(Q.where('uid', uid), Q.where('date', Q.like(`${month}%`)))
-      .fetch();
-
-    const totals = monthlyTasks.reduce(
-      (acc, task) => ({
-        totalZikr: acc.totalZikr + (task.totalZikrCount || 0),
-        totalQuranPages: acc.totalQuranPages + (task.quranPagesRead || 0),
-        totalCharity: acc.totalCharity + (task.charityAmount || 0),
-        totalFastingDays:
-          acc.totalFastingDays + (task.fastingCompleted ? 1 : 0),
-      }),
-      {
-        totalZikr: 0,
-        totalQuranPages: 0,
-        totalCharity: 0,
-        totalFastingDays: 0,
-      },
-    );
-
-    return totals;
-  } catch (error) {
-    console.error('Error getting monthly totals:', error);
     throw error;
   }
 };
