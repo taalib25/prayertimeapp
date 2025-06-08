@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {createUser, getUserById} from '../services/db/UserServices';
 
 interface User {
   id: string;
@@ -67,6 +68,18 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
       await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
       setUser(userData);
+
+      // Initialize user profile in the separate user storage system
+      const uid = parseInt(userData.id) || 1001;
+      const existingUser = await getUserById(uid);
+
+      if (!existingUser) {
+        await createUser(uid, {
+          username: userData.name || email.split('@')[0],
+          email: userData.email,
+          phoneNumber: userData.phoneNumber,
+        });
+      }
     } catch (error) {
       console.error('Error during login:', error);
       throw new Error('Failed to save user data');

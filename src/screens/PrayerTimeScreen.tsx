@@ -18,7 +18,7 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
-import {useUser} from '../hooks/useUser';
+import {getUserById} from '../services/db/UserServices';
 import {getCurrentDateString} from '../utils/helpers';
 import {
   initializeUserBackgroundTasks,
@@ -27,8 +27,22 @@ import {
 
 const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const [userProfile, setUserProfile] = useState<any>(null);
   const {prayerTimes, isLoading, error} = usePrayerTimes(selectedDate);
-  const {user} = useUser({uid: 1001});
+
+  // Fetch user profile separately
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user = await getUserById(1001);
+        setUserProfile(user);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Initialize background tasks when screen mounts
   useEffect(() => {
@@ -63,10 +77,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.location}
-          userName={user?.username}
-          mosqueName={user?.masjid}
-          mosqueLocation={user?.masjid}
+          location={userProfile?.settings?.location}
+          userName={userProfile?.profile?.username}
+          mosqueName={userProfile?.settings?.masjid}
+          mosqueLocation={userProfile?.settings?.masjid}
           avatarImage={require('../assets/images/profile.png')}
         />
 

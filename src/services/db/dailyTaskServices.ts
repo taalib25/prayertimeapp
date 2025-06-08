@@ -531,3 +531,44 @@ export const observeDailyTasksForDate = (uid: number, date: string) => {
     .query(Q.where('uid', uid), Q.where('date', date))
     .observe();
 };
+
+export const getDailyTasksForDateRange = async (
+  uid: number,
+  startDate: string,
+  endDate: string,
+): Promise<DailyTaskData[]> => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+    const tasks = await dailyTasksCollection
+      .query(
+        Q.where('uid', uid),
+        Q.where('date', Q.gte(startDate)),
+        Q.where('date', Q.lte(endDate)),
+        Q.sortBy('date', Q.asc),
+      )
+      .fetch();
+
+    return tasks.map(task => ({
+      uid: task.uid,
+      date: task.date,
+      fajrStatus: task.fajrStatus as PrayerStatus,
+      dhuhrStatus: task.dhuhrStatus as PrayerStatus,
+      asrStatus: task.asrStatus as PrayerStatus,
+      maghribStatus: task.maghribStatus as PrayerStatus,
+      ishaStatus: task.ishaStatus as PrayerStatus,
+      tahajjudCompleted: task.tahajjudCompleted,
+      duhaCompleted: task.duhaCompleted,
+      totalZikrCount: task.totalZikrCount,
+      quranMinutes: task.quranMinutes,
+      quranPagesRead: task.quranPagesRead,
+      specialTasks: task.specialTasks ? JSON.parse(task.specialTasks) : [],
+    }));
+  } catch (error) {
+    console.error(
+      `Error getting daily tasks for ${startDate} to ${endDate}:`,
+      error,
+    );
+    throw error;
+  }
+};

@@ -1,7 +1,6 @@
 import {Database} from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import PrayerTimesModel from '../../model/PrayerTimes';
-import UserModel from '../../model/User';
 import prayerAppSchema from './schema';
 import DailyTasksModel from '../../model/DailyTasks';
 
@@ -15,7 +14,7 @@ const adapter = new SQLiteAdapter({
     maxVersion: 1,
     sortedMigrations: [],
   },
-  jsi: false, 
+  jsi: false,
   onSetUpError: error => {
     console.error('Database setup error:', error);
   },
@@ -24,7 +23,7 @@ const adapter = new SQLiteAdapter({
 // Then, make a Watermelon database from it:
 const database = new Database({
   adapter,
-  modelClasses: [PrayerTimesModel, DailyTasksModel, UserModel],
+  modelClasses: [PrayerTimesModel, DailyTasksModel],
 });
 
 export default database;

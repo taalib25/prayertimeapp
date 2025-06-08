@@ -22,27 +22,6 @@ const prayerAppSchema = appSchema({
       ],
     }),
     tableSchema({
-      name: 'users',
-      columns: [
-        {name: 'uid', type: 'number'},
-        {name: 'username', type: 'string'},
-        {name: 'email', type: 'string', isOptional: true},
-        {name: 'phone_number', type: 'string', isOptional: true},
-        {name: 'location', type: 'string', isOptional: true},
-        {name: 'masjid', type: 'string', isOptional: true},
-        {name: 'prayer_settings', type: 'string'},
-        {name: 'monthly_zikr_goal', type: 'number'},
-        {name: 'monthly_quran_pages_goal', type: 'number'},
-        {name: 'monthly_charity_goal', type: 'number'},
-        {name: 'monthly_fasting_days_goal', type: 'number'},
-        {name: 'preferred_madhab', type: 'string'},
-        {name: 'app_language', type: 'string'},
-        {name: 'theme', type: 'string'},
-        {name: 'created_at', type: 'number'},
-        {name: 'updated_at', type: 'number'},
-      ],
-    }),
-    tableSchema({
       name: 'daily_tasks',
       columns: [
         {name: 'uid', type: 'number', isIndexed: true},

@@ -30,6 +30,7 @@ import {
 import {useHistoricalTasks} from '../hooks/useHistoricalTasks';
 import {useDailyTasks} from '../hooks/useDailyTasks';
 import database from '../services/db';
+import {getUserById, createUser} from '../services/db/UserServices';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -322,6 +323,34 @@ const DatabaseTestScreen = () => {
     }
   };
 
+  // Test AsyncStorage user functionality
+  const handleTestAsyncStorageUser = async () => {
+    try {
+      addToLog('🧪 Testing AsyncStorage User System...');
+
+      // Test creating a user
+      const testUser = await createUser(9999, {
+        username: 'TestUser',
+        email: 'test@example.com',
+        phoneNumber: '+1234567890',
+      });
+
+      addToLog(`✅ Created test user: ${testUser.profile.username}`);
+
+      // Test retrieving the user
+      const retrievedUser = await getUserById(9999);
+      if (retrievedUser) {
+        addToLog(`✅ Retrieved user: ${retrievedUser.profile.username}`);
+      } else {
+        addToLog('❌ Failed to retrieve user');
+      }
+
+      addToLog('🎉 AsyncStorage User test passed!');
+    } catch (error) {
+      addToLog(`❌ AsyncStorage User error: ${error}`);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -484,6 +513,19 @@ const DatabaseTestScreen = () => {
               style={styles.testButton}
               onPress={handleShowHistoricalAnalysis}>
               <Text style={styles.buttonText}>Show Analysis</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* AsyncStorage User Tests */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>👤 AsyncStorage User Tests</Text>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={handleTestAsyncStorageUser}>
+              <Text style={styles.buttonText}>Test User System</Text>
             </TouchableOpacity>
           </View>
         </View>
