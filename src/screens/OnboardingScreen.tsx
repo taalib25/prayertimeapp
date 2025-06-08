@@ -30,8 +30,6 @@ const OnboardingScreen: React.FC<Props> = ({
   const handleStartNow = async () => {
     try {
       await onOnboardingComplete();
-      // No explicit navigation.replace needed here.
-      // AppNavigator will re-render and display the appropriate screen (Login).
     } catch (error) {
       console.error('Error during onOnboardingComplete:', error);
       // Handle error if the callback itself throws one, though unlikely with current setup.

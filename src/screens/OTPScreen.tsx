@@ -178,7 +178,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 keyboardType="phone-pad"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
-                placeholder="Enter your mobile number"
+                placeholder="076 543 3423"
               />
               {errors.phoneNumber && (
                 <Text style={styles.errorText}>{errors.phoneNumber}</Text>
@@ -201,7 +201,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 style={styles.logo}
                 resizeMode="contain"
               />
-              <Text style={styles.title}>OTP Verification</Text>{' '}
+              <Text style={styles.title}>OTP Verification</Text>
               <Text
                 style={[
                   styles.phoneNumberText,
@@ -239,7 +239,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
               />
               <View style={styles.resendContainer}>
                 <Text style={styles.resendText}>
-                  Didn't receive the code?{' '}
+                  Didn't receive the code?
                   <Text onPress={handleResendOTP} style={styles.resendLink}>
                     Resend
                   </Text>
