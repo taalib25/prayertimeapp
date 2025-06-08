@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {
   getPrayerTimesForDate,
   PrayerTimesData,
@@ -11,41 +11,84 @@ interface PrayerTime {
   isActive?: boolean;
 }
 
+interface PrayerWithMinutes {
+  name: string;
+  displayName: string;
+  time: string;
+  totalMinutes: number;
+}
+
 export const usePrayerTimes = (date: string) => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cachedPrayerTimesRef = useRef<PrayerWithMinutes[] | null>(null);
+  const lastFetchDateRef = useRef<string>('');
 
-  const transformPrayerTimes = (dbData: PrayerTimesData): PrayerTime[] => {
-    const currentTime = new Date();
-    const currentHour = currentTime.getHours();
-    const currentMinute = currentTime.getMinutes();
-
-    const prayers = [
-      {name: 'fajr', displayName: 'Fajr', time: dbData.fajr},
-      {name: 'dhuhr', displayName: 'Dhuhr', time: dbData.dhuhr},
-      {name: 'asr', displayName: 'Asr', time: dbData.asr},
-      {name: 'maghrib', displayName: 'Maghrib', time: dbData.maghrib},
-      {name: 'isha', displayName: 'Isha', time: dbData.isha},
-    ];
-
-    // Determine which prayer is currently active
-    return prayers.map(prayer => {
-      const [timeHour, timeMinute] = prayer.time.split(':').map(Number);
-      const prayerMinutes = timeHour * 60 + timeMinute;
-      const currentMinutes = currentHour * 60 + currentMinute;
-
-      // Simple logic - you can make this more sophisticated
-      const isActive = Math.abs(currentMinutes - prayerMinutes) < 30;
-
+  // Memoize prayer time conversion to avoid recalculation
+  const convertPrayerTimes = useCallback((dbData: PrayerTimesData): PrayerWithMinutes[] => {
+    return [
+      {name: 'fajr', displayName: 'Fajr', time: dbData.fajr, totalMinutes: 0},
+      {name: 'dhuhr', displayName: 'Dhuhr', time: dbData.dhuhr, totalMinutes: 0},
+      {name: 'asr', displayName: 'Asr', time: dbData.asr, totalMinutes: 0},
+      {name: 'maghrib', displayName: 'Maghrib', time: dbData.maghrib, totalMinutes: 0},
+      {name: 'isha', displayName: 'Isha', time: dbData.isha, totalMinutes: 0},
+    ].map(prayer => {
+      const [hours, minutes] = prayer.time.split(':').map(Number);
       return {
         ...prayer,
-        isActive,
+        totalMinutes: hours * 60 + minutes,
       };
     });
-  };
+  }, []);
 
-  const fetchPrayerTimes = async () => {
+  // Optimized function to find active prayer using cached data
+  const findActivePrayer = useCallback((prayers: PrayerWithMinutes[]): PrayerTime[] => {
+    const currentTime = new Date();
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+
+    let activePrayerIndex = -1;
+    let minDifference = Infinity;
+
+    // Find the next prayer more efficiently
+    for (let i = 0; i < prayers.length; i++) {
+      const prayerTime = prayers[i].totalMinutes;
+      const difference = prayerTime >= currentMinutes 
+        ? prayerTime - currentMinutes 
+        : (prayerTime + 24 * 60) - currentMinutes;
+
+      if (difference < minDifference) {
+        minDifference = difference;
+        activePrayerIndex = i;
+      }
+    }
+
+    // Return only the necessary data
+    return prayers.map((prayer, index) => ({
+      name: prayer.name,
+      displayName: prayer.displayName,
+      time: prayer.time,
+      isActive: index === activePrayerIndex,
+    }));
+  }, []);
+
+  // Update active prayer status without refetching data
+  const updateActivePrayer = useCallback(() => {
+    if (cachedPrayerTimesRef.current) {
+      const updatedPrayers = findActivePrayer(cachedPrayerTimesRef.current);
+      setPrayerTimes(updatedPrayers);
+    }
+  }, [findActivePrayer]);
+
+  // Fetch prayer times only when date changes
+  const fetchPrayerTimes = useCallback(async () => {
+    // Skip fetch if date hasn't changed
+    if (lastFetchDateRef.current === date && cachedPrayerTimesRef.current) {
+      updateActivePrayer();
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -53,22 +96,53 @@ export const usePrayerTimes = (date: string) => {
       const dbPrayerTimes = await getPrayerTimesForDate(date);
 
       if (dbPrayerTimes) {
-        const transformed = transformPrayerTimes(dbPrayerTimes);
-        setPrayerTimes(transformed);
+        const convertedPrayers = convertPrayerTimes(dbPrayerTimes);
+        cachedPrayerTimesRef.current = convertedPrayers;
+        lastFetchDateRef.current = date;
+        
+        const prayersWithActive = findActivePrayer(convertedPrayers);
+        setPrayerTimes(prayersWithActive);
       } else {
         setError('No prayer times found for this date');
+        cachedPrayerTimesRef.current = null;
       }
     } catch (err) {
       setError('Failed to fetch prayer times');
       console.error('Error fetching prayer times:', err);
+      cachedPrayerTimesRef.current = null;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [date, convertPrayerTimes, findActivePrayer, updateActivePrayer]);
 
+  // Single effect to manage both fetching and interval
   useEffect(() => {
     fetchPrayerTimes();
-  }, [date]);
 
-  return {prayerTimes, isLoading, error, refetch: fetchPrayerTimes};
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Set up interval to update active prayer every minute (without refetching)
+    intervalRef.current = setInterval(updateActivePrayer, 60000);
+
+    // Cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [fetchPrayerTimes, updateActivePrayer]);
+
+  // Memoize the return value to prevent unnecessary re-renders
+  const memoizedReturn = useMemo(() => ({
+    prayerTimes,
+    isLoading,
+    error,
+    refetch: fetchPrayerTimes,
+  }), [prayerTimes, isLoading, error, fetchPrayerTimes]);
+
+  return memoizedReturn;
 };
