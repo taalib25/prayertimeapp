@@ -28,7 +28,6 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-<service android:name=".PrayerReminderService" android:foregroundServiceType="mediaPlayback" />
     <!-- <uses-permission android:minSdkVersion="34" android:name="android.permission.USE_EXACT_ALARM" /> -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <application
@@ -37,8 +36,10 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
-      android:theme="@style/SplashTheme">
-      android:supportsRtl="true">
+      android:theme="@style/SplashTheme"
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="true" 
+      >
       
       <!-- Main activity -->
       <activity

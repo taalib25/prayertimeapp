@@ -60,38 +60,30 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
 // Enhanced BackgroundFetch headless task
 const MyHeadlessTask = async (event) => {
   let taskId = event.taskId;
-  let isTimeout = event.timeout;
-  
-  if (isTimeout) {
-    console.log('[BackgroundFetch] Headless TIMEOUT:', taskId);
-    BackgroundFetch.finish(taskId);
-    return;
-  }
-  
-  console.log('[BackgroundFetch HeadlessTask] start:', taskId);
   
   try {
-    // Handle daily reset tasks
+    // Handle different task types based on taskId
     if (taskId.includes('daily-reset')) {
       const uid = extractUidFromTaskId(taskId);
       if (uid) {
-        // Import function dynamically to avoid circular imports
+        // Dynamic import to avoid circular dependencies
         const { checkAndResetDailyTasks } = require('./src/services/db/dailyTaskServices');
         await checkAndResetDailyTasks(uid);
-        console.log(`[BackgroundFetch] Daily reset completed for user ${uid}`);
       }
     }
     
-    // Handle fake call scheduling
-    if (taskId.includes('fake-call')) {
-      // Your existing fake call logic
+    if (taskId.includes('prayer-check')) {
+      const uid = extractUidFromTaskId(taskId);
+      if (uid) {
+        const today = new Date().toISOString().split('T')[0];
+        await checkAndUpdateNotifications(uid, today);
+      }
     }
-    
   } catch (error) {
     console.error('[BackgroundFetch] Task error:', error);
   }
   
-  BackgroundFetch.finish(taskId);
+  BackgroundFetch.finish(taskId); // Always call this!
 };
 
 // Helper function to extract UID from task ID

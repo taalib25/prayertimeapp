@@ -9,6 +9,10 @@ import {
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
+import {
+  initializeUserBackgroundTasks,
+  checkBackgroundTasksHealth,
+} from '../services/backgroundTasks';
 
 interface UseDailyTasksProps {
   uid: number;
@@ -93,7 +97,7 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
       if (nextAppState === 'active') {
         const currentDate = new Date().toISOString().split('T')[0];
         if (currentDate !== date) {
-          fetchDailyTasks();
+          fetchDailyTasks(); // This triggers reset if needed
         }
       }
     };
@@ -107,11 +111,20 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
     };
   }, [fetchDailyTasks, date]);
 
-  // Background task initialization
+  // Enhanced background task initialization
   useEffect(() => {
     const initializeBackgroundTasks = async () => {
       try {
+        // First check and reset daily tasks
         await checkAndResetDailyTasks(uid);
+
+        // Check if background tasks are properly set up
+        const isHealthy = await checkBackgroundTasksHealth(uid);
+
+        if (!isHealthy) {
+          console.log(`🔄 Setting up background tasks for user ${uid}...`);
+          await initializeUserBackgroundTasks(uid);
+        }
       } catch (error) {
         console.error('Error initializing background tasks:', error);
       }

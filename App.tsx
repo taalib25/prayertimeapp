@@ -29,7 +29,11 @@ import {
   NavigationContainerRef,
 } from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import { initializePrayerTimesDatabase } from './src/services/db/dbInitalizer';
+import {initializePrayerTimesDatabase} from './src/services/db/dbInitalizer';
+import {
+  initializeUserBackgroundTasks,
+  checkBackgroundTasksHealth,
+} from './src/services/backgroundTasks';
 
 // Define screen names and their params
 export type RootStackParamList = {
@@ -56,6 +60,24 @@ function AppNavigator() {
     checkOnboardingStatus();
     initializePrayerTimesDatabase();
   }, []);
+
+  // Initialize background tasks when user becomes authenticated
+  useEffect(() => {
+    const initializeBackgroundServices = async () => {
+      if (isAuthenticated && !isLoading) {
+        const defaultUserId = 1001;
+
+        // Check if background tasks are healthy
+        const isHealthy = await checkBackgroundTasksHealth(defaultUserId);
+
+        if (!isHealthy) {
+          await initializeUserBackgroundTasks(defaultUserId);
+        }
+      }
+    };
+
+    initializeBackgroundServices();
+  }, [isAuthenticated, isLoading]);
 
   const checkOnboardingStatus = async () => {
     try {

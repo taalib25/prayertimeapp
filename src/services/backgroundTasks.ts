@@ -12,13 +12,15 @@ export const initializeUserBackgroundTasks = async (
   uid: number,
 ): Promise<void> => {
   try {
+    console.log(`🔄 Initializing background tasks for user ${uid}...`);
+
+    // Configure BackgroundFetch if not already configured
+    await configureBackgroundFetch();
+
     // Schedule daily reset check (every 6 hours to catch missed resets)
     await scheduleRepeatingTask(
       `daily-reset-check-${uid}`,
       6 * 60 * 60 * 1000, // 6 hours
-      async () => {
-        await checkAndResetDailyTasks(uid);
-      },
     );
 
     // Schedule prayer time check (daily at 12:05 AM)
@@ -30,7 +32,6 @@ export const initializeUserBackgroundTasks = async (
       taskId: `prayer-check-${uid}-${tomorrow.getTime()}`,
       delay: tomorrow.getTime() - Date.now(),
       periodic: true,
-      // IN: 24 * 60 * 60 * 1000, // Daily
       forceAlarmManager: true,
       requiredNetworkType: BackgroundFetch.NETWORK_TYPE_NONE,
     });
@@ -48,21 +49,86 @@ export const initializeUserBackgroundTasks = async (
 };
 
 /**
+ * Configure BackgroundFetch (call once per app session)
+ */
+const configureBackgroundFetch = async (): Promise<void> => {
+  try {
+    const status = await BackgroundFetch.configure(
+      {
+        minimumFetchInterval: 15000, // 15 seconds (for testing)
+        stopOnTerminate: false,
+        startOnBoot: true,
+        enableHeadless: true,
+        forceAlarmManager: true,
+        requiredNetworkType: BackgroundFetch.NETWORK_TYPE_NONE,
+      },
+      async (taskId: string) => {
+        console.log(`[BackgroundFetch] Task executed: ${taskId}`);
+
+        try {
+          // Handle different task types
+          if (taskId.includes('daily-reset')) {
+            const uid = extractUidFromTaskId(taskId);
+            if (uid) {
+              await checkAndResetDailyTasks(uid);
+              console.log(`✅ Daily reset completed for user ${uid}`);
+            }
+          }
+
+          if (taskId.includes('prayer-check')) {
+            const uid = extractUidFromTaskId(taskId);
+            if (uid) {
+              const today = new Date().toISOString().split('T')[0];
+              await checkAndUpdateNotifications(uid, today);
+              console.log(`✅ Prayer notifications updated for user ${uid}`);
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Error in background task ${taskId}:`, error);
+        }
+
+        BackgroundFetch.finish(taskId);
+      },
+      (taskId: string) => {
+        console.log(`[BackgroundFetch] Task timeout: ${taskId}`);
+        BackgroundFetch.finish(taskId);
+      },
+    );
+
+    console.log(`📱 BackgroundFetch configured with status: ${status}`);
+  } catch (error) {
+    console.error('❌ Error configuring BackgroundFetch:', error);
+  }
+};
+
+/**
+ * Extract UID from task ID
+ */
+const extractUidFromTaskId = (taskId: string): number | null => {
+  const match = taskId.match(/-(\d+)(?:-|$)/);
+  return match ? parseInt(match[1]) : null;
+};
+
+/**
  * Schedule a repeating background task
  */
 const scheduleRepeatingTask = async (
   taskId: string,
   interval: number,
-  callback: () => Promise<void>,
 ): Promise<void> => {
-  await BackgroundFetch.scheduleTask({
-    taskId,
-    delay: interval,
-    periodic: true,
-    // period: interval,
-    forceAlarmManager: true,
-    requiredNetworkType: BackgroundFetch.NETWORK_TYPE_NONE,
-  });
+  try {
+    await BackgroundFetch.scheduleTask({
+      taskId,
+      delay: interval,
+      periodic: true,
+      forceAlarmManager: true,
+      requiredNetworkType: BackgroundFetch.NETWORK_TYPE_NONE,
+    });
+
+    console.log(`📅 Scheduled repeating task: ${taskId}`);
+  } catch (error) {
+    console.error(`❌ Error scheduling task ${taskId}:`, error);
+  }
 };
 
 /**
@@ -99,10 +165,7 @@ export const cleanupUserBackgroundTasks = async (
 ): Promise<void> => {
   try {
     // Stop known task IDs for this user
-    const taskIds = [
-      `daily-reset-check-${uid}`,
-      `prayer-check-${uid}`,
-    ];
+    const taskIds = [`daily-reset-check-${uid}`, `prayer-check-${uid}`];
 
     let cleanedCount = 0;
     for (const taskId of taskIds) {

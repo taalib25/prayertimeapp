@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -17,15 +17,42 @@ import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
-import { usePrayerTimes } from '../hooks/usePrayerTimes';
-import { useUser } from '../hooks/useUser';
-import { getCurrentDateString } from '../utils/helpers';
+import {usePrayerTimes} from '../hooks/usePrayerTimes';
+import {useUser} from '../hooks/useUser';
+import {getCurrentDateString} from '../utils/helpers';
+import {
+  initializeUserBackgroundTasks,
+  checkBackgroundTasksHealth,
+} from '../services/backgroundTasks';
 
 const PrayerTimeScreen = () => {
-  // const [isLoading, setIsLoading] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading, error} = usePrayerTimes(selectedDate);
-  const {user} = useUser({uid: 1001}); 
+  const {user} = useUser({uid: 1001});
+
+  // Initialize background tasks when screen mounts
+  useEffect(() => {
+    const setupBackgroundServices = async () => {
+      try {
+        const userId = 1001; // Your default user ID
+
+        // Check if background tasks need initialization
+        const isHealthy = await checkBackgroundTasksHealth(userId);
+
+        if (!isHealthy) {
+          console.log(
+            '🔄 Initializing background tasks from PrayerTimeScreen...',
+          );
+          await initializeUserBackgroundTasks(userId);
+        }
+      } catch (error) {
+        console.error('Error setting up background services:', error);
+      }
+    };
+
+    setupBackgroundServices();
+  }, []);
+
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -34,14 +61,13 @@ const PrayerTimeScreen = () => {
         translucent={true}
       />
       <ScrollView style={styles.scrollContainer}>
-        
         {/* Header with user profile and mosque info */}
         <Header
           location={user?.location}
           userName={user?.username}
           mosqueName={user?.masjid}
           mosqueLocation={user?.masjid}
-          avatarImage={require('../assets/images/profile.png')} 
+          avatarImage={require('../assets/images/profile.png')}
         />
 
         {isLoading ? (
@@ -52,7 +78,6 @@ const PrayerTimeScreen = () => {
           />
         ) : (
           <View style={styles.container}>
-            
             {/* Prayer Time Cards */}
             <PrayerTimeCards prayers={prayerTimes} />
 
@@ -75,8 +100,6 @@ const PrayerTimeScreen = () => {
 
             {/* Monthly Challenge Cards */}
             <MonthlyChallengeSelector />
-
-            
           </View>
         )}
       </ScrollView>
@@ -112,7 +135,6 @@ const styles = StyleSheet.create({
     color: 'red',
     marginVertical: 20,
     paddingHorizontal: 20,
-
   },
   sectionHeader: {
     flexDirection: 'row',

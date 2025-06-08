@@ -327,7 +327,7 @@ export const resetDailyTasks = async (
  */
 export const checkAndResetDailyTasks = async (uid: number) => {
   const today = new Date().toISOString().split('T')[0];
-  
+
   // Get most recent task record
   const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
   const latestTasks = await dailyTasksCollection
@@ -337,7 +337,7 @@ export const checkAndResetDailyTasks = async (uid: number) => {
   // If no tasks for today OR last task is from previous day
   if (latestTasks.length === 0 || latestTasks[0].date !== today) {
     await resetDailyTasks(uid, today); // Create fresh tasks
-    await scheduleNextDayReset(uid);   // Schedule tomorrow's reset
+    await scheduleNextDayReset(uid); // Schedule tomorrow's reset
     await checkAndUpdateNotifications(uid, today); // Update prayer notifications
   }
 };
@@ -370,17 +370,20 @@ export const scheduleNextDayReset = async (uid: number): Promise<void> => {
 /**
  * Check if prayer times changed and update notifications accordingly
  */
-export const checkAndUpdateNotifications = async (uid: number, date: string) => {
+export const checkAndUpdateNotifications = async (
+  uid: number,
+  date: string,
+) => {
   const todayPrayerTimes = await getPrayerTimesForDate(date);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayDate = yesterday.toISOString().split('T')[0];
   const yesterdayPrayerTimes = await getPrayerTimesForDate(yesterdayDate);
 
-  // Compare each prayer time
+  // Compare each prayer time - fix the typo
   const timesChanged =
     !yesterdayPrayerTimes ||
-    todayPrayerTimes?.asr!== yesterdayPrayerTimes.fajr ||
+    todayPrayerTimes?.fajr !== yesterdayPrayerTimes.fajr ||
     todayPrayerTimes?.dhuhr !== yesterdayPrayerTimes.dhuhr ||
     todayPrayerTimes?.asr !== yesterdayPrayerTimes.asr ||
     todayPrayerTimes?.maghrib !== yesterdayPrayerTimes.maghrib ||
@@ -511,21 +514,20 @@ const scheduleIndividualPrayerNotification = async (
  * Get user notification preferences (placeholder - implement based on your user model)
  */
 const getUserNotificationPreferences = async (uid: number) => {
-  // This should fetch from your user preferences tablee.error(`Error scheduling ${prayerName} notification:`, error);
+  // This should fetch from your user preferences table
   return {
     notifications: true,
     adhan_sound: 'default',
     reminder_minutes_before: 10,
-  };tification preferences (placeholder - implement based on your user model)
+  };
 };
-cationPreferences = async (uid: number) => {
+
 /**
- * Observable daily tasks for reactive UIeturn {
- */  notifications: true,
-    adhan_sound: 'default',
-export const observeDailyTasksForDate = (uid: number, date: string) => { reminder_minutes_before: 10,
+ * Observable daily tasks for reactive UI
+ */
+export const observeDailyTasksForDate = (uid: number, date: string) => {
   const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
   return dailyTasksCollection
     .query(Q.where('uid', uid), Q.where('date', date))
     .observe();
-};ble daily tasks for reactive UI
+};
