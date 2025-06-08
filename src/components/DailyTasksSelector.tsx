@@ -12,9 +12,6 @@ import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useDailyTasks} from '../hooks/useDailyTasks';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// Mock user ID - in real app, get from auth context
 const MOCK_USER_ID = 1;
 
 interface Task {
@@ -28,81 +25,6 @@ interface DayTasks {
   dayLabel: string; // "Today", "Yesterday", or formatted date
   tasks: Task[];
 }
-
-// Dynamic data for the last 3 days
-const getMockData = (): DayTasks[] => {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const dayBefore = new Date(today);
-  dayBefore.setDate(today.getDate() - 2);
-
-  const formatDateISO = (date: Date) => date.toISOString().split('T')[0];
-
-  const formatDayLabel = (
-    date: Date,
-    isToday: boolean,
-    isYesterday: boolean,
-  ) => {
-    if (isToday) return 'Today';
-    if (isYesterday) return 'Yesterday';
-
-    const options: Intl.DateTimeFormatOptions = {
-      month: 'short',
-      day: 'numeric',
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
-
-  return [
-    {
-      dateISO: formatDateISO(dayBefore),
-      dayLabel: formatDayLabel(dayBefore, false, false),
-      tasks: [
-        {id: 'db1', title: 'FAJR at Masjid', completed: true},
-        {id: 'db2', title: 'Read Surah Al-Kahf', completed: false},
-        {id: 'db3', title: 'Give Charity', completed: true},
-        {id: 'db4', title: 'Evening Zikr', completed: false},
-        {id: 'db5', title: 'Help a neighbor', completed: true},
-        {id: 'db6', title: 'Study Islamic history', completed: false},
-        {id: 'db7', title: 'Dua after Maghrib', completed: true},
-        {id: 'db8', title: 'Read Hadith collection', completed: false},
-      ],
-    },
-    {
-      dateISO: formatDateISO(yesterday),
-      dayLabel: formatDayLabel(yesterday, false, true),
-      tasks: [
-        {id: 'y1', title: 'Morning Zikr', completed: true},
-        {id: 'y2', title: 'Call Parents', completed: true},
-        {id: 'y3', title: '100 x Asthagfirullah', completed: false},
-        {id: 'y4', title: 'Plan for tomorrow', completed: true},
-        {id: 'y5', title: 'Read Hadith', completed: false},
-        {id: 'y6', title: 'Dua before sleep', completed: true},
-        {id: 'y7', title: 'Listen to Quran recitation', completed: false},
-        {id: 'y8', title: 'Practice patience', completed: true},
-        {id: 'y9', title: 'Reflect on blessings', completed: false},
-      ],
-    },
-    {
-      dateISO: formatDateISO(today),
-      dayLabel: formatDayLabel(today, true, false),
-      tasks: [
-        {id: 't1', title: 'FAJR at Masjid', completed: false},
-        {
-          id: 't2',
-          title: '500 x La hawla wala kuwwatha illa billah',
-          completed: false,
-        },
-        {id: 't3', title: '100 x Asthagfirullah', completed: false},
-        {id: 't4', title: '15 mins of Quran', completed: false},
-        {id: 't5', title: 'ISHA at Masjid', completed: false},
-        {id: 't6', title: 'Make Dua for family', completed: false},
-        {id: 't7', title: 'Reflect on day', completed: false},
-      ],
-    },
-  ];
-};
 
 interface TaskItemProps {
   item: Task;
@@ -172,11 +94,35 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
 
 const DailyTasksSelector: React.FC = () => {
   const today = new Date().toISOString().split('T')[0];
-  const {dailyTasks, isLoading, toggleSpecialTask} = useDailyTasks({
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dayBefore = new Date();
+  dayBefore.setDate(dayBefore.getDate() - 2);
+
+  //========================================================================================
+  const {
+    dailyTasks: todayTasks,
+    isLoading: todayLoading,
+    toggleSpecialTask,
+  } = useDailyTasks({
     uid: MOCK_USER_ID,
     date: today,
   });
-  console.log("tasks >>>>>>>>>>>>",dailyTasks)
+
+  const {dailyTasks: yesterdayTasks, isLoading: yesterdayLoading} =
+    useDailyTasks({
+      uid: MOCK_USER_ID,
+      date: yesterday.toISOString().split('T')[0],
+    });
+
+  const {dailyTasks: dayBeforeTasks, isLoading: dayBeforeLoading} =
+    useDailyTasks({
+      uid: MOCK_USER_ID,
+      date: dayBefore.toISOString().split('T')[0],
+    });
+  //========================================================================================
+  console.log('tasks >>>>>>>>>>>>', todayTasks);
+
   const handleTaskToggle = useCallback(
     (dateISO: string, taskId: string) => {
       if (dateISO === today) {
@@ -189,24 +135,51 @@ const DailyTasksSelector: React.FC = () => {
     [today, toggleSpecialTask],
   );
 
-  // Transform dailyTasks to match existing component structure
   const transformedDailyData = useMemo(() => {
-    if (!dailyTasks) return getMockData();
+    const formatDayLabel = (
+      date: Date,
+      isToday: boolean,
+      isYesterday: boolean,
+    ) => {
+      if (isToday) return 'Today';
+      if (isYesterday) return 'Yesterday';
 
-    const todayData = {
-      dateISO: today,
-      dayLabel: 'Today',
-      tasks: dailyTasks.specialTasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        completed: task.completed,
-      })),
+      const options: Intl.DateTimeFormatOptions = {
+        month: 'short',
+        day: 'numeric',
+      };
+      return date.toLocaleDateString('en-US', options);
     };
 
-    // Keep mock data for yesterday and day before for now
-    const mockData = getMockData();
-    return [mockData[0], mockData[1], todayData];
-  }, [dailyTasks, today]);
+    const createDayTasks = (
+      date: Date,
+      dailyTasks: any,
+      isToday: boolean,
+      isYesterday: boolean,
+    ): DayTasks => {
+      const dateISO = date.toISOString().split('T')[0];
+      const dayLabel = formatDayLabel(date, isToday, isYesterday);
+
+      const tasks =
+        dailyTasks?.specialTasks?.map((task: any) => ({
+          id: task.id,
+          title: task.title,
+          completed: task.completed,
+        })) || [];
+
+      return {
+        dateISO,
+        dayLabel,
+        tasks,
+      };
+    };
+
+    return [
+      createDayTasks(dayBefore, dayBeforeTasks, false, false),
+      createDayTasks(yesterday, yesterdayTasks, false, true),
+      createDayTasks(new Date(), todayTasks, true, false),
+    ];
+  }, [todayTasks, yesterdayTasks, dayBeforeTasks]);
 
   const [currentPage, setCurrentPage] = useState(
     transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0,
@@ -216,6 +189,19 @@ const DailyTasksSelector: React.FC = () => {
   const handlePageSelected = (e: any) => {
     setCurrentPage(e.nativeEvent.position);
   };
+
+  // Show loading state if any of the data is loading
+  if (todayLoading || yesterdayLoading || dayBeforeLoading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <Text style={typography.body}>Loading tasks...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

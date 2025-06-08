@@ -57,7 +57,7 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   }
 });
 
-// BackgroundFetch headless task for Android
+// Enhanced BackgroundFetch headless task
 const MyHeadlessTask = async (event) => {
   let taskId = event.taskId;
   let isTimeout = event.timeout;
@@ -70,10 +70,34 @@ const MyHeadlessTask = async (event) => {
   
   console.log('[BackgroundFetch HeadlessTask] start:', taskId);
   
-  // Check if we should trigger fake call
-  // This would check your scheduled call logic
+  try {
+    // Handle daily reset tasks
+    if (taskId.includes('daily-reset')) {
+      const uid = extractUidFromTaskId(taskId);
+      if (uid) {
+        // Import function dynamically to avoid circular imports
+        const { checkAndResetDailyTasks } = require('./src/services/db/dailyTaskServices');
+        await checkAndResetDailyTasks(uid);
+        console.log(`[BackgroundFetch] Daily reset completed for user ${uid}`);
+      }
+    }
+    
+    // Handle fake call scheduling
+    if (taskId.includes('fake-call')) {
+      // Your existing fake call logic
+    }
+    
+  } catch (error) {
+    console.error('[BackgroundFetch] Task error:', error);
+  }
   
   BackgroundFetch.finish(taskId);
+};
+
+// Helper function to extract UID from task ID
+const extractUidFromTaskId = (taskId) => {
+  const match = taskId.match(/-(\d+)-/);
+  return match ? parseInt(match[1]) : null;
 };
 
 // Register the BackgroundFetch HeadlessTask

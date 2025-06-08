@@ -1,4 +1,5 @@
 import {useState, useEffect, useCallback} from 'react';
+import {AppState} from 'react-native';
 import {
   getDailyTasksForDate,
   updatePrayerStatus,
@@ -86,22 +87,38 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
     fetchDailyTasks();
   }, [fetchDailyTasks]);
 
-  // Auto-refresh at start of new day
-  
+  // Enhanced auto-refresh system
   useEffect(() => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        const currentDate = new Date().toISOString().split('T')[0];
+        if (currentDate !== date) {
+          fetchDailyTasks();
+        }
+      }
+    };
 
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => {
+      subscription?.remove();
+    };
+  }, [fetchDailyTasks, date]);
 
-    const timer = setTimeout(() => {
-      fetchDailyTasks(); // Refresh at midnight
-    }, timeUntilMidnight);
+  // Background task initialization
+  useEffect(() => {
+    const initializeBackgroundTasks = async () => {
+      try {
+        await checkAndResetDailyTasks(uid);
+      } catch (error) {
+        console.error('Error initializing background tasks:', error);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [fetchDailyTasks]);
+    initializeBackgroundTasks();
+  }, [uid]);
 
   return {
     dailyTasks,

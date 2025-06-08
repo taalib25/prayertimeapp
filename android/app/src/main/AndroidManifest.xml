@@ -27,6 +27,8 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<service android:name=".PrayerReminderService" android:foregroundServiceType="mediaPlayback" />
     <!-- <uses-permission android:minSdkVersion="34" android:name="android.permission.USE_EXACT_ALARM" /> -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <application
