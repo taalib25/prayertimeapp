@@ -18,7 +18,7 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
-import {getUserById} from '../services/db/UserServices';
+import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
 import {
   initializeUserBackgroundTasks,
@@ -27,30 +27,34 @@ import {
 
 const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const {prayerTimes, isLoading, error} = usePrayerTimes(selectedDate);
+  const {
+    prayerTimes,
+    isLoading: prayerLoading,
+    error,
+  } = usePrayerTimes(selectedDate);
+  const {user, isLoading: userLoading, initializeUser} = useUser({uid: 1001});
 
-  // Fetch user profile separately
+  // Initialize user if not exists
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const user = await getUserById(1001);
-        setUserProfile(user);
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
+    const setupUser = async () => {
+      if (!userLoading && !user) {
+        // Initialize with dummy data
+        await initializeUser({
+          username: 'Ahmed Hassan',
+          email: 'ahmed@example.com',
+          phoneNumber: '+1234567890',
+        });
       }
     };
 
-    fetchUserProfile();
-  }, []);
+    setupUser();
+  }, [user, userLoading, initializeUser]);
 
   // Initialize background tasks when screen mounts
   useEffect(() => {
     const setupBackgroundServices = async () => {
       try {
-        const userId = 1001; // Your default user ID
-
-        // Check if background tasks need initialization
+        const userId = 1001;
         const isHealthy = await checkBackgroundTasksHealth(userId);
 
         if (!isHealthy) {
@@ -67,6 +71,8 @@ const PrayerTimeScreen = () => {
     setupBackgroundServices();
   }, []);
 
+  const isLoading = prayerLoading || userLoading;
+
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -77,10 +83,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={userProfile?.settings?.location}
-          userName={userProfile?.profile?.username}
-          mosqueName={userProfile?.settings?.masjid}
-          mosqueLocation={userProfile?.settings?.masjid}
+          location={user?.settings?.location || 'Loading...'}
+          userName={user?.profile?.username || 'User'}
+          mosqueName={user?.settings?.masjid || 'Al-Noor Mosque'}
+          mosqueLocation={user?.settings?.location || 'City Center'}
           avatarImage={require('../assets/images/profile.png')}
         />
 

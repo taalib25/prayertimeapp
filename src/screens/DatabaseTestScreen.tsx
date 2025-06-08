@@ -25,12 +25,19 @@ import {
   getDailyTasksForDate,
   updateSpecialTaskStatus,
   createDailyTasks,
+  getRecentDailyTasks,
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
-import {useHistoricalTasks} from '../hooks/useHistoricalTasks';
 import {useDailyTasks} from '../hooks/useDailyTasks';
 import database from '../services/db';
-import {getUserById, createUser} from '../services/db/UserServices';
+import {
+  getUserById,
+  createUser,
+  updateUserGoals,
+  updateUserSettings,
+  updateUserProfile,
+} from '../services/db/UserServices';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,25 +51,28 @@ const DatabaseTestScreen = () => {
   const [customPrayerTimes, setCustomPrayerTimes] =
     useState<PrayerTimesData | null>(null);
   const [dailyTasksData, setDailyTasksData] = useState<DailyTaskData[]>([]);
-
-  // Historical tasks hook for analysis
-  const {
-    data: historicalData,
-    analysis,
-    isLoading: historyLoading,
-    refetch: refetchHistory,
-  } = useHistoricalTasks({
-    uid: testUserId,
-    config: {
-      daysBack: 3,
-      includePrayers: true,
-      includeSpecialTasks: true,
-      includeZikr: true,
-      calculateTotals: true,
-      calculateAverages: true,
-      calculateStreaks: true,
-    },
+  const [asyncStorageData, setAsyncStorageData] = useState<any>({});
+  const [editingGoals, setEditingGoals] = useState({
+    monthlyZikrGoal: '',
+    monthlyQuranPagesGoal: '',
+    monthlyCharityGoal: '',
+    monthlyFastingDaysGoal: '',
   });
+  const [editingSettings, setEditingSettings] = useState({
+    theme: '',
+    appLanguage: '',
+    preferredMadhab: '',
+    location: '',
+    masjid: '',
+  });
+  const [selectedTaskDate, setSelectedTaskDate] = useState<string>(
+    new Date().toISOString().split('T')[0],
+  );
+  const [taskDaysToCreate, setTaskDaysToCreate] = useState<number>(3);
+  const [selectedTaskId, setSelectedTaskId] = useState<string>('');
+  const [currentDayTasks, setCurrentDayTasks] = useState<DailyTaskData | null>(
+    null,
+  );
 
   // Daily tasks hook for today
   const {
@@ -145,6 +155,85 @@ const DatabaseTestScreen = () => {
     }
   };
 
+  // Get daily tasks for a specific date
+  const handleGetDailyTasks = async () => {
+    try {
+      addToLog(`🔍 Getting daily tasks for ${selectedDate}...`);
+
+      const tasks = await getDailyTasksForDate(testUserId, selectedDate);
+
+      if (tasks) {
+        addToLog(`✅ Found tasks for ${selectedDate}:`);
+        addToLog(`   Special tasks: ${tasks.specialTasks.length}`);
+        addToLog(`   Zikr count: ${tasks.totalZikrCount}`);
+        addToLog(
+          `   Prayers: F:${tasks.fajrStatus} D:${tasks.dhuhrStatus} A:${tasks.asrStatus} M:${tasks.maghribStatus} I:${tasks.ishaStatus}`,
+        );
+
+        setDailyTasksData([tasks]);
+      } else {
+        addToLog(`❌ No tasks found for ${selectedDate}`);
+        setDailyTasksData([]);
+      }
+    } catch (error) {
+      addToLog(`❌ Error getting daily tasks: ${error}`);
+    }
+  };
+
+  // Get tasks for the selected date
+  const handleGetTasksForSelectedDate = async () => {
+    try {
+      addToLog(`🔍 Getting daily tasks for ${selectedTaskDate}...`);
+
+      const tasks = await getDailyTasksForDate(testUserId, selectedTaskDate);
+
+      if (tasks) {
+        setCurrentDayTasks(tasks);
+        addToLog(`✅ Found tasks for ${selectedTaskDate}:`);
+        addToLog(`   Special tasks: ${tasks.specialTasks.length}`);
+        addToLog(`   Zikr count: ${tasks.totalZikrCount}`);
+        addToLog(`   Quran pages: ${tasks.quranPagesRead}`);
+        addToLog(
+          `   Prayers: F:${tasks.fajrStatus} D:${tasks.dhuhrStatus} A:${tasks.asrStatus} M:${tasks.maghribStatus} I:${tasks.ishaStatus}`,
+        );
+      } else {
+        addToLog(`❌ No tasks found for ${selectedTaskDate}`);
+        setCurrentDayTasks(null);
+      }
+    } catch (error) {
+      addToLog(`❌ Error getting daily tasks: ${error}`);
+    }
+  };
+
+  // Get tasks for date range
+  const handleGetTasksRange = async () => {
+    try {
+      addToLog(`📅 Getting tasks from ${startDate} to ${endDate}...`);
+
+      const dates = [];
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      // Generate array of dates between start and end
+      for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(new Date(d).toISOString().split('T')[0]);
+      }
+
+      for (const date of dates) {
+        const tasks = await getDailyTasksForDate(testUserId, date);
+        if (tasks) {
+          addToLog(
+            `✅ Found tasks for ${date}: ${tasks.specialTasks.length} special tasks`,
+          );
+        } else {
+          addToLog(`❌ No tasks found for ${date}`);
+        }
+      }
+    } catch (error) {
+      addToLog(`❌ Error getting tasks range: ${error}`);
+    }
+  };
+
   // Test daily tasks database functionality
   const handleTestDailyTasksDB = async () => {
     try {
@@ -184,142 +273,153 @@ const DatabaseTestScreen = () => {
     }
   };
 
-  // Get daily tasks for a specific date
-  const handleGetDailyTasks = async () => {
+  // Enhanced create dummy tasks with date selection
+  const handleCreateDummyTasksForDays = async () => {
     try {
-      addToLog(`🔍 Getting daily tasks for ${selectedDate}...`);
+      addToLog(
+        `📝 Creating dummy daily tasks for ${taskDaysToCreate} days starting from ${selectedTaskDate}...`,
+      );
 
-      const tasks = await getDailyTasksForDate(testUserId, selectedDate);
+      const dates = [];
+      const startDate = new Date(selectedTaskDate);
 
-      if (tasks) {
-        addToLog(`✅ Found tasks for ${selectedDate}:`);
-        addToLog(`   Special tasks: ${tasks.specialTasks.length}`);
-        addToLog(`   Zikr count: ${tasks.totalZikrCount}`);
-        addToLog(
-          `   Prayers: F:${tasks.fajrStatus} D:${tasks.dhuhrStatus} A:${tasks.asrStatus} M:${tasks.maghribStatus} I:${tasks.ishaStatus}`,
-        );
+      for (let i = 0; i < taskDaysToCreate; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        dates.push(date.toISOString().split('T')[0]);
+      }
 
-        setDailyTasksData([tasks]);
-      } else {
-        addToLog(`❌ No tasks found for ${selectedDate}`);
-        setDailyTasksData([]);
+      for (const date of dates) {
+        await createDailyTasks(testUserId, date);
+        addToLog(`✅ Created tasks for ${date}`);
+      }
+
+      addToLog('🎉 Dummy tasks created successfully!');
+      // Refresh current day tasks if viewing same date
+      if (dates.includes(selectedTaskDate)) {
+        await handleGetTasksForSelectedDate();
       }
     } catch (error) {
-      addToLog(`❌ Error getting daily tasks: ${error}`);
+      addToLog(`❌ Error creating dummy tasks: ${error}`);
     }
   };
 
-  // Get tasks for date range
-  const handleGetTasksRange = async () => {
+  // Toggle specific task by ID
+  const handleToggleSpecificTask = async () => {
+    if (!currentDayTasks || !selectedTaskId) {
+      addToLog('❌ Please select a task to toggle');
+      return;
+    }
+
     try {
-      addToLog(`🔍 Getting tasks from ${startDate} to ${endDate}...`);
-
-      const tasks: DailyTaskData[] = [];
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      while (start <= end) {
-        const dateStr = start.toISOString().split('T')[0];
-        const dayTasks = await getDailyTasksForDate(testUserId, dateStr);
-        if (dayTasks) {
-          tasks.push(dayTasks);
-        }
-        start.setDate(start.getDate() + 1);
+      const task = currentDayTasks.specialTasks.find(
+        t => t.id === selectedTaskId,
+      );
+      if (!task) {
+        addToLog(`❌ Task with ID ${selectedTaskId} not found`);
+        return;
       }
 
-      addToLog(`✅ Found ${tasks.length} days with tasks`);
-      setDailyTasksData(tasks);
-
-      // Calculate summary
-      const totalSpecialTasks = tasks.reduce(
-        (sum, day) => sum + day.specialTasks.length,
-        0,
+      const newStatus = !task.completed;
+      await updateSpecialTaskStatus(
+        testUserId,
+        selectedTaskDate,
+        selectedTaskId,
+        newStatus,
       );
-      const completedSpecialTasks = tasks.reduce(
-        (sum, day) =>
-          sum + day.specialTasks.filter(task => task.completed).length,
-        0,
-      );
-      const totalZikr = tasks.reduce((sum, day) => sum + day.totalZikrCount, 0);
 
       addToLog(
-        `📊 Summary: ${completedSpecialTasks}/${totalSpecialTasks} special tasks completed, ${totalZikr} total zikr`,
+        `✅ Toggled task "${task.title}" to ${
+          newStatus ? 'completed ✅' : 'pending ❌'
+        }`,
       );
+
+      // Refresh tasks
+      await handleGetTasksForSelectedDate();
     } catch (error) {
-      addToLog(`❌ Error getting tasks range: ${error}`);
+      addToLog(`❌ Error toggling task: ${error}`);
     }
   };
 
-  // Test special task toggle
-  const handleTestSpecialTaskToggle = async () => {
+  // Toggle all tasks for the selected date
+  const handleToggleAllTasks = async () => {
+    if (!currentDayTasks) {
+      addToLog('❌ No tasks found for the selected date');
+      return;
+    }
+
     try {
-      addToLog('🔄 Testing special task toggle...');
+      addToLog(`🔄 Toggling all tasks for ${selectedTaskDate}...`);
 
-      // Get today's tasks first
-      const today = new Date().toISOString().split('T')[0];
-      const tasks = await getDailyTasksForDate(testUserId, today);
-
-      if (tasks && tasks.specialTasks.length > 0) {
-        const firstTask = tasks.specialTasks[0];
-        const newStatus = !firstTask.completed;
-
+      for (const task of currentDayTasks.specialTasks) {
         await updateSpecialTaskStatus(
           testUserId,
-          today,
-          firstTask.id,
-          newStatus,
+          selectedTaskDate,
+          task.id,
+          !task.completed,
         );
-        addToLog(
-          `✅ Toggled task "${firstTask.title}" to ${
-            newStatus ? 'completed' : 'pending'
-          }`,
-        );
-
-        // Refresh data
-        await refetchToday();
-      } else {
-        addToLog('❌ No special tasks found for today');
       }
+
+      addToLog(`✅ Toggled ${currentDayTasks.specialTasks.length} tasks`);
+      await handleGetTasksForSelectedDate();
     } catch (error) {
-      addToLog(`❌ Error toggling special task: ${error}`);
+      addToLog(`❌ Error toggling all tasks: ${error}`);
     }
   };
 
-  // Show historical analysis
-  const handleShowHistoricalAnalysis = () => {
+  // Mark all tasks as completed
+  const handleCompleteAllTasks = async () => {
+    if (!currentDayTasks) {
+      addToLog('❌ No tasks found for the selected date');
+      return;
+    }
+
     try {
-      addToLog('📊 Historical Analysis (Last 3 Days):');
+      addToLog(`✅ Marking all tasks as completed for ${selectedTaskDate}...`);
 
-      if (analysis) {
-        addToLog(`   Total Days: ${analysis.totalDays}`);
-        addToLog(`   Total Special Tasks: ${analysis.totalSpecialTasks}`);
-        addToLog(
-          `   Completed Special Tasks: ${analysis.totalSpecialTasksCompleted}`,
-        );
-        addToLog(
-          `   Average Tasks/Day: ${analysis.avgSpecialTasksPerDay.toFixed(1)}`,
-        );
-        addToLog(`   Average Zikr/Day: ${analysis.avgZikrPerDay.toFixed(0)}`);
-        addToLog(
-          `   Current Task Streak: ${analysis.currentSpecialTaskStreak}`,
-        );
-        addToLog(
-          `   Longest Task Streak: ${analysis.longestSpecialTaskStreak}`,
-        );
-
-        // Show per-task breakdown
-        Object.entries(analysis.specialTaskStats).forEach(([taskId, stats]) => {
-          addToLog(
-            `   "${stats.title}": ${stats.completed}/${
-              stats.total
-            } (${stats.percentage.toFixed(0)}%)`,
+      for (const task of currentDayTasks.specialTasks) {
+        if (!task.completed) {
+          await updateSpecialTaskStatus(
+            testUserId,
+            selectedTaskDate,
+            task.id,
+            true,
           );
-        });
-      } else {
-        addToLog('❌ No analysis data available');
+        }
       }
+
+      addToLog(`✅ Completed all tasks for ${selectedTaskDate}`);
+      await handleGetTasksForSelectedDate();
     } catch (error) {
-      addToLog(`❌ Error showing analysis: ${error}`);
+      addToLog(`❌ Error completing all tasks: ${error}`);
+    }
+  };
+
+  // Reset all tasks to pending
+  const handleResetAllTasks = async () => {
+    if (!currentDayTasks) {
+      addToLog('❌ No tasks found for the selected date');
+      return;
+    }
+
+    try {
+      addToLog(`🔄 Resetting all tasks for ${selectedTaskDate}...`);
+
+      for (const task of currentDayTasks.specialTasks) {
+        if (task.completed) {
+          await updateSpecialTaskStatus(
+            testUserId,
+            selectedTaskDate,
+            task.id,
+            false,
+          );
+        }
+      }
+
+      addToLog(`🔄 Reset all tasks for ${selectedTaskDate}`);
+      await handleGetTasksForSelectedDate();
+    } catch (error) {
+      addToLog(`❌ Error resetting all tasks: ${error}`);
     }
   };
 
@@ -348,6 +448,188 @@ const DatabaseTestScreen = () => {
       addToLog('🎉 AsyncStorage User test passed!');
     } catch (error) {
       addToLog(`❌ AsyncStorage User error: ${error}`);
+    }
+  };
+
+  // View all AsyncStorage data for a user
+  const handleViewAsyncStorageData = async () => {
+    try {
+      addToLog(`🔍 Viewing AsyncStorage data for user ${testUserId}...`);
+
+      const [profileData, goalsData, settingsData] = await Promise.all([
+        AsyncStorage.getItem(`user_${testUserId}_profile`),
+        AsyncStorage.getItem(`user_${testUserId}_goals`),
+        AsyncStorage.getItem(`user_${testUserId}_settings`),
+      ]);
+
+      const profile = profileData ? JSON.parse(profileData) : null;
+      const goals = goalsData ? JSON.parse(goalsData) : null;
+      const settings = settingsData ? JSON.parse(settingsData) : null;
+
+      setAsyncStorageData({profile, goals, settings});
+
+      if (profile) {
+        addToLog(`✅ Profile: ${profile.username} (${profile.email})`);
+      }
+      if (goals) {
+        addToLog(
+          `✅ Goals: Zikr=${goals.monthlyZikrGoal}, Quran=${goals.monthlyQuranPagesGoal}`,
+        );
+        setEditingGoals({
+          monthlyZikrGoal: goals.monthlyZikrGoal.toString(),
+          monthlyQuranPagesGoal: goals.monthlyQuranPagesGoal.toString(),
+          monthlyCharityGoal: goals.monthlyCharityGoal.toString(),
+          monthlyFastingDaysGoal: goals.monthlyFastingDaysGoal.toString(),
+        });
+      }
+      if (settings) {
+        addToLog(
+          `✅ Settings: Theme=${settings.theme}, Language=${settings.appLanguage}`,
+        );
+        setEditingSettings({
+          theme: settings.theme || '',
+          appLanguage: settings.appLanguage || '',
+          preferredMadhab: settings.preferredMadhab || '',
+          location: settings.location || '',
+          masjid: settings.masjid || '',
+        });
+      }
+
+      if (!profile && !goals && !settings) {
+        addToLog(`❌ No AsyncStorage data found for user ${testUserId}`);
+      }
+    } catch (error) {
+      addToLog(`❌ Error reading AsyncStorage: ${error}`);
+    }
+  };
+
+  // Update user goals
+  const handleUpdateGoals = async () => {
+    try {
+      addToLog('📝 Updating user goals...');
+
+      const goalsToUpdate = {
+        monthlyZikrGoal: parseInt(editingGoals.monthlyZikrGoal) || 0,
+        monthlyQuranPagesGoal:
+          parseInt(editingGoals.monthlyQuranPagesGoal) || 0,
+        monthlyCharityGoal: parseInt(editingGoals.monthlyCharityGoal) || 0,
+        monthlyFastingDaysGoal:
+          parseInt(editingGoals.monthlyFastingDaysGoal) || 0,
+      };
+
+      await updateUserGoals(testUserId, goalsToUpdate);
+      addToLog('✅ Goals updated successfully!');
+
+      // Refresh data
+      await handleViewAsyncStorageData();
+    } catch (error) {
+      addToLog(`❌ Error updating goals: ${error}`);
+    }
+  };
+
+  // Update user settings
+  const handleUpdateSettings = async () => {
+    try {
+      addToLog('⚙️ Updating user settings...');
+
+      const settingsToUpdate = {
+        theme: editingSettings.theme,
+        appLanguage: editingSettings.appLanguage,
+        preferredMadhab: editingSettings.preferredMadhab,
+        location: editingSettings.location,
+        masjid: editingSettings.masjid,
+      };
+
+      await updateUserSettings(testUserId, settingsToUpdate);
+      addToLog('✅ Settings updated successfully!');
+
+      // Refresh data
+      await handleViewAsyncStorageData();
+    } catch (error) {
+      addToLog(`❌ Error updating settings: ${error}`);
+    }
+  };
+
+  // Clear all AsyncStorage data for a user
+  const handleClearUserData = async () => {
+    try {
+      addToLog(`🗑️ Clearing all data for user ${testUserId}...`);
+
+      await Promise.all([
+        AsyncStorage.removeItem(`user_${testUserId}_profile`),
+        AsyncStorage.removeItem(`user_${testUserId}_goals`),
+        AsyncStorage.removeItem(`user_${testUserId}_settings`),
+      ]);
+
+      setAsyncStorageData({});
+      addToLog('✅ User data cleared successfully!');
+    } catch (error) {
+      addToLog(`❌ Error clearing user data: ${error}`);
+    }
+  };
+
+  // Create test user with custom data
+  const handleCreateTestUser = async () => {
+    try {
+      addToLog(`👤 Creating test user ${testUserId}...`);
+
+      await createUser(
+        testUserId,
+        {
+          username: `TestUser_${testUserId}`,
+          email: `test${testUserId}@example.com`,
+          phoneNumber: `+123456${testUserId}`,
+        },
+        {
+          monthlyZikrGoal: 500,
+          monthlyQuranPagesGoal: 15,
+          monthlyCharityGoal: 50,
+          monthlyFastingDaysGoal: 10,
+        },
+        {
+          theme: 'light',
+          appLanguage: 'en',
+          preferredMadhab: 'Hanafi',
+          location: 'Test City',
+          masjid: 'Test Mosque',
+        },
+      );
+
+      addToLog('✅ Test user created successfully!');
+      await handleViewAsyncStorageData();
+    } catch (error) {
+      addToLog(`❌ Error creating test user: ${error}`);
+    }
+  };
+
+  // Test the new efficient recent tasks method
+  const handleGetRecentTasks = async () => {
+    try {
+      addToLog(
+        `🔍 Getting recent tasks for user ${testUserId} (last 3 days)...`,
+      );
+
+      const recentTasks = await getRecentDailyTasks(testUserId, 3);
+
+      if (recentTasks && recentTasks.length > 0) {
+        addToLog(`✅ Found ${recentTasks.length} days of recent tasks:`);
+
+        recentTasks.forEach(dayTask => {
+          const completedTasks = dayTask.specialTasks.filter(
+            t => t.completed,
+          ).length;
+          addToLog(
+            `   ${dayTask.date}: ${completedTasks}/${dayTask.specialTasks.length} tasks completed`,
+          );
+        });
+
+        setDailyTasksData(recentTasks);
+      } else {
+        addToLog(`❌ No recent tasks found`);
+        setDailyTasksData([]);
+      }
+    } catch (error) {
+      addToLog(`❌ Error getting recent tasks: ${error}`);
     }
   };
 
@@ -452,114 +734,247 @@ const DatabaseTestScreen = () => {
 
         {/* Daily Tasks Tests */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Daily Tasks Tests</Text>
+          <Text style={styles.sectionTitle}>📋 Daily Tasks Management</Text>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleTestDailyTasksDB}>
-              <Text style={styles.buttonText}>Test DB Connection</Text>
-            </TouchableOpacity>
+          {/* Task Creation Controls */}
+          <View style={styles.taskControlsContainer}>
+            <Text style={styles.subsectionTitle}>➕ Create Tasks</Text>
 
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleCreateDummyTasks}>
-              <Text style={styles.buttonText}>Create Dummy Tasks</Text>
-            </TouchableOpacity>
+            <View style={styles.inputRow}>
+              <Text style={styles.inputLabel}>Start Date:</Text>
+              <TextInput
+                style={styles.dateInput}
+                value={selectedTaskDate}
+                onChangeText={setSelectedTaskDate}
+                placeholder="YYYY-MM-DD"
+              />
+            </View>
+
+            <View style={styles.inputRow}>
+              <Text style={styles.inputLabel}>Days to Create:</Text>
+              <TextInput
+                style={styles.numberInput}
+                value={taskDaysToCreate.toString()}
+                onChangeText={text => setTaskDaysToCreate(parseInt(text) || 1)}
+                placeholder="3"
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.createButton}
+                onPress={handleCreateDummyTasksForDays}>
+                <Text style={styles.buttonText}>
+                  Create {taskDaysToCreate} Days
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.testButton}
+                onPress={handleGetRecentTasks}>
+                <Text style={styles.buttonText}>Get Recent</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.buttonRow}>
-            <TextInput
-              style={styles.dateInput}
-              value={selectedDate}
-              onChangeText={setSelectedDate}
-              placeholder="YYYY-MM-DD"
-            />
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleGetDailyTasks}>
-              <Text style={styles.buttonText}>Get Single Day</Text>
-            </TouchableOpacity>
+          {/* Task Viewing Controls */}
+          <View style={styles.taskControlsContainer}>
+            <Text style={styles.subsectionTitle}>👁️ View Tasks</Text>
+
+            <View style={styles.inputRow}>
+              <Text style={styles.inputLabel}>View Date:</Text>
+              <TextInput
+                style={styles.dateInput}
+                value={selectedTaskDate}
+                onChangeText={setSelectedTaskDate}
+                placeholder="YYYY-MM-DD"
+              />
+              <TouchableOpacity
+                style={styles.viewButton}
+                onPress={handleGetTasksForSelectedDate}>
+                <Text style={styles.buttonText}>Load Tasks</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.dateInput}
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="Start Date"
-            />
-            <TextInput
-              style={styles.dateInput}
-              value={endDate}
-              onChangeText={setEndDate}
-              placeholder="End Date"
-            />
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleGetTasksRange}>
-              <Text style={styles.buttonText}>Get Range</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Task Management Controls - Only show when tasks are loaded */}
+          {currentDayTasks && (
+            <View style={styles.taskControlsContainer}>
+              <Text style={styles.subsectionTitle}>
+                🔧 Manage Tasks for {selectedTaskDate}
+              </Text>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleTestSpecialTaskToggle}>
-              <Text style={styles.buttonText}>Toggle Task</Text>
-            </TouchableOpacity>
+              {/* Quick Actions */}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.successButton}
+                  onPress={handleCompleteAllTasks}>
+                  <Text style={styles.buttonText}>Complete All</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleShowHistoricalAnalysis}>
-              <Text style={styles.buttonText}>Show Analysis</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.warningButton}
+                  onPress={handleResetAllTasks}>
+                  <Text style={styles.buttonText}>Reset All</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.testButton}
+                  onPress={handleToggleAllTasks}>
+                  <Text style={styles.buttonText}>Toggle All</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Individual Task Controls */}
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>Task ID:</Text>
+                <TextInput
+                  style={styles.taskIdInput}
+                  value={selectedTaskId}
+                  onChangeText={setSelectedTaskId}
+                  placeholder="Enter task ID"
+                />
+                <TouchableOpacity
+                  style={styles.toggleButton}
+                  onPress={handleToggleSpecificTask}>
+                  <Text style={styles.buttonText}>Toggle</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Task Summary */}
+              <View style={styles.taskSummary}>
+                <Text style={styles.summaryText}>
+                  📊 Summary:{' '}
+                  {currentDayTasks.specialTasks.filter(t => t.completed).length}
+                  /{currentDayTasks.specialTasks.length} completed
+                </Text>
+                <Text style={styles.summaryText}>
+                  📿 Zikr: {currentDayTasks.totalZikrCount} | 📖 Quran:{' '}
+                  {currentDayTasks.quranPagesRead} pages
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Legacy Controls */}
+          <View style={styles.legacyControls}>
+            <Text style={styles.subsectionTitle}>🔧 Legacy Controls</Text>
+            <View style={styles.buttonRow}>
+              <TextInput
+                style={styles.dateInput}
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="Start Date"
+              />
+              <TextInput
+                style={styles.dateInput}
+                value={endDate}
+                onChangeText={setEndDate}
+                placeholder="End Date"
+              />
+              <TouchableOpacity
+                style={styles.testButton}
+                onPress={handleGetTasksRange}>
+                <Text style={styles.buttonText}>Get Range</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        {/* AsyncStorage User Tests */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👤 AsyncStorage User Tests</Text>
-
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={handleTestAsyncStorageUser}>
-              <Text style={styles.buttonText}>Test User System</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Task Data Display */}
-        {dailyTasksData.length > 0 && (
+        {/* Enhanced Task Display */}
+        {currentDayTasks && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Task Data</Text>
-            <ScrollView style={styles.dataContainer}>
-              {dailyTasksData.map((dayData, index) => (
-                <View key={dayData.date} style={styles.dayDataContainer}>
-                  <Text style={styles.dayTitle}>{dayData.date}</Text>
-                  <Text style={styles.dataText}>
-                    Zikr: {dayData.totalZikrCount}
+            <Text style={styles.sectionTitle}>
+              📊 Tasks for {selectedTaskDate}
+            </Text>
+
+            <View style={styles.taskDisplayContainer}>
+              {/* Prayer Status */}
+              <View style={styles.prayerStatusContainer}>
+                <Text style={styles.subsectionTitle}>🕌 Prayer Status</Text>
+                <View style={styles.prayerGrid}>
+                  <Text
+                    style={[
+                      styles.prayerItem,
+                      currentDayTasks.fajrStatus === 'completed' &&
+                        styles.completedPrayer,
+                    ]}>
+                    Fajr:{' '}
+                    {currentDayTasks.fajrStatus === 'completed' ? '✅' : '❌'}
                   </Text>
-                  <Text style={styles.dataText}>
-                    Quran: {dayData.quranPagesRead} pages
+                  <Text
+                    style={[
+                      styles.prayerItem,
+                      currentDayTasks.dhuhrStatus === 'completed' &&
+                        styles.completedPrayer,
+                    ]}>
+                    Dhuhr:{' '}
+                    {currentDayTasks.dhuhrStatus === 'completed' ? '✅' : '❌'}
                   </Text>
-                  <Text style={styles.dataText}>
-                    Special Tasks ({dayData.specialTasks.length}):
+                  <Text
+                    style={[
+                      styles.prayerItem,
+                      currentDayTasks.asrStatus === 'completed' &&
+                        styles.completedPrayer,
+                    ]}>
+                    Asr:{' '}
+                    {currentDayTasks.asrStatus === 'completed' ? '✅' : '❌'}
                   </Text>
-                  {dayData.specialTasks.map(task => (
-                    <Text
-                      key={task.id}
-                      style={[
-                        styles.taskText,
-                        task.completed && styles.completedTask,
-                      ]}>
-                      • {task.title} {task.completed ? '✅' : '❌'}
-                    </Text>
-                  ))}
+                  <Text
+                    style={[
+                      styles.prayerItem,
+                      currentDayTasks.maghribStatus === 'completed' &&
+                        styles.completedPrayer,
+                    ]}>
+                    Maghrib:{' '}
+                    {currentDayTasks.maghribStatus === 'completed'
+                      ? '✅'
+                      : '❌'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.prayerItem,
+                      currentDayTasks.ishaStatus === 'completed' &&
+                        styles.completedPrayer,
+                    ]}>
+                    Isha:{' '}
+                    {currentDayTasks.ishaStatus === 'completed' ? '✅' : '❌'}
+                  </Text>
                 </View>
-              ))}
-            </ScrollView>
+              </View>
+
+              {/* Special Tasks */}
+              <View style={styles.specialTasksContainer}>
+                <Text style={styles.subsectionTitle}>⭐ Special Tasks</Text>
+                {currentDayTasks.specialTasks.map((task, index) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    style={[
+                      styles.taskItem,
+                      task.completed && styles.completedTaskItem,
+                    ]}
+                    onPress={() => setSelectedTaskId(task.id)}>
+                    <View style={styles.taskContent}>
+                      <Text
+                        style={[
+                          styles.taskTitle,
+                          task.completed && styles.completedTaskText,
+                        ]}>
+                        {task.title}
+                      </Text>
+                      <Text style={styles.taskId}>ID: {task.id}</Text>
+                      <Text style={styles.taskStatus}>
+                        {task.completed ? '✅ Completed' : '❌ Pending'}
+                      </Text>
+                    </View>
+                    {selectedTaskId === task.id && (
+                      <View style={styles.selectedIndicator} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
           </View>
         )}
 
@@ -739,39 +1154,156 @@ const styles = StyleSheet.create({
     minWidth: 80,
     textAlign: 'center',
   },
-  dataContainer: {
-    maxHeight: 200,
+  taskControlsContainer: {
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    padding: 10,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
-  dayDataContainer: {
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: colors.primary,
+  },
+  createButton: {
+    backgroundColor: colors.success,
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 10,
+    flex: 1,
+  },
+  viewButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 10,
+    minWidth: 100,
+  },
+  successButton: {
+    backgroundColor: colors.success,
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 10,
+    flex: 1,
+  },
+  warningButton: {
+    backgroundColor: '#ff9500',
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 10,
+    flex: 1,
+  },
+  toggleButton: {
+    backgroundColor: colors.accent,
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 10,
+    minWidth: 80,
+  },
+  taskIdInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  taskSummary: {
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  legacyControls: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    padding: 15,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  taskDisplayContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+  },
+  prayerStatusContainer: {
+    marginBottom: 20,
+  },
+  prayerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  prayerItem: {
+    width: '48%',
+    padding: 8,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+    marginBottom: 8,
+    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  completedPrayer: {
+    backgroundColor: '#d4edda',
+    borderColor: colors.success,
+  },
+  specialTasksContainer: {
+    marginTop: 10,
+  },
+  taskItem: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  dayTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
     marginBottom: 8,
-    color: colors.primary,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    position: 'relative',
   },
-  dataText: {
+  completedTaskItem: {
+    backgroundColor: '#d4edda',
+    borderColor: colors.success,
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskTitle: {
     fontSize: 14,
+    fontWeight: 'bold',
     marginBottom: 4,
     color: '#333',
   },
-  taskText: {
-    fontSize: 12,
-    marginLeft: 10,
-    marginBottom: 2,
+  completedTaskText: {
+    textDecorationLine: 'line-through',
     color: '#666',
   },
-  completedTask: {
-    color: colors.success,
+  taskId: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  taskStatus: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.accent,
   },
 });
 

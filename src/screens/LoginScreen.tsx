@@ -30,8 +30,8 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({navigation}) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('ahmed@test.com'); // Dummy email for testing
+  const [password, setPassword] = useState('password123'); // Dummy password for testing
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const {login} = useAuth();
@@ -62,8 +62,8 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
     setIsLoading(true);
 
     try {
-      // Navigate to OTP for verification
-      // We'll complete the login process after OTP is verified
+      // For demo purposes, accept any valid email/password format
+      // Navigate to OTP for verification with dummy phone number
       navigation.navigate('OTP', {email});
     } catch (error) {
       Alert.alert('Error', 'Login failed. Please try again.');

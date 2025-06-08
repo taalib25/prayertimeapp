@@ -2,6 +2,7 @@ import {useState, useEffect, useCallback} from 'react';
 import {AppState} from 'react-native';
 import {
   getDailyTasksForDate,
+  getRecentDailyTasks,
   updatePrayerStatus,
   updateSpecialTaskStatus,
   updateZikrCount,
@@ -141,5 +142,99 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
     toggleSpecialTask,
     updateZikr,
     refetch: fetchDailyTasks,
+  };
+};
+
+interface UseRecentDailyTasksProps {
+  uid: number;
+  daysBack?: number;
+}
+
+export const useRecentDailyTasks = ({
+  uid,
+  daysBack = 3,
+}: UseRecentDailyTasksProps) => {
+  const [recentTasks, setRecentTasks] = useState<DailyTaskData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRecentTasks = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Check and reset if it's a new day
+      await checkAndResetDailyTasks(uid);
+
+      const tasks = await getRecentDailyTasks(uid, daysBack);
+      setRecentTasks(tasks);
+    } catch (err) {
+      setError('Failed to fetch recent daily tasks');
+      console.error('Error fetching recent daily tasks:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [uid, daysBack]);
+
+  const toggleSpecialTaskForDate = useCallback(
+    async (date: string, taskId: string) => {
+      const dayTasks = recentTasks.find(task => task.date === date);
+      if (!dayTasks) return;
+
+      const task = dayTasks.specialTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      try {
+        await updateSpecialTaskStatus(uid, date, taskId, !task.completed);
+        await fetchRecentTasks(); // Refresh all data
+      } catch (err) {
+        console.error('Error toggling special task:', err);
+        setError('Failed to update task');
+      }
+    },
+    [uid, recentTasks, fetchRecentTasks],
+  );
+
+  const updatePrayerForDate = useCallback(
+    async (date: string, prayerName: string, status: PrayerStatus) => {
+      try {
+        await updatePrayerStatus(uid, date, prayerName, status);
+        await fetchRecentTasks(); // Refresh all data
+      } catch (err) {
+        console.error('Error updating prayer:', err);
+        setError('Failed to update prayer status');
+      }
+    },
+    [uid, fetchRecentTasks],
+  );
+
+  useEffect(() => {
+    fetchRecentTasks();
+  }, [fetchRecentTasks]);
+
+  // Enhanced auto-refresh system
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        fetchRecentTasks(); // This triggers reset if needed
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => {
+      subscription?.remove();
+    };
+  }, [fetchRecentTasks]);
+
+  return {
+    recentTasks,
+    isLoading,
+    error,
+    toggleSpecialTaskForDate,
+    updatePrayerForDate,
+    refetch: fetchRecentTasks,
   };
 };

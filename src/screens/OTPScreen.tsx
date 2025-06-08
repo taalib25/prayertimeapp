@@ -36,7 +36,7 @@ interface Props {
 }
 
 const OTPScreen: React.FC<Props> = ({navigation, route}) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('+1234567890'); // Dummy phone for testing
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Phone verification, 2: OTP verification
@@ -129,15 +129,13 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
     try {
       // For demo purposes, accept any complete OTP
-      // In a real app, verify with your backend
-
-      // Complete the login process
+      // Complete the login process with dummy phone number
       await login(email, phoneNumber);
 
       // Navigate to main app
       navigation.replace('MainApp');
     } catch (error) {
-      // Error handling would go here
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }

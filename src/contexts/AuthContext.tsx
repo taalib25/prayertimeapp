@@ -1,6 +1,5 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {createUser, getUserById} from '../services/db/UserServices';
 
 interface User {
   id: string;
@@ -47,7 +46,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       return false;
     } catch (error) {
       console.error('Error checking auth state:', error);
-      // Clear invalid stored data
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
       return false;
     } finally {
@@ -62,23 +60,53 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         email,
         phoneNumber,
         isVerified: true,
-        name: email.split('@')[0], // Use part before @ as default name
+        name: email.split('@')[0],
         createdAt: new Date().toISOString(),
       };
 
       await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
       setUser(userData);
 
-      // Initialize user profile in the separate user storage system
+      // Initialize user profile in AsyncStorage with dummy data
       const uid = parseInt(userData.id) || 1001;
-      const existingUser = await getUserById(uid);
+      const userProfileKey = `user_${uid}_profile`;
+      const userGoalsKey = `user_${uid}_goals`;
+      const userSettingsKey = `user_${uid}_settings`;
 
-      if (!existingUser) {
-        await createUser(uid, {
+      const existingProfile = await AsyncStorage.getItem(userProfileKey);
+
+      if (!existingProfile) {
+        const profile = {
           username: userData.name || email.split('@')[0],
           email: userData.email,
           phoneNumber: userData.phoneNumber,
-        });
+          createdAt: new Date().toISOString(),
+        };
+
+        const defaultGoals = {
+          monthlyZikrGoal: 1000,
+          monthlyQuranPagesGoal: 30,
+          monthlyCharityGoal: 100,
+          monthlyFastingDaysGoal: 15,
+        };
+
+        const defaultSettings = {
+          prayerSettings: 'standard',
+          preferredMadhab: 'hanafi',
+          appLanguage: 'en',
+          theme: 'light',
+          location: 'Cairo, Egypt',
+          masjid: 'Al-Azhar Mosque',
+        };
+
+        await Promise.all([
+          AsyncStorage.setItem(userProfileKey, JSON.stringify(profile)),
+          AsyncStorage.setItem(userGoalsKey, JSON.stringify(defaultGoals)),
+          AsyncStorage.setItem(
+            userSettingsKey,
+            JSON.stringify(defaultSettings),
+          ),
+        ]);
       }
     } catch (error) {
       console.error('Error during login:', error);
@@ -92,7 +120,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       setUser(null);
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still clear user state even if storage removal fails
       setUser(null);
     }
   };

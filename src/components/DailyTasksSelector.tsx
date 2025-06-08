@@ -10,9 +10,9 @@ import {
 import PagerView from 'react-native-pager-view';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {useDailyTasks} from '../hooks/useDailyTasks';
+import {useRecentDailyTasks} from '../hooks/useDailyTasks';
 
-const MOCK_USER_ID = 1;
+const MOCK_USER_ID = 1001;
 
 interface Task {
   id: string;
@@ -93,56 +93,32 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
 };
 
 const DailyTasksSelector: React.FC = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const dayBefore = new Date();
-  dayBefore.setDate(dayBefore.getDate() - 2);
-
-  //========================================================================================
-  const {
-    dailyTasks: todayTasks,
-    isLoading: todayLoading,
-    toggleSpecialTask,
-  } = useDailyTasks({
-    uid: MOCK_USER_ID,
-    date: today,
-  });
-
-  const {dailyTasks: yesterdayTasks, isLoading: yesterdayLoading} =
-    useDailyTasks({
+  // Use the new efficient hook to get recent tasks
+  const {recentTasks, isLoading, error, toggleSpecialTaskForDate} =
+    useRecentDailyTasks({
       uid: MOCK_USER_ID,
-      date: yesterday.toISOString().split('T')[0],
+      daysBack: 3,
     });
 
-  const {dailyTasks: dayBeforeTasks, isLoading: dayBeforeLoading} =
-    useDailyTasks({
-      uid: MOCK_USER_ID,
-      date: dayBefore.toISOString().split('T')[0],
-    });
-  //========================================================================================
-  console.log('tasks >>>>>>>>>>>>', todayTasks);
+  console.log('Recent tasks >>>>>>>>>>>>', recentTasks);
 
   const handleTaskToggle = useCallback(
     (dateISO: string, taskId: string) => {
-      if (dateISO === today) {
-        toggleSpecialTask(taskId);
-      } else {
-        // Handle historical data differently if needed
-        console.log(`Historical task toggle for ${dateISO}: ${taskId}`);
-      }
+      toggleSpecialTaskForDate(dateISO, taskId);
     },
-    [today, toggleSpecialTask],
+    [toggleSpecialTaskForDate],
   );
 
   const transformedDailyData = useMemo(() => {
-    const formatDayLabel = (
-      date: Date,
-      isToday: boolean,
-      isYesterday: boolean,
-    ) => {
-      if (isToday) return 'Today';
-      if (isYesterday) return 'Yesterday';
+    const formatDayLabel = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      if (dateStr === today) return 'Today';
+      if (dateStr === yesterdayStr) return 'Yesterday';
 
       const options: Intl.DateTimeFormatOptions = {
         month: 'short',
@@ -151,35 +127,16 @@ const DailyTasksSelector: React.FC = () => {
       return date.toLocaleDateString('en-US', options);
     };
 
-    const createDayTasks = (
-      date: Date,
-      dailyTasks: any,
-      isToday: boolean,
-      isYesterday: boolean,
-    ): DayTasks => {
-      const dateISO = date.toISOString().split('T')[0];
-      const dayLabel = formatDayLabel(date, isToday, isYesterday);
-
-      const tasks =
-        dailyTasks?.specialTasks?.map((task: any) => ({
-          id: task.id,
-          title: task.title,
-          completed: task.completed,
-        })) || [];
-
-      return {
-        dateISO,
-        dayLabel,
-        tasks,
-      };
-    };
-
-    return [
-      createDayTasks(dayBefore, dayBeforeTasks, false, false),
-      createDayTasks(yesterday, yesterdayTasks, false, true),
-      createDayTasks(new Date(), todayTasks, true, false),
-    ];
-  }, [todayTasks, yesterdayTasks, dayBeforeTasks]);
+    return recentTasks.map(dayData => ({
+      dateISO: dayData.date,
+      dayLabel: formatDayLabel(dayData.date),
+      tasks: dayData.specialTasks.map(task => ({
+        id: task.id,
+        title: task.title,
+        completed: task.completed,
+      })),
+    }));
+  }, [recentTasks]);
 
   const [currentPage, setCurrentPage] = useState(
     transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0,
@@ -190,8 +147,8 @@ const DailyTasksSelector: React.FC = () => {
     setCurrentPage(e.nativeEvent.position);
   };
 
-  // Show loading state if any of the data is loading
-  if (todayLoading || yesterdayLoading || dayBeforeLoading) {
+  // Show loading state
+  if (isLoading) {
     return (
       <View
         style={[
@@ -199,6 +156,32 @@ const DailyTasksSelector: React.FC = () => {
           {justifyContent: 'center', alignItems: 'center'},
         ]}>
         <Text style={typography.body}>Loading tasks...</Text>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <Text style={[typography.body, {color: colors.error}]}>{error}</Text>
+      </View>
+    );
+  }
+
+  // Show empty state
+  if (transformedDailyData.length === 0) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <Text style={typography.body}>No tasks found</Text>
       </View>
     );
   }

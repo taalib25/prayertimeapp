@@ -572,3 +572,86 @@ export const getDailyTasksForDateRange = async (
     throw error;
   }
 };
+
+/**
+ * Get recent daily tasks for a user (last N days)
+ * This is more efficient than fetching individual days
+ */
+export const getRecentDailyTasks = async (
+  uid: number,
+  daysBack: number = 3,
+): Promise<DailyTaskData[]> => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+    // Calculate the date range
+    const endDate = new Date().toISOString().split('T')[0]; // Today
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (daysBack - 1));
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    // Query for the date range, ordered by date descending (most recent first)
+    const tasks = await dailyTasksCollection
+      .query(
+        Q.where('uid', uid),
+        Q.where('date', Q.gte(startDateStr)),
+        Q.where('date', Q.lte(endDate)),
+        Q.sortBy('date', Q.desc),
+      )
+      .fetch();
+
+    // Transform to DailyTaskData format
+    const transformedTasks = tasks.map(task => ({
+      uid: task.uid,
+      date: task.date,
+      fajrStatus: task.fajrStatus as PrayerStatus,
+      dhuhrStatus: task.dhuhrStatus as PrayerStatus,
+      asrStatus: task.asrStatus as PrayerStatus,
+      maghribStatus: task.maghribStatus as PrayerStatus,
+      ishaStatus: task.ishaStatus as PrayerStatus,
+      tahajjudCompleted: task.tahajjudCompleted,
+      duhaCompleted: task.duhaCompleted,
+      totalZikrCount: task.totalZikrCount,
+      quranMinutes: task.quranMinutes,
+      quranPagesRead: task.quranPagesRead,
+      specialTasks: task.specialTasks ? JSON.parse(task.specialTasks) : [],
+    }));
+
+    // Fill in missing dates with default tasks if needed
+    const allDates = [];
+    for (let i = 0; i < daysBack; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      allDates.push(date.toISOString().split('T')[0]);
+    }
+
+    const completeTasks = allDates.map(date => {
+      const existingTask = transformedTasks.find(task => task.date === date);
+      if (existingTask) {
+        return existingTask;
+      }
+
+      // Return default task structure for missing dates
+      return {
+        uid,
+        date,
+        fajrStatus: 'pending' as PrayerStatus,
+        dhuhrStatus: 'pending' as PrayerStatus,
+        asrStatus: 'pending' as PrayerStatus,
+        maghribStatus: 'pending' as PrayerStatus,
+        ishaStatus: 'pending' as PrayerStatus,
+        tahajjudCompleted: false,
+        duhaCompleted: false,
+        totalZikrCount: 0,
+        quranMinutes: 0,
+        quranPagesRead: 0,
+        specialTasks: [],
+      };
+    });
+
+    return completeTasks;
+  } catch (error) {
+    console.error(`Error getting recent daily tasks:`, error);
+    throw error;
+  }
+};
