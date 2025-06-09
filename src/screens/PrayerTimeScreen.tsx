@@ -38,7 +38,6 @@ const PrayerTimeScreen = () => {
   useEffect(() => {
     const setupUser = async () => {
       if (!userLoading && !user) {
-        // Initialize with dummy data
         await initializeUser({
           username: 'Ahmed Hassan',
           email: 'ahmed@example.com',

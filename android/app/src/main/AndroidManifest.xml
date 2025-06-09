@@ -67,10 +67,19 @@
         android:taskAffinity="com.prayer_app.fakecall"
         android:allowEmbedded="true"
         android:theme="@style/AppTheme">
+        
+        <!-- Intent filter for notification launches -->
         <intent-filter>
           <action android:name="android.intent.action.MAIN" />
           <category android:name="android.intent.category.DEFAULT" />
         </intent-filter>
+        
+        <!-- Intent filter for full screen action -->
+        <intent-filter>
+          <action android:name="com.prayer_app.FAKE_CALL_ACTION" />
+          <category android:name="android.intent.category.DEFAULT" />
+        </intent-filter>
+        
         <!-- Add an intent filter for direct launch from notifications -->
         <intent-filter>
           <action android:name="android.intent.action.VIEW" />

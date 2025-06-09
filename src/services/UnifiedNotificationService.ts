@@ -73,7 +73,9 @@ class UnifiedNotificationService {
 
       await this.initialize();
 
-      const settings = await this.preferencesService.getNotificationSettings(uid);
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
       if (!settings || !settings.notifications) {
         console.log(`❌ Notifications disabled for user ${uid}`);
         return;
@@ -153,7 +155,10 @@ class UnifiedNotificationService {
             }
           }
         } catch (prayerError) {
-          console.error(`❌ Failed to schedule ${prayer} notification:`, prayerError);
+          console.error(
+            `❌ Failed to schedule ${prayer} notification:`,
+            prayerError,
+          );
           // Continue with other prayers even if one fails
         }
       }
@@ -201,7 +206,7 @@ class UnifiedNotificationService {
               ? settings.adhan_sound
               : undefined,
             vibrationPattern: settings.notification_types?.vibration
-              ? [300, 500, 300,400]
+              ? [300, 500, 300, 400]
               : undefined,
           },
           ios: {
@@ -215,7 +220,10 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(`❌ Failed to schedule standard notification for ${prayer}:`, error);
+      console.error(
+        `❌ Failed to schedule standard notification for ${prayer}:`,
+        error,
+      );
       return null;
     }
   }
@@ -238,13 +246,14 @@ class UnifiedNotificationService {
       await notifee.createTriggerNotification(
         {
           id,
-          title: 'Incoming Call',
+          title: 'Prayer Time ☪️',
           body: `${this.capitalizePrayer(prayer)} Prayer Reminder`,
           data: {
             type: 'fake-call',
             uid: uid.toString(),
             prayer,
             screen: 'FakeCallScreen',
+            notificationId: id,
           },
           android: {
             channelId: this.fullscreenChannelId,
@@ -253,14 +262,21 @@ class UnifiedNotificationService {
             visibility: settings.dnd_bypass
               ? AndroidVisibility.PUBLIC
               : AndroidVisibility.PRIVATE,
-            pressAction: {id: 'default'},
-            fullScreenAction: {id: 'full-screen'},
+            pressAction: {
+              id: 'default',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
+            fullScreenAction: {
+              id: 'full-screen',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
             sound: 'ringtone',
             vibrationPattern: [300, 500, 300, 500],
             ongoing: true,
             autoCancel: false,
             lightUpScreen: true,
             onlyAlertOnce: false,
+            largeIcon: require('../assets/icons/fajr-logo.png'), // Add app icon
           },
           ios: {
             sound: 'ringtone.caf',
@@ -273,7 +289,10 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(`❌ Failed to schedule fullscreen notification for ${prayer}:`, error);
+      console.error(
+        `❌ Failed to schedule fullscreen notification for ${prayer}:`,
+        error,
+      );
       return null;
     }
   }
@@ -288,7 +307,7 @@ class UnifiedNotificationService {
       }
 
       const [hours, minutes] = prayerTime.split(':').map(Number);
-      
+
       if (isNaN(hours) || isNaN(minutes)) {
         throw new Error('Invalid time format');
       }
@@ -319,7 +338,9 @@ class UnifiedNotificationService {
       for (const notification of userNotifications) {
         try {
           if (notification.notification.id) {
-            await notifee.cancelTriggerNotification(notification.notification.id);
+            await notifee.cancelTriggerNotification(
+              notification.notification.id,
+            );
           }
         } catch (cancelError) {
           console.error('❌ Failed to cancel notification:', cancelError);
@@ -351,7 +372,9 @@ class UnifiedNotificationService {
       await this.initialize();
 
       const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(uid);
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
 
       if (!settings) {
         throw new Error('Unable to get notification settings');
@@ -386,7 +409,9 @@ class UnifiedNotificationService {
       await this.initialize();
 
       const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(uid);
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
 
       if (!settings) {
         throw new Error('Unable to get notification settings');
@@ -402,18 +427,50 @@ class UnifiedNotificationService {
         dnd_bypass: true,
       };
 
-      const id = await this.scheduleFullscreenNotification(
-        uid,
-        'test-fake-call',
-        testTime,
-        testSettings,
+      const id = `test-fake-call-${Date.now()}`;
+
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title: 'Incoming Call 📞',
+          body: 'Prayer Reminder Call',
+          data: {
+            type: 'fake-call',
+            uid: uid.toString(),
+            prayer: 'test-fake-call',
+            screen: 'FakeCallScreen',
+            notificationId: id,
+          },
+          android: {
+            channelId: this.fullscreenChannelId,
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.CALL,
+            visibility: AndroidVisibility.PUBLIC,
+            pressAction: {
+              id: 'default',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
+            fullScreenAction: {
+              id: 'full-screen',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
+            sound: 'ringtone',
+            vibrationPattern: [300, 500, 300, 500],
+            ongoing: true,
+            autoCancel: false,
+            lightUpScreen: true,
+            onlyAlertOnce: false,
+          },
+        },
+        {
+          type: TriggerType.TIMESTAMP,
+          timestamp: testTime.getTime(),
+        },
       );
 
-      if (id) {
-        console.log(`🧪 Test fake call scheduled for ${delaySeconds} seconds`);
-      } else {
-        throw new Error('Failed to create fake call notification');
-      }
+      console.log(
+        `🧪 Test fake call scheduled for ${delaySeconds} seconds with ID: ${id}`,
+      );
     } catch (error) {
       console.error('❌ Failed to schedule test fake call:', error);
       throw error;

@@ -40,6 +40,9 @@ const FakeCallScreen = () => {
   useEffect(() => {
     console.log('FakeCallScreen mounted');
 
+    // Immediately dismiss the notification that launched this screen
+    dismissLaunchingNotification();
+
     // Request system alert window permission for Android
     if (Platform.OS === 'android') {
       // Request overlay permission for showing over DND
@@ -105,6 +108,62 @@ const FakeCallScreen = () => {
   }, []); // Removed callStatus dependency to prevent re-initializing
 
   /**
+   * Dismiss the specific notification that launched this screen
+   */
+  const dismissLaunchingNotification = async () => {
+    try {
+      // Get all displayed notifications
+      const notifications = await notifee.getDisplayedNotifications();
+
+      console.log(`Found ${notifications.length} displayed notifications`);
+
+      // Filter and cancel fake call notifications
+      for (const notification of notifications) {
+        const notificationData = notification.notification.data;
+
+        if (
+          notificationData?.type === 'fake-call' ||
+          notificationData?.screen === 'FakeCallScreen' ||
+          notification.notification.title?.includes('Incoming Call') ||
+          notification.notification.title?.includes('Prayer Time')
+        ) {
+          if (notification.notification.id) {
+            await notifee.cancelNotification(notification.notification.id);
+            console.log(
+              '✅ Dismissed launching notification:',
+              notification.notification.id,
+            );
+          }
+        }
+      }
+
+      // Also get and cancel trigger notifications related to fake calls
+      const triggerNotifications = await notifee.getTriggerNotifications();
+      for (const trigger of triggerNotifications) {
+        const notificationData = trigger.notification.data;
+
+        if (
+          notificationData?.type === 'fake-call' ||
+          notificationData?.screen === 'FakeCallScreen'
+        ) {
+          if (trigger.notification.id) {
+            await notifee.cancelTriggerNotification(trigger.notification.id);
+            console.log(
+              '✅ Cancelled trigger notification:',
+              trigger.notification.id,
+            );
+          }
+        }
+      }
+
+      // Cancel by channel ID as fallback
+      await notifee.cancelAllNotifications(['prayer-notifications-fullscreen']);
+    } catch (error) {
+      console.error('❌ Error dismissing launching notification:', error);
+    }
+  };
+
+  /**
    * Dismiss all notifications related to fake calls
    */
   const dismissAllCallNotifications = async () => {
@@ -117,7 +176,8 @@ const FakeCallScreen = () => {
         if (
           notification.notification.data?.screen === 'FakeCallScreen' ||
           notification.notification.title === 'Incoming Call' ||
-          notification.notification.title === 'Connecting call...'
+          notification.notification.title === 'Connecting call...' ||
+          notification.notification.title?.includes('Prayer Time')
         ) {
           if (notification.notification.id) {
             await notifee.cancelNotification(notification.notification.id);
@@ -130,10 +190,10 @@ const FakeCallScreen = () => {
       }
 
       // Also cancel by channel ID as a fallback
-      await notifee.cancelAllNotifications(['fake-call-channel']);
-      console.log('Dismissed all call notifications');
+      await notifee.cancelAllNotifications(['prayer-notifications-fullscreen']);
+      console.log('✅ Dismissed all call notifications');
     } catch (error) {
-      console.error('Error dismissing notifications:', error);
+      console.error('❌ Error dismissing notifications:', error);
     }
   };
 
