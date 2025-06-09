@@ -50,27 +50,6 @@ const PrayerTimeScreen = () => {
     setupUser();
   }, [user, userLoading, initializeUser]);
 
-  // Initialize background tasks when screen mounts
-  useEffect(() => {
-    const setupBackgroundServices = async () => {
-      try {
-        const userId = 1001;
-        const isHealthy = await checkBackgroundTasksHealth(userId);
-
-        if (!isHealthy) {
-          console.log(
-            '🔄 Initializing background tasks from PrayerTimeScreen...',
-          );
-          await initializeUserBackgroundTasks(userId);
-        }
-      } catch (error) {
-        console.error('Error setting up background services:', error);
-      }
-    };
-
-    setupBackgroundServices();
-  }, []);
-
   const isLoading = prayerLoading || userLoading;
 
   return (
