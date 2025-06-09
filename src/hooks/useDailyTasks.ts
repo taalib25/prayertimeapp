@@ -10,11 +10,7 @@ import {
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
-import {
-  initializeUserBackgroundTasks,
-  checkBackgroundTasksHealth,
-} from '../services/backgroundTasks';
-import UnifiedNotificationService from '../services/UnifiedNotificationService';
+import {checkBackgroundTasksHealth} from '../services/backgroundTasks';
 
 interface UseDailyTasksProps {
   uid: number;
@@ -34,8 +30,10 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
       // Check and reset if it's a new day
       await checkAndResetDailyTasks(uid);
 
+      // Ensure notification services are healthy
+      await checkBackgroundTasksHealth(uid);
+
       const tasks = await getDailyTasksForDate(uid, date);
-      // console.log("tasks", tasks)
       setDailyTasks(tasks);
     } catch (err) {
       setError('Failed to fetch daily tasks');
@@ -113,32 +111,6 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
     };
   }, [fetchDailyTasks, date]);
 
-  // Enhanced background task initialization
-  useEffect(() => {
-    const initializeNotificationServices = async () => {
-      try {
-        // First check and reset daily tasks
-        await checkAndResetDailyTasks(uid);
-
-        // Initialize unified notification service
-        const notificationService = UnifiedNotificationService.getInstance();
-        await notificationService.scheduleDailyPrayerNotifications(uid, date);
-
-        // Check if notification services are properly set up
-        const isHealthy = await checkBackgroundTasksHealth(uid);
-
-        if (!isHealthy) {
-          console.log(`🔄 Setting up notification services for user ${uid}...`);
-          await initializeUserBackgroundTasks(uid);
-        }
-      } catch (error) {
-        console.error('Error initializing notification services:', error);
-      }
-    };
-
-    initializeNotificationServices();
-  }, [uid, date]);
-
   return {
     dailyTasks,
     isLoading,
@@ -170,6 +142,9 @@ export const useRecentDailyTasks = ({
 
       // Check and reset if it's a new day
       await checkAndResetDailyTasks(uid);
+
+      // Ensure notification services are healthy
+      await checkBackgroundTasksHealth(uid);
 
       const tasks = await getRecentDailyTasks(uid, daysBack);
 

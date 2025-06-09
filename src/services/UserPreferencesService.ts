@@ -50,12 +50,7 @@ class UserPreferencesService {
         JSON.stringify(allPrefs),
       );
 
-      // Trigger notification reschedule via UnifiedNotificationService
-      const UnifiedNotificationService =
-        require('./UnifiedNotificationService').default;
-      const notificationService = UnifiedNotificationService.getInstance();
-      const today = new Date().toISOString().split('T')[0];
-      await notificationService.scheduleDailyPrayerNotifications(uid, today);
+      console.log(`✅ Updated notification settings for user ${uid}`);
     } catch (error) {
       console.error('Error updating notification settings:', error);
       throw error;

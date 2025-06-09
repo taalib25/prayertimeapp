@@ -73,7 +73,9 @@ class UnifiedNotificationService {
 
       await this.initialize();
 
-      const settings = await this.preferencesService.getNotificationSettings(uid);
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
       if (!settings || !settings.notifications) {
         console.log(`❌ Notifications disabled for user ${uid}`);
         return;
@@ -153,7 +155,10 @@ class UnifiedNotificationService {
             }
           }
         } catch (prayerError) {
-          console.error(`❌ Failed to schedule ${prayer} notification:`, prayerError);
+          console.error(
+            `❌ Failed to schedule ${prayer} notification:`,
+            prayerError,
+          );
           // Continue with other prayers even if one fails
         }
       }
@@ -197,12 +202,16 @@ class UnifiedNotificationService {
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.REMINDER,
             pressAction: {id: 'default'},
+            autoCancel: true,
             sound: settings.notification_types?.sound
               ? settings.adhan_sound
               : undefined,
             vibrationPattern: settings.notification_types?.vibration
-              ? [300, 500, 300]
+              ? [200, 400, 200, 400]
               : undefined,
+            localOnly: false,
+            showTimestamp: true,
+            timestamp: notificationTime.getTime(),
           },
           ios: {
             sound: settings.notification_types?.sound
@@ -215,7 +224,10 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(`❌ Failed to schedule standard notification for ${prayer}:`, error);
+      console.error(
+        `❌ Failed to schedule standard notification for ${prayer}:`,
+        error,
+      );
       return null;
     }
   }
@@ -255,10 +267,14 @@ class UnifiedNotificationService {
               : AndroidVisibility.PRIVATE,
             pressAction: {id: 'default'},
             fullScreenAction: {id: 'full-screen'},
-            sound: 'ringtone',
-            vibrationPattern: [300, 500, 300, 500, 300],
-            ongoing: true,
             autoCancel: false,
+            ongoing: true,
+            localOnly: false,
+            lightUpScreen: true,
+            sound: 'ringtone',
+            vibrationPattern: [200, 400, 200, 400, 200, 400],
+            showTimestamp: true,
+            timestamp: notificationTime.getTime(),
           },
           ios: {
             sound: 'ringtone.caf',
@@ -271,7 +287,10 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(`❌ Failed to schedule fullscreen notification for ${prayer}:`, error);
+      console.error(
+        `❌ Failed to schedule fullscreen notification for ${prayer}:`,
+        error,
+      );
       return null;
     }
   }
@@ -286,7 +305,7 @@ class UnifiedNotificationService {
       }
 
       const [hours, minutes] = prayerTime.split(':').map(Number);
-      
+
       if (isNaN(hours) || isNaN(minutes)) {
         throw new Error('Invalid time format');
       }
@@ -317,7 +336,9 @@ class UnifiedNotificationService {
       for (const notification of userNotifications) {
         try {
           if (notification.notification.id) {
-            await notifee.cancelTriggerNotification(notification.notification.id);
+            await notifee.cancelTriggerNotification(
+              notification.notification.id,
+            );
           }
         } catch (cancelError) {
           console.error('❌ Failed to cancel notification:', cancelError);
@@ -349,7 +370,9 @@ class UnifiedNotificationService {
       await this.initialize();
 
       const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(uid);
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
 
       if (!settings) {
         throw new Error('Unable to get notification settings');

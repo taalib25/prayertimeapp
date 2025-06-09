@@ -1,14 +1,7 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import DailyTasksModel, {PrayerStatus} from '../../model/DailyTasks';
-import notifee, {
-  AndroidImportance,
-  TriggerType,
-  RepeatFrequency,
-  TimestampTrigger,
-} from '@notifee/react-native';
 import {getPrayerTimesForDate, PrayerTimesData} from './PrayerServices';
-import UnifiedNotificationService from '../UnifiedNotificationService';
 
 export interface DailyTaskData {
   uid: number;
@@ -337,25 +330,7 @@ export const checkAndResetDailyTasks = async (uid: number) => {
   // If no tasks for today OR last task is from previous day
   if (latestTasks.length === 0 || latestTasks[0].date !== today) {
     await resetDailyTasks(uid, today); // Create fresh tasks
-    await checkAndUpdateNotifications(uid, today); // Update prayer notifications
-  }
-};
-
-/**
- * Check if prayer times changed and update notifications accordingly
- */
-export const checkAndUpdateNotifications = async (
-  uid: number,
-  date: string,
-) => {
-  try {
-    const notificationService = UnifiedNotificationService.getInstance();
-    await notificationService.scheduleDailyPrayerNotifications(uid, date);
-    console.log(
-      '✅ Prayer notifications updated via UnifiedNotificationService',
-    );
-  } catch (error) {
-    console.error('Error updating notifications:', error);
+    console.log(`✅ Daily tasks reset for ${today}`);
   }
 };
 

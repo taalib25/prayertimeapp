@@ -61,8 +61,8 @@ const FakeCallScreen = () => {
       console.log('Error configuring audio:', error);
     }
 
-    // Start very aggressive vibration pattern for DND bypass
-    const vibrationPattern = [200, 300, 200, 300, 200, 300, 200, 300, 200, 300];
+    // Start very aggressive vibration pattern for DND bypass - ensure even number of elements
+    const vibrationPattern = [0, 200, 400, 200, 400, 200];
     Vibration.vibrate(vibrationPattern, true);
 
     // Auto timeout the call after 20 seconds if not answered
@@ -335,11 +335,7 @@ const FakeCallScreen = () => {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {renderCallInterface()}
-    </View>
-  );
+  return <View style={styles.container}>{renderCallInterface()}</View>;
 };
 
 const styles = StyleSheet.create({
