@@ -127,20 +127,24 @@ const DailyTasksSelector: React.FC = () => {
       return date.toLocaleDateString('en-US', options);
     };
 
-    return recentTasks.map(dayData => ({
-      dateISO: dayData.date,
-      dayLabel: formatDayLabel(dayData.date),
-      tasks: dayData.specialTasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        completed: task.completed,
-      })),
-    }));
+    // Filter out days with no tasks and reverse order so today is first
+    const tasksWithData = recentTasks
+      .filter(dayData => dayData.specialTasks.length > 0)
+      .reverse() // Reverse to show today first, then previous days
+      .map(dayData => ({
+        dateISO: dayData.date,
+        dayLabel: formatDayLabel(dayData.date),
+        tasks: dayData.specialTasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          completed: task.completed,
+        })),
+      }));
+
+    return tasksWithData;
   }, [recentTasks]);
 
-  const [currentPage, setCurrentPage] = useState(
-    transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0,
-  );
+  const [currentPage, setCurrentPage] = useState(0); // Start at 0 since today is first
   const pagerRef = useRef<PagerView>(null);
 
   const handlePageSelected = (e: any) => {
@@ -173,17 +177,9 @@ const DailyTasksSelector: React.FC = () => {
     );
   }
 
-  // Show empty state
+  // Hide component if no tasks found
   if (transformedDailyData.length === 0) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {justifyContent: 'center', alignItems: 'center'},
-        ]}>
-        <Text style={typography.body}>No tasks found</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
@@ -191,9 +187,7 @@ const DailyTasksSelector: React.FC = () => {
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={
-          transformedDailyData.length > 0 ? transformedDailyData.length - 1 : 0
-        }
+        initialPage={0} // Start with today (first page)
         onPageSelected={handlePageSelected}>
         {transformedDailyData.map((dayTasks, index) => (
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
@@ -202,19 +196,21 @@ const DailyTasksSelector: React.FC = () => {
         ))}
       </PagerView>
 
-      {/* Pagination Indicator */}
-      <View style={styles.paginationContainer}>
-        {transformedDailyData.map((_, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.paginationDot,
-              currentPage === index && styles.paginationDotActive,
-            ]}
-            onPress={() => pagerRef.current?.setPage(index)}
-          />
-        ))}
-      </View>
+      {/* Pagination Indicator - Only show if more than 1 day */}
+      {transformedDailyData.length > 1 && (
+        <View style={styles.paginationContainer}>
+          {transformedDailyData.map((_, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.paginationDot,
+                currentPage === index && styles.paginationDotActive,
+              ]}
+              onPress={() => pagerRef.current?.setPage(index)}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };

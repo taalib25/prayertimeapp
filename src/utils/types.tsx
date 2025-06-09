@@ -47,13 +47,28 @@ export interface PrayerStatus {
 }
 
 /**
- * User preferences for prayer notifications
+ * User preferences for prayer notifications - Enhanced
  */
 export interface PrayerNotificationSettings {
   notifications: boolean;
   adhan_sound: string;
   calculation_method: string;
   reminder_minutes_before: number;
+  // New fields for better control
+  notification_types: {
+    standard: boolean; // Regular notifications
+    fullscreen: boolean; // Full screen notifications (fake call style)
+    sound: boolean; // Sound enabled
+    vibration: boolean; // Vibration enabled
+  };
+  prayer_specific: {
+    fajr: boolean;
+    dhuhr: boolean;
+    asr: boolean;
+    maghrib: boolean;
+    isha: boolean;
+  };
+  dnd_bypass: boolean; // Attempt to bypass Do Not Disturb
 }
 
 /**

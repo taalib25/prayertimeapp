@@ -7,7 +7,6 @@ import App from './App';
 import {name as appName} from './app.json';
 import FakeCallScreen from './src/screens/FakeCallScreen';
 import notifee, { EventType } from '@notifee/react-native';
-import BackgroundFetch from 'react-native-background-fetch';
 
 // Handle background notification events
 notifee.onBackgroundEvent(async ({ type, detail }) => {
@@ -17,7 +16,6 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   // Handle notification press
   if (notification && type === EventType.PRESS && notification.data && notification.data.screen === 'FakeCallScreen') {
     console.log('[BACKGROUND EVENT] FakeCallScreen notification pressed.');
-    // The app will check for pending navigation when it launches
     await notifee.cancelNotification(notification.id);
   }
 
@@ -26,28 +24,6 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     if (pressAction.id === 'answer-call' && notification) {
       console.log('[BACKGROUND ACTION] Accept call action pressed');
       await notifee.cancelNotification(notification.id);
-      
-      // Create a new notification that will launch the app with deep link info
-      await notifee.displayNotification({
-        title: 'Connecting call...',
-        body: 'Opening prayer call screen',
-        data: {
-          screen: 'FakeCallScreen',
-          launchReason: 'answer-call',
-          timestamp: Date.now()
-        },
-        android: {
-          channelId: 'fake-call-channel',
-          pressAction: {
-            id: 'default',
-            launchActivity: 'default',
-          },
-          fullScreenAction: {
-            id: 'default',
-            launchActivity: 'com.prayer_app.FakeCallActivity',
-          },
-        }
-      });
     }
 
     if (pressAction.id === 'decline-call' && notification) {
@@ -56,44 +32,6 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
     }
   }
 });
-
-// Enhanced BackgroundFetch headless task
-const MyHeadlessTask = async (event) => {
-  let taskId = event.taskId;
-  
-  try {
-    // Handle different task types based on taskId
-    if (taskId.includes('daily-reset')) {
-      const uid = extractUidFromTaskId(taskId);
-      if (uid) {
-        // Dynamic import to avoid circular dependencies
-        const { checkAndResetDailyTasks } = require('./src/services/db/dailyTaskServices');
-        await checkAndResetDailyTasks(uid);
-      }
-    }
-    
-    if (taskId.includes('prayer-check')) {
-      const uid = extractUidFromTaskId(taskId);
-      if (uid) {
-        const today = new Date().toISOString().split('T')[0];
-        await checkAndUpdateNotifications(uid, today);
-      }
-    }
-  } catch (error) {
-    console.error('[BackgroundFetch] Task error:', error);
-  }
-  
-  BackgroundFetch.finish(taskId); // Always call this!
-};
-
-// Helper function to extract UID from task ID
-const extractUidFromTaskId = (taskId) => {
-  const match = taskId.match(/-(\d+)-/);
-  return match ? parseInt(match[1]) : null;
-};
-
-// Register the BackgroundFetch HeadlessTask
-BackgroundFetch.registerHeadlessTask(MyHeadlessTask);
 
 AppRegistry.registerComponent(appName, () => App);
 AppRegistry.registerComponent('FakeCallScreen', () => FakeCallScreen);

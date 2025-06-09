@@ -1,7 +1,6 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import DailyTasksModel, {PrayerStatus} from '../../model/DailyTasks';
-import BackgroundFetch from 'react-native-background-fetch';
 import notifee, {
   AndroidImportance,
   TriggerType,
@@ -9,6 +8,7 @@ import notifee, {
   TimestampTrigger,
 } from '@notifee/react-native';
 import {getPrayerTimesForDate, PrayerTimesData} from './PrayerServices';
+import UnifiedNotificationService from '../UnifiedNotificationService';
 
 export interface DailyTaskData {
   uid: number;
@@ -337,33 +337,7 @@ export const checkAndResetDailyTasks = async (uid: number) => {
   // If no tasks for today OR last task is from previous day
   if (latestTasks.length === 0 || latestTasks[0].date !== today) {
     await resetDailyTasks(uid, today); // Create fresh tasks
-    await scheduleNextDayReset(uid); // Schedule tomorrow's reset
     await checkAndUpdateNotifications(uid, today); // Update prayer notifications
-  }
-};
-
-/**
- * Schedule background task for next day reset
- */
-export const scheduleNextDayReset = async (uid: number): Promise<void> => {
-  try {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 1, 0); // 12:00:01 AM tomorrow
-
-    const taskId = `daily-reset-${uid}-${tomorrow.getTime()}`;
-
-    await BackgroundFetch.scheduleTask({
-      taskId: taskId,
-      delay: tomorrow.getTime() - Date.now(),
-      periodic: false,
-      forceAlarmManager: true,
-      requiredNetworkType: BackgroundFetch.NETWORK_TYPE_NONE,
-    });
-
-    console.log(`📅 Scheduled next day reset for ${tomorrow.toISOString()}`);
-  } catch (error) {
-    console.error('Error scheduling next day reset:', error);
   }
 };
 
@@ -374,152 +348,15 @@ export const checkAndUpdateNotifications = async (
   uid: number,
   date: string,
 ) => {
-  const todayPrayerTimes = await getPrayerTimesForDate(date);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = yesterday.toISOString().split('T')[0];
-  const yesterdayPrayerTimes = await getPrayerTimesForDate(yesterdayDate);
-
-  // Compare each prayer time - fix the typo
-  const timesChanged =
-    !yesterdayPrayerTimes ||
-    todayPrayerTimes?.fajr !== yesterdayPrayerTimes.fajr ||
-    todayPrayerTimes?.dhuhr !== yesterdayPrayerTimes.dhuhr ||
-    todayPrayerTimes?.asr !== yesterdayPrayerTimes.asr ||
-    todayPrayerTimes?.maghrib !== yesterdayPrayerTimes.maghrib ||
-    todayPrayerTimes?.isha !== yesterdayPrayerTimes.isha;
-
-  if (timesChanged) {
-    console.log('🔔 Prayer times changed, updating notifications...');
-    await rescheduleAllPrayerNotifications(uid, todayPrayerTimes!);
-  } else {
-    console.log('⏰ Prayer times unchanged, keeping existing notifications');
-  }
-};
-
-/**
- * Reschedule all prayer notifications for new times
- */
-const rescheduleAllPrayerNotifications = async (
-  uid: number,
-  prayerTimes: PrayerTimesData,
-): Promise<void> => {
   try {
-    // Cancel existing prayer notifications for this user
-    const existingNotifications = await notifee.getTriggerNotifications();
-    const prayerNotifications = existingNotifications.filter(
-      notif =>
-        notif.notification.data?.type === 'prayer-reminder' &&
-        notif.notification.data?.uid === uid.toString(),
-    );
-
-    for (const notification of prayerNotifications) {
-      await notifee.cancelTriggerNotification(notification.notification.id!);
-    }
-
-    // Get user preferences (simplified)
-    const preferences = {
-      notifications: true,
-      adhan_sound: 'default',
-      reminder_minutes_before: 10,
-    };
-
-    if (!preferences.notifications) return;
-
-    // Schedule new notifications for each prayer
-    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    const today = new Date();
-
-    for (const prayer of prayers) {
-      const prayerTime = prayerTimes[prayer as keyof PrayerTimesData] as string;
-      if (!prayerTime) continue;
-
-      const [hours, minutes] = prayerTime.split(':').map(Number);
-      const notificationTime = new Date(today);
-      notificationTime.setHours(
-        hours,
-        minutes - preferences.reminder_minutes_before,
-        0,
-        0,
-      );
-
-      if (notificationTime > new Date()) {
-        await scheduleIndividualPrayerNotification(
-          uid,
-          prayer,
-          notificationTime,
-          preferences,
-        );
-      }
-    }
-
-    console.log('✅ All prayer notifications rescheduled');
-  } catch (error) {
-    console.error('Error rescheduling prayer notifications:', error);
-  }
-};
-
-/**
- * Schedule individual prayer notification
- */
-const scheduleIndividualPrayerNotification = async (
-  uid: number,
-  prayerName: string,
-  notificationTime: Date,
-  preferences: any,
-): Promise<void> => {
-  try {
-    const channelId = await notifee.createChannel({
-      id: 'prayer-reminders',
-      name: 'Prayer Reminders',
-      sound: preferences.adhan_sound || 'default',
-      vibration: true,
-      importance: AndroidImportance.HIGH,
-    });
-
-    const trigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: notificationTime.getTime(),
-      repeatFrequency: RepeatFrequency.DAILY,
-    };
-
-    await notifee.createTriggerNotification(
-      {
-        title: `${
-          prayerName.charAt(0).toUpperCase() + prayerName.slice(1)
-        } Prayer`,
-        body: `It's almost time for ${prayerName} prayer.`,
-        data: {
-          type: 'prayer-reminder',
-          uid: uid.toString(),
-          prayer: prayerName,
-        },
-        android: {
-          channelId,
-          pressAction: {id: 'default'},
-          sound: preferences.adhan_sound || 'default',
-        },
-        ios: {
-          sound: `${preferences.adhan_sound || 'default'}.caf`,
-        },
-      },
-      trigger,
+    const notificationService = UnifiedNotificationService.getInstance();
+    await notificationService.scheduleDailyPrayerNotifications(uid, date);
+    console.log(
+      '✅ Prayer notifications updated via UnifiedNotificationService',
     );
   } catch (error) {
-    console.error(`Error scheduling ${prayerName} notification:`, error);
+    console.error('Error updating notifications:', error);
   }
-};
-
-/**
- * Get user notification preferences (placeholder - implement based on your user model)
- */
-const getUserNotificationPreferences = async (uid: number) => {
-  // This should fetch from your user preferences table
-  return {
-    notifications: true,
-    adhan_sound: 'default',
-    reminder_minutes_before: 10,
-  };
 };
 
 /**

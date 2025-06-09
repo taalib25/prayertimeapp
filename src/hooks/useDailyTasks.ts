@@ -14,6 +14,7 @@ import {
   initializeUserBackgroundTasks,
   checkBackgroundTasksHealth,
 } from '../services/backgroundTasks';
+import UnifiedNotificationService from '../services/UnifiedNotificationService';
 
 interface UseDailyTasksProps {
   uid: number;
@@ -114,25 +115,29 @@ export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
 
   // Enhanced background task initialization
   useEffect(() => {
-    const initializeBackgroundTasks = async () => {
+    const initializeNotificationServices = async () => {
       try {
         // First check and reset daily tasks
         await checkAndResetDailyTasks(uid);
 
-        // Check if background tasks are properly set up
+        // Initialize unified notification service
+        const notificationService = UnifiedNotificationService.getInstance();
+        await notificationService.scheduleDailyPrayerNotifications(uid, date);
+
+        // Check if notification services are properly set up
         const isHealthy = await checkBackgroundTasksHealth(uid);
 
         if (!isHealthy) {
-          console.log(`🔄 Setting up background tasks for user ${uid}...`);
+          console.log(`🔄 Setting up notification services for user ${uid}...`);
           await initializeUserBackgroundTasks(uid);
         }
       } catch (error) {
-        console.error('Error initializing background tasks:', error);
+        console.error('Error initializing notification services:', error);
       }
     };
 
-    initializeBackgroundTasks();
-  }, [uid]);
+    initializeNotificationServices();
+  }, [uid, date]);
 
   return {
     dailyTasks,
@@ -167,7 +172,13 @@ export const useRecentDailyTasks = ({
       await checkAndResetDailyTasks(uid);
 
       const tasks = await getRecentDailyTasks(uid, daysBack);
-      setRecentTasks(tasks);
+
+      // Sort tasks by date (oldest first) so component can reverse for display
+      const sortedTasks = tasks.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
+
+      setRecentTasks(sortedTasks);
     } catch (err) {
       setError('Failed to fetch recent daily tasks');
       console.error('Error fetching recent daily tasks:', err);
