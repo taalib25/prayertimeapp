@@ -73,17 +73,16 @@ export const useUser = ({uid}: UseUserProps) => {
         ? JSON.parse(settingsData)
         : DEFAULT_SETTINGS;
 
-      if (!profile) {
-        setError('User profile not found');
-        return;
+      if (profile) {
+        setUser({
+          id: uid,
+          profile,
+          goals,
+          settings,
+        });
+      } else {
+        setUser(null);
       }
-
-      setUser({
-        id: uid,
-        profile,
-        goals,
-        settings,
-      });
     } catch (err) {
       setError('Failed to fetch user data');
       console.error('Error fetching user:', err);
@@ -156,34 +155,6 @@ export const useUser = ({uid}: UseUserProps) => {
     [user, fetchUser, getStorageKey],
   );
 
-  // Initialize user profile if it doesn't exist
-  const initializeUser = useCallback(
-    async (initialProfile: UserProfile) => {
-      try {
-        await Promise.all([
-          AsyncStorage.setItem(
-            getStorageKey('profile'),
-            JSON.stringify(initialProfile),
-          ),
-          AsyncStorage.setItem(
-            getStorageKey('goals'),
-            JSON.stringify(DEFAULT_GOALS),
-          ),
-          AsyncStorage.setItem(
-            getStorageKey('settings'),
-            JSON.stringify(DEFAULT_SETTINGS),
-          ),
-        ]);
-
-        await fetchUser();
-      } catch (err) {
-        console.error('Error initializing user:', err);
-        setError('Failed to initialize user');
-      }
-    },
-    [fetchUser, getStorageKey],
-  );
-
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
@@ -195,7 +166,6 @@ export const useUser = ({uid}: UseUserProps) => {
     updateGoals,
     updateSettings,
     updateProfile,
-    initializeUser,
     refetch: fetchUser,
   };
 };

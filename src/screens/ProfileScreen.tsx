@@ -13,7 +13,7 @@ import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
 import UnifiedNotificationService from '../services/UnifiedNotificationService';
-import { useAuth } from '../contexts/AuthContext';
+import {useAuth} from '../contexts/AuthContext';
 
 const ProfileScreen: React.FC = () => {
   const {logout} = useAuth();
@@ -66,10 +66,10 @@ const ProfileScreen: React.FC = () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
       // Schedule a fake call notification that should bypass DND
-      await notificationService.scheduleTestFakeCall(1001, 10); // 10 seconds
+      await notificationService.scheduleTestFakeCall(1001, 5); // Reduced to 5 seconds
       Alert.alert(
         'Fake Call Scheduled ✅',
-        'Fake call notification will appear in 10 seconds and should bypass DND/Silent mode!',
+        'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to schedule fake call notification');
@@ -117,29 +117,25 @@ const ProfileScreen: React.FC = () => {
             onPress={testFakeCallNotification}>
             <Text style={styles.testButtonText}>Test Fake Call</Text>
             <Text style={styles.testButtonSubtext}>
-              Full-screen call bypassing DND (10s)
+              Full-screen call bypassing DND (5s)
             </Text>
           </TouchableOpacity>
         </View>
 
-        <Pressable 
-          style={styles.logoutButton} 
-          onPress={() => 
-            Alert.alert(
-              'Logout', 
-              'Are you sure you want to logout?',
-              [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Logout',
-            style: 'destructive',
-            onPress: logout,
-          },
-              ]
-            )
+        <Pressable
+          style={styles.logoutButton}
+          onPress={() =>
+            Alert.alert('Logout', 'Are you sure you want to logout?', [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Logout',
+                style: 'destructive',
+                onPress: logout,
+              },
+            ])
           }>
           <Text style={styles.logoutText}>Logout</Text>
         </Pressable>

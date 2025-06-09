@@ -20,6 +20,7 @@ import {
   otpVerificationSchema,
 } from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -120,6 +121,50 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
   const {login} = useAuth();
   const email = route.params?.email || '';
 
+  const createDummyUserData = async () => {
+    try {
+      const uid = 1001;
+      const dummyProfile = {
+        username: 'Ahmed Hassan',
+        email: email || 'ahmed@example.com',
+        phoneNumber: phoneNumber,
+      };
+
+      const dummyGoals = {
+        monthlyZikrGoal: 100,
+        monthlyQuranPagesGoal: 30,
+        monthlyCharityGoal: 5,
+        monthlyFastingDaysGoal: 6,
+      };
+
+      const dummySettings = {
+        prayerSettings: 'standard',
+        preferredMadhab: 'hanafi',
+        appLanguage: 'en',
+        theme: 'light',
+        location: 'New York, NY',
+        masjid: 'Al-Noor Mosque',
+      };
+
+      // Store dummy data in AsyncStorage
+      await Promise.all([
+        AsyncStorage.setItem(
+          `user_${uid}_profile`,
+          JSON.stringify(dummyProfile),
+        ),
+        AsyncStorage.setItem(`user_${uid}_goals`, JSON.stringify(dummyGoals)),
+        AsyncStorage.setItem(
+          `user_${uid}_settings`,
+          JSON.stringify(dummySettings),
+        ),
+      ]);
+
+      console.log('✅ Dummy user data created successfully');
+    } catch (error) {
+      console.error('❌ Error creating dummy user data:', error);
+    }
+  };
+
   const handleVerifyOTP = async () => {
     if (!validateOTP()) {
       return;
@@ -128,8 +173,10 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setIsLoading(true);
 
     try {
-      // For demo purposes, accept any complete OTP
-      // Complete the login process with dummy phone number
+      // Create dummy user data before login
+      await createDummyUserData();
+
+      // Complete the login process
       await login(email, phoneNumber);
 
       // Navigate to main app

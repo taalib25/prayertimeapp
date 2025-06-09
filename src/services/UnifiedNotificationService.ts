@@ -235,7 +235,8 @@ class UnifiedNotificationService {
     settings: any,
   ): Promise<string | null> {
     try {
-      const id = `prayer-${uid}-${prayer}-fullscreen-${notificationTime.getTime()}`;
+      // Generate unique ID
+      const id = `prayer-fullscreen-${prayer}-${uid}-${notificationTime.getTime()}`;
 
       const trigger: TimestampTrigger = {
         type: TriggerType.TIMESTAMP,
@@ -254,6 +255,7 @@ class UnifiedNotificationService {
             prayer,
             screen: 'FakeCallScreen',
             notificationId: id,
+            returnTo: 'MainApp',
           },
           android: {
             channelId: this.fullscreenChannelId,
@@ -272,11 +274,13 @@ class UnifiedNotificationService {
             },
             sound: 'ringtone',
             vibrationPattern: [300, 500, 300, 500],
-            ongoing: true,
-            autoCancel: false,
+            ongoing: false,
+            autoCancel: true,
             lightUpScreen: true,
             onlyAlertOnce: false,
-            largeIcon: require('../assets/icons/fajr-logo.png'), // Add app icon
+            timeoutAfter: 30000,
+            smallIcon: 'ic_notification',
+            localOnly: true,
           },
           ios: {
             sound: 'ringtone.caf',
@@ -287,12 +291,12 @@ class UnifiedNotificationService {
         trigger,
       );
 
+      console.log(
+        `✅ Scheduled fullscreen notification for ${prayer} at ${notificationTime.toLocaleString()}`,
+      );
       return id;
     } catch (error) {
-      console.error(
-        `❌ Failed to schedule fullscreen notification for ${prayer}:`,
-        error,
-      );
+      console.error('❌ Error scheduling fullscreen notification:', error);
       return null;
     }
   }
@@ -417,16 +421,6 @@ class UnifiedNotificationService {
         throw new Error('Unable to get notification settings');
       }
 
-      // Force fullscreen settings for test
-      const testSettings = {
-        ...settings,
-        notification_types: {
-          ...settings.notification_types,
-          fullscreen: true,
-        },
-        dnd_bypass: true,
-      };
-
       const id = `test-fake-call-${Date.now()}`;
 
       await notifee.createTriggerNotification(
@@ -440,6 +434,7 @@ class UnifiedNotificationService {
             prayer: 'test-fake-call',
             screen: 'FakeCallScreen',
             notificationId: id,
+            returnTo: 'MainApp',
           },
           android: {
             channelId: this.fullscreenChannelId,
@@ -456,10 +451,12 @@ class UnifiedNotificationService {
             },
             sound: 'ringtone',
             vibrationPattern: [300, 500, 300, 500],
-            ongoing: true,
-            autoCancel: false,
+            ongoing: false,
+            autoCancel: true,
             lightUpScreen: true,
             onlyAlertOnce: false,
+            timeoutAfter: 30000,
+            localOnly: true,
           },
         },
         {

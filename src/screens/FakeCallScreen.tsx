@@ -36,12 +36,13 @@ const FakeCallScreen = () => {
   >('ringing');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const endedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('FakeCallScreen mounted');
 
-    // Immediately dismiss the notification that launched this screen
-    dismissLaunchingNotification();
+    // Immediately dismiss all notifications to prevent conflicts
+    dismissAllNotifications();
 
     // Request system alert window permission for Android
     if (Platform.OS === 'android') {
@@ -53,7 +54,7 @@ const FakeCallScreen = () => {
     }
 
     // Cancel all notifications related to fake calls when screen opens
-    dismissAllCallNotifications();
+    dismissAllNotifications();
 
     // Configure audio to bypass DND mode aggressively
     try {
@@ -94,6 +95,9 @@ const FakeCallScreen = () => {
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
       }
+      if (endedTimeoutRef.current) {
+        clearTimeout(endedTimeoutRef.current);
+      }
 
       // Stop vibration and sound
       Vibration.cancel();
@@ -103,95 +107,60 @@ const FakeCallScreen = () => {
         console.log('Error stopping sound in cleanup:', error);
       }
 
+      // Final cleanup of notifications
+      dismissAllNotifications();
+
       backHandler.remove();
     };
-  }, []); // Removed callStatus dependency to prevent re-initializing
+  }, []);
+
+  // Add effect to handle automatic navigation when call ends
+  useEffect(() => {
+    if (callStatus === 'ended') {
+      // Set a timeout to navigate after showing "Call Ended" message
+      endedTimeoutRef.current = setTimeout(() => {
+        cleanupAndExit();
+      }, 2000); // Show "Call Ended" for 2 seconds
+    }
+
+    return () => {
+      if (endedTimeoutRef.current) {
+        clearTimeout(endedTimeoutRef.current);
+      }
+    };
+  }, [callStatus]);
 
   /**
-   * Dismiss the specific notification that launched this screen
+   * Comprehensive notification dismissal
    */
-  const dismissLaunchingNotification = async () => {
+  const dismissAllNotifications = async () => {
     try {
-      // Get all displayed notifications
-      const notifications = await notifee.getDisplayedNotifications();
+      console.log('🧹 Starting comprehensive notification dismissal...');
 
-      console.log(`Found ${notifications.length} displayed notifications`);
+      // Cancel ALL notifications first
+      await notifee.cancelAllNotifications();
 
-      // Filter and cancel fake call notifications
-      for (const notification of notifications) {
-        const notificationData = notification.notification.data;
-
-        if (
-          notificationData?.type === 'fake-call' ||
-          notificationData?.screen === 'FakeCallScreen' ||
-          notification.notification.title?.includes('Incoming Call') ||
-          notification.notification.title?.includes('Prayer Time')
-        ) {
-          if (notification.notification.id) {
-            await notifee.cancelNotification(notification.notification.id);
-            console.log(
-              '✅ Dismissed launching notification:',
-              notification.notification.id,
-            );
-          }
-        }
-      }
-
-      // Also get and cancel trigger notifications related to fake calls
+      // Get and cancel all trigger notifications
       const triggerNotifications = await notifee.getTriggerNotifications();
       for (const trigger of triggerNotifications) {
-        const notificationData = trigger.notification.data;
-
-        if (
-          notificationData?.type === 'fake-call' ||
-          notificationData?.screen === 'FakeCallScreen'
-        ) {
-          if (trigger.notification.id) {
-            await notifee.cancelTriggerNotification(trigger.notification.id);
-            console.log(
-              '✅ Cancelled trigger notification:',
-              trigger.notification.id,
-            );
-          }
+        if (trigger.notification.id) {
+          await notifee.cancelTriggerNotification(trigger.notification.id);
         }
       }
 
-      // Cancel by channel ID as fallback
-      await notifee.cancelAllNotifications(['prayer-notifications-fullscreen']);
-    } catch (error) {
-      console.error('❌ Error dismissing launching notification:', error);
-    }
-  };
-
-  /**
-   * Dismiss all notifications related to fake calls
-   */
-  const dismissAllCallNotifications = async () => {
-    try {
-      // Get all displayed notifications
-      const notifications = await notifee.getDisplayedNotifications();
-
-      // Filter and cancel fake call notifications
-      for (const notification of notifications) {
-        if (
-          notification.notification.data?.screen === 'FakeCallScreen' ||
-          notification.notification.title === 'Incoming Call' ||
-          notification.notification.title === 'Connecting call...' ||
-          notification.notification.title?.includes('Prayer Time')
-        ) {
-          if (notification.notification.id) {
-            await notifee.cancelNotification(notification.notification.id);
-            console.log(
-              'Cancelled notification:',
-              notification.notification.id,
-            );
-          }
+      // Get and cancel all displayed notifications
+      const displayedNotifications = await notifee.getDisplayedNotifications();
+      for (const notification of displayedNotifications) {
+        if (notification.notification.id) {
+          await notifee.cancelNotification(notification.notification.id);
         }
       }
 
-      // Also cancel by channel ID as a fallback
+      // Cancel by specific channels
       await notifee.cancelAllNotifications(['prayer-notifications-fullscreen']);
-      console.log('✅ Dismissed all call notifications');
+      await notifee.cancelAllNotifications(['prayer-notifications-standard']);
+
+      console.log('✅ All notifications dismissed');
     } catch (error) {
       console.error('❌ Error dismissing notifications:', error);
     }
@@ -200,49 +169,82 @@ const FakeCallScreen = () => {
   const handleAutoTimeout = () => {
     console.log('Call auto-timeout');
     setCallStatus('ended');
-    cleanupAndExit();
+    // Timeout will be handled by useEffect
   };
 
   const cleanupAndExit = () => {
-    // Stop vibration
-    Vibration.cancel();
+    console.log('Starting cleanup and exit process...');
 
-    // Stop any playing sound
+    // Stop vibration and sound immediately
+    Vibration.cancel();
     try {
       SoundPlayer.stop();
     } catch (error) {
       console.log('Error stopping sound:', error);
     }
 
-    // Dismiss any remaining notifications
-    dismissAllCallNotifications();
+    // Clear all timeouts
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+    }
+    if (endedTimeoutRef.current) {
+      clearTimeout(endedTimeoutRef.current);
+    }
 
-    // Navigate back to main screen instead of closing app
-    try {
-      if (navigationInitialized.current && navigation) {
-        navigation.navigate('MainApp'); // Navigate to home screen
-      } else {
-        // Fallback: Go back or exit app
+    // Dismiss notifications one final time
+    dismissAllNotifications();
+
+    // Navigate with multiple fallback strategies
+    const navigateToMain = () => {
+      try {
+        if (navigationInitialized.current && navigation) {
+          console.log('Using navigation hook to reset to MainApp');
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'MainApp'}],
+          });
+        } else {
+          const {navigationRef} = require('../../App');
+          if (navigationRef.current) {
+            console.log('Using global navigationRef to reset to MainApp');
+            navigationRef.current.reset({
+              index: 0,
+              routes: [{name: 'MainApp'}],
+            });
+          } else {
+            console.log('No navigation available, attempting goBack');
+            const {goBack} = require('../../App');
+            goBack();
+          }
+        }
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        // Last resort - exit app
         BackHandler.exitApp();
       }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      BackHandler.exitApp();
-    }
+    };
+
+    // Add a small delay to ensure cleanup completes
+    setTimeout(navigateToMain, 200);
   };
 
   const handleAcceptCall = async () => {
     console.log('Call accepted');
 
-    // Stop the ringing sound first
+    // Stop the ringing sound and vibration immediately
     try {
       SoundPlayer.stop();
     } catch (error) {
       console.log('Error stopping ringing sound:', error);
     }
 
-    // Dismiss notifications immediately when call is accepted
-    await dismissAllCallNotifications();
+    Vibration.cancel();
+
+    // Dismiss all notifications
+    await dismissAllNotifications();
 
     setCallStatus('connected');
 
@@ -251,14 +253,11 @@ const FakeCallScreen = () => {
       clearTimeout(timeoutRef.current);
     }
 
-    // Stop vibration
-    Vibration.cancel();
-
-    // Play the fajr sound in loop mode when call is answered
+    // Play the fajr sound in loop mode
     try {
       SoundPlayer.playSoundFile('fajr', 'mp3');
       SoundPlayer.setVolume(1.0);
-      SoundPlayer.setNumberOfLoops(-1); // -1 means infinite loop
+      SoundPlayer.setNumberOfLoops(-1);
       SoundPlayer.play();
     } catch (error) {
       console.log('Error playing answer sound in loop:', error);
@@ -268,68 +267,43 @@ const FakeCallScreen = () => {
     durationIntervalRef.current = setInterval(() => {
       setCallDuration(prev => prev + 1);
     }, 1000);
-
-    // Don't automatically end the call - let user end it
-    // The automatic timeout has been removed
   };
 
   const handleRejectCall = async () => {
     console.log('Call rejected');
 
-    // Stop ringing sound immediately
+    // Stop everything immediately
     try {
       SoundPlayer.stop();
     } catch (error) {
       console.log('Error stopping sound:', error);
     }
 
-    // Dismiss notifications immediately when call is rejected
-    await dismissAllCallNotifications();
+    Vibration.cancel();
+    await dismissAllNotifications();
 
     setCallStatus('ended');
-
-    // Navigate away immediately when call is rejected
-    try {
-      if (navigationInitialized.current && navigation) {
-        navigation.navigate('MainApp'); // Navigate back to home
-      } else {
-        BackHandler.exitApp();
-      }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      BackHandler.exitApp();
-    }
+    // Timeout will be handled by useEffect
   };
 
   const handleEndCall = async () => {
     console.log('Call ended');
 
-    // Stop any playing sound
+    // Stop everything
     try {
       SoundPlayer.stop();
     } catch (error) {
       console.log('Error stopping sound:', error);
     }
 
-    // Dismiss notifications when call is ended
-    await dismissAllCallNotifications();
+    Vibration.cancel();
+    await dismissAllNotifications();
 
     setCallStatus('ended');
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
     }
-
-    // Navigate away when call is ended
-    try {
-      if (navigationInitialized.current && navigation) {
-        navigation.navigate('MainApp'); // Navigate back to home
-      } else {
-        BackHandler.exitApp();
-      }
-    } catch (error) {
-      console.error('Navigation error:', error);
-      BackHandler.exitApp();
-    }
+    // Timeout will be handled by useEffect
   };
 
   const formatCallDuration = (seconds: number): string => {
@@ -387,9 +361,11 @@ const FakeCallScreen = () => {
         </>
       );
     } else {
+      // Call ended state - show very brief message
       return (
         <View style={styles.callerInfo}>
-          <Text style={styles.callerName}>Call Ended</Text>
+          <SvgIcon name="fajrlogo" size={100} color={colors.text.secondary} />
+          <Text style={styles.callEndedText}>Call Ended</Text>
         </View>
       );
     }
@@ -495,6 +471,12 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: 'white',
     fontWeight: '600',
+  },
+  callEndedText: {
+    ...typography.h3,
+    color: colors.text.secondary,
+    marginTop: 20,
+    textAlign: 'center',
   },
 });
 

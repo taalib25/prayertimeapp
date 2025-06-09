@@ -20,34 +20,11 @@ import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSel
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
-import {
-  initializeUserBackgroundTasks,
-  checkBackgroundTasksHealth,
-} from '../services/backgroundTasks';
 
 const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
-  const {
-    prayerTimes,
-    isLoading: prayerLoading,
-    error,
-  } = usePrayerTimes(selectedDate);
-  const {user, isLoading: userLoading, initializeUser} = useUser({uid: 1001});
-
-  // Initialize user if not exists
-  useEffect(() => {
-    const setupUser = async () => {
-      if (!userLoading && !user) {
-        await initializeUser({
-          username: 'Ahmed Hassan',
-          email: 'ahmed@example.com',
-          phoneNumber: '+1234567890',
-        });
-      }
-    };
-
-    setupUser();
-  }, [user, userLoading, initializeUser]);
+  const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
+  const {user, isLoading: userLoading} = useUser({uid: 1001});
 
   const isLoading = prayerLoading || userLoading;
 
@@ -61,8 +38,8 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.settings?.location || 'Loading...'}
-          userName={user?.profile?.username || 'User'}
+          location={user?.settings?.location || 'New York, NY'}
+          userName={user?.profile?.username || 'Ahmed Hassan'}
           mosqueName={user?.settings?.masjid || 'Al-Noor Mosque'}
           mosqueLocation={user?.settings?.location || 'City Center'}
           avatarImage={require('../assets/images/profile.png')}

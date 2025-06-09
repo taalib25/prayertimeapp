@@ -49,7 +49,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Create navigation reference with proper typing
-export const navigationRef = React.createRef<NavigationContainerRef<RootStackParamList>>();
+export const navigationRef =
+  React.createRef<NavigationContainerRef<RootStackParamList>>();
 
 // Helper function to navigate from anywhere in the app
 export function navigate(name: keyof RootStackParamList, params?: any) {
@@ -130,17 +131,19 @@ function AppNavigator() {
   }
 
   return (
-    <NavigationContainer 
+    <NavigationContainer
       ref={navigationRef}
       onReady={() => {
         // Navigation is ready - you can add analytics or other initialization here
-        console.log('Navigation container ready');
+        console.log('✅ Navigation container ready');
       }}
-      onStateChange={(state) => {
-        // Track navigation state changes for analytics
-        console.log('Navigation state changed:', state);
-      }}
-    >
+      onStateChange={state => {
+        // Track navigation state changes for analytics and debugging
+        console.log(
+          '🔄 Navigation state changed:',
+          state?.routes?.[state.index]?.name,
+        );
+      }}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -148,12 +151,11 @@ function AppNavigator() {
           gestureEnabled: true, // Enable swipe gestures
         }}>
         {!hasSeenOnboarding ? (
-          <Stack.Screen 
+          <Stack.Screen
             name="Onboarding"
             options={{
               gestureEnabled: false, // Prevent swiping back from onboarding
-            }}
-          >
+            }}>
             {props => (
               <OnboardingScreen
                 {...props}
@@ -164,19 +166,20 @@ function AppNavigator() {
         ) : isAuthenticated ? (
           <Stack.Group>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-            <Stack.Screen 
-              name="DatabaseTest" 
+            <Stack.Screen
+              name="DatabaseTest"
               component={DatabaseTestScreen}
               options={{
                 presentation: 'modal', // Present as modal
               }}
             />
-            <Stack.Screen 
-              name="FakeCallScreen" 
+            <Stack.Screen
+              name="FakeCallScreen"
               component={FakeCallScreen}
               options={{
                 presentation: 'fullScreenModal',
                 gestureEnabled: false, // Prevent dismissing fake call screen
+                animationTypeForReplace: 'push', // Better animation
               }}
             />
           </Stack.Group>
@@ -190,7 +193,6 @@ function AppNavigator() {
     </NavigationContainer>
   );
 }
-
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
