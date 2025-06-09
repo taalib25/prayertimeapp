@@ -318,19 +318,23 @@ export const resetDailyTasks = async (
 /**
  * Enhanced auto-reset that works in background
  */
-export const checkAndResetDailyTasks = async (uid: number) => {
-  const today = new Date().toISOString().split('T')[0];
+export const checkAndCreateTodayTasks = async (uid: number): Promise<void> => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  // Get most recent task record
-  const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
-  const latestTasks = await dailyTasksCollection
-    .query(Q.where('uid', uid), Q.sortBy('date', Q.desc), Q.take(1))
-    .fetch();
+    // Check if today's tasks already exist
+    const existingTasks = await getDailyTasksForDate(uid, today);
 
-  // If no tasks for today OR last task is from previous day
-  if (latestTasks.length === 0 || latestTasks[0].date !== today) {
-    await resetDailyTasks(uid, today); // Create fresh tasks
-    console.log(`✅ Daily tasks reset for ${today}`);
+    if (!existingTasks) {
+      // Only create tasks for today if they don't exist
+      await createDailyTasks(uid, today);
+      console.log(`✅ Created daily tasks for today: ${today}`);
+    } else {
+      console.log(`✅ Daily tasks already exist for today: ${today}`);
+    }
+  } catch (error) {
+    console.error('Error in checkAndCreateTodayTasks:', error);
+    throw error;
   }
 };
 

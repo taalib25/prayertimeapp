@@ -1,126 +1,15 @@
 import {useState, useEffect, useCallback} from 'react';
 import {AppState} from 'react-native';
 import {
-  getDailyTasksForDate,
   getRecentDailyTasks,
   updatePrayerStatus,
   updateSpecialTaskStatus,
   updateZikrCount,
-  checkAndResetDailyTasks,
+  checkAndCreateTodayTasks,
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
 import {checkBackgroundTasksHealth} from '../services/backgroundTasks';
-
-interface UseDailyTasksProps {
-  uid: number;
-  date: string;
-}
-
-export const useDailyTasks = ({uid, date}: UseDailyTasksProps) => {
-  const [dailyTasks, setDailyTasks] = useState<DailyTaskData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchDailyTasks = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // Check and reset if it's a new day
-      await checkAndResetDailyTasks(uid);
-
-      // Ensure notification services are healthy
-      await checkBackgroundTasksHealth(uid);
-
-      const tasks = await getDailyTasksForDate(uid, date);
-      setDailyTasks(tasks);
-    } catch (err) {
-      setError('Failed to fetch daily tasks');
-      console.error('Error fetching daily tasks:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [uid, date]);
-
-  const updatePrayer = useCallback(
-    async (prayerName: string, status: PrayerStatus) => {
-      try {
-        await updatePrayerStatus(uid, date, prayerName, status);
-        await fetchDailyTasks(); // Refresh data
-      } catch (err) {
-        console.error('Error updating prayer:', err);
-        setError('Failed to update prayer status');
-      }
-    },
-    [uid, date, fetchDailyTasks],
-  );
-
-  const toggleSpecialTask = useCallback(
-    async (taskId: string) => {
-      if (!dailyTasks) return;
-
-      const task = dailyTasks.specialTasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      try {
-        await updateSpecialTaskStatus(uid, date, taskId, !task.completed);
-        await fetchDailyTasks(); // Refresh data
-      } catch (err) {
-        console.error('Error toggling special task:', err);
-        setError('Failed to update task');
-      }
-    },
-    [uid, date, dailyTasks, fetchDailyTasks],
-  );
-
-  const updateZikr = useCallback(
-    async (count: number) => {
-      try {
-        await updateZikrCount(uid, date, count);
-        await fetchDailyTasks(); // Refresh data
-      } catch (err) {
-        console.error('Error updating zikr:', err);
-        setError('Failed to update zikr count');
-      }
-    },
-    [uid, date, fetchDailyTasks],
-  );
-
-  useEffect(() => {
-    fetchDailyTasks();
-  }, [fetchDailyTasks]);
-
-  // Enhanced auto-refresh system
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
-        const currentDate = new Date().toISOString().split('T')[0];
-        if (currentDate !== date) {
-          fetchDailyTasks(); // This triggers reset if needed
-        }
-      }
-    };
-
-    const subscription = AppState.addEventListener(
-      'change',
-      handleAppStateChange,
-    );
-    return () => {
-      subscription?.remove();
-    };
-  }, [fetchDailyTasks, date]);
-
-  return {
-    dailyTasks,
-    isLoading,
-    error,
-    updatePrayer,
-    toggleSpecialTask,
-    updateZikr,
-    refetch: fetchDailyTasks,
-  };
-};
 
 interface UseRecentDailyTasksProps {
   uid: number;
@@ -140,17 +29,17 @@ export const useRecentDailyTasks = ({
       setIsLoading(true);
       setError(null);
 
-      // Check and reset if it's a new day
-      await checkAndResetDailyTasks(uid);
+      // Only check and create today's tasks if they don't exist
+      await checkAndCreateTodayTasks(uid);
 
       // Ensure notification services are healthy
       await checkBackgroundTasksHealth(uid);
 
       const tasks = await getRecentDailyTasks(uid, daysBack);
 
-      // Sort tasks by date (oldest first) so component can reverse for display
+      // Sort tasks by date (newest first) for proper display order
       const sortedTasks = tasks.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
 
       setRecentTasks(sortedTasks);
@@ -164,6 +53,14 @@ export const useRecentDailyTasks = ({
 
   const toggleSpecialTaskForDate = useCallback(
     async (date: string, taskId: string) => {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Prevent toggling tasks for previous days
+      if (date !== today) {
+        console.log('Cannot toggle tasks for previous days');
+        return;
+      }
+
       const dayTasks = recentTasks.find(task => task.date === date);
       if (!dayTasks) return;
 
@@ -172,7 +69,7 @@ export const useRecentDailyTasks = ({
 
       try {
         await updateSpecialTaskStatus(uid, date, taskId, !task.completed);
-        await fetchRecentTasks(); // Refresh all data
+        await fetchRecentTasks();
       } catch (err) {
         console.error('Error toggling special task:', err);
         setError('Failed to update task');
@@ -183,12 +80,41 @@ export const useRecentDailyTasks = ({
 
   const updatePrayerForDate = useCallback(
     async (date: string, prayerName: string, status: PrayerStatus) => {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Prevent updating prayers for previous days
+      if (date !== today) {
+        console.log('Cannot update prayers for previous days');
+        return;
+      }
+
       try {
         await updatePrayerStatus(uid, date, prayerName, status);
-        await fetchRecentTasks(); // Refresh all data
+        await fetchRecentTasks();
       } catch (err) {
         console.error('Error updating prayer:', err);
         setError('Failed to update prayer status');
+      }
+    },
+    [uid, fetchRecentTasks],
+  );
+
+  const updateZikrForDate = useCallback(
+    async (date: string, count: number) => {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Prevent updating zikr for previous days
+      if (date !== today) {
+        console.log('Cannot update zikr for previous days');
+        return;
+      }
+
+      try {
+        await updateZikrCount(uid, date, count);
+        await fetchRecentTasks();
+      } catch (err) {
+        console.error('Error updating zikr:', err);
+        setError('Failed to update zikr count');
       }
     },
     [uid, fetchRecentTasks],
@@ -198,11 +124,10 @@ export const useRecentDailyTasks = ({
     fetchRecentTasks();
   }, [fetchRecentTasks]);
 
-  // Enhanced auto-refresh system
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-        fetchRecentTasks(); // This triggers reset if needed
+        fetchRecentTasks(); // This will create today's tasks if needed
       }
     };
 
@@ -221,6 +146,7 @@ export const useRecentDailyTasks = ({
     error,
     toggleSpecialTaskForDate,
     updatePrayerForDate,
+    updateZikrForDate,
     refetch: fetchRecentTasks,
   };
 };
