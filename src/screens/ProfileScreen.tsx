@@ -47,17 +47,22 @@ const ProfileScreen: React.FC = () => {
     console.log(`Pressed person ${index + 1}: ${person.phone}`);
   };
 
-  // Test standard notification
-  const testStandardNotification = async () => {
+  // Test standard prayer notification
+  const testPrayerNotification = async () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTestNotification(1001, 10); // 10 seconds
+      await notificationService.initialize();
+
+      // Schedule a standard notification 5 seconds from now
+      const today = new Date().toISOString().split('T')[0];
+      await notificationService.scheduleDailyPrayerNotifications(1001, today);
+
       Alert.alert(
-        'Standard Notification Scheduled ✅',
-        'Standard notification will appear in 10 seconds!',
+        'Prayer Notifications Scheduled ✅',
+        'Prayer notifications have been scheduled for today based on your settings!',
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to schedule standard notification');
+      Alert.alert('Error', 'Failed to schedule prayer notifications');
     }
   };
 
@@ -65,14 +70,48 @@ const ProfileScreen: React.FC = () => {
   const testFakeCallNotification = async () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
-      // Schedule a fake call notification that should bypass DND
-      await notificationService.scheduleTestFakeCall(1001, 5); // Reduced to 5 seconds
+      await notificationService.scheduleTestFakeCall(1001, 5);
       Alert.alert(
         'Fake Call Scheduled ✅',
         'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to schedule fake call notification');
+    }
+  };
+
+  // View scheduled notifications
+  const viewScheduledNotifications = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      const scheduled = await notificationService.getScheduledNotifications();
+
+      const message =
+        scheduled.length > 0
+          ? `Found ${scheduled.length} scheduled notifications:\n\n${scheduled
+              .map(
+                n =>
+                  `• ${n.title} at ${new Date(
+                    n.trigger.timestamp,
+                  ).toLocaleString()}`,
+              )
+              .join('\n')}`
+          : 'No scheduled notifications found';
+
+      Alert.alert('Scheduled Notifications', message);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get scheduled notifications');
+    }
+  };
+
+  // Clear all notifications
+  const clearAllNotifications = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.cancelAllNotifications();
+      Alert.alert('Success', 'All notifications cleared!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to clear notifications');
     }
   };
 
@@ -97,18 +136,18 @@ const ProfileScreen: React.FC = () => {
           stats={meetingAttendance.stats}
         />
 
-        {/* Test Notification Section */}
-        <View style={styles.testSection}>
-          <Text style={styles.testSectionTitle}>Test Notifications</Text>
+        {/* Notification Testing Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔔 Notification Testing</Text>
 
           <TouchableOpacity
-            style={styles.testButton}
-            onPress={testStandardNotification}>
+            style={[styles.testButton, styles.standardButton]}
+            onPress={testPrayerNotification}>
             <Text style={styles.testButtonText}>
-              Test Standard Notification
+              Schedule Prayer Notifications
             </Text>
             <Text style={styles.testButtonSubtext}>
-              Regular prayer reminder (10s)
+              Schedule today's prayer notifications
             </Text>
           </TouchableOpacity>
 
@@ -118,6 +157,24 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.testButtonText}>Test Fake Call</Text>
             <Text style={styles.testButtonSubtext}>
               Full-screen call bypassing DND (5s)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.testButton, styles.infoButton]}
+            onPress={viewScheduledNotifications}>
+            <Text style={styles.testButtonText}>View Scheduled</Text>
+            <Text style={styles.testButtonSubtext}>
+              See all scheduled notifications
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.testButton, styles.clearButton]}
+            onPress={clearAllNotifications}>
+            <Text style={styles.testButtonText}>Clear All</Text>
+            <Text style={styles.testButtonSubtext}>
+              Cancel all notifications
             </Text>
           </TouchableOpacity>
         </View>
@@ -164,27 +221,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
-  testSection: {
-    backgroundColor: colors.background.light,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginVertical: spacing.md,
+  section: {
+    marginBottom: spacing.lg,
   },
-  testSectionTitle: {
+  sectionTitle: {
     ...typography.h3,
     color: colors.primary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
   testButton: {
-    backgroundColor: colors.primary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     alignItems: 'center',
   },
+  standardButton: {
+    backgroundColor: colors.primary,
+  },
   fakeCallButton: {
     backgroundColor: '#FF6B35', // Orange color for fake call
+  },
+  infoButton: {
+    backgroundColor: '#007AFF',
+  },
+  clearButton: {
+    backgroundColor: '#FF6B6B',
   },
   testButtonText: {
     ...typography.button,

@@ -1,27 +1,25 @@
 import notifee, {
   AndroidImportance,
+  AndroidVisibility,
+  AndroidCategory,
   TriggerType,
   RepeatFrequency,
   TimestampTrigger,
-  AndroidCategory,
-  AndroidVisibility,
 } from '@notifee/react-native';
+import {Platform} from 'react-native';
 import UserPreferencesService from './UserPreferencesService';
 import {getPrayerTimesForDate} from './db/PrayerServices';
 
-interface ScheduledNotification {
-  id: string;
-  uid: number;
-  prayer: string;
-  timestamp: number;
-  type: 'standard' | 'fullscreen';
-}
-
 class UnifiedNotificationService {
   private static instance: UnifiedNotificationService;
-  private preferencesService = UserPreferencesService.getInstance();
+  private preferencesService: UserPreferencesService;
   private standardChannelId = 'prayer-notifications-standard';
   private fullscreenChannelId = 'prayer-notifications-fullscreen';
+  private isInitialized = false;
+
+  private constructor() {
+    this.preferencesService = UserPreferencesService.getInstance();
+  }
 
   static getInstance(): UnifiedNotificationService {
     if (!UnifiedNotificationService.instance) {
@@ -31,145 +29,150 @@ class UnifiedNotificationService {
   }
 
   async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      console.log('📱 Notification service already initialized');
+      return;
+    }
+
     try {
-      // Create standard notification channel
-      await notifee.createChannel({
-        id: this.standardChannelId,
-        name: 'Prayer Reminders',
-        importance: AndroidImportance.HIGH,
-        sound: 'default',
-        vibration: true,
-      });
+      console.log('🔄 Initializing notification service...');
 
-      // Create fullscreen notification channel for fake call style
-      await notifee.createChannel({
-        id: this.fullscreenChannelId,
-        name: 'Prayer Alarms',
-        importance: AndroidImportance.HIGH,
-        sound: 'ringtone',
-        vibration: true,
-        visibility: AndroidVisibility.PUBLIC,
-        bypassDnd: true,
-      });
+      // Request permission
+      await notifee.requestPermission();
 
-      console.log('✅ Notification channels initialized');
+      if (Platform.OS === 'android') {
+        // Create standard notification channel
+        await notifee.createChannel({
+          id: this.standardChannelId,
+          name: 'Prayer Notifications',
+          importance: AndroidImportance.HIGH,
+          visibility: AndroidVisibility.PUBLIC,
+          sound: 'adhan',
+          vibration: true,
+          description: 'Prayer time reminders',
+        });
+
+        // Create fullscreen notification channel (fake call)
+        await notifee.createChannel({
+          id: this.fullscreenChannelId,
+          name: 'Prayer Call Notifications',
+          importance: AndroidImportance.HIGH,
+          visibility: AndroidVisibility.PUBLIC,
+          sound: 'ringtone',
+          vibration: true,
+          description: 'Full-screen prayer call notifications',
+        });
+      }
+
+      this.isInitialized = true;
+      console.log('✅ Notification service initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize notification channels:', error);
+      console.error('❌ Error initializing notification service:', error);
       throw error;
     }
   }
 
-  /**
-   * Main method to schedule all prayer notifications for a user
-   */
   async scheduleDailyPrayerNotifications(
     uid: number,
     date: string,
   ): Promise<void> {
     try {
-      if (!uid || !date) {
-        throw new Error('Invalid uid or date provided');
-      }
+      console.log(`🔔 Scheduling prayer notifications for ${date}...`);
 
-      await this.initialize();
-
+      // Get user notification settings
       const settings = await this.preferencesService.getNotificationSettings(
         uid,
       );
-      if (!settings || !settings.notifications) {
-        console.log(`❌ Notifications disabled for user ${uid}`);
+      if (!settings?.notifications) {
+        console.log('❌ Notifications disabled for user');
         return;
       }
 
+      // Get prayer times for the date
       const prayerTimes = await getPrayerTimesForDate(date);
       if (!prayerTimes) {
         console.log(`❌ No prayer times found for ${date}`);
         return;
       }
 
-      // Clear existing notifications first
-      await this.clearUserNotifications(uid);
+      // Cancel existing notifications for this date
+      await this.cancelPrayerNotificationsForDate(date);
 
       const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-      const notifications: ScheduledNotification[] = [];
+      let scheduledCount = 0;
 
       for (const prayer of prayers) {
-        try {
-          if (
-            !settings.prayer_specific ||
-            !settings.prayer_specific[
-              prayer as keyof typeof settings.prayer_specific
-            ]
-          ) {
-            continue;
-          }
+        // Check if this prayer is enabled
+        if (
+          !settings.prayer_specific[
+            prayer as keyof typeof settings.prayer_specific
+          ]
+        ) {
+          console.log(`⏭️ Skipping ${prayer} - disabled in settings`);
+          continue;
+        }
 
-          const prayerTime = prayerTimes[
-            prayer as keyof typeof prayerTimes
-          ] as string;
-          if (!prayerTime) continue;
+        const prayerTime = prayerTimes[
+          prayer as keyof typeof prayerTimes
+        ] as string;
+        if (!prayerTime) {
+          console.log(`⏭️ Skipping ${prayer} - no time found`);
+          continue;
+        }
 
-          const notificationTime = this.calculateNotificationTime(
-            prayerTime,
-            settings.reminder_minutes_before || 10,
+        // Calculate notification time
+        const notificationTime = this.calculateNotificationTime(
+          date,
+          prayerTime,
+          settings.reminder_minutes_before || 10,
+        );
+
+        if (notificationTime <= new Date()) {
+          console.log(`⏭️ Skipping ${prayer} - time already passed`);
+          continue;
+        }
+
+        // Schedule standard notification if enabled
+        if (settings.notification_types.standard) {
+          await this.scheduleStandardNotification(
+            uid,
+            prayer,
+            notificationTime,
+            settings,
           );
+          scheduledCount++;
+        }
 
-          // Only schedule future notifications
-          if (notificationTime > new Date()) {
-            // Schedule standard notification if enabled
-            if (settings.notification_types?.standard) {
-              const standardId = await this.scheduleStandardNotification(
-                uid,
-                prayer,
-                notificationTime,
-                settings,
-              );
-              if (standardId) {
-                notifications.push({
-                  id: standardId,
-                  uid,
-                  prayer,
-                  timestamp: notificationTime.getTime(),
-                  type: 'standard',
-                });
-              }
-            }
-
-            // Schedule fullscreen notification if enabled
-            if (settings.notification_types?.fullscreen) {
-              const fullscreenId = await this.scheduleFullscreenNotification(
-                uid,
-                prayer,
-                notificationTime,
-                settings,
-              );
-              if (fullscreenId) {
-                notifications.push({
-                  id: fullscreenId,
-                  uid,
-                  prayer,
-                  timestamp: notificationTime.getTime(),
-                  type: 'fullscreen',
-                });
-              }
-            }
-          }
-        } catch (prayerError) {
-          console.error(
-            `❌ Failed to schedule ${prayer} notification:`,
-            prayerError,
+        // Schedule fullscreen notification if enabled
+        if (settings.notification_types.fullscreen) {
+          await this.scheduleFullscreenNotification(
+            uid,
+            prayer,
+            notificationTime,
+            settings,
           );
-          // Continue with other prayers even if one fails
+          scheduledCount++;
         }
       }
 
       console.log(
-        `✅ Scheduled ${notifications.length} notifications for user ${uid} on ${date}`,
+        `✅ Scheduled ${scheduledCount} prayer notifications for ${date}`,
       );
     } catch (error) {
-      console.error('❌ Failed to schedule daily prayer notifications:', error);
+      console.error('❌ Error scheduling prayer notifications:', error);
       throw error;
     }
+  }
+
+  private calculateNotificationTime(
+    date: string,
+    prayerTime: string,
+    minutesBefore: number,
+  ): Date {
+    const [hours, minutes] = prayerTime.split(':').map(Number);
+    const notificationDate = new Date(`${date}T${prayerTime}:00`);
+    notificationDate.setMinutes(notificationDate.getMinutes() - minutesBefore);
+    return notificationDate;
   }
 
   private async scheduleStandardNotification(
@@ -179,7 +182,7 @@ class UnifiedNotificationService {
     settings: any,
   ): Promise<string | null> {
     try {
-      const id = `prayer-${uid}-${prayer}-standard-${notificationTime.getTime()}`;
+      const id = `prayer-standard-${prayer}-${uid}-${notificationTime.getTime()}`;
 
       const trigger: TimestampTrigger = {
         type: TriggerType.TIMESTAMP,
@@ -190,40 +193,48 @@ class UnifiedNotificationService {
       await notifee.createTriggerNotification(
         {
           id,
-          title: `${this.capitalizePrayer(prayer)} Prayer`,
-          body: `It's almost time for ${prayer} prayer`,
+          title: 'Prayer Time 🕌',
+          body: `${this.capitalizePrayer(prayer)} prayer time is approaching`,
           data: {
             type: 'prayer-reminder',
             uid: uid.toString(),
             prayer,
+            notificationId: id,
           },
           android: {
             channelId: this.standardChannelId,
             importance: AndroidImportance.HIGH,
-            category: AndroidCategory.REMINDER,
-            pressAction: {id: 'default'},
-            sound: settings.notification_types?.sound
-              ? settings.adhan_sound
+            visibility: settings.dnd_bypass
+              ? AndroidVisibility.PUBLIC
+              : AndroidVisibility.PRIVATE,
+            sound: settings.notification_types.sound
+              ? settings.adhan_sound || 'adhan'
               : undefined,
-            vibrationPattern: settings.notification_types?.vibration
-              ? [300, 500, 300, 400]
+            vibrationPattern: settings.notification_types.vibration
+              ? [300, 500, 300, 500]
               : undefined,
+            smallIcon: 'ic_notification',
+            pressAction: {
+              id: 'default',
+            },
           },
           ios: {
-            sound: settings.notification_types?.sound
-              ? `${settings.adhan_sound}.caf`
+            sound: settings.notification_types.sound
+              ? `${settings.adhan_sound || 'adhan'}.caf`
               : undefined,
+            critical: settings.dnd_bypass,
+            criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
           },
         },
         trigger,
       );
 
+      console.log(
+        `✅ Scheduled standard notification for ${prayer} at ${notificationTime.toLocaleString()}`,
+      );
       return id;
     } catch (error) {
-      console.error(
-        `❌ Failed to schedule standard notification for ${prayer}:`,
-        error,
-      );
+      console.error('❌ Error scheduling standard notification:', error);
       return null;
     }
   }
@@ -235,7 +246,6 @@ class UnifiedNotificationService {
     settings: any,
   ): Promise<string | null> {
     try {
-      // Generate unique ID
       const id = `prayer-fullscreen-${prayer}-${uid}-${notificationTime.getTime()}`;
 
       const trigger: TimestampTrigger = {
@@ -301,110 +311,44 @@ class UnifiedNotificationService {
     }
   }
 
-  private calculateNotificationTime(
-    prayerTime: string,
-    minutesBefore: number,
-  ): Date {
-    try {
-      if (!prayerTime || typeof prayerTime !== 'string') {
-        throw new Error('Invalid prayer time format');
-      }
-
-      const [hours, minutes] = prayerTime.split(':').map(Number);
-
-      if (isNaN(hours) || isNaN(minutes)) {
-        throw new Error('Invalid time format');
-      }
-
-      const notificationTime = new Date();
-      notificationTime.setHours(hours, minutes - (minutesBefore || 10), 0, 0);
-
-      // If time has passed today, schedule for tomorrow
-      if (notificationTime <= new Date()) {
-        notificationTime.setDate(notificationTime.getDate() + 1);
-      }
-
-      return notificationTime;
-    } catch (error) {
-      console.error('❌ Failed to calculate notification time:', error);
-      // Return a default time (current time + 1 hour)
-      return new Date(Date.now() + 60 * 60 * 1000);
-    }
-  }
-
-  private async clearUserNotifications(uid: number): Promise<void> {
-    try {
-      const scheduled = await notifee.getTriggerNotifications();
-      const userNotifications = scheduled.filter(
-        n => n.notification.data?.uid === uid.toString(),
-      );
-
-      for (const notification of userNotifications) {
-        try {
-          if (notification.notification.id) {
-            await notifee.cancelTriggerNotification(
-              notification.notification.id,
-            );
-          }
-        } catch (cancelError) {
-          console.error('❌ Failed to cancel notification:', cancelError);
-          // Continue with other notifications
-        }
-      }
-
-      console.log(
-        `🧹 Cleared ${userNotifications.length} existing notifications for user ${uid}`,
-      );
-    } catch (error) {
-      console.error('❌ Failed to clear user notifications:', error);
-      // Don't throw here, just log the error
-    }
-  }
-
   private capitalizePrayer(prayer: string): string {
     return prayer.charAt(0).toUpperCase() + prayer.slice(1);
   }
 
-  /**
-   * Quick method to schedule a test notification
-   */
-  async scheduleTestNotification(
-    uid: number,
-    delaySeconds: number = 20,
-  ): Promise<void> {
+  async cancelPrayerNotificationsForDate(date: string): Promise<void> {
     try {
-      await this.initialize();
+      const triggerNotifications = await notifee.getTriggerNotifications();
 
-      const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
-
-      if (!settings) {
-        throw new Error('Unable to get notification settings');
+      for (const trigger of triggerNotifications) {
+        const notificationId = trigger.notification.id;
+        if (notificationId && notificationId.includes(date)) {
+          await notifee.cancelTriggerNotification(notificationId);
+        }
       }
 
-      await this.scheduleStandardNotification(uid, 'test', testTime, settings);
-
-      if (settings.notification_types?.fullscreen) {
-        await this.scheduleFullscreenNotification(
-          uid,
-          'test',
-          testTime,
-          settings,
-        );
-      }
-
-      console.log(`🧪 Test notification scheduled for ${delaySeconds} seconds`);
+      console.log(`🧹 Cancelled existing notifications for ${date}`);
     } catch (error) {
-      console.error('❌ Failed to schedule test notification:', error);
-      throw error;
+      console.error('❌ Error cancelling notifications:', error);
     }
   }
 
-  /**
-   * Schedule a test fake call notification
-   */
+  async cancelAllNotifications(): Promise<void> {
+    try {
+      await notifee.cancelAllNotifications();
+      const triggerNotifications = await notifee.getTriggerNotifications();
+
+      for (const trigger of triggerNotifications) {
+        if (trigger.notification.id) {
+          await notifee.cancelTriggerNotification(trigger.notification.id);
+        }
+      }
+
+      console.log('🧹 Cancelled all notifications');
+    } catch (error) {
+      console.error('❌ Error cancelling all notifications:', error);
+    }
+  }
+
   async scheduleTestFakeCall(
     uid: number,
     delaySeconds: number = 10,
@@ -471,6 +415,22 @@ class UnifiedNotificationService {
     } catch (error) {
       console.error('❌ Failed to schedule test fake call:', error);
       throw error;
+    }
+  }
+
+  async getScheduledNotifications(): Promise<any[]> {
+    try {
+      const triggerNotifications = await notifee.getTriggerNotifications();
+      return triggerNotifications.map(trigger => ({
+        id: trigger.notification.id,
+        title: trigger.notification.title,
+        body: trigger.notification.body,
+        data: trigger.notification.data,
+        trigger: trigger.trigger,
+      }));
+    } catch (error) {
+      console.error('❌ Error getting scheduled notifications:', error);
+      return [];
     }
   }
 }

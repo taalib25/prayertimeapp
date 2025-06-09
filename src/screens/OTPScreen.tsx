@@ -21,6 +21,8 @@ import {
 } from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserPreferencesService from '../services/UserPreferencesService';
+import {initializeUserBackgroundTasks} from '../services/backgroundTasks';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -158,6 +160,13 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           JSON.stringify(dummySettings),
         ),
       ]);
+
+      // Initialize notification preferences
+      const preferencesService = UserPreferencesService.getInstance();
+      await preferencesService.initializeDefaultSettings(uid);
+
+      // Initialize notification services
+      await initializeUserBackgroundTasks(uid);
 
       console.log('✅ Dummy user data created successfully');
     } catch (error) {
