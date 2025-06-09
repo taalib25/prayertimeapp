@@ -74,7 +74,7 @@ export const checkBackgroundTasksHealth = async (
     );
     if (!lastInit) {
       console.log(
-        `No initialization record found for user ${uid}, initializing...`,
+        `No initialization record found for user ${uid}, initializing notifications only...`,
       );
       await initializeUserBackgroundTasks(uid);
       return true;
@@ -85,12 +85,18 @@ export const checkBackgroundTasksHealth = async (
 
     // Reinitialize if more than 7 days since last init
     if (daysSinceInit > 7) {
-      console.log(`Notifications expired for user ${uid}, reinitializing...`);
+      console.log(
+        `Notifications expired for user ${uid}, reinitializing notifications only...`,
+      );
       await initializeUserBackgroundTasks(uid);
       return true;
     }
 
-    console.log(`Notification services healthy for user ${uid}`);
+    console.log(
+      `Notification services healthy for user ${uid} (${daysSinceInit.toFixed(
+        1,
+      )} days since init)`,
+    );
     return true;
   } catch (error) {
     console.error('❌ Error checking notification services health:', error);

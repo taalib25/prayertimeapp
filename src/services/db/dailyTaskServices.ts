@@ -102,6 +102,31 @@ export const createDailyTasks = async (
   try {
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
 
+    // First check if tasks already exist to prevent overwriting
+    const existingTasks = await dailyTasksCollection
+      .query(Q.where('uid', uid), Q.where('date', date))
+      .fetch();
+
+    if (existingTasks.length > 0) {
+      console.log(`Tasks already exist for ${date}, returning existing data`);
+      const task = existingTasks[0];
+      return {
+        uid: task.uid,
+        date: task.date,
+        fajrStatus: task.fajrStatus as PrayerStatus,
+        dhuhrStatus: task.dhuhrStatus as PrayerStatus,
+        asrStatus: task.asrStatus as PrayerStatus,
+        maghribStatus: task.maghribStatus as PrayerStatus,
+        ishaStatus: task.ishaStatus as PrayerStatus,
+        tahajjudCompleted: task.tahajjudCompleted,
+        duhaCompleted: task.duhaCompleted,
+        totalZikrCount: task.totalZikrCount,
+        quranMinutes: task.quranMinutes,
+        quranPagesRead: task.quranPagesRead,
+        specialTasks: task.specialTasks ? JSON.parse(task.specialTasks) : [],
+      };
+    }
+
     let createdTask: DailyTasksModel;
 
     await database.write(async () => {
@@ -122,7 +147,7 @@ export const createDailyTasks = async (
       });
     });
 
-    console.log(`✅ Created daily tasks for ${date}`);
+    console.log(`✅ Created NEW daily tasks for ${date}`);
 
     return {
       uid: createdTask!.uid,
@@ -316,22 +341,32 @@ export const resetDailyTasks = async (
 };
 
 /**
- * Enhanced auto-reset that works in background
+ * Enhanced auto-reset that works in background - FIXED to not overwrite existing data
  */
 export const checkAndCreateTodayTasks = async (uid: number): Promise<void> => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
+    console.log(`🔍 Checking for today's tasks: ${today}`);
+
     // Check if today's tasks already exist
     const existingTasks = await getDailyTasksForDate(uid, today);
 
-    if (!existingTasks) {
-      // Only create tasks for today if they don't exist
-      await createDailyTasks(uid, today);
-      console.log(`✅ Created daily tasks for today: ${today}`);
-    } else {
+    if (existingTasks) {
       console.log(`✅ Daily tasks already exist for today: ${today}`);
+      console.log(
+        `   - Existing special tasks: ${existingTasks.specialTasks.length} tasks`,
+      );
+      // Don't create or overwrite - just return
+      return;
     }
+
+    // Only create tasks for today if they don't exist
+    console.log(`📝 Creating NEW daily tasks for today: ${today}`);
+    const newTasks = await createDailyTasks(uid, today);
+    console.log(
+      `✅ Created daily tasks for today with ${newTasks.specialTasks.length} special tasks`,
+    );
   } catch (error) {
     console.error('Error in checkAndCreateTodayTasks:', error);
     throw error;
@@ -390,8 +425,7 @@ export const getDailyTasksForDateRange = async (
 };
 
 /**
- * Get recent daily tasks for a user (last N days)
- * This is more efficient than fetching individual days
+ * Get recent daily tasks for a user (last N days) - IMPROVED to not create unnecessary tasks
  */
 export const getRecentDailyTasks = async (
   uid: number,
@@ -406,6 +440,8 @@ export const getRecentDailyTasks = async (
     startDate.setDate(startDate.getDate() - (daysBack - 1));
     const startDateStr = startDate.toISOString().split('T')[0];
 
+    console.log(`📊 Fetching recent tasks from ${startDateStr} to ${endDate}`);
+
     // Query for the date range, ordered by date descending (most recent first)
     const tasks = await dailyTasksCollection
       .query(
@@ -415,6 +451,8 @@ export const getRecentDailyTasks = async (
         Q.sortBy('date', Q.desc),
       )
       .fetch();
+
+    console.log(`📊 Found ${tasks.length} existing task records`);
 
     // Transform to DailyTaskData format
     const transformedTasks = tasks.map(task => ({
@@ -433,7 +471,7 @@ export const getRecentDailyTasks = async (
       specialTasks: task.specialTasks ? JSON.parse(task.specialTasks) : [],
     }));
 
-    // Fill in missing dates with default tasks if needed
+    // Generate all dates in range for reference
     const allDates = [];
     for (let i = 0; i < daysBack; i++) {
       const date = new Date();
@@ -441,13 +479,20 @@ export const getRecentDailyTasks = async (
       allDates.push(date.toISOString().split('T')[0]);
     }
 
+    // Only fill in missing dates with EMPTY tasks (no special tasks) for non-today dates
+    const today = new Date().toISOString().split('T')[0];
     const completeTasks = allDates.map(date => {
       const existingTask = transformedTasks.find(task => task.date === date);
       if (existingTask) {
+        console.log(
+          `📋 Found existing tasks for ${date}: ${existingTask.specialTasks.length} special tasks`,
+        );
         return existingTask;
       }
 
-      // Return default task structure for missing dates
+      // For past dates, return empty tasks (don't create in database)
+      // Only today's missing tasks should be created via checkAndCreateTodayTasks
+      console.log(`📝 No tasks found for ${date}, returning empty placeholder`);
       return {
         uid,
         date,
@@ -461,7 +506,7 @@ export const getRecentDailyTasks = async (
         totalZikrCount: 0,
         quranMinutes: 0,
         quranPagesRead: 0,
-        specialTasks: [],
+        specialTasks: [], // Empty for missing past dates
       };
     });
 

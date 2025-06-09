@@ -29,18 +29,33 @@ export const useRecentDailyTasks = ({
       setIsLoading(true);
       setError(null);
 
-      // Only check and create today's tasks if they don't exist
+      console.log('🔄 Starting fetchRecentTasks...');
+
+      // Only check and create TODAY's tasks if they don't exist
+      const today = new Date().toISOString().split('T')[0];
+      console.log(`📅 Today is: ${today}`);
+
       await checkAndCreateTodayTasks(uid);
 
-      // Ensure notification services are healthy
+      // Ensure notification services are healthy (don't recreate tasks)
       await checkBackgroundTasksHealth(uid);
 
+      // Fetch recent tasks (this will NOT create tasks, just fetch existing ones)
       const tasks = await getRecentDailyTasks(uid, daysBack);
+
+      console.log(`📊 Fetched ${tasks.length} recent task records`);
 
       // Sort tasks by date (newest first) for proper display order
       const sortedTasks = tasks.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
+
+      // Log the task data for debugging
+      sortedTasks.forEach(task => {
+        console.log(
+          `📋 ${task.date}: ${task.specialTasks.length} special tasks`,
+        );
+      });
 
       setRecentTasks(sortedTasks);
     } catch (err) {
@@ -127,7 +142,9 @@ export const useRecentDailyTasks = ({
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-        fetchRecentTasks(); // This will create today's tasks if needed
+        console.log("🔄 App became active, checking for today's tasks only...");
+        // Only check for today's tasks, don't recreate everything
+        fetchRecentTasks();
       }
     };
 
