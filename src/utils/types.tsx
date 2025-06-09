@@ -72,6 +72,15 @@ export interface PrayerNotificationSettings {
 }
 
 /**
+ * Prayer completion status interface
+ */
+export interface PrayerCompletionStatus {
+  completed: boolean;
+  method?: 'jamath' | 'individual' | 'qaza';
+  timestamp?: string;
+}
+
+/**
  * Daily task interfaces
  */
 export interface DailyTask {
@@ -92,26 +101,4 @@ export interface DailyTasksSummary {
     maghrib: PrayerCompletionStatus;
     isha: PrayerCompletionStatus;
   };
-  specialTasks: DailyTask[];
-  zikrCount: number;
-  quranMinutes: number;
-  completionPercentage: number;
-}
-
-export interface PrayerCompletionStatus {
-  status: 'pending' | 'completed' | 'missed' | 'jamath' | 'individual' | 'qaza';
-  time?: string;
-  completedAt?: Date;
-}
-
-/**
- * Monthly challenge data
- */
-export interface MonthlyGoals {
-  zikr: {current: number; total: number};
-  quran: {current: number; total: number};
-  fajr: {current: number; total: number};
-  isha: {current: number; total: number};
-  charity: {current: number; total: number};
-  fasting: {current: number; total: number};
 }

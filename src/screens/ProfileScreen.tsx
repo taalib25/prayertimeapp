@@ -6,13 +6,17 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  Pressable,
 } from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
-import CallScreen from './CallScreen';
+import UnifiedNotificationService from '../services/UnifiedNotificationService';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfileScreen: React.FC = () => {
+  const {logout} = useAuth();
   // Sample data for the meeting cards
   const personalizedMeeting = {
     title: 'Personalized Meeting',
@@ -43,6 +47,35 @@ const ProfileScreen: React.FC = () => {
     console.log(`Pressed person ${index + 1}: ${person.phone}`);
   };
 
+  // Test standard notification
+  const testStandardNotification = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.scheduleTestNotification(1001, 10); // 10 seconds
+      Alert.alert(
+        'Standard Notification Scheduled ✅',
+        'Standard notification will appear in 10 seconds!',
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to schedule standard notification');
+    }
+  };
+
+  // Test fake call notification (fullscreen)
+  const testFakeCallNotification = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      // Schedule a fake call notification that should bypass DND
+      await notificationService.scheduleTestFakeCall(1001, 10); // 10 seconds
+      Alert.alert(
+        'Fake Call Scheduled ✅',
+        'Fake call notification will appear in 10 seconds and should bypass DND/Silent mode!',
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to schedule fake call notification');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -64,11 +97,52 @@ const ProfileScreen: React.FC = () => {
           stats={meetingAttendance.stats}
         />
 
-        <CallScreen/>
+        {/* Test Notification Section */}
+        <View style={styles.testSection}>
+          <Text style={styles.testSectionTitle}>Test Notifications</Text>
 
-        <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={testStandardNotification}>
+            <Text style={styles.testButtonText}>
+              Test Standard Notification
+            </Text>
+            <Text style={styles.testButtonSubtext}>
+              Regular prayer reminder (10s)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.testButton, styles.fakeCallButton]}
+            onPress={testFakeCallNotification}>
+            <Text style={styles.testButtonText}>Test Fake Call</Text>
+            <Text style={styles.testButtonSubtext}>
+              Full-screen call bypassing DND (10s)
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Pressable 
+          style={styles.logoutButton} 
+          onPress={() => 
+            Alert.alert(
+              'Logout', 
+              'Are you sure you want to logout?',
+              [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: logout,
+          },
+              ]
+            )
+          }>
           <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -94,6 +168,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
   },
+  testSection: {
+    backgroundColor: colors.background.light,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginVertical: spacing.md,
+  },
+  testSectionTitle: {
+    ...typography.h3,
+    color: colors.primary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  testButton: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    alignItems: 'center',
+  },
+  fakeCallButton: {
+    backgroundColor: '#FF6B35', // Orange color for fake call
+  },
+  testButtonText: {
+    ...typography.button,
+    color: colors.white,
+    marginBottom: 4,
+  },
+  testButtonSubtext: {
+    ...typography.caption,
+    color: colors.white,
+    opacity: 0.9,
+    textAlign: 'center',
+  },
   logoutButton: {
     backgroundColor: colors.error,
     borderRadius: borderRadius.lg,
@@ -106,7 +213,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   bottomSpacing: {
-    marginBottom:80,
+    marginBottom: 80,
     height: spacing.xxl,
   },
 });

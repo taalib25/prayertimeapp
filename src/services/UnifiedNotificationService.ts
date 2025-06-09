@@ -73,9 +73,7 @@ class UnifiedNotificationService {
 
       await this.initialize();
 
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
+      const settings = await this.preferencesService.getNotificationSettings(uid);
       if (!settings || !settings.notifications) {
         console.log(`❌ Notifications disabled for user ${uid}`);
         return;
@@ -155,10 +153,7 @@ class UnifiedNotificationService {
             }
           }
         } catch (prayerError) {
-          console.error(
-            `❌ Failed to schedule ${prayer} notification:`,
-            prayerError,
-          );
+          console.error(`❌ Failed to schedule ${prayer} notification:`, prayerError);
           // Continue with other prayers even if one fails
         }
       }
@@ -202,16 +197,12 @@ class UnifiedNotificationService {
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.REMINDER,
             pressAction: {id: 'default'},
-            autoCancel: true,
             sound: settings.notification_types?.sound
               ? settings.adhan_sound
               : undefined,
             vibrationPattern: settings.notification_types?.vibration
-              ? [200, 400, 200, 400]
+              ? [300, 500, 300,400]
               : undefined,
-            localOnly: false,
-            showTimestamp: true,
-            timestamp: notificationTime.getTime(),
           },
           ios: {
             sound: settings.notification_types?.sound
@@ -224,10 +215,7 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(
-        `❌ Failed to schedule standard notification for ${prayer}:`,
-        error,
-      );
+      console.error(`❌ Failed to schedule standard notification for ${prayer}:`, error);
       return null;
     }
   }
@@ -267,14 +255,12 @@ class UnifiedNotificationService {
               : AndroidVisibility.PRIVATE,
             pressAction: {id: 'default'},
             fullScreenAction: {id: 'full-screen'},
-            autoCancel: false,
-            ongoing: true,
-            localOnly: false,
-            lightUpScreen: true,
             sound: 'ringtone',
-            vibrationPattern: [200, 400, 200, 400, 200, 400],
-            showTimestamp: true,
-            timestamp: notificationTime.getTime(),
+            vibrationPattern: [300, 500, 300, 500],
+            ongoing: true,
+            autoCancel: false,
+            lightUpScreen: true,
+            onlyAlertOnce: false,
           },
           ios: {
             sound: 'ringtone.caf',
@@ -287,10 +273,7 @@ class UnifiedNotificationService {
 
       return id;
     } catch (error) {
-      console.error(
-        `❌ Failed to schedule fullscreen notification for ${prayer}:`,
-        error,
-      );
+      console.error(`❌ Failed to schedule fullscreen notification for ${prayer}:`, error);
       return null;
     }
   }
@@ -305,7 +288,7 @@ class UnifiedNotificationService {
       }
 
       const [hours, minutes] = prayerTime.split(':').map(Number);
-
+      
       if (isNaN(hours) || isNaN(minutes)) {
         throw new Error('Invalid time format');
       }
@@ -336,9 +319,7 @@ class UnifiedNotificationService {
       for (const notification of userNotifications) {
         try {
           if (notification.notification.id) {
-            await notifee.cancelTriggerNotification(
-              notification.notification.id,
-            );
+            await notifee.cancelTriggerNotification(notification.notification.id);
           }
         } catch (cancelError) {
           console.error('❌ Failed to cancel notification:', cancelError);
@@ -370,9 +351,7 @@ class UnifiedNotificationService {
       await this.initialize();
 
       const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
+      const settings = await this.preferencesService.getNotificationSettings(uid);
 
       if (!settings) {
         throw new Error('Unable to get notification settings');
@@ -392,6 +371,51 @@ class UnifiedNotificationService {
       console.log(`🧪 Test notification scheduled for ${delaySeconds} seconds`);
     } catch (error) {
       console.error('❌ Failed to schedule test notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Schedule a test fake call notification
+   */
+  async scheduleTestFakeCall(
+    uid: number,
+    delaySeconds: number = 10,
+  ): Promise<void> {
+    try {
+      await this.initialize();
+
+      const testTime = new Date(Date.now() + delaySeconds * 1000);
+      const settings = await this.preferencesService.getNotificationSettings(uid);
+
+      if (!settings) {
+        throw new Error('Unable to get notification settings');
+      }
+
+      // Force fullscreen settings for test
+      const testSettings = {
+        ...settings,
+        notification_types: {
+          ...settings.notification_types,
+          fullscreen: true,
+        },
+        dnd_bypass: true,
+      };
+
+      const id = await this.scheduleFullscreenNotification(
+        uid,
+        'test-fake-call',
+        testTime,
+        testSettings,
+      );
+
+      if (id) {
+        console.log(`🧪 Test fake call scheduled for ${delaySeconds} seconds`);
+      } else {
+        throw new Error('Failed to create fake call notification');
+      }
+    } catch (error) {
+      console.error('❌ Failed to schedule test fake call:', error);
       throw error;
     }
   }
