@@ -13,7 +13,7 @@ import FajrLogo from '../assets/icons/fajr-logo.svg';
 import HomeIcon from '../assets/icons/home.svg';
 import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
 import SalahIcon from '../assets/icons/salah.svg';
-import UserIcon from '../assets/icons/user.svg';
+import UserIcon from '../assets/icons/profile.svg';
 
 export type IconName =
   | 'fajr'
@@ -27,26 +27,36 @@ export type IconName =
   | 'home'
   | 'prayer-beads'
   | 'salah'
-  | 'user';
+  | 'profile';
 
 interface SvgIconProps {
   name: IconName;
   size?: number;
   color?: string;
+  stroke?: string;
   style?: ViewStyle;
 }
 
-const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
+const SvgIcon: React.FC<SvgIconProps> = ({
+  name,
+  size = 24,
+  color,
+  stroke,
+  style,
+}) => {
   const IconComponent = getIconComponent(name);
 
   if (!IconComponent) {
     return null;
   }
 
-  // Pass the color prop to the SVG component, typically as 'fill'
-  // If your SVGs use 'stroke' for color, you might need to adjust this
-  // or pass both fill and stroke if necessary.
-  const iconProps: { width: number; height: number; style?: ViewStyle; fill?: string } = {
+  const iconProps: {
+    width: number;
+    height: number;
+    style?: ViewStyle;
+    fill?: string;
+    stroke?: string;
+  } = {
     width: size,
     height: size,
     style: style,
@@ -56,9 +66,11 @@ const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
     iconProps.fill = color;
   }
 
-  return (
-    <IconComponent {...iconProps} />
-  );
+  if (stroke) {
+    iconProps.stroke = stroke;
+  }
+
+  return <IconComponent {...iconProps} />;
 };
 
 const getIconComponent = (name: IconName) => {
@@ -72,9 +84,9 @@ const getIconComponent = (name: IconName) => {
     map: MapIcon,
     fajrlogo: FajrLogo,
     home: HomeIcon,
-    salah : SalahIcon,
+    salah: SalahIcon,
     'prayer-beads': PrayerBeadsIcon,
-    user: UserIcon,
+    profile: UserIcon,
   };
 
   return icons[name];

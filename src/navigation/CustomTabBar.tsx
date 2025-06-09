@@ -20,7 +20,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       case 'Salah':
         return 'salah';
       case 'Profile':
-        return 'user';
+        return 'profile';
       default:
         return 'home';
     }
@@ -49,7 +49,6 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
           };
 
           const iconName = getIconName(route.name);
-          const iconColor = isFocused ? colors.accent : colors.text.secondary; // Determine color based on focus
 
           return (
             <TouchableOpacity
@@ -61,12 +60,12 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               <SvgIcon
                 name={iconName}
                 size={24}
-                color={iconColor} // Pass the determined color to SvgIcon
+                stroke={isFocused ? colors.primary : undefined}
               />
               <Text
                 style={[
                   styles.tabLabel,
-                  isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel, // Apply appropriate label style
+                  isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel,
                 ]}>
                 {route.name}
               </Text>
@@ -107,12 +106,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontSize: 10,
     marginTop: 2,
+    fontWeight: '600',
   },
   focusedTabLabel: {
-    color: colors.accent, // Match focused icon color
+    color: colors.primary,
+    fontWeight: '700',
   },
   unfocusedTabLabel: {
-    color: colors.text.secondary, // Match unfocused icon color
+    color: colors.text.secondary,
+    fontWeight: '600',
   },
 });
 
