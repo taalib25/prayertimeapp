@@ -47,54 +47,6 @@ const ProfileScreen: React.FC = () => {
     console.log(`Pressed person ${index + 1}: ${person.phone}`);
   };
 
-  const testnotification = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-
-      // Test immediate notification (3 seconds)
-      await notificationService.scheduleImmediateTestNotification(1001);
-
-      Alert.alert(
-        'Test Notification Scheduled ✅',
-        'A test notification will appear in 3 seconds!',
-      );
-    } catch (error) {
-      console.error('Test notification error:', error);
-      Alert.alert('Error', `Failed to schedule test notification: ${error}`);
-    }
-  };
-
-  // Test standard prayer notification
-  const testPrayerNotification = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.initialize();
-
-      // Schedule a standard notification 10 seconds from now
-      const result = await notificationService.scheduleCustomNotification(
-        1001,
-        'Prayer Time 🕌',
-        'Test prayer notification',
-        10, // 10 seconds
-        false,
-      );
-
-      if (result) {
-        Alert.alert(
-          'Prayer Notification Scheduled ✅',
-          'A prayer notification will appear in 10 seconds!',
-        );
-      } else {
-        Alert.alert(
-          'Warning',
-          'Notification was not scheduled. Check your notification settings.',
-        );
-      }
-    } catch (error) {
-      console.error('Prayer notification error:', error);
-      Alert.alert('Error', `Failed to schedule prayer notification: ${error}`);
-    }
-  };
 
   // Test prayer notifications for today
   const testPrayerNotifications = async () => {
@@ -137,20 +89,6 @@ const ProfileScreen: React.FC = () => {
         'Error',
         `Failed to schedule test notification: ${error?.message || error}`,
       );
-    }
-  };
-
-  // Test fake call notification (fullscreen)
-  const testFakeCallNotification = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTestFakeCall(1001, 5);
-      Alert.alert(
-        'Fake Call Scheduled ✅',
-        'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to schedule fake call notification');
     }
   };
 
@@ -260,16 +198,6 @@ const ProfileScreen: React.FC = () => {
               Standard notification in 5 seconds
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.testButton, styles.fakeCallButton]}
-            onPress={testFakeCallNotification}>
-            <Text style={styles.testButtonText}>Test Fake Call</Text>
-            <Text style={styles.testButtonSubtext}>
-              Full-screen call bypassing DND (5s)
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.testButton, styles.fakeCallButton]}
             onPress={testFullscreenCall}>

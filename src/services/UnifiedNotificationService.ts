@@ -103,11 +103,35 @@ class UnifiedNotificationService {
     try {
       console.log(`🔔 Scheduling prayer notifications for ${date}...`);
 
-      // Get user notification settings
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
-      if (!settings?.notifications) {
+      await this.initialize();
+
+      // Get user notification settings or use defaults
+      let settings;
+      try {
+        settings = await this.preferencesService.getNotificationSettings(uid);
+      } catch (error) {
+        console.log('❌ Could not get user settings, using defaults');
+        settings = null;
+      }
+
+      // Use default settings if none found
+      if (!settings) {
+        settings = {
+          notifications: true,
+          notification_types: {standard: true, fullscreen: false},
+          prayer_specific: {
+            fajr: true,
+            dhuhr: true,
+            asr: true,
+            maghrib: true,
+            isha: true,
+          },
+          reminder_minutes_before: 10,
+          dnd_bypass: false,
+        };
+      }
+
+      if (!settings.notifications) {
         console.log('❌ Notifications disabled for user');
         return;
       }
@@ -128,6 +152,7 @@ class UnifiedNotificationService {
       for (const prayer of prayers) {
         // Check if this prayer is enabled
         if (
+          settings.prayer_specific &&
           !settings.prayer_specific[
             prayer as keyof typeof settings.prayer_specific
           ]
@@ -157,7 +182,7 @@ class UnifiedNotificationService {
         }
 
         // Schedule standard notification if enabled
-        if (settings.notification_types.standard) {
+        if (settings.notification_types?.standard !== false) {
           await this.scheduleStandardNotification(
             uid,
             prayer,
@@ -168,7 +193,7 @@ class UnifiedNotificationService {
         }
 
         // Schedule fullscreen notification if enabled
-        if (settings.notification_types.fullscreen) {
+        if (settings.notification_types?.fullscreen) {
           await this.scheduleFullscreenNotification(
             uid,
             prayer,
@@ -396,12 +421,16 @@ class UnifiedNotificationService {
           android: {
             channelId: this.channels.standard.id,
             importance: AndroidImportance.HIGH,
+            visibility: AndroidVisibility.PUBLIC,
+            sound: 'default',
             vibrationPattern: [300, 500, 300, 500],
+            smallIcon: 'ic_notification',
             pressAction: {
               id: 'default',
             },
           },
           ios: {
+            sound: 'default',
             critical: settings.dnd_bypass || false,
             criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
           },
@@ -517,75 +546,6 @@ class UnifiedNotificationService {
     }
   }
 
-  async scheduleTestFakeCall(
-    uid: number,
-    delaySeconds: number = 10,
-  ): Promise<void> {
-    try {
-      await this.initialize();
-
-      const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
-
-      if (!settings) {
-        throw new Error('Unable to get notification settings');
-      }
-
-      const id = `test-fake-call-${Date.now()}`;
-
-      await notifee.createTriggerNotification(
-        {
-          id,
-          title: 'Incoming Call 📞',
-          body: 'Prayer Reminder Call',
-          data: {
-            type: 'fake-call',
-            uid: uid.toString(),
-            prayer: 'test-fake-call',
-            screen: 'FakeCallScreen',
-            notificationId: id,
-            returnTo: 'MainApp',
-          },
-          android: {
-            channelId: this.channels.fullscreen.id,
-            importance: AndroidImportance.HIGH,
-            category: AndroidCategory.CALL,
-            visibility: AndroidVisibility.PUBLIC,
-            pressAction: {
-              id: 'default',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
-            fullScreenAction: {
-              id: 'full-screen',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
-            sound: 'ringtone',
-            vibrationPattern: [300, 500, 300, 500],
-            ongoing: false,
-            autoCancel: true,
-            lightUpScreen: true,
-            onlyAlertOnce: false,
-            timeoutAfter: 30000,
-            localOnly: true,
-          },
-        },
-        {
-          type: TriggerType.TIMESTAMP,
-          timestamp: testTime.getTime(),
-        },
-      );
-
-      console.log(
-        `🧪 Test fake call scheduled for ${delaySeconds} seconds with ID: ${id}`,
-      );
-    } catch (error) {
-      console.error('❌ Failed to schedule test fake call:', error);
-      throw error;
-    }
-  }
-
   /**
    * Schedule prayer notifications for today with repeat capability
    */
@@ -635,6 +595,7 @@ class UnifiedNotificationService {
           android: {
             channelId: this.channels.standard.id,
             importance: AndroidImportance.HIGH,
+            visibility: AndroidVisibility.PUBLIC,
             sound: 'default',
             vibrationPattern: [300, 500],
             smallIcon: 'ic_notification',
@@ -733,6 +694,20 @@ class UnifiedNotificationService {
     } catch (error) {
       console.error('❌ Error scheduling fullscreen call test:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get all scheduled notifications for debugging
+   */
+  async getScheduledNotifications(): Promise<TriggerNotification[]> {
+    try {
+      const scheduled = await notifee.getTriggerNotifications();
+      console.log(`📊 Found ${scheduled.length} scheduled notifications`);
+      return scheduled;
+    } catch (error) {
+      console.error('❌ Error getting scheduled notifications:', error);
+      return [];
     }
   }
 }
