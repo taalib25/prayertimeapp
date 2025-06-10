@@ -6,8 +6,7 @@ export type PrayerStatus =
   | 'completed'
   | 'missed'
   | 'jamath'
-  | 'individual'
-  | 'qaza';
+  | 'individual';
 
 export default class DailyTasksModel extends Model {
   static table = 'daily_tasks';
