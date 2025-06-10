@@ -69,22 +69,3 @@ export const checkBackgroundTasksHealth = async (
   }
 };
 
-/**
- * Reschedule notifications after settings change
- */
-export const rescheduleNotificationsForUser = async (
-  uid: number,
-): Promise<void> => {
-  try {
-    console.log(`🔄 Rescheduling notifications for user ${uid}...`);
-
-    const notificationService = UnifiedNotificationService.getInstance();
-    const today = new Date().toISOString().split('T')[0];
-
-    await notificationService.scheduleDailyPrayerNotifications(uid, today);
-
-    console.log(`✅ Notifications rescheduled for user ${uid}`);
-  } catch (error) {
-    console.error('❌ Error rescheduling notifications:', error);
-  }
-};

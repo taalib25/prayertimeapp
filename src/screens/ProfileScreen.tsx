@@ -80,44 +80,6 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Schedule weekly prayer notifications
-  const scheduleWeeklyPrayers = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleWeeklyPrayerNotifications(1001);
-
-      Alert.alert(
-        'Weekly Prayers Scheduled ✅',
-        'Prayer notifications have been scheduled for the next 7 days!',
-      );
-    } catch (error: any) {
-      console.error('Weekly prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule weekly prayers: ${error?.message || error}`,
-      );
-    }
-  };
-
-  // Update prayer notifications
-  const updatePrayerNotifications = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.updatePrayerNotifications(1001);
-
-      Alert.alert(
-        'Prayer Notifications Updated ✅',
-        'All prayer notifications have been updated with new times!',
-      );
-    } catch (error: any) {
-      console.error('Update prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to update prayer notifications: ${error?.message || error}`,
-      );
-    }
-  };
-
   // Test simple notification
   const testSimpleNotification = async () => {
     try {
@@ -164,6 +126,25 @@ const ProfileScreen: React.FC = () => {
       Alert.alert(
         'Error',
         `Failed to schedule fullscreen call: ${error?.message || error}`,
+      );
+    }
+  };
+
+  // Replace scheduleWeeklyPrayers function with this:
+  const initializeDailyPrayers = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.scheduleDailyPrayerNotifications(1001);
+
+      Alert.alert(
+        'Daily Prayer Notifications Set ✅',
+        'Prayer notifications are now scheduled with daily repeat. They will automatically update when prayer times change!',
+      );
+    } catch (error: any) {
+      console.error('Daily prayer notifications error:', error);
+      Alert.alert(
+        'Error',
+        `Failed to setup daily prayers: ${error?.message || error}`,
       );
     }
   };
@@ -232,28 +213,10 @@ const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
-            onPress={testPrayerNotifications}>
-            <Text style={styles.testButtonText}>Schedule Today's Prayers</Text>
+            onPress={initializeDailyPrayers}>
+            <Text style={styles.testButtonText}>Setup Daily Prayers</Text>
             <Text style={styles.testButtonSubtext}>
-              Schedule all prayer notifications for today
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.testButton, styles.standardButton]}
-            onPress={scheduleWeeklyPrayers}>
-            <Text style={styles.testButtonText}>Schedule Weekly Prayers</Text>
-            <Text style={styles.testButtonSubtext}>
-              Schedule prayers for next 7 days
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.testButton, styles.infoButton]}
-            onPress={updatePrayerNotifications}>
-            <Text style={styles.testButtonText}>Update Prayer Times</Text>
-            <Text style={styles.testButtonSubtext}>
-              Refresh all prayer notifications
+              Smart daily repeating notifications
             </Text>
           </TouchableOpacity>
 
