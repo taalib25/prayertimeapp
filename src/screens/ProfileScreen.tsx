@@ -47,6 +47,19 @@ const ProfileScreen: React.FC = () => {
     console.log(`Pressed person ${index + 1}: ${person.phone}`);
   };
 
+  // Test fake call notification (fullscreen)
+  const testFakeCallNotification = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.scheduleTestFakeCall(1001, 5);
+      Alert.alert(
+        'Fake Call Scheduled ✅',
+        'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to schedule fake call notification');
+    }
+  };
 
   // Test prayer notifications for today
   const testPrayerNotifications = async () => {
@@ -63,6 +76,44 @@ const ProfileScreen: React.FC = () => {
       Alert.alert(
         'Error',
         `Failed to schedule prayer notifications: ${error?.message || error}`,
+      );
+    }
+  };
+
+  // Schedule weekly prayer notifications
+  const scheduleWeeklyPrayers = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.scheduleWeeklyPrayerNotifications(1001);
+
+      Alert.alert(
+        'Weekly Prayers Scheduled ✅',
+        'Prayer notifications have been scheduled for the next 7 days!',
+      );
+    } catch (error: any) {
+      console.error('Weekly prayer notifications error:', error);
+      Alert.alert(
+        'Error',
+        `Failed to schedule weekly prayers: ${error?.message || error}`,
+      );
+    }
+  };
+
+  // Update prayer notifications
+  const updatePrayerNotifications = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.updatePrayerNotifications(1001);
+
+      Alert.alert(
+        'Prayer Notifications Updated ✅',
+        'All prayer notifications have been updated with new times!',
+      );
+    } catch (error: any) {
+      console.error('Update prayer notifications error:', error);
+      Alert.alert(
+        'Error',
+        `Failed to update prayer notifications: ${error?.message || error}`,
       );
     }
   };
@@ -117,7 +168,6 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-
   // View scheduled notifications
   const viewScheduledNotifications = async () => {
     try {
@@ -155,7 +205,6 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -191,6 +240,24 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={[styles.testButton, styles.standardButton]}
+            onPress={scheduleWeeklyPrayers}>
+            <Text style={styles.testButtonText}>Schedule Weekly Prayers</Text>
+            <Text style={styles.testButtonSubtext}>
+              Schedule prayers for next 7 days
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.testButton, styles.infoButton]}
+            onPress={updatePrayerNotifications}>
+            <Text style={styles.testButtonText}>Update Prayer Times</Text>
+            <Text style={styles.testButtonSubtext}>
+              Refresh all prayer notifications
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.testButton, styles.infoButton]}
             onPress={testSimpleNotification}>
             <Text style={styles.testButtonText}>Test Simple Notification</Text>
@@ -200,7 +267,7 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.testButton, styles.fakeCallButton]}
-            onPress={testFullscreenCall}>
+            onPress={testFakeCallNotification}>
             <Text style={styles.testButtonText}>Test Fullscreen Call</Text>
             <Text style={styles.testButtonSubtext}>
               Fullscreen call notification in 5 seconds
