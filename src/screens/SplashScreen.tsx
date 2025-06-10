@@ -10,7 +10,7 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
   const {checkAuthState} = useAuth();
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
     // Start fade in animation immediately

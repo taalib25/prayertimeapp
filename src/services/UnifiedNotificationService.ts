@@ -5,6 +5,7 @@ import notifee, {
   TriggerType,
   RepeatFrequency,
   TimestampTrigger,
+  TriggerNotification,
 } from '@notifee/react-native';
 import {Platform} from 'react-native';
 import UserPreferencesService from './UserPreferencesService';
@@ -13,9 +14,21 @@ import {getPrayerTimesForDate} from './db/PrayerServices';
 class UnifiedNotificationService {
   private static instance: UnifiedNotificationService;
   private preferencesService: UserPreferencesService;
-  private standardChannelId = 'prayer-notifications-standard';
-  private fullscreenChannelId = 'prayer-notifications-fullscreen';
   private isInitialized = false;
+
+  // Define channels structure for better organization
+  private channels = {
+    standard: {
+      id: 'prayer-notifications-standard',
+      name: 'Prayer Notifications',
+      importance: AndroidImportance.HIGH,
+    },
+    fullscreen: {
+      id: 'prayer-notifications-fullscreen',
+      name: 'Prayer Call Notifications',
+      importance: AndroidImportance.HIGH,
+    },
+  };
 
   private constructor() {
     this.preferencesService = UserPreferencesService.getInstance();
@@ -37,32 +50,35 @@ class UnifiedNotificationService {
     try {
       console.log('🔄 Initializing notification service...');
 
-      // Request permission
-      await notifee.requestPermission();
+      // Request permission first with detailed logging
+      const permission = await notifee.requestPermission();
+      console.log('📱 Permission result:', JSON.stringify(permission, null, 2));
 
       if (Platform.OS === 'android') {
-        // Create standard notification channel
+        // Create channels with simplified configuration
+        console.log('🔧 Creating Android notification channels...');
+
         await notifee.createChannel({
-          id: this.standardChannelId,
-          name: 'Prayer Notifications',
+          id: this.channels.standard.id,
+          name: this.channels.standard.name,
           importance: AndroidImportance.HIGH,
           visibility: AndroidVisibility.PUBLIC,
-          sound: 'adhan',
-          vibration: true,
           description: 'Prayer time reminders',
         });
 
-        // Create fullscreen notification channel (fake call)
         await notifee.createChannel({
-          id: this.fullscreenChannelId,
-          name: 'Prayer Call Notifications',
+          id: this.channels.fullscreen.id,
+          name: this.channels.fullscreen.name,
           importance: AndroidImportance.HIGH,
           visibility: AndroidVisibility.PUBLIC,
-          sound: 'ringtone',
-          vibration: true,
           description: 'Full-screen prayer call notifications',
         });
+
+        console.log('✅ Notification channels created successfully');
       }
+
+      // Set up notification event listeners for debugging
+      this.setupNotificationListeners();
 
       this.isInitialized = true;
       console.log('✅ Notification service initialized successfully');
@@ -70,6 +86,17 @@ class UnifiedNotificationService {
       console.error('❌ Error initializing notification service:', error);
       throw error;
     }
+  }
+
+  private setupNotificationListeners(): void {
+    // Listen for notification events
+    notifee.onForegroundEvent(({type, detail}) => {
+      console.log('📱 Foreground notification event:', type, detail);
+    });
+
+    notifee.onBackgroundEvent(async ({type, detail}) => {
+      console.log('📱 Background notification event:', type, detail);
+    });
   }
 
   async scheduleDailyPrayerNotifications(
@@ -164,6 +191,158 @@ class UnifiedNotificationService {
     }
   }
 
+  async scheduleCustomNotification(
+    uid: number,
+    title: string,
+    body: string,
+    delaySeconds: number,
+    isFullscreen: boolean = false,
+  ): Promise<string | null> {
+    try {
+      await this.initialize();
+
+      // Fix: Convert seconds to milliseconds properly
+      const notificationTime = new Date(Date.now() + delaySeconds * 1000);
+      console.log(
+        `🕐 Scheduling notification for: ${notificationTime.toLocaleString()}`,
+      );
+
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
+
+      if (!settings) {
+        console.log('❌ No notification settings found, using defaults');
+        // Use default settings if none found
+        const defaultSettings = {
+          notifications: true,
+          notification_types: {sound: true, vibration: true},
+          dnd_bypass: false,
+          adhan_sound: 'default',
+        };
+
+        return await this.createNotificationWithSettings(
+          uid,
+          title,
+          body,
+          notificationTime,
+          isFullscreen,
+          defaultSettings,
+        );
+      }
+
+      if (!settings.notifications) {
+        console.log('❌ Notifications disabled in settings');
+        return null;
+      }
+
+      return await this.createNotificationWithSettings(
+        uid,
+        title,
+        body,
+        notificationTime,
+        isFullscreen,
+        settings,
+      );
+    } catch (error) {
+      console.error('❌ Error scheduling custom notification:', error);
+      return null;
+    }
+  }
+
+  private async createNotificationWithSettings(
+    uid: number,
+    title: string,
+    body: string,
+    notificationTime: Date,
+    isFullscreen: boolean,
+    settings: any,
+  ): Promise<string | null> {
+    const id = `custom-notification-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    const trigger: TimestampTrigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: notificationTime.getTime(),
+    };
+
+    console.log(
+      `📅 Trigger timestamp: ${trigger.timestamp} (${new Date(
+        trigger.timestamp,
+      ).toLocaleString()})`,
+    );
+
+    if (isFullscreen) {
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title,
+          body,
+          data: {
+            type: 'custom-fullscreen',
+            uid: uid.toString(),
+            notificationId: id,
+          },
+          android: {
+            channelId: this.channels.fullscreen.id,
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.CALL,
+            visibility: AndroidVisibility.PUBLIC,
+            fullScreenAction: {
+              id: 'full-screen',
+            },
+            pressAction: {
+              id: 'default',
+            },
+            vibrationPattern: [300, 500, 300, 500],
+            autoCancel: true,
+            lightUpScreen: true,
+            timeoutAfter: 30000,
+          },
+          ios: {
+            critical: settings.dnd_bypass || false,
+            criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
+          },
+        },
+        trigger,
+      );
+    } else {
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title,
+          body,
+          data: {
+            type: 'custom-standard',
+            uid: uid.toString(),
+            notificationId: id,
+          },
+          android: {
+            channelId: this.channels.standard.id,
+            importance: AndroidImportance.HIGH,
+            vibrationPattern: [300, 500, 300, 500],
+            pressAction: {
+              id: 'default',
+            },
+          },
+          ios: {
+            critical: settings.dnd_bypass || false,
+            criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
+          },
+        },
+        trigger,
+      );
+    }
+
+    console.log(
+      `✅ Scheduled custom ${
+        isFullscreen ? 'fullscreen' : 'standard'
+      } notification for ${notificationTime.toLocaleString()} with ID: ${id}`,
+    );
+    return id;
+  }
+
   private calculateNotificationTime(
     date: string,
     prayerTime: string,
@@ -202,27 +381,15 @@ class UnifiedNotificationService {
             notificationId: id,
           },
           android: {
-            channelId: this.standardChannelId,
+            channelId: this.channels.standard.id,
             importance: AndroidImportance.HIGH,
-            visibility: settings.dnd_bypass
-              ? AndroidVisibility.PUBLIC
-              : AndroidVisibility.PRIVATE,
-            sound: settings.notification_types.sound
-              ? settings.adhan_sound || 'adhan'
-              : undefined,
-            vibrationPattern: settings.notification_types.vibration
-              ? [300, 500, 300, 500]
-              : undefined,
-            smallIcon: 'ic_notification',
+            vibrationPattern: [300, 500, 300, 500],
             pressAction: {
               id: 'default',
             },
           },
           ios: {
-            sound: settings.notification_types.sound
-              ? `${settings.adhan_sound || 'adhan'}.caf`
-              : undefined,
-            critical: settings.dnd_bypass,
+            critical: settings.dnd_bypass || false,
             criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
           },
         },
@@ -263,38 +430,26 @@ class UnifiedNotificationService {
             type: 'fake-call',
             uid: uid.toString(),
             prayer,
-            screen: 'FakeCallScreen',
             notificationId: id,
-            returnTo: 'MainApp',
           },
           android: {
-            channelId: this.fullscreenChannelId,
+            channelId: this.channels.fullscreen.id,
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.CALL,
-            visibility: settings.dnd_bypass
-              ? AndroidVisibility.PUBLIC
-              : AndroidVisibility.PRIVATE,
-            pressAction: {
-              id: 'default',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
+            visibility: AndroidVisibility.PUBLIC,
             fullScreenAction: {
               id: 'full-screen',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
             },
-            sound: 'ringtone',
+            pressAction: {
+              id: 'default',
+            },
             vibrationPattern: [300, 500, 300, 500],
-            ongoing: false,
             autoCancel: true,
             lightUpScreen: true,
-            onlyAlertOnce: false,
             timeoutAfter: 30000,
-            smallIcon: 'ic_notification',
-            localOnly: true,
           },
           ios: {
-            sound: 'ringtone.caf',
-            critical: settings.dnd_bypass,
+            critical: settings.dnd_bypass || false,
             criticalVolume: settings.dnd_bypass ? 1.0 : 0.7,
           },
         },
@@ -357,14 +512,6 @@ class UnifiedNotificationService {
       await this.initialize();
 
       const testTime = new Date(Date.now() + delaySeconds * 1000);
-      const settings = await this.preferencesService.getNotificationSettings(
-        uid,
-      );
-
-      if (!settings) {
-        throw new Error('Unable to get notification settings');
-      }
-
       const id = `test-fake-call-${Date.now()}`;
 
       await notifee.createTriggerNotification(
@@ -376,31 +523,23 @@ class UnifiedNotificationService {
             type: 'fake-call',
             uid: uid.toString(),
             prayer: 'test-fake-call',
-            screen: 'FakeCallScreen',
             notificationId: id,
-            returnTo: 'MainApp',
           },
           android: {
-            channelId: this.fullscreenChannelId,
+            channelId: this.channels.fullscreen.id,
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.CALL,
             visibility: AndroidVisibility.PUBLIC,
-            pressAction: {
-              id: 'default',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
-            },
             fullScreenAction: {
               id: 'full-screen',
-              launchActivity: 'com.prayer_app.FakeCallActivity',
             },
-            sound: 'ringtone',
+            pressAction: {
+              id: 'default',
+            },
             vibrationPattern: [300, 500, 300, 500],
-            ongoing: false,
             autoCancel: true,
             lightUpScreen: true,
-            onlyAlertOnce: false,
             timeoutAfter: 30000,
-            localOnly: true,
           },
         },
         {
@@ -418,19 +557,352 @@ class UnifiedNotificationService {
     }
   }
 
-  async getScheduledNotifications(): Promise<any[]> {
+  /**
+   * Schedule a test standard notification for testing purposes
+   */
+  async scheduleTestStandardNotification(
+    uid: number,
+    minutes: number,
+  ): Promise<void> {
     try {
-      const triggerNotifications = await notifee.getTriggerNotifications();
-      return triggerNotifications.map(trigger => ({
-        id: trigger.notification.id,
-        title: trigger.notification.title,
-        body: trigger.notification.body,
-        data: trigger.notification.data,
-        trigger: trigger.trigger,
-      }));
+      const triggerTime = new Date();
+      triggerTime.setMinutes(triggerTime.getMinutes() + minutes);
+
+      const notificationId = `test-standard-${Date.now()}`;
+
+      await notifee.createTriggerNotification(
+        {
+          id: notificationId,
+          title: '🧪 Test Standard Notification',
+          body: `This is a test notification scheduled for ${minutes} minute${
+            minutes > 1 ? 's' : ''
+          } ago`,
+          android: {
+            channelId: this.channels.standard.id,
+            importance: AndroidImportance.HIGH,
+            pressAction: {
+              id: 'default',
+              launchActivity: 'default',
+            },
+            actions: [
+              {
+                title: 'Dismiss',
+                pressAction: {id: 'dismiss'},
+              },
+            ],
+          },
+          data: {
+            type: 'test-standard',
+            uid: uid.toString(),
+          },
+        },
+        {
+          type: TriggerType.TIMESTAMP,
+          timestamp: triggerTime.getTime(),
+        },
+      );
+
+      console.log(
+        `✅ Test standard notification scheduled for ${triggerTime.toLocaleTimeString()}`,
+      );
+    } catch (error) {
+      console.error('❌ Error scheduling test standard notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all scheduled notifications for debugging
+   */
+  async getScheduledNotifications(): Promise<TriggerNotification[]> {
+    try {
+      const scheduled = await notifee.getTriggerNotifications();
+      console.log(`📊 Found ${scheduled.length} scheduled notifications`);
+      return scheduled;
     } catch (error) {
       console.error('❌ Error getting scheduled notifications:', error);
       return [];
+    }
+  }
+
+  /**
+   * Schedule an immediate test notification (appears in 3 seconds)
+   */
+  async scheduleImmediateTestNotification(uid: number): Promise<string | null> {
+    try {
+      console.log('🧪 Scheduling immediate test notification...');
+
+      // Check and request permissions first
+      const permission = await notifee.requestPermission();
+      console.log('📱 Permission status:', permission);
+
+      if (permission.authorizationStatus !== 1) {
+        console.log('❌ Notification permission not granted');
+        throw new Error('Notification permission not granted');
+      }
+
+      await this.initialize();
+
+      // Schedule for 3 seconds from now
+      const result = await this.scheduleCustomNotification(
+        uid,
+        '🧪 Test Notification',
+        'This is an immediate test notification!',
+        3, // 3 seconds
+        false,
+      );
+
+      if (result) {
+        console.log(
+          `✅ Immediate test notification scheduled with ID: ${result}`,
+        );
+      }
+
+      return result;
+    } catch (error) {
+      console.error(
+        '❌ Failed to schedule immediate test notification:',
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Display immediate notification (no delay) for testing
+   */
+  async displayImmediateNotification(
+    uid: number,
+    title: string = '🧪 Immediate Test',
+    body: string = 'This notification appears immediately!',
+    isFullscreen: boolean = false,
+  ): Promise<string | null> {
+    try {
+      console.log('🚀 Displaying immediate notification...');
+
+      await this.initialize();
+
+      const id = `immediate-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      if (isFullscreen) {
+        console.log('📱 Creating immediate fullscreen notification...');
+        await notifee.displayNotification({
+          id,
+          title,
+          body,
+          data: {
+            type: 'immediate-fullscreen',
+            uid: uid.toString(),
+            notificationId: id,
+          },
+          android: {
+            channelId: this.channels.fullscreen.id,
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.CALL,
+            visibility: AndroidVisibility.PUBLIC,
+            fullScreenAction: {
+              id: 'full-screen',
+            },
+            pressAction: {
+              id: 'default',
+            },
+            vibrationPattern: [300, 500, 300, 500],
+            autoCancel: true,
+            lightUpScreen: true,
+          },
+          ios: {
+            critical: true,
+            criticalVolume: 1.0,
+          },
+        });
+      } else {
+        console.log('📱 Creating immediate standard notification...');
+        await notifee.displayNotification({
+          id,
+          title,
+          body,
+          data: {
+            type: 'immediate-standard',
+            uid: uid.toString(),
+            notificationId: id,
+          },
+          android: {
+            channelId: this.channels.standard.id,
+            importance: AndroidImportance.HIGH,
+            vibrationPattern: [300, 500, 300, 500],
+            autoCancel: true,
+            pressAction: {
+              id: 'default',
+            },
+          },
+        });
+      }
+
+      console.log(`✅ Immediate notification displayed with ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error('❌ Error displaying immediate notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Enhanced permission and settings check
+   */
+  async checkNotificationCapabilities(): Promise<{
+    permission: any;
+    channels: any[];
+    settings: any;
+    powerManager: any;
+  }> {
+    try {
+      console.log('🔍 Checking notification capabilities...');
+
+      const permission = await notifee.requestPermission();
+      console.log('📱 Permission:', permission);
+
+      let channels: any[] = [];
+      let powerManager: any = null;
+
+      if (Platform.OS === 'android') {
+        channels = await notifee.getChannels();
+        console.log('📺 Channels:', channels);
+
+        powerManager = await notifee.getPowerManagerInfo();
+        console.log('🔋 Power Manager:', powerManager);
+      }
+
+      const settings = await notifee.getNotificationSettings();
+      console.log('⚙️ Notification Settings:', settings);
+
+      return {
+        permission,
+        channels,
+        settings,
+        powerManager,
+      };
+    } catch (error) {
+      console.error('❌ Error checking capabilities:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Simple trigger notification with minimal configuration
+   */
+  async scheduleSimpleTestNotification(
+    uid: number,
+    delaySeconds: number = 5,
+  ): Promise<string | null> {
+    try {
+      console.log(
+        `🧪 Scheduling simple test notification for ${delaySeconds} seconds...`,
+      );
+
+      await this.initialize();
+
+      const notificationTime = new Date(Date.now() + delaySeconds * 1000);
+      const id = `simple-test-${Date.now()}`;
+
+      console.log(`📅 Scheduling for: ${notificationTime.toLocaleString()}`);
+
+      const trigger: TimestampTrigger = {
+        type: TriggerType.TIMESTAMP,
+        timestamp: notificationTime.getTime(),
+      };
+
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title: '🧪 Simple Test Notification',
+          body: `This notification was scheduled for ${delaySeconds} seconds delay`,
+          data: {
+            type: 'simple-test',
+            uid: uid.toString(),
+          },
+          android: {
+            channelId: this.channels.standard.id,
+            importance: AndroidImportance.HIGH,
+            vibrationPattern: [300, 500],
+            pressAction: {
+              id: 'default',
+            },
+          },
+        },
+        trigger,
+      );
+
+      console.log(`✅ Simple test notification scheduled with ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error('❌ Error scheduling simple test notification:', error);
+      throw error;
+    }
+  }
+
+  async scheduleFullscreenTestNotification(
+    uid: number,
+    delaySeconds: number = 5,
+  ): Promise<string | null> {
+    try {
+      console.log(
+        `📱 Scheduling fullscreen test notification for ${delaySeconds} seconds...`,
+      );
+
+      await this.initialize();
+
+      const notificationTime = new Date(Date.now() + delaySeconds * 1000);
+      const id = `fullscreen-test-${Date.now()}`;
+
+      console.log(
+        `📅 Scheduling fullscreen for: ${notificationTime.toLocaleString()}`,
+      );
+
+      const trigger: TimestampTrigger = {
+        type: TriggerType.TIMESTAMP,
+        timestamp: notificationTime.getTime(),
+      };
+
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title: '📞 Incoming Call',
+          body: 'Prayer Reminder Call',
+          data: {
+            type: 'fullscreen-test',
+            uid: uid.toString(),
+          },
+          android: {
+            channelId: this.channels.fullscreen.id,
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.CALL,
+            visibility: AndroidVisibility.PUBLIC,
+            fullScreenAction: {
+              id: 'full-screen',
+            },
+            pressAction: {
+              id: 'default',
+            },
+            vibrationPattern: [300, 500, 300, 500],
+            autoCancel: true,
+            lightUpScreen: true,
+            timeoutAfter: 30000,
+          },
+          ios: {
+            critical: true,
+            criticalVolume: 1.0,
+          },
+        },
+        trigger,
+      );
+
+      console.log(`✅ Fullscreen test notification scheduled with ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error('❌ Error scheduling fullscreen test notification:', error);
+      throw error;
     }
   }
 }

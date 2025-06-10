@@ -66,6 +66,28 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const testnotification = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.initialize();
+
+      // Schedule a test notification 5 seconds from now
+      await notificationService.scheduleCustomNotification(
+        1001,
+        'Test Notification',
+        'This is a test notification',
+        10000,
+      );
+
+      Alert.alert(
+        'Test Notification Scheduled ✅',
+        'A test notification will appear in 5 seconds!',
+      );
+    }
+    catch (error) {
+      Alert.alert('Error', 'Failed to schedule test notification');
+    }
+  }
   // Test fake call notification (fullscreen)
   const testFakeCallNotification = async () => {
     try {
@@ -144,7 +166,7 @@ const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
-            onPress={testPrayerNotification}>
+            onPress={testnotification}>
             <Text style={styles.testButtonText}>
               Schedule Prayer Notifications
             </Text>
