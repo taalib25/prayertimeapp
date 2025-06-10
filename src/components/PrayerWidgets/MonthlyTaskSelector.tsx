@@ -1,4 +1,4 @@
-import React, {useState, useRef, useMemo, useCallback} from 'react';
+import React, {useState, useRef, useMemo, useCallback, useEffect} from 'react';
 import {
   View,
   Text,
@@ -46,6 +46,25 @@ interface EditModalProps {
 }
 
 const MOCK_USER_ID = 1001;
+
+// Helper function to convert month name to number - moved before usage
+const getMonthNumber = (monthName: string): number => {
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  return months.indexOf(monthName);
+};
 
 // Generate data for the past 3 months using real database data
 const getMonthlyData = (
@@ -162,7 +181,6 @@ const CompactChallengeCard: React.FC<{
   isEditable?: boolean;
   onEdit?: () => void;
   todayValue?: number;
-  shouldAnimate?: boolean;
 }> = React.memo(
   ({
     id,
@@ -177,39 +195,17 @@ const CompactChallengeCard: React.FC<{
     isEditable = false,
     onEdit,
     todayValue = 0,
-    shouldAnimate = false,
   }) => {
-    const progressRef = useRef<any>(null);
-    const hasAnimated = useRef(false);
     const exceededGoal = current > total;
     const actualProgressColor = exceededGoal ? colors.success : progressColor;
 
-    // Memoize progress calculation
+    // Calculate progress percentage 
     const progressPercentage = useMemo(() => {
       const percentage = exceededGoal
         ? 100
         : Math.min((current / total) * 100, 100);
-      return Math.round(percentage); // Round to avoid decimal issues
+      return Math.round(percentage);
     }, [current, total, exceededGoal]);
-
-    // Only animate when specifically requested and visible
-    React.useEffect(() => {
-      if (
-        isVisible &&
-        shouldAnimate &&
-        progressRef.current &&
-        !hasAnimated.current
-      ) {
-        console.log(`🎯 Animating progress for ${id}: ${progressPercentage}%`);
-        progressRef.current.animate(progressPercentage, 800);
-        hasAnimated.current = true;
-
-        // Reset animation flag after some time
-        setTimeout(() => {
-          hasAnimated.current = false;
-        }, 2000);
-      }
-    }, [progressPercentage, isVisible, shouldAnimate, id]);
 
     return (
       <Pressable
@@ -220,18 +216,15 @@ const CompactChallengeCard: React.FC<{
 
         <View style={styles.compactProgressContainer}>
           <AnimatedCircularProgress
-            ref={progressRef}
             size={120}
-            width={6}
-            fill={shouldAnimate ? 0 : progressPercentage} // Start at 0 if animating, otherwise show actual value
+            width={8} // Increased stroke thickness
+            fill={progressPercentage}
             tintColor={actualProgressColor}
             backgroundColor={colors.background.surface}
             rotation={0}
             lineCap="round"
-            duration={800}
-            onAnimationComplete={() => {
-              console.log(`✅ Animation completed for ${id}`);
-            }}>
+            duration={0} // No animation - instant update
+          >
             {() => (
               <View style={styles.compactProgressText}>
                 <Text
@@ -253,36 +246,33 @@ const CompactChallengeCard: React.FC<{
           </AnimatedCircularProgress>
 
           {/* Show exceeded indicator */}
-          {exceededGoal && (
+          {/* {exceededGoal && (
             <View style={styles.exceededIndicator}>
               <Text style={styles.exceededText}>Goal Exceeded! 🎉</Text>
             </View>
-          )}
+          )} */}
         </View>
 
         <Text style={[styles.compactSubtitle, {color: textColor}]}>
           {subtitle}
         </Text>
 
-        {isEditable && (
+        {/* {isEditable && (
           <View style={styles.todayContainer}>
             <Text style={styles.todayText}>Today: {todayValue}</Text>
             <Text style={styles.editHint}>Tap to edit</Text>
           </View>
-        )}
+        )} */}
       </Pressable>
     );
   },
+  // Simplified comparison - only re-render when essential values change
   (prevProps, nextProps) => {
-    // Enhanced comparison to prevent unnecessary re-renders
     return (
-      prevProps.id === nextProps.id &&
       prevProps.current === nextProps.current &&
       prevProps.total === nextProps.total &&
-      prevProps.isVisible === nextProps.isVisible &&
       prevProps.todayValue === nextProps.todayValue &&
-      prevProps.isEditable === nextProps.isEditable &&
-      prevProps.shouldAnimate === nextProps.shouldAnimate
+      prevProps.isVisible === nextProps.isVisible
     );
   },
 );
@@ -305,21 +295,56 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
       daysBack: 1,
     });
 
-  // Memoize monthly data processing
-  const monthlyData = useMemo(
-    () => getMonthlyData(userGoals, rawMonthlyData),
-    [userGoals, rawMonthlyData],
-  );
+  // Memoize monthly data processing with proper sorting
+  const monthlyData = useMemo(() => {
+    const data = getMonthlyData(userGoals, rawMonthlyData);
+    // Ensure data is sorted chronologically (oldest to newest)
+    return data.sort((a, b) => {
+      const dateA = new Date(a.year, getMonthNumber(a.monthLabel));
+      const dateB = new Date(b.year, getMonthNumber(b.monthLabel));
+      return dateA.getTime() - dateB.getTime();
+    });
+  }, [userGoals, rawMonthlyData]);
 
-  const [currentPage, setCurrentPage] = useState(() =>
-    Math.max(0, monthlyData.length - 1),
-  );
+  // Calculate initial page to show current month
+  const getCurrentMonthIndex = useCallback(() => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthName = currentDate.toLocaleDateString('en-US', {
+      month: 'long',
+    });
+
+    // Find the index of current month
+    const currentMonthIndex = monthlyData.findIndex(
+      month =>
+        month.year === currentYear && month.monthLabel === currentMonthName,
+    );
+
+    // If current month is found, use it; otherwise use the last month (most recent)
+    return currentMonthIndex >= 0
+      ? currentMonthIndex
+      : Math.max(0, monthlyData.length - 1);
+  }, [monthlyData]);
+
+  const [currentPage, setCurrentPage] = useState(0);
   const pagerRef = useRef<PagerView>(null);
 
   // Modal states
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingType, setEditingType] = useState<'zikr' | 'quran' | null>(null);
-  const [lastEditedCard, setLastEditedCard] = useState<string | null>(null);
+
+  // Update current page when monthly data loads
+  useEffect(() => {
+    if (monthlyData.length > 0) {
+      const initialPage = getCurrentMonthIndex();
+      setCurrentPage(initialPage);
+
+      // Set the pager to show current month after a brief delay to ensure it's mounted
+      setTimeout(() => {
+        pagerRef.current?.setPage(initialPage);
+      }, 100);
+    }
+  }, [monthlyData, getCurrentMonthIndex]);
 
   // Memoize today's data to prevent unnecessary re-renders
   const todayData = useMemo(() => {
@@ -343,18 +368,12 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
       try {
         if (editingType === 'zikr') {
           await updateZikrForDate(today, value);
-          setLastEditedCard('zikr');
         } else if (editingType === 'quran') {
           await updateQuranForDate(today, value);
-          setLastEditedCard('quran');
         }
 
-        // Refetch data after a short delay
-        setTimeout(() => {
-          refetchMonthly();
-          // Clear the edited card marker after animation completes
-          setTimeout(() => setLastEditedCard(null), 1200);
-        }, 300);
+        // Immediate refetch for instant UI update
+        await refetchMonthly();
       } catch (error) {
         Alert.alert('Error', 'Failed to update progress');
       }
@@ -366,7 +385,7 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
     setCurrentPage(e.nativeEvent.position);
   }, []);
 
-  // Optimized data update with stable references
+  // Simplified data update - just use the latest data directly
   const updatedMonthlyData = useMemo(() => {
     if (!monthlyData.length) return monthlyData;
 
@@ -376,23 +395,32 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
     if (currentMonthIndex >= 0) {
       const currentMonth = updated[currentMonthIndex];
 
+      // Update current month with today's actual values
       updated[currentMonthIndex] = {
         ...currentMonth,
         zikr: {
           ...currentMonth.zikr,
-          current: Math.max(0, todayData.zikr),
+          current:
+            currentMonth.zikr.current -
+            (currentMonth.zikr.current - todayData.zikr >= 0
+              ? 0
+              : todayData.zikr),
         },
         quran: {
           ...currentMonth.quran,
-          current: Math.max(0, todayData.quranPages),
+          current:
+            currentMonth.quran.current -
+            (currentMonth.quran.current - todayData.quranPages >= 0
+              ? 0
+              : todayData.quranPages),
         },
       };
     }
 
     return updated;
-  }, [monthlyData, todayData.zikr, todayData.quranPages]);
+  }, [monthlyData, todayData]);
 
-  // Optimized MonthView component
+  // Simplified MonthView component
   const MonthView = React.memo<{monthData: MonthData; index: number}>(
     ({monthData, index}) => {
       const isVisible = currentPage === index;
@@ -400,17 +428,6 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
       const displayData = isCurrentMonth
         ? updatedMonthlyData[index]
         : monthData;
-
-      // Generate stable unique IDs for each card
-      const cardIds = useMemo(
-        () => ({
-          zikr: `${displayData.monthLabel}-${displayData.year}-zikr`,
-          quran: `${displayData.monthLabel}-${displayData.year}-quran`,
-          fajr: `${displayData.monthLabel}-${displayData.year}-fajr`,
-          isha: `${displayData.monthLabel}-${displayData.year}-isha`,
-        }),
-        [displayData.monthLabel, displayData.year],
-      );
 
       return (
         <View style={styles.monthContainer}>
@@ -422,7 +439,7 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
 
           <View style={styles.compactCardsGrid}>
             <CompactChallengeCard
-              id={cardIds.zikr}
+              id={`${displayData.monthLabel}-${displayData.year}-zikr`}
               title="Zikr"
               subtitle="Monthly"
               current={displayData.zikr.current}
@@ -434,11 +451,10 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
               isEditable={isCurrentMonth}
               onEdit={() => handleEdit('zikr')}
               todayValue={isCurrentMonth ? todayData.zikr : 0}
-              shouldAnimate={lastEditedCard === 'zikr' && isCurrentMonth}
             />
 
             <CompactChallengeCard
-              id={cardIds.quran}
+              id={`${displayData.monthLabel}-${displayData.year}-quran`}
               title="Quran"
               subtitle="Pages"
               current={displayData.quran.current}
@@ -450,11 +466,10 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
               isEditable={isCurrentMonth}
               onEdit={() => handleEdit('quran')}
               todayValue={isCurrentMonth ? todayData.quranPages : 0}
-              shouldAnimate={lastEditedCard === 'quran' && isCurrentMonth}
             />
 
             <CompactChallengeCard
-              id={cardIds.fajr}
+              id={`${displayData.monthLabel}-${displayData.year}-fajr`}
               title="Fajr"
               subtitle="Days"
               current={displayData.fajr.current}
@@ -463,11 +478,10 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
               progressColor={colors.lightBlue}
               textColor={colors.text.prayerBlue}
               isVisible={isVisible}
-              shouldAnimate={false} // Never animate prayer cards
             />
 
             <CompactChallengeCard
-              id={cardIds.isha}
+              id={`${displayData.monthLabel}-${displayData.year}-isha`}
               title="Isha"
               subtitle="Days"
               current={displayData.isha.current}
@@ -476,29 +490,9 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
               progressColor={colors.lightBlue}
               textColor={colors.text.prayerBlue}
               isVisible={isVisible}
-              shouldAnimate={false} // Never animate prayer cards
             />
           </View>
         </View>
-      );
-    },
-    (prevProps, nextProps) => {
-      // Only re-render if essential data actually changed
-      const prevData = prevProps.monthData;
-      const nextData = nextProps.monthData;
-
-      return (
-        prevProps.index === nextProps.index &&
-        prevData.monthLabel === nextData.monthLabel &&
-        prevData.year === nextData.year &&
-        prevData.zikr.current === nextData.zikr.current &&
-        prevData.zikr.total === nextData.zikr.total &&
-        prevData.quran.current === nextData.quran.current &&
-        prevData.quran.total === nextData.quran.total &&
-        prevData.fajr.current === nextData.fajr.current &&
-        prevData.fajr.total === nextData.fajr.total &&
-        prevData.isha.current === nextData.isha.current &&
-        prevData.isha.total === nextData.isha.total
       );
     },
   );
@@ -532,7 +526,7 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={updatedMonthlyData.length - 1}
+        initialPage={0} // Will be updated by useEffect
         onPageSelected={handlePageSelected}
         pageMargin={8}>
         {updatedMonthlyData.map((monthData, index) => (
@@ -547,7 +541,7 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
       {/* Pagination Indicator */}
       {updatedMonthlyData.length > 1 && (
         <View style={styles.paginationContainer}>
-          {updatedMonthlyData.map((_, index) => (
+          {updatedMonthlyData.map((monthData, index) => (
             <TouchableOpacity
               key={index}
               onPress={() => pagerRef.current?.setPage(index)}>
@@ -555,6 +549,9 @@ const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
                 style={[
                   styles.paginationDot,
                   currentPage === index && styles.paginationDotActive,
+                  // Highlight current month dot differently
+                  index === getCurrentMonthIndex() &&
+                    styles.paginationDotCurrent,
                 ]}
               />
             </TouchableOpacity>
@@ -691,6 +688,11 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  paginationDotCurrent: {
+    borderWidth: 2,
+    borderColor: colors.text.prayerBlue,
+    backgroundColor: 'transparent',
   },
   todayContainer: {
     marginTop: 8,

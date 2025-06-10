@@ -26,7 +26,7 @@ const PrayerTimeScreen = () => {
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, isLoading: userLoading} = useUser({uid: 1001});
   const isLoading = prayerLoading || userLoading;
-
+  console.log('Prayer Times:', user);
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -37,7 +37,7 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.settings?.location || 'New York, NY'}
+          location={user?.settings?.location || 'Colombo, LK'}
           userName={user?.profile?.username || 'Ahmed Hassan'}
           mosqueName={user?.settings?.masjid || 'Al-Noor Mosque'}
           mosqueLocation={user?.settings?.location || 'City Center'}
