@@ -1,8 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {PrayerNotificationSettings} from '../utils/types';
+
+interface NotificationSettings {
+  notifications: boolean;
+  reminder_minutes_before: number;
+  dnd_bypass: boolean;
+  notification_types: {
+    standard: boolean;
+    fullscreen: boolean;
+    sound: boolean;
+    vibration: boolean;
+  };
+  prayer_specific: {
+    fajr: boolean;
+    dhuhr: boolean;
+    asr: boolean;
+    maghrib: boolean;
+    isha: boolean;
+  };
+  adhan_sound: string;
+}
 
 class UserPreferencesService {
   private static instance: UserPreferencesService;
+  private cache = new Map<string, any>();
 
   private constructor() {}
 
@@ -13,16 +33,67 @@ class UserPreferencesService {
     return UserPreferencesService.instance;
   }
 
-  private getPreferencesKey(uid: number): string {
-    return `user_preferences_${uid}`;
+  private getKey(uid: number, setting: string): string {
+    return `notification_settings_${uid}_${setting}`;
   }
 
-  private getDefaultSettings(): PrayerNotificationSettings {
+  async getNotificationSettings(
+    uid: number,
+  ): Promise<NotificationSettings | null> {
+    const cacheKey = `settings_${uid}`;
+
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey);
+    }
+
+    try {
+      const settingsData = await AsyncStorage.getItem(
+        `notification_settings_${uid}`,
+      );
+
+      if (settingsData) {
+        const settings = JSON.parse(settingsData);
+        this.cache.set(cacheKey, settings);
+        return settings;
+      }
+
+      // Return default settings if none found
+      const defaultSettings = this.getDefaultSettings();
+      await this.saveNotificationSettings(uid, defaultSettings);
+      return defaultSettings;
+    } catch (error) {
+      console.error('Error getting notification settings:', error);
+      return this.getDefaultSettings();
+    }
+  }
+
+  async saveNotificationSettings(
+    uid: number,
+    settings: NotificationSettings,
+  ): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        `notification_settings_${uid}`,
+        JSON.stringify(settings),
+      );
+      this.cache.set(`settings_${uid}`, settings);
+    } catch (error) {
+      console.error('Error saving notification settings:', error);
+    }
+  }
+
+  async initializeDefaultSettings(uid: number): Promise<void> {
+    const existing = await this.getNotificationSettings(uid);
+    if (!existing) {
+      await this.saveNotificationSettings(uid, this.getDefaultSettings());
+    }
+  }
+
+  private getDefaultSettings(): NotificationSettings {
     return {
       notifications: true,
-      adhan_sound: 'adhan',
-      calculation_method: 'ISNA',
       reminder_minutes_before: 10,
+      dnd_bypass: true,
       notification_types: {
         standard: true,
         fullscreen: false,
@@ -36,95 +107,12 @@ class UserPreferencesService {
         maghrib: true,
         isha: true,
       },
-      dnd_bypass: false,
+      adhan_sound: 'adhan',
     };
   }
 
-  async getNotificationSettings(
-    uid: number,
-  ): Promise<PrayerNotificationSettings> {
-    try {
-      const allPrefs = await this.getAllPreferences(uid);
-      return allPrefs.notifications || this.getDefaultSettings();
-    } catch (error) {
-      console.error('Error getting notification settings:', error);
-      return this.getDefaultSettings();
-    }
-  }
-
-  async updateNotificationSettings(
-    uid: number,
-    settings: Partial<PrayerNotificationSettings>,
-  ): Promise<void> {
-    try {
-      const current = await this.getNotificationSettings(uid);
-      const updated = {...current, ...settings};
-
-      const allPrefs = await this.getAllPreferences(uid);
-      allPrefs.notifications = updated;
-
-      await AsyncStorage.setItem(
-        this.getPreferencesKey(uid),
-        JSON.stringify(allPrefs),
-      );
-
-      console.log(`✅ Updated notification settings for user ${uid}`);
-    } catch (error) {
-      console.error('Error updating notification settings:', error);
-      throw error;
-    }
-  }
-
-  private async getAllPreferences(uid: number): Promise<any> {
-    try {
-      const stored = await AsyncStorage.getItem(this.getPreferencesKey(uid));
-      return stored
-        ? JSON.parse(stored)
-        : {notifications: this.getDefaultSettings()};
-    } catch {
-      return {notifications: this.getDefaultSettings()};
-    }
-  }
-
-  async initializeDefaultSettings(uid: number): Promise<void> {
-    try {
-      const existing = await this.getAllPreferences(uid);
-      if (!existing.notifications) {
-        existing.notifications = this.getDefaultSettings();
-        await AsyncStorage.setItem(
-          this.getPreferencesKey(uid),
-          JSON.stringify(existing),
-        );
-        console.log(
-          `✅ Initialized default notification settings for user ${uid}`,
-        );
-      }
-    } catch (error) {
-      console.error('Error initializing default settings:', error);
-    }
-  }
-
-  async clearUserPreferences(uid: number): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(this.getPreferencesKey(uid));
-      console.log(`🧹 Cleared preferences for user ${uid}`);
-    } catch (error) {
-      console.error('Error clearing user preferences:', error);
-    }
-  }
-
-  // Utility method to check if prayer notifications should be sent
-  async shouldNotifyForPrayer(
-    uid: number,
-    prayerName: string,
-  ): Promise<boolean> {
-    const settings = await this.getNotificationSettings(uid);
-    return (
-      settings.notifications &&
-      settings.prayer_specific[
-        prayerName.toLowerCase() as keyof typeof settings.prayer_specific
-      ]
-    );
+  clearCache(): void {
+    this.cache.clear();
   }
 }
 

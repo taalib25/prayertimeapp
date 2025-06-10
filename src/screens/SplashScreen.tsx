@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet, Animated, Text} from 'react-native';
+import {View, StyleSheet, Animated} from 'react-native';
 import {colors} from '../utils/theme';
 import {useAuth} from '../contexts/AuthContext';
 import SvgIcon from '../components/SvgIcon';
@@ -13,23 +13,23 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in animation
+    // Start fade in animation immediately
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 1000,
+      duration: 800, // Faster animation
       useNativeDriver: true,
     }).start();
 
-    // Check authentication status while splash screen is displayed
+    // Check authentication status with reduced delay
     const checkAuth = async () => {
       try {
-        // Wait for minimum splash screen time and authentication check
-        await Promise.all([
-          new Promise(resolve => setTimeout(resolve, 6000)), // 2 seconds minimum display time
-          checkAuthState().then(isAuthenticated => {
-            onAuthCheck(isAuthenticated);
-          }),
+        // Reduced minimum splash screen time for better performance
+        const [authResult] = await Promise.all([
+          checkAuthState(),
+          new Promise(resolve => setTimeout(resolve, 4000)), // Reduced from 6000 to 2000
         ]);
+
+        onAuthCheck(authResult);
       } catch (error) {
         console.error('Error in auth check:', error);
         onAuthCheck(false); // Default to not authenticated if error
@@ -59,11 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.primary,
   },
 });
 

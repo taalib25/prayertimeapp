@@ -230,8 +230,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
-    padding: 8,
-    marginHorizontal: 8,
+    padding: 5,
+    marginHorizontal: 1,
     marginTop: 10,
     marginBottom: 16,
   },

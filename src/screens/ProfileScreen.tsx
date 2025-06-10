@@ -91,9 +91,11 @@ const ProfileScreen: React.FC = () => {
           ? `Found ${scheduled.length} scheduled notifications:\n\n${scheduled
               .map(
                 n =>
-                  `• ${n.title} at ${new Date(
-                    n.trigger.timestamp,
-                  ).toLocaleString()}`,
+                  `• ${n.notification.title} at ${
+                    'timestamp' in n.trigger
+                      ? new Date(n.trigger.timestamp).toLocaleString()
+                      : 'Scheduled'
+                  }`,
               )
               .join('\n')}`
           : 'No scheduled notifications found';

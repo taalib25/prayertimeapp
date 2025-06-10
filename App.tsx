@@ -11,6 +11,7 @@ import {
   StatusBar,
   StyleSheet,
   useColorScheme,
+  View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
@@ -34,6 +35,7 @@ import {
   initializeUserBackgroundTasks,
   checkBackgroundTasksHealth,
 } from './src/services/backgroundTasks';
+import {colors} from './src/utils/theme';
 
 // Define screen names and their params
 export type RootStackParamList = {
@@ -70,27 +72,34 @@ function AppNavigator() {
   const [showingSplash, setShowingSplash] = useState(true);
 
   useEffect(() => {
-    checkOnboardingStatus();
-    initializePrayerTimesDatabase();
+    // Initialize both onboarding check and prayer times database in parallel
+    Promise.all([checkOnboardingStatus(), initializePrayerTimesDatabase()]);
   }, []);
 
   // Initialize background tasks when user becomes authenticated
   useEffect(() => {
-    const initializeBackgroundServices = async () => {
-      if (isAuthenticated && !isLoading) {
-        const defaultUserId = 1001;
-
-        // Check if background tasks are healthy
-        const isHealthy = await checkBackgroundTasksHealth(defaultUserId);
-
-        if (!isHealthy) {
-          await initializeUserBackgroundTasks(defaultUserId);
-        }
-      }
-    };
-
-    initializeBackgroundServices();
+    if (isAuthenticated && !isLoading) {
+      // Use setTimeout to avoid blocking the UI
+      setTimeout(() => {
+        initializeBackgroundServices();
+      }, 100);
+    }
   }, [isAuthenticated, isLoading]);
+
+  const initializeBackgroundServices = async () => {
+    const defaultUserId = 1001;
+
+    try {
+      // Check if background tasks are healthy
+      const isHealthy = await checkBackgroundTasksHealth(defaultUserId);
+
+      if (!isHealthy) {
+        await initializeUserBackgroundTasks(defaultUserId);
+      }
+    } catch (error) {
+      console.error('Error initializing background services:', error);
+    }
+  };
 
   const checkOnboardingStatus = async () => {
     try {
@@ -120,14 +129,18 @@ function AppNavigator() {
     setShowingSplash(false);
   };
 
-  // Show splash screen while checking auth and onboarding
+  // Early return for loading states with minimal UI
   if (showingSplash) {
     return <SplashScreen onAuthCheck={handleAuthCheck} />;
   }
 
-  // Still loading state
-  if (isLoading || isCheckingOnboarding || hasSeenOnboarding === null) {
-    return null; // or a loading indicator
+  // Simplified loading check
+  if (isLoading || isCheckingOnboarding) {
+    return (
+      <View style={{flex: 1, backgroundColor: colors.white}}>
+        {/* Minimal loading state */}
+      </View>
+    );
   }
 
   return (

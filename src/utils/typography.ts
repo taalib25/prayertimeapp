@@ -1,14 +1,5 @@
 import {TextStyle} from 'react-native';
 
-// export const fontWeights = {
-//   light: '300' as const,
-//   regular: '400' as const,
-//   medium: '500' as const,
-//   semibold: '600' as const,
-//   bold: '700' as const,
-//   extrabold: '800' as const,
-// };
-
 // Static font families for different weights
 const fontFamilies = {
   light: 'Sora-Light',
@@ -34,7 +25,7 @@ export const typography: Record<string, TextStyle> = {
   h3: {
     fontFamily: fontFamilies.semibold,
     fontSize: 20,
-    lineHeight: 18,
+    lineHeight: 28, // Fixed line height for better layout
   },
 
   // Body text
@@ -48,21 +39,27 @@ export const typography: Record<string, TextStyle> = {
     fontSize: 16,
     lineHeight: 24,
   },
+  bodyLarge: {
+    fontFamily: fontFamilies.medium,
+    fontSize: 18,
+    lineHeight: 26,
+  },
   bodySmall: {
     fontFamily: fontFamilies.regular,
     fontSize: 15,
-    lineHeight: 16,
+    lineHeight: 20, // Fixed line height
   },
   bodyTiny: {
     fontFamily: fontFamilies.regular,
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: 18, // Fixed line height
   },
 
   //Header Profile
   headerProfile: {
     fontFamily: fontFamilies.semibold,
     fontSize: 22,
+    lineHeight: 28,
   },
 
   prayerCard: {
