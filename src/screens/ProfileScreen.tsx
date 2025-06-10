@@ -47,47 +47,99 @@ const ProfileScreen: React.FC = () => {
     console.log(`Pressed person ${index + 1}: ${person.phone}`);
   };
 
+  const testnotification = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+
+      // Test immediate notification (3 seconds)
+      await notificationService.scheduleImmediateTestNotification(1001);
+
+      Alert.alert(
+        'Test Notification Scheduled ✅',
+        'A test notification will appear in 3 seconds!',
+      );
+    } catch (error) {
+      console.error('Test notification error:', error);
+      Alert.alert('Error', `Failed to schedule test notification: ${error}`);
+    }
+  };
+
   // Test standard prayer notification
   const testPrayerNotification = async () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
       await notificationService.initialize();
 
-      // Schedule a standard notification 5 seconds from now
-      const today = new Date().toISOString().split('T')[0];
-      await notificationService.scheduleDailyPrayerNotifications(1001, today);
+      // Schedule a standard notification 10 seconds from now
+      const result = await notificationService.scheduleCustomNotification(
+        1001,
+        'Prayer Time 🕌',
+        'Test prayer notification',
+        10, // 10 seconds
+        false,
+      );
+
+      if (result) {
+        Alert.alert(
+          'Prayer Notification Scheduled ✅',
+          'A prayer notification will appear in 10 seconds!',
+        );
+      } else {
+        Alert.alert(
+          'Warning',
+          'Notification was not scheduled. Check your notification settings.',
+        );
+      }
+    } catch (error) {
+      console.error('Prayer notification error:', error);
+      Alert.alert('Error', `Failed to schedule prayer notification: ${error}`);
+    }
+  };
+
+  // Test prayer notifications for today
+  const testPrayerNotifications = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.scheduleTodayPrayerNotifications(1001);
 
       Alert.alert(
         'Prayer Notifications Scheduled ✅',
         'Prayer notifications have been scheduled for today based on your settings!',
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to schedule prayer notifications');
+    } catch (error: any) {
+      console.error('Prayer notifications error:', error);
+      Alert.alert(
+        'Error',
+        `Failed to schedule prayer notifications: ${error?.message || error}`,
+      );
     }
   };
 
-  const testnotification = async () => {
+  // Test simple notification
+  const testSimpleNotification = async () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.initialize();
 
-      // Schedule a test notification 5 seconds from now
-      await notificationService.scheduleCustomNotification(
+      const result = await notificationService.scheduleTestNotification(
         1001,
-        'Test Notification',
-        'This is a test notification',
-        10000,
+        5,
       );
 
+      if (result) {
+        Alert.alert(
+          'Test Notification Scheduled ✅',
+          'A test notification will appear in 5 seconds!',
+        );
+      }
+    } catch (error: any) {
+      console.error('Test notification error:', error);
       Alert.alert(
-        'Test Notification Scheduled ✅',
-        'A test notification will appear in 5 seconds!',
+        'Error',
+        `Failed to schedule test notification: ${error?.message || error}`,
       );
     }
-    catch (error) {
-      Alert.alert('Error', 'Failed to schedule test notification');
-    }
-  }
+  };
+
   // Test fake call notification (fullscreen)
   const testFakeCallNotification = async () => {
     try {
@@ -102,6 +154,32 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  // Test fullscreen call
+  const testFullscreenCall = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
+
+      const result = await notificationService.scheduleTestFullscreenCall(
+        1001,
+        5,
+      );
+
+      if (result) {
+        Alert.alert(
+          'Fullscreen Call Scheduled ✅',
+          'A fullscreen call will appear in 5 seconds!',
+        );
+      }
+    } catch (error: any) {
+      console.error('Fullscreen call error:', error);
+      Alert.alert(
+        'Error',
+        `Failed to schedule fullscreen call: ${error?.message || error}`,
+      );
+    }
+  };
+
+
   // View scheduled notifications
   const viewScheduledNotifications = async () => {
     try {
@@ -112,7 +190,7 @@ const ProfileScreen: React.FC = () => {
         scheduled.length > 0
           ? `Found ${scheduled.length} scheduled notifications:\n\n${scheduled
               .map(
-                n =>
+                (n: any) =>
                   `• ${n.notification.title} at ${
                     'timestamp' in n.trigger
                       ? new Date(n.trigger.timestamp).toLocaleString()
@@ -138,6 +216,7 @@ const ProfileScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to clear notifications');
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -166,12 +245,19 @@ const ProfileScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
-            onPress={testnotification}>
-            <Text style={styles.testButtonText}>
-              Schedule Prayer Notifications
-            </Text>
+            onPress={testPrayerNotifications}>
+            <Text style={styles.testButtonText}>Schedule Today's Prayers</Text>
             <Text style={styles.testButtonSubtext}>
-              Schedule today's prayer notifications
+              Schedule all prayer notifications for today
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.testButton, styles.infoButton]}
+            onPress={testSimpleNotification}>
+            <Text style={styles.testButtonText}>Test Simple Notification</Text>
+            <Text style={styles.testButtonSubtext}>
+              Standard notification in 5 seconds
             </Text>
           </TouchableOpacity>
 
@@ -184,6 +270,14 @@ const ProfileScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[styles.testButton, styles.fakeCallButton]}
+            onPress={testFullscreenCall}>
+            <Text style={styles.testButtonText}>Test Fullscreen Call</Text>
+            <Text style={styles.testButtonSubtext}>
+              Fullscreen call notification in 5 seconds
+            </Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.testButton, styles.infoButton]}
             onPress={viewScheduledNotifications}>
