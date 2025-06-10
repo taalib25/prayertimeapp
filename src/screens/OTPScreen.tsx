@@ -125,7 +125,10 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
   const createDummyUserData = async () => {
     try {
+    
       const uid = 1001;
+
+      // This function will be replaced by handling API response data
       const dummyProfile = {
         username: 'Ahmed Hassan',
         email: email || 'ahmed@example.com',
@@ -148,7 +151,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
         masjid: 'Al-Noor Mosque',
       };
 
-      // Store dummy data in AsyncStorage
+      // Store user data - this will be replaced by storing API response
       await Promise.all([
         AsyncStorage.setItem(
           `user_${uid}_profile`,
@@ -161,16 +164,14 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
         ),
       ]);
 
-      // Initialize notification preferences
+      // Initialize services
       const preferencesService = UserPreferencesService.getInstance();
       await preferencesService.initializeDefaultSettings(uid);
-
-      // Initialize notification services
       await initializeUserBackgroundTasks(uid);
 
-      console.log('✅ Dummy user data created successfully');
+      console.log('✅ User data created successfully');
     } catch (error) {
-      console.error('❌ Error creating dummy user data:', error);
+      console.error('❌ Error creating user data:', error);
     }
   };
 
@@ -182,13 +183,16 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setIsLoading(true);
 
     try {
-      // Create dummy user data before login
+      // Step 1: Verify OTP with API (currently dummy)
+      // const apiResponse = await verifyOTPWithAPI(phoneNumber, otp.join(''));
+
+      // Step 2: Create/update user data (will use API response)
       await createDummyUserData();
 
-      // Complete the login process
+      // Step 3: Login user
       await login(email, phoneNumber);
 
-      // Navigate to main app
+      // Step 4: Navigate to main app
       navigation.replace('MainApp');
     } catch (error) {
       console.error('Login error:', error);

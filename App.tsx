@@ -1,35 +1,25 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
 import React, {useState, useEffect, useCallback} from 'react';
-
-import {
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {SafeAreaView, StatusBar, View, useColorScheme} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import SplashScreen from './src/screens/SplashScreen';
-import OnboardingScreen from './src/screens/OnboardingScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import OTPScreen from './src/screens/OTPScreen';
-import BottomTabNavigator from './src/navigation/BottomTabNavigator';
-import {DatabaseProvider} from './src/services/db/databaseProvider';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import FakeCallScreen from './src/screens/FakeCallScreen';
-import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
-
 import {
   NavigationContainer,
   NavigationContainerRef,
 } from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
+// Screens
+import SplashScreen from './src/screens/SplashScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import OTPScreen from './src/screens/OTPScreen';
+import FakeCallScreen from './src/screens/FakeCallScreen';
+import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
+import BottomTabNavigator from './src/navigation/BottomTabNavigator';
+
+// Services & Context
+import {DatabaseProvider} from './src/services/db/databaseProvider';
+import {AuthProvider, useAuth} from './src/contexts/AuthContext';
 import {initializePrayerTimesDatabase} from './src/services/db/dbInitalizer';
 import {
   initializeUserBackgroundTasks,
@@ -37,7 +27,7 @@ import {
 } from './src/services/backgroundTasks';
 import {colors} from './src/utils/theme';
 
-// Define screen names and their params
+// Types
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
@@ -50,11 +40,10 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Create navigation reference with proper typing
+// Navigation helpers
 export const navigationRef =
   React.createRef<NavigationContainerRef<RootStackParamList>>();
 
-// Helper function to navigate from anywhere in the app
 export function navigate(name: keyof RootStackParamList, params?: any) {
   navigationRef.current?.navigate(name as any, params);
 }
@@ -63,36 +52,40 @@ export function goBack() {
   navigationRef.current?.goBack();
 }
 
+// Main App Navigator Component
 function AppNavigator() {
-  const {isAuthenticated, isLoading} = useAuth();
+  const {isAuthenticated, isLoading, checkAuthState} = useAuth();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
     null,
   );
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [showingSplash, setShowingSplash] = useState(true);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
+  // Initialize app data on mount
   useEffect(() => {
-    // Initialize both onboarding check and prayer times database in parallel
     Promise.all([checkOnboardingStatus(), initializePrayerTimesDatabase()]);
   }, []);
 
-  // Initialize background tasks when user becomes authenticated
+  // Check auth state after splash
+  useEffect(() => {
+    if (!showingSplash && !isAuthChecked) {
+      checkAuthState().finally(() => setIsAuthChecked(true));
+    }
+  }, [showingSplash, isAuthChecked, checkAuthState]);
+
+  // Initialize background services when authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      // Use setTimeout to avoid blocking the UI
-      setTimeout(() => {
-        initializeBackgroundServices();
-      }, 100);
+      setTimeout(initializeBackgroundServices, 100);
     }
   }, [isAuthenticated, isLoading]);
 
+  // Background services initialization
   const initializeBackgroundServices = async () => {
     const defaultUserId = 1001;
-
     try {
-      // Check if background tasks are healthy
       const isHealthy = await checkBackgroundTasksHealth(defaultUserId);
-
       if (!isHealthy) {
         await initializeUserBackgroundTasks(defaultUserId);
       }
@@ -101,6 +94,7 @@ function AppNavigator() {
     }
   };
 
+  // Check onboarding status
   const checkOnboardingStatus = async () => {
     try {
       const value = await AsyncStorage.getItem('hasSeenOnboarding');
@@ -113,62 +107,42 @@ function AppNavigator() {
     }
   };
 
+  // Handle onboarding completion
   const handleOnboardingFinish = useCallback(async () => {
     try {
       await AsyncStorage.setItem('hasSeenOnboarding', 'true');
       setHasSeenOnboarding(true);
     } catch (error) {
       console.error('Failed to save onboarding status:', error);
-      // Optionally, handle the error, e.g., show an alert
-      // For now, we'll update the state to proceed in the current session
       setHasSeenOnboarding(true);
     }
-  }, [setHasSeenOnboarding]);
+  }, []);
 
-  const handleAuthCheck = (authenticated: boolean) => {
-    setShowingSplash(false);
-  };
+  // Handle splash screen completion
+  const handleAuthCheck = () => setShowingSplash(false);
 
-  // Early return for loading states with minimal UI
+  // Loading states
   if (showingSplash) {
     return <SplashScreen onAuthCheck={handleAuthCheck} />;
   }
 
-  // Simplified loading check
-  if (isLoading || isCheckingOnboarding) {
-    return (
-      <View style={{flex: 1, backgroundColor: colors.white}}>
-        {/* Minimal loading state */}
-      </View>
-    );
+  if (isLoading || isCheckingOnboarding || !isAuthChecked) {
+    return <View style={{flex: 1, backgroundColor: colors.white}} />;
   }
 
+  // Screen configurations
+  const screenOptions = {
+    headerShown: false,
+    animation: 'slide_from_right' as const,
+    gestureEnabled: true,
+  };
+
   return (
-    <NavigationContainer
-      ref={navigationRef}
-      onReady={() => {
-        // Navigation is ready - you can add analytics or other initialization here
-        console.log('✅ Navigation container ready');
-      }}
-      onStateChange={state => {
-        // Track navigation state changes for analytics and debugging
-        console.log(
-          '🔄 Navigation state changed:',
-          state?.routes?.[state.index]?.name,
-        );
-      }}>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          animation: 'slide_from_right', // Add smooth animations
-          gestureEnabled: true, // Enable swipe gestures
-        }}>
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator screenOptions={screenOptions}>
         {!hasSeenOnboarding ? (
-          <Stack.Screen
-            name="Onboarding"
-            options={{
-              gestureEnabled: false, // Prevent swiping back from onboarding
-            }}>
+          // Onboarding Flow
+          <Stack.Screen name="Onboarding" options={{gestureEnabled: false}}>
             {props => (
               <OnboardingScreen
                 {...props}
@@ -177,26 +151,26 @@ function AppNavigator() {
             )}
           </Stack.Screen>
         ) : isAuthenticated ? (
+          // Authenticated User Screens
           <Stack.Group>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
             <Stack.Screen
               name="DatabaseTest"
               component={DatabaseTestScreen}
-              options={{
-                presentation: 'modal', // Present as modal
-              }}
+              options={{presentation: 'modal'}}
             />
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}
               options={{
                 presentation: 'fullScreenModal',
-                gestureEnabled: false, // Prevent dismissing fake call screen
-                animationTypeForReplace: 'push', // Better animation
+                gestureEnabled: false,
+                animationTypeForReplace: 'push',
               }}
             />
           </Stack.Group>
         ) : (
+          // Authentication Screens
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="OTP" component={OTPScreen} />
@@ -207,21 +181,21 @@ function AppNavigator() {
   );
 }
 
+// Main App Component
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    flex: 1,
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
 
   return (
     <DatabaseProvider>
       <AuthProvider>
-        <SafeAreaView style={backgroundStyle}>
+        <SafeAreaView
+          style={{
+            flex: 1,
+            backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+          }}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={backgroundStyle.backgroundColor}
+            backgroundColor={isDarkMode ? Colors.darker : Colors.lighter}
           />
           <AppNavigator />
         </SafeAreaView>
@@ -229,66 +203,5 @@ function App(): React.JSX.Element {
     </DatabaseProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  topNavContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', // Pushes title/empty space to left, button to right
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 15, // Add horizontal padding
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light, // Adjust color as needed
-    // backgroundColor: 'transparent', // Or a specific color
-  },
-  topNavTitleContainer: {
-    flex: 1, // Allows this to take up space if a title is added
-  },
-  translateButton: {
-    padding: 10, // Adjusted padding for a more icon-like button
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  translateButtonText: {
-    fontSize: 18, // Adjust size as needed for an icon
-    fontWeight: 'bold', // Make it bold to appear more like an icon
-  },
-  navContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.light, // Adjust color as needed
-  },
-  navButton: {
-    padding: 10,
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    // Color will be handled by parent Text in Section or globally
-  },
-  contentContainer: {
-    flex: 1,
-    // paddingHorizontal: '5%', // You can use safePadding logic here if needed
-  },
-});
 
 export default App;

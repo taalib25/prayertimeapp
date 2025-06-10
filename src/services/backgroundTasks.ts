@@ -29,12 +29,6 @@ export const initializeUserBackgroundTasks = async (
     const today = new Date().toISOString().split('T')[0];
     await notificationService.scheduleDailyPrayerNotifications(uid, today);
 
-    // Store last initialization time
-    await AsyncStorage.setItem(
-      `notification_services_init_${uid}`,
-      Date.now().toString(),
-    );
-
     console.log(`✅ Notification services initialized for user ${uid}`);
   } catch (error) {
     console.error('❌ Error initializing notification services:', error);
