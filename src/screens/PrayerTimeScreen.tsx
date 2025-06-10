@@ -25,7 +25,6 @@ const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, isLoading: userLoading} = useUser({uid: 1001});
-
   const isLoading = prayerLoading || userLoading;
 
   return (
@@ -73,8 +72,8 @@ const PrayerTimeScreen = () => {
             {/* Section Header for Tasks */}
             <DailyTasksSelector />
 
-            {/* Monthly Challenge Cards */}
-            <MonthlyChallengeSelector />
+            {/* Monthly Challenge Cards with user goals */}
+            <MonthlyChallengeSelector userGoals={user?.goals} />
           </View>
         )}
       </ScrollView>

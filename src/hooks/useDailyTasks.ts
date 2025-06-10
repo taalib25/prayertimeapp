@@ -5,7 +5,9 @@ import {
   updatePrayerStatus,
   updateSpecialTaskStatus,
   updateZikrCount,
+  updateQuranPages,
   checkAndCreateTodayTasks,
+  getRecentMonthsData,
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
@@ -135,6 +137,27 @@ export const useRecentDailyTasks = ({
     [uid, fetchRecentTasks],
   );
 
+  const updateQuranForDate = useCallback(
+    async (date: string, pages: number) => {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Prevent updating Quran for previous days
+      if (date !== today) {
+        console.log('Cannot update Quran for previous days');
+        return;
+      }
+
+      try {
+        await updateQuranPages(uid, date, pages);
+        await fetchRecentTasks();
+      } catch (err) {
+        console.error('Error updating Quran:', err);
+        setError('Failed to update Quran pages');
+      }
+    },
+    [uid, fetchRecentTasks],
+  );
+
   useEffect(() => {
     fetchRecentTasks();
   }, [fetchRecentTasks]);
@@ -164,6 +187,49 @@ export const useRecentDailyTasks = ({
     toggleSpecialTaskForDate,
     updatePrayerForDate,
     updateZikrForDate,
+    updateQuranForDate,
     refetch: fetchRecentTasks,
+  };
+};
+
+/**
+ * Hook for monthly aggregated data
+ */
+export const useMonthlyData = ({
+  uid,
+  monthsBack = 3,
+}: {
+  uid: number;
+  monthsBack?: number;
+}) => {
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMonthlyData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      console.log('📊 Fetching monthly aggregated data...');
+      const data = await getRecentMonthsData(uid, monthsBack);
+      setMonthlyData(data);
+    } catch (err) {
+      setError('Failed to fetch monthly data');
+      console.error('Error fetching monthly data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [uid, monthsBack]);
+
+  useEffect(() => {
+    fetchMonthlyData();
+  }, [fetchMonthlyData]);
+
+  return {
+    monthlyData,
+    isLoading,
+    error,
+    refetch: fetchMonthlyData,
   };
 };

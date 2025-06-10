@@ -297,6 +297,39 @@ export const updateZikrCount = async (
 };
 
 /**
+ * Update Quran pages
+ */
+export const updateQuranPages = async (
+  uid: number,
+  date: string,
+  pages: number,
+): Promise<void> => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+    const existingTasks = await dailyTasksCollection
+      .query(Q.where('uid', uid), Q.where('date', date))
+      .fetch();
+
+    if (existingTasks.length === 0) {
+      await createDailyTasks(uid, date);
+      return updateQuranPages(uid, date, pages);
+    }
+
+    await database.write(async () => {
+      await existingTasks[0].update(task => {
+        task.quranPagesRead = pages;
+      });
+    });
+
+    console.log(`✅ Updated Quran pages for ${date}: ${pages} pages`);
+  } catch (error) {
+    console.error('Error updating Quran pages:', error);
+    throw error;
+  }
+};
+
+/**
  * Reset daily tasks to default values (called at start of each day)
  */
 export const resetDailyTasks = async (
@@ -514,5 +547,131 @@ export const getRecentDailyTasks = async (
   } catch (error) {
     console.error(`Error getting recent daily tasks:`, error);
     throw error;
+  }
+};
+
+/**
+ * Get monthly aggregated data for a user
+ */
+export const getMonthlyTaskData = async (
+  uid: number,
+  year: number,
+  month: number, // 0-based month (0 = January)
+): Promise<{
+  totalZikr: number;
+  totalQuranPages: number;
+  fajrCompletedDays: number;
+  ishaCompletedDays: number;
+  totalDays: number;
+}> => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+    // Calculate start and end dates for the month
+    const monthStart = new Date(year, month, 1).toISOString().split('T')[0];
+    const monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0];
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+    console.log(
+      `📊 Fetching monthly data for ${year}-${
+        month + 1
+      } (${monthStart} to ${monthEnd})`,
+    );
+
+    // Query tasks for the month
+    const monthTasks = await dailyTasksCollection
+      .query(
+        Q.where('uid', uid),
+        Q.where('date', Q.gte(monthStart)),
+        Q.where('date', Q.lte(monthEnd)),
+        Q.sortBy('date', Q.asc),
+      )
+      .fetch();
+
+    console.log(`📊 Found ${monthTasks.length} task records for the month`);
+
+    // Aggregate the data
+    let totalZikr = 0;
+    let totalQuranPages = 0;
+    let fajrCompletedDays = 0;
+    let ishaCompletedDays = 0;
+
+    monthTasks.forEach(task => {
+      totalZikr += task.totalZikrCount || 0;
+      totalQuranPages += task.quranPagesRead || 0;
+
+      // Count completed prayer days
+      if (['completed', 'jamath', 'individual'].includes(task.fajrStatus)) {
+        fajrCompletedDays++;
+      }
+      if (['completed', 'jamath', 'individual'].includes(task.ishaStatus)) {
+        ishaCompletedDays++;
+      }
+    });
+
+    return {
+      totalZikr,
+      totalQuranPages,
+      fajrCompletedDays,
+      ishaCompletedDays,
+      totalDays: totalDaysInMonth,
+    };
+  } catch (error) {
+    console.error(
+      `Error getting monthly task data for ${year}-${month + 1}:`,
+      error,
+    );
+    return {
+      totalZikr: 0,
+      totalQuranPages: 0,
+      fajrCompletedDays: 0,
+      ishaCompletedDays: 0,
+      totalDays: new Date(year, month + 1, 0).getDate(),
+    };
+  }
+};
+
+/**
+ * Get data for the last N months
+ */
+export const getRecentMonthsData = async (
+  uid: number,
+  monthsBack: number = 3,
+): Promise<
+  Array<{
+    year: number;
+    month: number;
+    monthName: string;
+    totalZikr: number;
+    totalQuranPages: number;
+    fajrCompletedDays: number;
+    ishaCompletedDays: number;
+    totalDays: number;
+  }>
+> => {
+  try {
+    const results = [];
+    const today = new Date();
+
+    for (let i = monthsBack - 1; i >= 0; i--) {
+      const targetDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const monthName = targetDate.toLocaleDateString('en-US', {month: 'long'});
+
+      const monthData = await getMonthlyTaskData(uid, year, month);
+
+      results.push({
+        year,
+        month,
+        monthName,
+        ...monthData,
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Error getting recent months data:', error);
+    return [];
   }
 };
