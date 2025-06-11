@@ -76,14 +76,14 @@ function AppNavigator() {
 
   // Initialize background services when authenticated
   useEffect(() => {
-   console.log(
-      `Auth state: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
-    if (isAuthenticated && isLoading) {
-      console.log(
-      `asdad adsd Auth state changed: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
-      setTimeout(() => initializeUserBackgroundTasks(1001), 700);
+    console.log(
+      `Auth state: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`,
+    );
+    if (isAuthenticated && !isLoading) {
+      console.log('Initializing background services for authenticated user');
+      setTimeout(() => initializeUserBackgroundTasks(1001), 300);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isLoading]);
 
   // Background services initialization
   const initializeBackgroundServices = async () => {
@@ -199,7 +199,7 @@ function App(): React.JSX.Element {
           }}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-                  backgroundColor="transparent"
+            backgroundColor="transparent"
           />
           <AppNavigator />
         </SafeAreaView>

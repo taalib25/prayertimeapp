@@ -125,7 +125,6 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
   const createDummyUserData = async () => {
     try {
-    
       const uid = 1001;
 
       // This function will be replaced by handling API response data
@@ -192,11 +191,8 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
       // Step 3: Login user
       await login(email, phoneNumber);
 
-      // Step 4: Navigate to main app
-      navigation.replace('MainApp');
     } catch (error) {
       console.error('Login error:', error);
-    } finally {
       setIsLoading(false);
     }
   };
