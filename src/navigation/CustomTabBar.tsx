@@ -60,7 +60,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               <SvgIcon
                 name={iconName}
                 size={29}
-                color={isFocused ? colors.text.prayerBlue : colors.text.muted}
+                color={isFocused ? colors.background.profilebg : colors.text.secondary}
               />
               {/* <Text
                 style={[
