@@ -14,7 +14,7 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import OTPScreen from './src/screens/OTPScreen';
 import FakeCallScreen from './src/screens/FakeCallScreen';
-import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
+// import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
 // Services & Context
@@ -33,7 +33,7 @@ export type RootStackParamList = {
   Login: undefined;
   OTP: {email: string};
   MainApp: undefined;
-  DatabaseTest: undefined;
+  // DatabaseTest: undefined;
   PrayerChallenge: undefined;
   FakeCallScreen: undefined;
 };
@@ -157,11 +157,11 @@ function AppNavigator() {
           // Authenticated User Screens
           <Stack.Group>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-            <Stack.Screen
+            {/* <Stack.Screen
               name="DatabaseTest"
               component={DatabaseTestScreen}
               options={{presentation: 'modal'}}
-            />
+            /> */}
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}

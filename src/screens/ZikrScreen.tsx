@@ -48,16 +48,16 @@ const ZikrScreen: React.FC = () => {
     console.log(`Selected Zikr ${index + 1}`);
   };
 
-  const navigateToDatabaseTest = () => {
-    navigation.navigate('DatabaseTest');
-  };
+  // const navigateToDatabaseTest = () => {
+  //   navigation.navigate('DatabaseTest');
+  // };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Zikr Screen</Text>
       </View>
-      <Button title="Go to Database Test" onPress={navigateToDatabaseTest} />
+      {/* <Button title="Go to Database Test" onPress={navigateToDatabaseTest} /> */}
       {/* You can add your Zikr content here using MeetingCard or other components */}
       {/* Example:
       <ScrollView style={styles.content}>
