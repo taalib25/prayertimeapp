@@ -433,7 +433,7 @@ const spacing = {
 const styles = StyleSheet.create({
   container: {
     height: 550,
-    backgroundColor: colors.background.light,
+    // backgroundColor: colors.background.light,
     borderRadius: 20,
     marginVertical: spacing.md,
     paddingVertical: spacing.sm,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   pageContainer: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   monthContainer: {
     flex: 1,

@@ -22,6 +22,7 @@ export const colors = {
     muted: '#6B7280', // Muted text
     blue: '#3C4A9B', // Blue for links and highlights
     prayerBlue: '#29476F', // Prayer blue
+    lightPrayerBlue: '#A2A2A2', // Prayer blue
   },
   background: {
     dark: '#135719E5', // Dark forest green
