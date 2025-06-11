@@ -9,14 +9,13 @@ interface HeaderProps {
   userName?: string;
   mosqueName?: string;
   mosqueLocation?: string;
-  avatarImage?: any; // Optional local image path
+  avatarImage?: any;
 }
 
 const Header: React.FC<HeaderProps> = ({
   location = 'Colombo, Sri Lanka',
   userName = 'User',
   mosqueName = 'Local Mosque',
-  mosqueLocation = '',
   avatarImage,
 }) => {
   return (
@@ -92,10 +91,11 @@ const Header: React.FC<HeaderProps> = ({
             color={colors.accent}
             style={styles.mosqueIcon}
           />
-          <Text style={styles.mosqueName} numberOfLines={2}>
-            {mosqueName}
-            {mosqueLocation ? `, ${mosqueLocation}` : ''}
-          </Text>
+          <View style={styles.mosqueTextContainer}>
+            <Text style={styles.mosqueName} numberOfLines={2}>
+              {mosqueName}sasas sa ds sda assd ads
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -104,20 +104,21 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   avatar: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    height: 60,
-    width: 60,
-    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    height: '20%',
+    width: '20%',
+    aspectRatio: 1,
+    borderRadius: 1000,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 9,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   avatarImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: '100%',
+    height: '100%',
+    borderRadius: 1000,
   },
   avatarText: {
     ...typography.h3,
@@ -171,14 +172,16 @@ const styles = StyleSheet.create({
     marginRight: 6,
     fontSize: 14,
     flexShrink: 1,
-    maxWidth: 120, // Set explicit max width
+    maxWidth: 120,
+    fontWeight: '500',
   },
   dateText: {
-   ...typography.bodyMedium,
-              color: '#fff',
-              fontSize: 16,
-              marginLeft: 14,
-              justifyContent: 'flex-start',
+    ...typography.bodyMedium,
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 14,
+    justifyContent: 'flex-start',
+    fontWeight: '600',
   },
   chevronIcon: {
     width: 0,
@@ -204,54 +207,64 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
     marginRight: 8,
-    maxWidth: '70%', // Limit width to prevent overlap
+    width: '90%', // Use percentage-based width
   },
   greeting: {
     ...typography.h3,
-    color: colors.text.dark,
+    color: colors.lime,
     flexShrink: 1,
-    maxWidth: '100%',
+    fontSize: 17,
+    width: '100%', // Use percentage-based width
   },
   userName: {
-    ...typography.headerProfile,
+    ...typography.h2,
     color: '#fff',
     marginBottom: 1,
     flexShrink: 1,
-    maxWidth: '100%',
+    width: '100%', // Use percentage-based width
   },
   welcomeBack: {
     ...typography.bodyTiny,
-    color: colors.text.secondary,
+    color: colors.text.dark,
     flexShrink: 1,
-    maxWidth: '100%',
+    width: '100%', // Use percentage-based width
   },
   underline: {
     height: 1.5,
     marginTop: 4,
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     width: '60%',
     borderRadius: 1,
   },
   mosqueContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 12,
     borderRadius: 10,
-    marginTop: -4,
-    width: '100%',
-    paddingRight: 60, // Add padding to avoid right-side image
+    // marginTop: -4,
+    width: '85%',
+    paddingRight: 60,
   },
   mosqueIcon: {
     marginRight: 12,
+    marginTop:-5,
   },
-  mosqueName: {
-    ...typography.bodySmall,
-    color: colors.text.dark,
+  mosqueTextContainer: {
     flex: 1,
     marginRight: 8,
-    lineHeight: 18,
-    maxWidth: '75%', // Limit width to prevent overlap
   },
+  mosqueName: {
+    ...typography.bodyMedium,
+    fontSize: 14,
+    color: colors.text.dark,
+    // fontWeight: '600',
+    lineHeight: 16,
+  },
+  // mosqueLocation: {
+  //   ...typography.bodyTiny,
+  //   color: colors.background.surface,
+  //   lineHeight: 16,
+  // },
 });
 
 export default Header;
