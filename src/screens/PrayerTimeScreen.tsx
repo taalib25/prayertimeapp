@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 40,
-    marginTop: -150, // Move the container up to overlap with ~20% of the prayer cards
+    marginTop: -195, // Move the container up to overlap with ~20% of the prayer cards
     zIndex: 1,
   },
   loader: {marginTop: 40},
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginTop: 100,
+    marginTop: 150,
     marginVertical: 16,
   },
   sectionTitle: {
