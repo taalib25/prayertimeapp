@@ -68,30 +68,37 @@ const PrayerTimeScreen = () => {
             style={styles.loader}
           />
         ) : (
-          <View style={styles.container}>
-            {/* Prayer Time Cards */}
-            <PrayerTimeCards prayers={prayerTimes} />
-
-            {/* New Today Section */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Daily Reminders</Text>
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
+          <>
+            {/* Prayer Time Cards - positioned to overlap */}
+            <View style={styles.prayerCardsContainer}>
+              <PrayerTimeCards prayers={prayerTimes} />
             </View>
 
-            {/* Empty cards placeholder */}
-            <View style={styles.emptyCardsRow}>
-              <View style={styles.emptyCard} />
-              <View style={styles.emptyCard} />
+            <View style={styles.container}>
+              {/* New Today Section */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Daily Reminders</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Empty cards placeholder */}
+              <View style={styles.emptyCardsRow}>
+                <View style={styles.emptyCard} />
+                <View style={styles.emptyCard} />
+              </View>
+
+              <Text style={styles.seeAllText}>“Remind, indeed reminders benefit the believers”</Text>
+              <Text style={styles.seeAllText}>(Quran 51:55)</Text>
+
+              {/* Section Header for Tasks */}
+              <DailyTasksSelector />
+
+              {/* Monthly Challenge Cards with user goals */}
+              <MonthlyChallengeSelector userGoals={user?.goals} />
             </View>
-
-            {/* Section Header for Tasks */}
-            <DailyTasksSelector />
-
-            {/* Monthly Challenge Cards with user goals */}
-            <MonthlyChallengeSelector userGoals={user?.goals} />
-          </View>
+          </>
         )}
       </ScrollView>
     </View>
@@ -108,18 +115,21 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  prayerCardsContainer: {
+    zIndex: 2,
+    marginHorizontal: 16,
+    marginTop: -25,
+    position: 'relative',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
     paddingHorizontal: 16,
-    paddingTop: 14,
-    overflow: 'hidden',
+    paddingTop: 40,
+    marginTop: -150, // Move the container up to overlap with ~20% of the prayer cards
+    zIndex: 1,
   },
-  loader: {
-    marginTop: 40,
-  },
+  loader: {marginTop: 40},
   errorText: {
     ...typography.body,
     textAlign: 'center',
@@ -132,6 +142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
+    marginTop: 100,
     marginVertical: 16,
   },
   sectionTitle: {
@@ -141,6 +152,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     ...typography.bodyMedium,
     color: colors.primary,
+    textAlign: 'right',
   },
   emptyCardsRow: {
     flexDirection: 'row',

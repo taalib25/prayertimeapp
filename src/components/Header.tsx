@@ -126,11 +126,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   container: {
-    height: 230,
+    // height: 230,
     position: 'relative',
     overflow: 'hidden',
-    marginBottom: 14,
-    marginTop: 10,
+    marginBottom: 9,
+    marginTop: 22,
   },
   backgroundImage: {
     position: 'absolute',

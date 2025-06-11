@@ -30,7 +30,7 @@ export const colors = {
     overlay: 'rgba(27, 94, 32, 0.5)', // Green overlay
     light: '#F0FDF4', // Very light green
     surface: '#ECFDF5', // Light green surface
-    profilebg: '#6DA54F', // Sage green for profile background
+    profilebg: '#528B43', // Sage green for profile background
     prayerCard: '#E1FFD1', // Light green for prayer cards
   },
 

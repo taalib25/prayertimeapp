@@ -240,19 +240,20 @@ const styles = StyleSheet.create({
   prayerCardContainer: {
     flex: 1,
     alignItems: 'center',
+    padding : 8,
   },
   prayerCard: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 1,
+    paddingHorizontal: 0,
     width: '100%',
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   activeCard: {
-    borderColor: colors.accent,
+    borderColor: "#4CE047",
   },
   prayerName: {
     ...typography.prayerCard,
