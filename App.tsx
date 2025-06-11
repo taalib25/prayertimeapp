@@ -198,7 +198,7 @@ function App(): React.JSX.Element {
           }}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={isDarkMode ? Colors.darker : Colors.lighter}
+                  backgroundColor="transparent"
           />
           <AppNavigator />
         </SafeAreaView>
