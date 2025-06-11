@@ -145,14 +145,12 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.prayerCardsRow}>
-        {prayers.map((prayer, index) => {
-          const prayerStatus = getPrayerStatus(prayer.name);
-          const attendanceType = getAttendanceType(prayerStatus);
-
-          return (
-            <View key={index} style={styles.prayerCardContainer}>
+    <>
+      {/* Prayer Cards Container */}
+      <View style={styles.container}>
+        <View style={styles.prayerCardsRow}>
+          {prayers.map((prayer, index) => (
+            <View key={index} style={styles.prayerColumn}>
               <View
                 style={[
                   styles.prayerCard,
@@ -164,37 +162,46 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                   <SvgIcon
                     name={prayer.name.toLowerCase() as IconName}
                     size={22}
-                    // color={colors.accent}
                   />
                 </View>
 
                 <Text style={styles.prayerTime}>{prayer.time}</Text>
               </View>
-
-              {/* Enhanced Attendance Indicator */}
-              <TouchableOpacity
-                style={styles.attendanceContainer}
-                onPress={() => handleAttendancePress(prayer)}
-                activeOpacity={0.7}>
-                <View
-                  style={[
-                    styles.attendanceCircle,
-                    {
-                      backgroundColor: getAttendanceColor(attendanceType),
-                      opacity: getAttendanceOpacity(attendanceType),
-                    },
-                  ]}>
-                  {attendanceType !== 'none' && (
-                    <Text style={styles.attendanceCheckmark}>✓</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
             </View>
+          ))}
+        </View>
+      </View>
+
+      {/* External Attendance Indicators Container */}
+      <View style={styles.attendanceRow}>
+        {prayers.map((prayer, index) => {
+          const prayerStatus = getPrayerStatus(prayer.name);
+          const attendanceType = getAttendanceType(prayerStatus);
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={styles.attendanceContainer}
+              onPress={() => handleAttendancePress(prayer)}
+              activeOpacity={0.7}>
+              <View
+                style={[
+                  styles.attendanceCircle,
+                  {
+                    backgroundColor: getAttendanceColor(attendanceType),
+                    opacity: getAttendanceOpacity(attendanceType),
+                  },
+                ]}>
+                {attendanceType !== 'none' && (
+                  <Text style={styles.attendanceCheckmark}>✓</Text>
+                )}
+              </View>
+            </TouchableOpacity>
           );
         })}
       </View>
 
-      {/* Attendance Selection Modal */}
+      {/* Modals */}
       {selectedPrayerForAttendance && (
         <AttendanceSelectionModal
           visible={attendancePopupVisible}
@@ -219,7 +226,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
           isNotification={reminderType === 'notification'}
         />
       )}
-    </View>
+    </>
   );
 };
 
@@ -228,19 +235,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
     padding: 5,
+    paddingTop: 18,
     marginHorizontal: 1,
     marginTop: 10,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   prayerCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  prayerCardContainer: {
+  prayerColumn: {
     flex: 1,
     alignItems: 'center',
-    padding : 8,
   },
   prayerCard: {
     alignItems: 'center',
@@ -251,20 +258,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
+    marginBottom: 6, // Space between card and attendance
   },
   activeCard: {
-    borderColor: "#4CE047",
+    borderColor: '#4CE047',
   },
   prayerName: {
     ...typography.prayerCard,
     color: colors.text.prayerBlue,
     marginBottom: 13,
+    fontSize: 15,
     textAlign: 'center',
   },
   prayerTime: {
     ...typography.prayerCard,
+    fontSize: 15,
     color: colors.text.prayerBlue,
     marginTop: 15,
+    marginBottom: 5,
     textAlign: 'center',
   },
   iconContainer: {
@@ -272,11 +283,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  attendanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 15,
+    marginBottom: 36,
+    paddingHorizontal: 8,
+  },
   attendanceContainer: {
-    marginTop: 8,
-    padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 2,
+    flex: 1,
   },
   attendanceCircle: {
     width: 24,

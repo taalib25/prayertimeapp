@@ -93,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({
           />
           <View style={styles.mosqueTextContainer}>
             <Text style={styles.mosqueName} numberOfLines={2}>
-              {mosqueName}
+              {mosqueName} asdsa adsdsad sadsa asda
             </Text>
           </View>
         </View>
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     marginBottom: 9,
-    marginTop: 22,
+    marginTop: 24,
   },
   backgroundImage: {
     position: 'absolute',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     marginBottom: 16,
     marginTop: 8,
@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...typography.h3,
-    color: colors.lime,
+    color: colors.text.dark,
     flexShrink: 1,
-    fontSize: 17,
+    fontSize: 20,
     width: '100%', // Use percentage-based width
   },
   userName: {
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   welcomeBack: {
     ...typography.bodyTiny,
-    color: colors.text.dark,
+    color: colors.text.primary,
     flexShrink: 1,
     width: '100%', // Use percentage-based width
   },
