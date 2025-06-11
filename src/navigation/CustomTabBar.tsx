@@ -59,16 +59,16 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               style={styles.tabButton}>
               <SvgIcon
                 name={iconName}
-                size={24}
-                stroke={isFocused ? colors.primary : undefined}
+                size={29}
+                color={isFocused ? colors.text.prayerBlue : colors.text.muted}
               />
-              <Text
+              {/* <Text
                 style={[
                   styles.tabLabel,
                   isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel,
                 ]}>
                 {route.name}
-              </Text>
+              </Text> */}
             </TouchableOpacity>
           );
         })}
@@ -103,18 +103,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   tabLabel: {
-    ...typography.caption,
-    fontSize: 10,
-    marginTop: 2,
-    fontWeight: '600',
+    ...typography.body,
+    fontSize: 13,
+    marginTop: 1,
   },
   focusedTabLabel: {
-    color: colors.primary,
-    fontWeight: '700',
+    color: colors.text.prayerBlue,
+    ...typography.bodyMedium,
+    fontSize: 14,
   },
   unfocusedTabLabel: {
     color: colors.text.secondary,
-    fontWeight: '600',
   },
 });
 

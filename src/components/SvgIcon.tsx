@@ -1,5 +1,6 @@
 import React from 'react';
 import {ViewStyle} from 'react-native';
+import {colors} from '../utils/theme';
 
 // Import your custom SVG icons
 import FajrIcon from '../assets/icons/Fajr.svg';
@@ -50,22 +51,18 @@ const SvgIcon: React.FC<SvgIconProps> = ({
     return null;
   }
 
-  const iconProps: {
-    width: number;
-    height: number;
-    style?: ViewStyle;
-    fill?: string;
-    stroke?: string;
-  } = {
+  const iconProps: any = {
     width: size,
     height: size,
     style: style,
   };
 
+  // Since SVGs use currentColor, pass color directly
   if (color) {
-    iconProps.fill = color;
+    iconProps.color = color;
   }
 
+  // Allow explicit stroke override if needed
   if (stroke) {
     iconProps.stroke = stroke;
   }
