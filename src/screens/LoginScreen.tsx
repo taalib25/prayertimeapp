@@ -19,6 +19,7 @@ import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import {loginSchema, LoginFormData} from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
+import SvgIcon from '../components/SvgIcon';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -82,11 +83,12 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
           keyboardShouldPersistTaps="handled">
           <View style={styles.container}>
             <View style={styles.formContainer}>
-              <Image
-                source={require('../assets/icons/fajr-council.png')}
+              {/* <Image
+                source={require('../assets/icons/fajrLogo.png')}
                 style={styles.logo}
                 resizeMode="contain"
-              />
+              /> */}
+                <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
               <Text style={styles.title}>Assalamu Alaikum!</Text>
               <Text style={styles.subtitle}>
                 Please login to access your account
@@ -162,6 +164,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginBottom: 40,
+    marginLeft: -35,
     alignSelf: 'flex-start',
   },
   title: {
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   loginButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.text.lightDark,
     borderRadius: 12,
     height: 56,
     marginBottom: 24,

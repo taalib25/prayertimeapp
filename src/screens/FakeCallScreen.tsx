@@ -319,7 +319,7 @@ const FakeCallScreen = () => {
       return (
         <>
           <View style={styles.callerInfo}>
-            <SvgIcon name="fajrlogo" size={160} color={colors.primary} />
+            <SvgIcon name="fajrlogo" size={160} />
             <Text style={styles.callerName}>Prayer Reminder</Text>
             <Text style={styles.callerSubtitle}>Time for prayer</Text>
             <Text style={styles.incomingText}>Incoming call...</Text>
@@ -343,7 +343,7 @@ const FakeCallScreen = () => {
       return (
         <>
           <View style={styles.callerInfo}>
-            <SvgIcon name="fajrlogo" size={160} color={colors.primary} />
+            <SvgIcon name="fajrlogo" size={160} />
             <Text style={styles.callerName}>Prayer Reminder</Text>
             <Text style={styles.callerSubtitle}>Connected</Text>
             <Text style={styles.callDuration}>

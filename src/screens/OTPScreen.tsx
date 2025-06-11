@@ -23,6 +23,7 @@ import {useAuth} from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserPreferencesService from '../services/UserPreferencesService';
 import {initializeUserBackgroundTasks} from '../services/backgroundTasks';
+import SvgIcon from '../components/SvgIcon';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -211,12 +212,12 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           {/* Phone Verification Step */}
           {step === 1 && (
             <View>
-              <Image
+              {/* <Image
                 source={require('../assets/icons/fajr-council.png')}
                 style={styles.logo}
                 resizeMode="contain"
-              />
-
+              /> */}
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
               <Text style={styles.title}>Verify your phone number</Text>
               <Text style={styles.subtitle}>
                 Enter your phone number to receive a verification code
@@ -250,11 +251,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           {/* OTP Verification Step */}
           {step === 2 && (
             <View>
-              <Image
-                source={require('../assets/icons/fajr-council.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
               <Text style={styles.title}>OTP Verification</Text>
               <Text
                 style={[
@@ -263,7 +260,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                     marginTop: 80,
                     marginBottom: 24,
                     ...typography.body,
-                    color: colors.accent,
+                    color: colors.text.dark,
                   },
                 ]}>
                 We've sent a code to{' '}
@@ -321,9 +318,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   logo: {
-    width: 100,
+   width: 100,
     height: 100,
     marginBottom: 40,
+    marginLeft: -35,
     alignSelf: 'flex-start',
   },
   title: {
@@ -375,7 +373,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.text.lightDark,
     borderRadius: 8,
     height: 56,
     marginBottom: 24,

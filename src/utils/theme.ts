@@ -19,6 +19,7 @@ export const colors = {
     secondary: '#A5D6A7', // Light green for secondary text
     accent: '#81C784', // Light green accent
     dark: '#464646', // Dark text
+    lightDark: '#5D5D5D', // Slightly lighter dark text
     muted: '#6B7280', // Muted text
     blue: '#3C4A9B', // Blue for links and highlights
     prayerBlue: '#29476F', // Prayer blue

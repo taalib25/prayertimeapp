@@ -57,7 +57,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    ...typography.prayerCard,
+    ...typography.h3,
+    fontSize: 18,
     color: colors.white,
   },
   disabledButton: {

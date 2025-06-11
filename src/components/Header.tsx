@@ -93,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({
           />
           <View style={styles.mosqueTextContainer}>
             <Text style={styles.mosqueName} numberOfLines={2}>
-              {mosqueName} asdsa adsdsad sadsa asda
+              {mosqueName}
             </Text>
           </View>
         </View>
