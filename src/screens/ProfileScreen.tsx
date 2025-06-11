@@ -22,14 +22,14 @@ const ProfileScreen: React.FC = () => {
     title: 'Personalized Meeting',
     subtitle: '3 Days Remaining',
     persons: [
-      {name: 'Person 1', phone: '07712345698', completed: false},
-      {name: 'Person 2', phone: '07712345698', completed: true},
-      {name: 'Person 3', phone: '07712345698', completed: false},
+      {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
+      {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
+      {name: 'Omar Abdullah  ', phone: '07712345700', completed: false},
     ],
     stats: [
       {label: 'Assigned', value: '3'},
-      {label: 'Completed', value: '2'},
-      {label: 'Remaining', value: '1'},
+      {label: 'Completed', value: '1'},
+      {label: 'Remaining', value: '2'},
     ],
   };
 
@@ -37,9 +37,9 @@ const ProfileScreen: React.FC = () => {
     title: 'Meeting Attendance',
     subtitle: 'Last 5 meetings',
     stats: [
-      {label: 'Attended', value: '3'},
+      {label: 'Attended', value: '4'},
       {label: 'Absent', value: '1'},
-      {label: 'Excused', value: '1'},
+      {label: 'Present %', value: '80%'},
     ],
   };
 
