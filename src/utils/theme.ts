@@ -12,15 +12,18 @@ export const colors = {
   sage: '#A7F3D0', // Sage green
   forest: '#064E3B', // Forest green
   lime: '#84CC16', // Lime green
+  lightBlue :"#04BFDA",
 
   text: {
     primary: '#FFFFFF',
     secondary: '#A5D6A7', // Light green for secondary text
     accent: '#81C784', // Light green accent
     dark: '#464646', // Dark text
+    lightDark: '#5D5D5D', // Slightly lighter dark text
     muted: '#6B7280', // Muted text
     blue: '#3C4A9B', // Blue for links and highlights
     prayerBlue: '#29476F', // Prayer blue
+    lightPrayerBlue: '#A2A2A2', // Prayer blue
   },
   background: {
     dark: '#135719E5', // Dark forest green
@@ -28,7 +31,7 @@ export const colors = {
     overlay: 'rgba(27, 94, 32, 0.5)', // Green overlay
     light: '#F0FDF4', // Very light green
     surface: '#ECFDF5', // Light green surface
-    profilebg: '#6DA54F', // Sage green for profile background
+    profilebg: '#528B43', // Sage green for profile background
     prayerCard: '#E1FFD1', // Light green for prayer cards
   },
 

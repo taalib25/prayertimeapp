@@ -7,7 +7,7 @@ const PrayerChallengeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Prayer Tracker</Text>
+        <Text style={styles.title}>Salah Screen</Text>
       </View>
     </SafeAreaView>
   );

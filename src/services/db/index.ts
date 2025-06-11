@@ -1,31 +1,29 @@
-import {initDatabase, closeDatabase, getDatabase} from './dbInitalizer';
-import {
-  savePrayerTimes,
-  getPrayerTimes,
-  getPrayerTimesRange,
-} from './prayertimes_services';
-import {
-  updatePrayerTracking,
-  getPrayerTrackingForDate,
-  getPrayerTrackingRange,
-  getPrayerStreak,
-} from './prayer_tracking_services';
+import {Database} from '@nozbe/watermelondb';
+import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import PrayerTimesModel from '../../model/PrayerTimes';
+import prayerAppSchema from './schema';
+import DailyTasksModel from '../../model/DailyTasks';
 
-// Re-export everything for easy imports
-export {
-  // Core database operations
-  initDatabase,
-  closeDatabase,
-  getDatabase, // Export getDatabase
+// First, create the adapter to the underlying database:
+const adapter = new SQLiteAdapter({
+  schema: prayerAppSchema,
+  dbName: 'prayer_app.db',
+  migrations: {
+    validated: true,
+    minVersion: 1,
+    maxVersion: 1,
+    sortedMigrations: [],
+  },
+  jsi: false,
+  onSetUpError: error => {
+    console.error('Database setup error:', error);
+  },
+});
 
-  // Prayer times operations
-  savePrayerTimes,
-  getPrayerTimes,
-  getPrayerTimesRange,
+// Then, make a Watermelon database from it:
+const database = new Database({
+  adapter,
+  modelClasses: [PrayerTimesModel, DailyTasksModel],
+});
 
-  // Prayer tracking operations
-  updatePrayerTracking,
-  getPrayerTrackingForDate,
-  getPrayerTrackingRange,
-  getPrayerStreak,
-};
+export default database;

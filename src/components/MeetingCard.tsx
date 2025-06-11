@@ -39,9 +39,10 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
           key={index}
           style={styles.personRow}
           onPress={() => onPersonPress?.(person, index)}>
-          <Text style={styles.personText}>
-            Person {index + 1} - {person.phone}
-          </Text>
+          <View style={styles.personInfo}>
+            <Text style={styles.personText}>{person.name}</Text>
+            <Text style={styles.personPhone}>{person.phone}</Text>
+          </View>
           <View
             style={[styles.circle, person.completed && styles.circleActive]}
           />
@@ -50,13 +51,49 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
 
       {stats.length > 0 && (
         <View style={styles.statsContainer}>
-          {stats.map((stat, index) => (
-            <View key={index} style={styles.statItem}>
-              <Text style={styles.statText}>
-                {stat.label} - {stat.value}
-              </Text>
-            </View>
-          ))}
+          {stats.map((stat, index) => {
+            const isCompleted = stat.label.toLowerCase().includes('completed');
+            const isRemaining = stat.label.toLowerCase().includes('remaining');
+            const isAssigned = stat.label.toLowerCase().includes('assigned');
+            const isAttended = stat.label.toLowerCase().includes('attended');
+            const isPercent = String(stat.value).includes('%');
+
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.statItem,
+                  isCompleted && styles.statCompleted,
+                  isRemaining && styles.statRemaining,
+                  isAssigned && styles.statAssigned,
+                  isAttended && styles.statAttended,
+                  isPercent && styles.statPercent,
+                ]}>
+                <Text
+                  style={[
+                    styles.statValue,
+                    isCompleted && styles.statValueCompleted,
+                    isRemaining && styles.statValueRemaining,
+                    isAssigned && styles.statValueAssigned,
+                    isAttended && styles.statValueAttended,
+                    isPercent && styles.statValuePercent,
+                  ]}>
+                  {stat.value}
+                </Text>
+                <Text
+                  style={[
+                    styles.statLabel,
+                    isCompleted && styles.statLabelCompleted,
+                    isRemaining && styles.statLabelRemaining,
+                    isAssigned && styles.statLabelAssigned,
+                    isAttended && styles.statLabelAttended,
+                    isPercent && styles.statLabelPercent,
+                  ]}>
+                  {stat.label}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       )}
     </View>
@@ -87,15 +124,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: colors.white,
-    borderRadius: 50,
-    paddingVertical: spacing.md,
+    borderRadius: 14,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
+  personInfo: {
+    flex: 1,
+  },
   personText: {
     ...typography.bodyMedium,
-    color: colors.text.prayerBlue,
+    color: colors.text.dark,
     fontWeight: '500',
+  },
+  personPhone: {
+    ...typography.caption,
+    color: colors.text.muted,
+    fontSize: 14,
+    opacity: 0.8,
+    marginTop: 1,
   },
   circle: {
     width: 20,
@@ -109,15 +156,79 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    marginTop: spacing.xs,
-    justifyContent: 'space-around',
+    marginTop: spacing.md,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
   },
   statItem: {
     alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    flex: 1,
+    marginHorizontal: spacing.xs / 2,
+    borderWidth: 1.5,
+    minHeight: 60,
+    justifyContent: 'center',
   },
-  statText: {
-    ...typography.body,
-    color: colors.text.prayerBlue,
+  statAssigned: {
+    borderColor: '#2196F3',
+  },
+  statCompleted: {
+    borderColor: '#4CAF50',
+  },
+  statRemaining: {
+    borderColor: '#FF9800',
+  },
+  statAttended: {
+    borderColor: '#4CAF50',
+  },
+  statPercent: {
+    borderColor: '#9C27B0',
+  },
+  statValue: {
+    ...typography.h2,
+    // fontWeight: '800',
+    marginBottom: spacing.xs / 3,
+    fontSize: 18,
+  },
+  statValueAssigned: {
+    color: '#1976D2',
+  },
+  statValueCompleted: {
+    color: '#388E3C',
+  },
+  statValueRemaining: {
+    color: '#F57C00',
+  },
+  statValueAttended: {
+    color: '#388E3C',
+  },
+  statValuePercent: {
+    color: '#7B1FA2',
+  },
+  statLabel: {
+    ...typography.bodyMedium,
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 13,
+    lineHeight: 15,
+  },
+  statLabelAssigned: {
+    color: '#1565C0',
+  },
+  statLabelCompleted: {
+    color: '#2E7D32',
+  },
+  statLabelRemaining: {
+    color: '#EF6C00',
+  },
+  statLabelAttended: {
+    color: '#2E7D32',
+  },
+  statLabelPercent: {
+    color: '#6A1B9A',
   },
 });
 

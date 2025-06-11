@@ -1,5 +1,6 @@
 import React from 'react';
 import {ViewStyle} from 'react-native';
+import {colors} from '../utils/theme';
 
 // Import your custom SVG icons
 import FajrIcon from '../assets/icons/Fajr.svg';
@@ -13,7 +14,7 @@ import FajrLogo from '../assets/icons/fajr-logo.svg';
 import HomeIcon from '../assets/icons/home.svg';
 import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
 import SalahIcon from '../assets/icons/salah.svg';
-import UserIcon from '../assets/icons/user.svg';
+import UserIcon from '../assets/icons/profile.svg';
 
 export type IconName =
   | 'fajr'
@@ -27,25 +28,46 @@ export type IconName =
   | 'home'
   | 'prayer-beads'
   | 'salah'
-  | 'user';
+  | 'profile';
 
 interface SvgIconProps {
   name: IconName;
   size?: number;
   color?: string;
+  stroke?: string;
   style?: ViewStyle;
 }
 
-const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
+const SvgIcon: React.FC<SvgIconProps> = ({
+  name,
+  size = 24,
+  color,
+  stroke,
+  style,
+}) => {
   const IconComponent = getIconComponent(name);
 
   if (!IconComponent) {
     return null;
   }
 
-  return (
-    <IconComponent width={size} height={size} style={style} />
-  );
+  const iconProps: any = {
+    width: size,
+    height: size,
+    style: style,
+  };
+
+  // Since SVGs use currentColor, pass color directly
+  if (color) {
+    iconProps.color = color;
+  }
+
+  // Allow explicit stroke override if needed
+  if (stroke) {
+    iconProps.stroke = stroke;
+  }
+
+  return <IconComponent {...iconProps} />;
 };
 
 const getIconComponent = (name: IconName) => {
@@ -59,9 +81,9 @@ const getIconComponent = (name: IconName) => {
     map: MapIcon,
     fajrlogo: FajrLogo,
     home: HomeIcon,
-    salah : SalahIcon,
+    salah: SalahIcon,
     'prayer-beads': PrayerBeadsIcon,
-    user: UserIcon,
+    profile: UserIcon,
   };
 
   return icons[name];

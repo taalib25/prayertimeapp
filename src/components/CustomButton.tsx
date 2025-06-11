@@ -37,7 +37,6 @@ const CustomButton: React.FC<CustomButtonProps> = ({
       ]}
       onPress={onPress}
       disabled={disabled || loading}>
-      {' '}
       {loading ? (
         <ActivityIndicator color={colors.white} size="small" />
       ) : (
@@ -46,6 +45,8 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     </TouchableOpacity>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   button: {
@@ -56,7 +57,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    ...typography.prayerCard,
+    ...typography.h3,
+    fontSize: 18,
     color: colors.white,
   },
   disabledButton: {

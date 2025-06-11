@@ -1,12 +1,34 @@
-import { createRef } from 'react';
+import { navigationRef } from '../../App';
 
-export const navigationRef = createRef();
+// Navigation utilities that can be used from anywhere in the app
+export function navigate(routeName, params) {
+  navigationRef.current?.navigate(routeName, params);
+}
 
-export function navigate(name, params) {
-  if (navigationRef.current) {
-    // Verify the screen exists in the navigator
-    navigationRef.current.navigate(name, params);
-  } else {
-    console.log('Navigation attempted before navigation was ready:', name);
-  }
+export function goBack() {
+  navigationRef.current?.goBack();
+}
+
+export function reset(routeName, params) {
+  navigationRef.current?.reset({
+    index: 0,
+    routes: [{ name: routeName, params }],
+  });
+}
+
+export function getCurrentRoute() {
+  return navigationRef.current?.getCurrentRoute();
+}
+
+// Specific navigation functions for your app
+export function navigateToFakeCall() {
+  navigate('FakeCallScreen');
+}
+
+export function navigateToLogin() {
+  reset('Login');
+}
+
+export function navigateToMainApp() {
+  reset('MainApp');
 }

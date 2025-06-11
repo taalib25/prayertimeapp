@@ -10,26 +10,26 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
   const {checkAuthState} = useAuth();
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
-    // Fade in animation
+    // Start fade in animation immediately
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 1000,
+      duration: 800, // Faster animation
       useNativeDriver: true,
     }).start();
 
-    // Check authentication status while splash screen is displayed
+    // Check authentication status with reduced delay
     const checkAuth = async () => {
       try {
-        // Wait for minimum splash screen time and authentication check
-        await Promise.all([
-          new Promise(resolve => setTimeout(resolve, 2000)), // 2 seconds minimum display time
-          checkAuthState().then(isAuthenticated => {
-            onAuthCheck(isAuthenticated);
-          }),
+        // Reduced minimum splash screen time for better performance
+        const [authResult] = await Promise.all([
+          checkAuthState(),
+          new Promise(resolve => setTimeout(resolve, 4000)), // Reduced from 6000 to 2000
         ]);
+
+        onAuthCheck(authResult);
       } catch (error) {
         console.error('Error in auth check:', error);
         onAuthCheck(false); // Default to not authenticated if error
@@ -42,7 +42,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.logoContainer, {opacity: fadeAnim}]}>
-        <SvgIcon name="fajrlogo" size={220} color={colors.primary} />
+        <SvgIcon name="fajrlogo" size={240} color={colors.accent} />
       </Animated.View>
     </View>
   );
@@ -59,11 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.primary,
   },
 });
 

@@ -20,7 +20,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       case 'Salah':
         return 'salah';
       case 'Profile':
-        return 'user';
+        return 'profile';
       default:
         return 'home';
     }
@@ -33,14 +33,18 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
           const isFocused = state.index === index;
 
           const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
+            try {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            } catch (error) {
+              console.error('Tab navigation error:', error);
             }
           };
 
@@ -55,11 +59,14 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               style={styles.tabButton}>
               <SvgIcon
                 name={iconName}
-                size={24}
-                style={isFocused ? styles.activeIcon : styles.inactiveIcon}
+                size={29}
+                color={isFocused ? colors.primary : colors.text.lightPrayerBlue}
               />
               <Text
-                style={[styles.tabLabel, isFocused && styles.focusedTabLabel]}>
+                style={[
+                  styles.tabLabel,
+                  isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel,
+                ]}>
                 {route.name}
               </Text>
             </TouchableOpacity>
@@ -95,22 +102,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
   },
-  activeIcon: {
-    opacity: 1,
-    // We can't directly change the SVG fill color, but we can modify opacity
-  },
-  inactiveIcon: {
-    opacity: 0.6,
-  },
   tabLabel: {
-    ...typography.caption,
-    fontSize: 10,
-    color: colors.text.muted,
-    marginTop: 2,
+    ...typography.body,
+    fontSize: 12,
+    marginTop: 1,
   },
   focusedTabLabel: {
-    color: colors.text.blue,
-
+    color: colors.primary,
+    ...typography.bodyMedium,
+    fontSize: 14,
+  },
+  unfocusedTabLabel: {
+    color: colors.text.lightPrayerBlue,
   },
 });
 

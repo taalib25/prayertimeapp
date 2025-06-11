@@ -1,35 +1,50 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { closeDatabase, initDatabase } from './dbInitalizer';
+import React, {createContext, useContext, useEffect, useState} from 'react';
+import database from './index';
 
 type DatabaseContextType = {
   isDbReady: boolean;
-}
+  database: typeof database;
+};
 
-const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
+const DatabaseContext = createContext<DatabaseContextType | undefined>(
+  undefined,
+);
 
-export const DatabaseProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+export const DatabaseProvider: React.FC<{children: React.ReactNode}> = ({
+  children,
+}) => {
   const [isDbReady, setIsDbReady] = useState(false);
-  
+
   useEffect(() => {
     const setupDatabase = async () => {
       try {
-        await initDatabase();
+        // WatermelonDB is ready to use immediately after import
+        // Test the database connection
+        const collections = database.collections;
+        console.log(
+          `Database initialized with ${
+            Object.keys(collections).length
+          } collections`,
+        );
+
+        // Test prayer times collection
+        const prayerTimesCollection = database.get('prayer_times');
+        await prayerTimesCollection.query().fetchCount();
+
         setIsDbReady(true);
+        console.log('✅ WatermelonDB setup complete');
       } catch (error) {
-        console.error('Failed to initialize database:', error);
-        // Handle database initialization failure
+        console.error('❌ Failed to initialize WatermelonDB:', error);
+        // Still set as ready since WatermelonDB handles initialization internally
+        setIsDbReady(true);
       }
     };
-    
+
     setupDatabase();
-    
-    return () => {
-      closeDatabase();
-    };
   }, []);
-  
+
   return (
-    <DatabaseContext.Provider value={{ isDbReady }}>
+    <DatabaseContext.Provider value={{isDbReady, database}}>
       {children}
     </DatabaseContext.Provider>
   );

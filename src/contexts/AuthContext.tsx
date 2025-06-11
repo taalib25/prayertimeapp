@@ -46,7 +46,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       return false;
     } catch (error) {
       console.error('Error checking auth state:', error);
-      // Clear invalid stored data
       await AsyncStorage.removeItem(USER_STORAGE_KEY);
       return false;
     } finally {
@@ -56,20 +55,69 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const login = async (email: string, phoneNumber: string) => {
     try {
+      // Use consistent user ID (1001) for API compatibility
+      const userId = '1001';
+
       const userData: User = {
-        id: Date.now().toString(),
+        id: userId,
         email,
         phoneNumber,
         isVerified: true,
-        name: email.split('@')[0], // Use part before @ as default name
+        name: email.split('@')[0],
         createdAt: new Date().toISOString(),
       };
 
       await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
       setUser(userData);
+      
+      // This part will be replaced by API call that returns user profile data
+      // For now, create dummy data with consistent UID
+      const uid = parseInt(userId);
+      await createUserProfileData(uid, userData);
     } catch (error) {
       console.error('Error during login:', error);
       throw new Error('Failed to save user data');
+    }
+  };
+
+  // Separate function to handle user profile creation (will be replaced by API response handling)
+  const createUserProfileData = async (uid: number, userData: User) => {
+    const userProfileKey = `user_${uid}_profile`;
+    const userGoalsKey = `user_${uid}_goals`;
+    const userSettingsKey = `user_${uid}_settings`;
+
+    const existingProfile = await AsyncStorage.getItem(userProfileKey);
+
+    if (!existingProfile) {
+      // This data structure should match your API response
+      const profile = {
+        username: userData.name || userData.email.split('@')[0],
+        email: userData.email,
+        phoneNumber: userData.phoneNumber,
+        createdAt: userData.createdAt,
+      };
+
+      const defaultGoals = {
+        monthlyZikrGoal: 1000,
+        monthlyQuranPagesGoal: 30,
+        monthlyCharityGoal: 100,
+        monthlyFastingDaysGoal: 15,
+      };
+
+      const defaultSettings = {
+        prayerSettings: 'standard',
+        preferredMadhab: 'hanafi',
+        appLanguage: 'en',
+        theme: 'light',
+        location: 'Cairo, Egypt',
+        masjid: 'Al-Azhar Mosque',
+      };
+
+      await Promise.all([
+        AsyncStorage.setItem(userProfileKey, JSON.stringify(profile)),
+        AsyncStorage.setItem(userGoalsKey, JSON.stringify(defaultGoals)),
+        AsyncStorage.setItem(userSettingsKey, JSON.stringify(defaultSettings)),
+      ]);
     }
   };
 
@@ -79,7 +127,6 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       setUser(null);
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still clear user state even if storage removal fails
       setUser(null);
     }
   };

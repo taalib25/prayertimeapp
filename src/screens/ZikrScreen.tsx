@@ -1,10 +1,24 @@
 import React from 'react';
-import {View, Text, StyleSheet, SafeAreaView, ScrollView} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Button,
+} from 'react-native';
 import {colors, spacing} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../App';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ZikrScreen: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+
   const dailyZikr = {
     title: 'Daily Remembrance',
     subtitle: "Today's Dhikr",
@@ -34,11 +48,37 @@ const ZikrScreen: React.FC = () => {
     console.log(`Selected Zikr ${index + 1}`);
   };
 
+  // const navigateToDatabaseTest = () => {
+  //   navigation.navigate('DatabaseTest');
+  // };
+
   return (
     <SafeAreaView style={styles.container}>
-     <View style={styles.header}>
-          <Text style={styles.headerTitle}>Zikr Screen</Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Zikr Screen</Text>
+      </View>
+      {/* <Button title="Go to Database Test" onPress={navigateToDatabaseTest} /> */}
+      {/* You can add your Zikr content here using MeetingCard or other components */}
+      {/* Example:
+      <ScrollView style={styles.content}>
+        <MeetingCard
+          title={dailyZikr.title}
+          subtitle={dailyZikr.subtitle}
+          persons={dailyZikr.persons}
+          stats={dailyZikr.stats}
+          onCardPress={() => console.log('Daily Zikr card pressed')}
+          onPersonPress={handleZikrPress}
+        />
+        <MeetingCard
+          title={recommendedZikr.title}
+          subtitle={recommendedZikr.subtitle}
+          stats={recommendedZikr.stats}
+          onCardPress={() => console.log('Recommended Zikr card pressed')}
+          // Recommended Zikr might not have individual person press actions
+        />
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+      */}
     </SafeAreaView>
   );
 };
@@ -53,9 +93,8 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: spacing.md,
     justifyContent: 'center',
-  
-    alignItems: 'center',
 
+    alignItems: 'center',
   },
   headerTitle: {
     ...typography.h1,
