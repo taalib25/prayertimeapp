@@ -31,15 +31,7 @@ const Header: React.FC<HeaderProps> = ({
       {/* Content Container */}
       <View style={styles.contentContainer}>
         {/* Location Bar */}
-
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            marginBottom: 16,
-            marginTop: 8,
-          }}>
+        <View style={styles.topRow}>
           <TouchableOpacity style={styles.locationBar}>
             <SvgIcon
               name="map"
@@ -47,17 +39,12 @@ const Header: React.FC<HeaderProps> = ({
               color="#fff"
               style={styles.locationIcon}
             />
-            <Text style={styles.locationText}>{location}</Text>
+            <Text style={styles.locationText} numberOfLines={1}>
+              {location}
+            </Text>
             <View style={styles.chevronIcon} />
           </TouchableOpacity>
-          <Text
-            style={{
-              ...typography.body,
-              color: '#fff',
-              fontSize: 14,
-              marginLeft: 14,
-              justifyContent: 'flex-end',
-            }}>
+          <Text style={styles.dateText} numberOfLines={1}>
             {new Date()
               .toLocaleDateString('en-GB', {
                 day: 'numeric',
@@ -84,12 +71,19 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.greeting}>Assalamu Alaikum!</Text>
-            <Text style={styles.userName}>{userName}</Text>
-            <Text style={styles.welcomeBack}>Welcome Back!</Text>
+            <Text style={styles.greeting} numberOfLines={1}>
+              Assalamu Alaikum!
+            </Text>
+            <Text style={styles.userName} numberOfLines={1}>
+              {userName}
+            </Text>
+            <Text style={styles.welcomeBack} numberOfLines={1}>
+              Welcome Back!
+            </Text>
           </View>
         </View>
         <View style={styles.underline} />
+
         {/* Mosque Info */}
         <View style={styles.mosqueContainer}>
           <SvgIcon
@@ -98,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({
             color={colors.accent}
             style={styles.mosqueIcon}
           />
-          <Text style={styles.mosqueName}>
+          <Text style={styles.mosqueName} numberOfLines={2}>
             {mosqueName}
             {mosqueLocation ? `, ${mosqueLocation}` : ''}
           </Text>
@@ -150,6 +144,15 @@ const styles = StyleSheet.create({
     padding: 16,
     flex: 1,
   },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 8,
+    width: '100%',
+    paddingRight: 60, // Add padding to avoid right-side image
+  },
   locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -157,9 +160,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 20,
-    marginBottom: 16,
-    alignSelf: 'flex-start',
-    marginTop: 8,
+    maxWidth: '55%', // Reduce from 65% to ensure spacing
   },
   locationIcon: {
     marginRight: 6,
@@ -169,6 +170,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginRight: 6,
     fontSize: 14,
+    flexShrink: 1,
+    maxWidth: 120, // Set explicit max width
+  },
+  dateText: {
+   ...typography.bodyMedium,
+              color: '#fff',
+              fontSize: 16,
+              marginLeft: 14,
+              justifyContent: 'flex-start',
   },
   chevronIcon: {
     width: 0,
@@ -188,18 +198,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     marginTop: 8,
+    width: '100%',
+    paddingRight: 80, // Add padding to avoid right-side image
   },
   userInfo: {
     flex: 1,
+    marginRight: 8,
+    maxWidth: '70%', // Limit width to prevent overlap
   },
   greeting: {
     ...typography.h3,
     color: colors.text.dark,
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   userName: {
     ...typography.headerProfile,
     color: '#fff',
     marginBottom: 1,
+    flexShrink: 1,
+    maxWidth: '100%',
+  },
+  welcomeBack: {
+    ...typography.bodyTiny,
+    color: colors.text.secondary,
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   underline: {
     height: 1.5,
@@ -208,10 +232,6 @@ const styles = StyleSheet.create({
     width: '60%',
     borderRadius: 1,
   },
-  welcomeBack: {
-    ...typography.bodyTiny,
-    color: colors.text.secondary,
-  },
   mosqueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,6 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: -4,
     width: '100%',
+    paddingRight: 60, // Add padding to avoid right-side image
   },
   mosqueIcon: {
     marginRight: 12,
@@ -226,7 +247,10 @@ const styles = StyleSheet.create({
   mosqueName: {
     ...typography.bodySmall,
     color: colors.text.dark,
-    width: '55%',
+    flex: 1,
+    marginRight: 8,
+    lineHeight: 18,
+    maxWidth: '75%', // Limit width to prevent overlap
   },
 });
 

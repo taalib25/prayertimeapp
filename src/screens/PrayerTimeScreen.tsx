@@ -20,12 +20,29 @@ import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSel
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
-
+// async function getLocation() {
+//   return GetLocation.getCurrentPosition({
+//     enableHighAccuracy: true,
+//     timeout: 60000,
+// })
+// .then(location => {
+//     console.log(location);
+//     return {
+//       latitude: location.latitude,
+//       longitude: location.longitude,
+//     };
+// })
+// .catch(error => {
+//     const { code, message } = error;
+//     console.warn(code, message);
+// })
+// }
 const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, isLoading: userLoading} = useUser({uid: 1001});
   const isLoading = prayerLoading || userLoading;
+
   console.log('Prayer Times:', user);
   return (
     <View style={styles.safeArea}>
@@ -37,10 +54,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.settings?.location || 'Colombo, LK'}
-          userName={user?.profile?.username || 'Ahmed Hassan'}
-          mosqueName={user?.settings?.masjid || 'Al-Noor Mosque'}
-          mosqueLocation={user?.settings?.location || 'City Center'}
+          location={user?.settings?.location}
+          userName={user?.profile?.username}
+          mosqueName={user?.settings?.masjid}
+          mosqueLocation={user?.settings?.location}
           avatarImage={require('../assets/images/profile.png')}
         />
 
@@ -85,7 +102,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background.profilebg,
-    paddingTop: 20,
+    paddingTop: 0,
     marginBottom: 80,
   },
   scrollContainer: {
