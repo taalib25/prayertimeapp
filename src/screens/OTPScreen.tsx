@@ -147,8 +147,8 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
         preferredMadhab: 'hanafi',
         appLanguage: 'en',
         theme: 'light',
-        location: 'New York, NY',
-        masjid: 'Al-Noor Mosque',
+        location: 'Colombo, LK',
+        masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
       };
 
       // Store user data - this will be replaced by storing API response

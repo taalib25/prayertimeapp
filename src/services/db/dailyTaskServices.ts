@@ -380,22 +380,20 @@ export const checkAndCreateTodayTasks = async (uid: number): Promise<void> => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    console.log(`🔍 Checking for today's tasks: ${today}`);
+    // console.log(`🔍 Checking for today's tasks: ${today}`);
 
     // Check if today's tasks already exist
     const existingTasks = await getDailyTasksForDate(uid, today);
 
     if (existingTasks) {
-      console.log(`✅ Daily tasks already exist for today: ${today}`);
-      console.log(
-        `   - Existing special tasks: ${existingTasks.specialTasks.length} tasks`,
-      );
+      // console.log(`✅ Daily tasks already exist for today: ${today}`);
+      // console.log(
+      //   `   - Existing special tasks: ${existingTasks.specialTasks.length} tasks`,
+      // );
       // Don't create or overwrite - just return
       return;
     }
 
-    // Only create tasks for today if they don't exist
-    console.log(`📝 Creating NEW daily tasks for today: ${today}`);
     const newTasks = await createDailyTasks(uid, today);
     console.log(
       `✅ Created daily tasks for today with ${newTasks.specialTasks.length} special tasks`,
@@ -473,7 +471,7 @@ export const getRecentDailyTasks = async (
     startDate.setDate(startDate.getDate() - (daysBack - 1));
     const startDateStr = startDate.toISOString().split('T')[0];
 
-    console.log(`📊 Fetching recent tasks from ${startDateStr} to ${endDate}`);
+    // console.log(`📊 Fetching recent tasks from ${startDateStr} to ${endDate}`);
 
     // Query for the date range, ordered by date descending (most recent first)
     const tasks = await dailyTasksCollection
@@ -485,7 +483,7 @@ export const getRecentDailyTasks = async (
       )
       .fetch();
 
-    console.log(`📊 Found ${tasks.length} existing task records`);
+    // console.log(`📊 Found ${tasks.length} existing task records`);
 
     // Transform to DailyTaskData format
     const transformedTasks = tasks.map(task => ({
@@ -517,9 +515,9 @@ export const getRecentDailyTasks = async (
     const completeTasks = allDates.map(date => {
       const existingTask = transformedTasks.find(task => task.date === date);
       if (existingTask) {
-        console.log(
-          `📋 Found existing tasks for ${date}: ${existingTask.specialTasks.length} special tasks`,
-        );
+        // console.log(
+        //   `📋 Found existing tasks for ${date}: ${existingTask.specialTasks.length} special tasks`,
+        // );
         return existingTask;
       }
 
@@ -572,11 +570,11 @@ export const getMonthlyTaskData = async (
     const monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0];
     const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
 
-    console.log(
-      `📊 Fetching monthly data for ${year}-${
-        month + 1
-      } (${monthStart} to ${monthEnd})`,
-    );
+    // console.log(
+    //   `📊 Fetching monthly data for ${year}-${
+    //     month + 1
+    //   } (${monthStart} to ${monthEnd})`,
+    // );
 
     // Query tasks for the month
     const monthTasks = await dailyTasksCollection
@@ -588,7 +586,7 @@ export const getMonthlyTaskData = async (
       )
       .fetch();
 
-    console.log(`📊 Found ${monthTasks.length} task records for the month`);
+    // console.log(`📊 Found ${monthTasks.length} task records for the month`);
 
     // Aggregate the data
     let totalZikr = 0;

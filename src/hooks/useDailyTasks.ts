@@ -31,7 +31,7 @@ export const useRecentDailyTasks = ({
       setIsLoading(true);
       setError(null);
 
-      console.log('🔄 Starting fetchRecentTasks...');
+      // console.log('🔄 Starting fetchRecentTasks...');
 
       // Only check and create TODAY's tasks if they don't exist
       const today = new Date().toISOString().split('T')[0];

@@ -30,8 +30,8 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({navigation}) => {
-  const [email, setEmail] = useState('ahmed@test.com'); // Dummy email for testing
-  const [password, setPassword] = useState('password123'); // Dummy password for testing
+  const [email, setEmail] = useState('ahmed@test.com'); 
+  const [password, setPassword] = useState('T@st1234');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
   const {login} = useAuth();
