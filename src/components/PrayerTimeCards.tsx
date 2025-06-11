@@ -153,26 +153,23 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
 
           return (
             <View key={index} style={styles.prayerCardContainer}>
-              <TouchableOpacity
+              <View
                 style={[
                   styles.prayerCard,
                   prayer.isActive && styles.activeCard,
-                ]}
-                onLongPress={() => handleLongPress(prayer)}
-                delayLongPress={800}
-                activeOpacity={0.7}>
+                ]}>
                 <Text style={styles.prayerName}>{prayer.displayName}</Text>
 
                 <View style={styles.iconContainer}>
                   <SvgIcon
                     name={prayer.name.toLowerCase() as IconName}
                     size={22}
-                    color={colors.accent}
+                    // color={colors.accent}
                   />
                 </View>
 
                 <Text style={styles.prayerTime}>{prayer.time}</Text>
-              </TouchableOpacity>
+              </View>
 
               {/* Enhanced Attendance Indicator */}
               <TouchableOpacity
@@ -247,8 +244,8 @@ const styles = StyleSheet.create({
   prayerCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
     width: '100%',
   },
   activeCard: {
