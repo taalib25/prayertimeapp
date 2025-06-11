@@ -76,11 +76,12 @@ function AppNavigator() {
 
   // Initialize background services when authenticated
   useEffect(() => {
-   
-    if (isAuthenticated && !isLoading) {
+   console.log(
+      `Auth state: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
+    if (isAuthenticated && isLoading) {
       console.log(
-      `Auth state changed: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
-      setTimeout(() => initializeUserBackgroundTasks(1001), 500);
+      `asdad adsd Auth state changed: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`);
+      setTimeout(() => initializeUserBackgroundTasks(1001), 700);
     }
   }, [isAuthenticated]);
 

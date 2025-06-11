@@ -39,7 +39,7 @@ interface Props {
 }
 
 const OTPScreen: React.FC<Props> = ({navigation, route}) => {
-  const [phoneNumber, setPhoneNumber] = useState('+1234567890'); // Dummy phone for testing
+  const [phoneNumber, setPhoneNumber] = useState('0762348947'); // Dummy phone for testing
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Phone verification, 2: OTP verification

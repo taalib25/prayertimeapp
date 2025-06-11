@@ -105,31 +105,6 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Test fullscreen call
-  const testFullscreenCall = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-
-      const result = await notificationService.scheduleTestFullscreenCall(
-        1001,
-        5,
-      );
-
-      if (result) {
-        Alert.alert(
-          'Fullscreen Call Scheduled ✅',
-          'A fullscreen call will appear in 5 seconds!',
-        );
-      }
-    } catch (error: any) {
-      console.error('Fullscreen call error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule fullscreen call: ${error?.message || error}`,
-      );
-    }
-  };
-
   // Replace scheduleWeeklyPrayers function with this:
   const initializeDailyPrayers = async () => {
     try {
@@ -211,19 +186,19 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔔 Notification Testing</Text>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
             onPress={initializeDailyPrayers}>
             <Text style={styles.testButtonText}>Setup Daily Prayers</Text>
             <Text style={styles.testButtonSubtext}>
               Smart daily repeating notifications
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
-            style={[styles.testButton, styles.infoButton]}
+            style={[styles.testButton, styles.standardButton]}
             onPress={testSimpleNotification}>
-            <Text style={styles.testButtonText}>Test Simple Notification</Text>
+            <Text style={styles.testButtonText}>Try Simple Notification</Text>
             <Text style={styles.testButtonSubtext}>
               Standard notification in 5 seconds
             </Text>
@@ -231,15 +206,15 @@ const ProfileScreen: React.FC = () => {
           <TouchableOpacity
             style={[styles.testButton, styles.fakeCallButton]}
             onPress={testFakeCallNotification}>
-            <Text style={styles.testButtonText}>Test Fullscreen Call</Text>
+            <Text style={styles.testButtonText}>Try Fake Call</Text>
             <Text style={styles.testButtonSubtext}>
-              Fullscreen call notification in 5 seconds
+              Fake call notification in 5 seconds
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.testButton, styles.infoButton]}
             onPress={viewScheduledNotifications}>
-            <Text style={styles.testButtonText}>View Scheduled</Text>
+            <Text style={styles.testButtonText}>View Notifications</Text>
             <Text style={styles.testButtonSubtext}>
               See all scheduled notifications
             </Text>

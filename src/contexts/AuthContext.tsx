@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
       await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
       setUser(userData);
-
+      
       // This part will be replaced by API call that returns user profile data
       // For now, create dummy data with consistent UID
       const uid = parseInt(userId);

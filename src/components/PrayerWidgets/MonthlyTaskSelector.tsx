@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   },
   paginationDotCurrent: {
     borderWidth: 2,
-    borderColor: colors.text.prayerBlue,
+    borderColor: colors.primary,
     backgroundColor: 'transparent',
   },
   todayContainer: {
@@ -639,11 +639,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-
-  // Remove unused styles
-  // bigNumberContainer, bigNumber, manualEditInput, unitContainer, unitLabel,
-  // pencilButton, pencilIcon, controlsContainer, minusButton, plusButton,
-  // buttonText, numberDisplay, incrementLabel styles are now removed
 });
 
 export default MonthlyChallengeSelector;
