@@ -39,7 +39,7 @@ const ProfileScreen: React.FC = () => {
     stats: [
       {label: 'Attended', value: '4'},
       {label: 'Absent', value: '1'},
-      {label: 'Present %', value: '80%'},
+      {label: 'Excused', value: '2'},
     ],
   };
 
