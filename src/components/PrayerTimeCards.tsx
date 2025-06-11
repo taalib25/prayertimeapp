@@ -245,13 +245,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 1,
     width: '100%',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   activeCard: {
-    borderRadius: 12,
     borderColor: colors.accent,
-    borderWidth: 2,
   },
   prayerName: {
     ...typography.prayerCard,
