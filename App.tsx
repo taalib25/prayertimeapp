@@ -26,7 +26,7 @@ import {
   checkBackgroundTasksHealth,
 } from './src/services/backgroundTasks';
 import {colors} from './src/utils/theme';
-
+import FeedsScreen from './src/screens/FeedsScreen';
 // Types
 export type RootStackParamList = {
   Onboarding: undefined;
@@ -36,6 +36,7 @@ export type RootStackParamList = {
   // DatabaseTest: undefined;
   PrayerChallenge: undefined;
   FakeCallScreen: undefined;
+  Feeds: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -84,19 +85,6 @@ function AppNavigator() {
       setTimeout(() => initializeUserBackgroundTasks(1001), 300);
     }
   }, [isAuthenticated, isLoading]);
-
-  // Background services initialization
-  const initializeBackgroundServices = async () => {
-    const defaultUserId = 1001;
-    try {
-      const isHealthy = await checkBackgroundTasksHealth(defaultUserId);
-      if (!isHealthy) {
-        await initializeUserBackgroundTasks(defaultUserId);
-      }
-    } catch (error) {
-      console.error('Error initializing background services:', error);
-    }
-  };
 
   // Check onboarding status
   const checkOnboardingStatus = async () => {
@@ -158,11 +146,14 @@ function AppNavigator() {
           // Authenticated User Screens
           <Stack.Group>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-            {/* <Stack.Screen
-              name="DatabaseTest"
-              component={DatabaseTestScreen}
-              options={{presentation: 'modal'}}
-            /> */}
+            <Stack.Screen
+              name="Feeds"
+              component={FeedsScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}

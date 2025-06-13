@@ -5,45 +5,32 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
-
-// Import new components
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
+import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
-// async function getLocation() {
-//   return GetLocation.getCurrentPosition({
-//     enableHighAccuracy: true,
-//     timeout: 60000,
-// })
-// .then(location => {
-//     console.log(location);
-//     return {
-//       latitude: location.latitude,
-//       longitude: location.longitude,
-//     };
-// })
-// .catch(error => {
-//     const { code, message } = error;
-//     console.warn(code, message);
-// })
-// }
+
 const PrayerTimeScreen = () => {
+  const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, isLoading: userLoading} = useUser({uid: 1001});
   const isLoading = prayerLoading || userLoading;
 
-  console.log('Prayer Times:', user);
+  const handleSeeAllReminders = () => {
+    navigation.navigate('Feeds' as never);
+  };
+
   return (
     <View style={styles.safeArea}>
       <StatusBar
@@ -75,22 +62,11 @@ const PrayerTimeScreen = () => {
             </View>
 
             <View style={styles.container}>
-              {/* New Today Section */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Daily Reminders</Text>
-                <TouchableOpacity>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Empty cards placeholder */}
-              <View style={styles.emptyCardsRow}>
-                <View style={styles.emptyCard} />
-                <View style={styles.emptyCard} />
-              </View>
-
-              <Text style={styles.seeAllText}>“Remind, indeed reminders benefit the believers”</Text>
-              <Text style={styles.seeAllText}>(Quran 51:55)</Text>
+              {/* Reminder Section */}
+              <ReminderSection
+                maxItems={4}
+                onSeeAllPress={handleSeeAllReminders}
+              />
 
               {/* Section Header for Tasks */}
               <DailyTasksSelector />
@@ -126,8 +102,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 7,
-    marginTop: -195, // Move the container up to overlap with ~20% of the prayer cards
+    marginTop: -195,
     zIndex: 1,
+    paddingBottom: 60,
   },
   loader: {marginTop: 40},
   errorText: {
@@ -136,50 +113,6 @@ const styles = StyleSheet.create({
     color: 'red',
     marginVertical: 20,
     paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginTop: 150,
-    marginVertical: 16,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.primary,
-  },
-  seeAllText: {
-    ...typography.bodyMedium,
-    color: colors.primary,
-    textAlign: 'right',
-  },
-  emptyCardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  emptyCard: {
-    height: 240,
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statsCardsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-  tasksSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    marginTop: 8,
   },
 });
 
