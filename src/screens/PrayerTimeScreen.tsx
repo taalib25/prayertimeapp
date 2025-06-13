@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingTop: 40,
+    paddingTop: 7,
     marginTop: -195, // Move the container up to overlap with ~20% of the prayer cards
     zIndex: 1,
   },

@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     paddingHorizontal: 30,
-    paddingBottom: Platform.OS === 'ios' ? 50 : 30,
+    paddingBottom: Platform.OS === 'ios' ? 50 : 60,
     width: '100%',
   },
   startButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primaryMain,
     borderRadius: 12,
     height: 56,
   },

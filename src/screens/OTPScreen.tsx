@@ -233,7 +233,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 keyboardType="phone-pad"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
-                placeholder="076 543 3423"
+                placeholder="eg :076 543 3423"
               />
               {errors.phoneNumber && (
                 <Text style={styles.errorText}>{errors.phoneNumber}</Text>

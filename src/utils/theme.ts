@@ -1,5 +1,6 @@
 export const colors = {
   primary: '#2C9B28', // Dark green
+  primaryMain: '#40AC34', // Darker green
   primaryLight: '#2E7D32', // Medium green
   accent: '#6DA54F', // Green
   accentLight: '#66BB6A', // Light green
