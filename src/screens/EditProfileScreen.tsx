@@ -14,6 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from '../components/SvgIcon';
 import {colors, spacing, borderRadius} from '../utils/theme';
+import {typography} from '../utils/typography';
 
 interface InputWithLabelProps {
   label: string;
@@ -76,7 +77,7 @@ const EditProfileScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [address, setAddress] = useState('');
-  const [birthday, setBirthday] = useState('');
+  const [dateOfBirth, setdateOfBirth] = useState('');
   const [nearestMasjid, setNearestMasjid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -94,7 +95,7 @@ const EditProfileScreen: React.FC = () => {
         setEmail(userData.email || '');
         setMobile(userData.mobile || '');
         setAddress(userData.address || '');
-        setBirthday(userData.birthday || '');
+        setdateOfBirth(userData.dateOfBirth || '');
         setNearestMasjid(userData.masjid || '');
       }
     } catch (error) {
@@ -117,7 +118,7 @@ const EditProfileScreen: React.FC = () => {
         email: email,
         mobile: mobile,
         address: address,
-        birthday: birthday,
+        dateOfBirth: dateOfBirth,
         masjid: nearestMasjid,
       };
 
@@ -183,8 +184,8 @@ const EditProfileScreen: React.FC = () => {
           />
 
           <DateInput
-            label="Birthday"
-            value={birthday}
+            label="Date Of Birth"
+            value={dateOfBirth}
             onPress={() => {
               // Future: Add date picker functionality
               Alert.alert(
@@ -253,13 +254,12 @@ const styles = StyleSheet.create({
     borderColor: colors.white,
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: '600',
+    ...typography.headerProfile,
     color: colors.text.dark,
     marginBottom: 4,
   },
   memberSince: {
-    fontSize: 14,
+    ...typography.bodySmall,
     color: colors.text.muted,
   },
   formContainer: {
@@ -270,8 +270,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...typography.bodyMedium,
     color: colors.text.dark,
     marginBottom: spacing.sm,
   },
@@ -281,7 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    fontSize: 16,
+    ...typography.body,
     color: colors.text.dark,
     backgroundColor: colors.white,
   },
@@ -301,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   dateText: {
-    fontSize: 16,
+    ...typography.body,
     color: colors.text.dark,
   },
   placeholderText: {
@@ -319,8 +318,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
+    ...typography.button,
     color: colors.white,
-    fontSize: 16,
   },
 });
 
