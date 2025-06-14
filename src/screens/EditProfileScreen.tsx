@@ -123,9 +123,7 @@ const EditProfileScreen: React.FC = () => {
           <View style={styles.profileImageContainer}>
             <Image
               source={
-                profileImage
-                  ? {uri: profileImage}
-                  : require('./assets/default-avatar.png')
+               {uri: profileImage}
               } // Provide a fallback default avatar
               style={styles.profileImage}
             />

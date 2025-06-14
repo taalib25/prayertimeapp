@@ -104,7 +104,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   };
 
   const handleEditProfile = () => {
-    navigation.navigate('EditProfile');
+    navigation.navigate('EditProfileScreen');
   };
 
   const handleNotificationSettings = () => {

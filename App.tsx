@@ -14,6 +14,8 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import OTPScreen from './src/screens/OTPScreen';
 import FakeCallScreen from './src/screens/FakeCallScreen';
+import NotificationScreen from './src/screens/NotificationScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 // import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
@@ -37,6 +39,8 @@ export type RootStackParamList = {
   PrayerChallenge: undefined;
   FakeCallScreen: undefined;
   Feeds: undefined;
+  NotificationScreen: undefined;
+  EditProfileScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -142,13 +146,28 @@ function AppNavigator() {
               />
             )}
           </Stack.Screen>
-        ) : isAuthenticated ? (
-          // Authenticated User Screens
+        ) : isAuthenticated ? ( // Authenticated User Screens
           <Stack.Group>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
             <Stack.Screen
               name="Feeds"
               component={FeedsScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="NotificationScreen"
+              component={NotificationScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="EditProfileScreen"
+              component={EditProfileScreen}
               options={{
                 headerShown: false,
                 presentation: 'card',
