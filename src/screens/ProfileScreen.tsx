@@ -1,329 +1,366 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
+  Image,
   TouchableOpacity,
-  Alert,
-  Pressable,
+  ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
-import {colors, spacing, borderRadius} from '../utils/theme';
-import {typography} from '../utils/typography';
-import MeetingCard from '../components/MeetingCard';
-import UnifiedNotificationService from '../services/UnifiedNotificationService';
-import {useAuth} from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import BadgeCard from '../components/BadgeCard';
+import StatisticRing from '../components/StatisticRing';
+import MenuButton from '../components/MenuButton';
+import SvgIcon from '../components/SvgIcon';
+import {colors} from '../utils/theme';
 
-const ProfileScreen: React.FC = () => {
-  const {logout} = useAuth();
-  // Sample data for the meeting cards
-  const personalizedMeeting = {
-    title: 'Personalized Meeting',
-    subtitle: '3 Days Remaining',
-    persons: [
-      {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
-      {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
-      {name: 'Omar Abdullah  ', phone: '07712345700', completed: false},
-    ],
-    stats: [
-      {label: 'Assigned', value: '3'},
-      {label: 'Completed', value: '1'},
-      {label: 'Remaining', value: '2'},
-    ],
-  };
+interface ProfileScreenProps {
+  navigation: any;
+}
 
-  const meetingAttendance = {
-    title: 'Meeting Attendance',
-    subtitle: 'Last 5 meetings',
-    stats: [
-      {label: 'Attended', value: '4'},
-      {label: 'Absent', value: '1'},
-      {label: 'Excused', value: '2'},
-    ],
-  };
+interface UserProfile {
+  username: string;
+  email: string;
+  profileImage?: string;
+  memberSince: string;
+  location: string;
+  masjid: string;
+}
 
-  const handlePersonPress = (person: any, index: number) => {
-    console.log(`Pressed person ${index + 1}: ${person.phone}`);
-  };
+interface UserStats {
+  fajrCount: number;
+  ishaCount: number;
+  zikriCount: number;
+  quranMinutes: number;
+  badges: Array<{
+    id: string;
+    title: string;
+    icon: string;
+    isEarned: boolean;
+  }>;
+}
 
-  // Test fake call notification (fullscreen)
-  const testFakeCallNotification = async () => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
     try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTestFakeCall(1001, 5);
-      Alert.alert(
-        'Fake Call Scheduled ✅',
-        'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to schedule fake call notification');
-    }
-  };
+      setIsLoading(true);
 
-  // Test prayer notifications for today
-  const testPrayerNotifications = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTodayPrayerNotifications(1001);
+      // Load user profile data
+      const profileData = await AsyncStorage.getItem('userProfile');
+      const statsData = await AsyncStorage.getItem('userStats');
 
-      Alert.alert(
-        'Prayer Notifications Scheduled ✅',
-        'Prayer notifications have been scheduled for today based on your settings!',
-      );
-    } catch (error: any) {
-      console.error('Prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule prayer notifications: ${error?.message || error}`,
-      );
-    }
-  };
-
-  // Test simple notification
-  const testSimpleNotification = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-
-      const result = await notificationService.scheduleTestNotification(
-        1001,
-        5,
-      );
-
-      if (result) {
-        Alert.alert(
-          'Test Notification Scheduled ✅',
-          'A test notification will appear in 5 seconds!',
+      if (profileData) {
+        setUserProfile(JSON.parse(profileData));
+      } else {
+        // Set default user data if none exists
+        const defaultProfile: UserProfile = {
+          username: 'Mohamed Hijaz',
+          email: 'mohamed.hijaz@example.com',
+          memberSince: 'Sep 2024',
+          location: 'Gothatuwa',
+          masjid: 'Masjid Ul Jabbar Jumma Masjid',
+        };
+        setUserProfile(defaultProfile);
+        await AsyncStorage.setItem(
+          'userProfile',
+          JSON.stringify(defaultProfile),
         );
       }
-    } catch (error: any) {
-      console.error('Test notification error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule test notification: ${error?.message || error}`,
-      );
-    }
-  };
 
-  // Replace scheduleWeeklyPrayers function with this:
-  const initializeDailyPrayers = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleDailyPrayerNotifications(1001);
-
-      Alert.alert(
-        'Daily Prayer Notifications Set ✅',
-        'Prayer notifications are now scheduled with daily repeat. They will automatically update when prayer times change!',
-      );
-    } catch (error: any) {
-      console.error('Daily prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to setup daily prayers: ${error?.message || error}`,
-      );
-    }
-  };
-
-  // View scheduled notifications
-  const viewScheduledNotifications = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      const scheduled = await notificationService.getScheduledNotifications();
-
-      const message =
-        scheduled.length > 0
-          ? `Found ${scheduled.length} scheduled notifications:\n\n${scheduled
-              .map(
-                (n: any) =>
-                  `• ${n.notification.title} at ${
-                    'timestamp' in n.trigger
-                      ? new Date(n.trigger.timestamp).toLocaleString()
-                      : 'Scheduled'
-                  }`,
-              )
-              .join('\n')}`
-          : 'No scheduled notifications found';
-
-      Alert.alert('Scheduled Notifications', message);
+      if (statsData) {
+        setUserStats(JSON.parse(statsData));
+      } else {
+        // Set default stats data if none exists
+        const defaultStats: UserStats = {
+          fajrCount: 25,
+          ishaCount: 20,
+          zikriCount: 154,
+          quranMinutes: 300,
+          badges: [
+            {id: '1', title: 'Challenge 40', icon: 'salah', isEarned: true},
+            {id: '2', title: 'Zikr Star', icon: 'prayer-beads', isEarned: true},
+            {id: '3', title: 'Recite Master', icon: 'profile', isEarned: false},
+          ],
+        };
+        setUserStats(defaultStats);
+        await AsyncStorage.setItem('userStats', JSON.stringify(defaultStats));
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to get scheduled notifications');
+      console.error('Error loading user data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Clear all notifications
-  const clearAllNotifications = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.cancelAllNotifications();
-      Alert.alert('Success', 'All notifications cleared!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to clear notifications');
-    }
+  const handleEditProfile = () => {
+    navigation.navigate('EditProfile');
   };
 
+  const handleNotificationSettings = () => {
+    navigation.navigate('NotificationScreen');
+  };
+
+  const handleCallerSettings = () => {
+    navigation.navigate('CallerSettings');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  if (!userProfile || !userStats) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to load profile data</Text>
+        <TouchableOpacity onPress={loadUserData} style={styles.retryButton}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const earnedBadges = userStats.badges.filter(badge => badge.isEarned).length;
+  const totalBadges = userStats.badges.length;
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <ScrollView style={styles.container}>
+        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Image
+            source={
+              userProfile.profileImage
+                ? {uri: userProfile.profileImage}
+                : require('../assets/images/profile.png')
+            }
+            style={styles.profileImage}
+          />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{userProfile.username}</Text>
+            <Text style={styles.memberSince}>
+              Member Since {userProfile.memberSince}
+            </Text>
+            <View style={styles.locationContainer}>
+              <SvgIcon name="masjid" size={16} color="#4CAF50" />
+              <Text style={styles.locationText}>
+                {userProfile.masjid}
+                {'\n'}
+                {userProfile.location}
+              </Text>
+            </View>
+          </View>
         </View>
-
-        <MeetingCard
-          title={personalizedMeeting.title}
-          subtitle={personalizedMeeting.subtitle}
-          persons={personalizedMeeting.persons}
-          stats={personalizedMeeting.stats}
-          onPersonPress={handlePersonPress}
-        />
-
-        <MeetingCard
-          title={meetingAttendance.title}
-          subtitle={meetingAttendance.subtitle}
-          stats={meetingAttendance.stats}
-        />
-
-        {/* Notification Testing Section */}
+        {/* Badges Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔔 Notification Testing</Text>
-
-          {/* <TouchableOpacity
-            style={[styles.testButton, styles.standardButton]}
-            onPress={initializeDailyPrayers}>
-            <Text style={styles.testButtonText}>Setup Daily Prayers</Text>
-            <Text style={styles.testButtonSubtext}>
-              Smart daily repeating notifications
-            </Text>
-          </TouchableOpacity> */}
-
-          <TouchableOpacity
-            style={[styles.testButton, styles.standardButton]}
-            onPress={testSimpleNotification}>
-            <Text style={styles.testButtonText}>Try Simple Notification</Text>
-            <Text style={styles.testButtonSubtext}>
-              Standard notification in 5 seconds
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.testButton, styles.fakeCallButton]}
-            onPress={testFakeCallNotification}>
-            <Text style={styles.testButtonText}>Try Fake Call</Text>
-            <Text style={styles.testButtonSubtext}>
-              Fake call notification in 5 seconds
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.testButton, styles.infoButton]}
-            onPress={viewScheduledNotifications}>
-            <Text style={styles.testButtonText}>View Notifications</Text>
-            <Text style={styles.testButtonSubtext}>
-              See all scheduled notifications
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.testButton, styles.clearButton]}
-            onPress={clearAllNotifications}>
-            <Text style={styles.testButtonText}>Clear All</Text>
-            <Text style={styles.testButtonSubtext}>
-              Cancel all notifications
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.badgesCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                Badges {earnedBadges}/{totalBadges}
+              </Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAll}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.badgesContainer}>
+              {userStats.badges.map(badge => (
+                <BadgeCard
+                  key={badge.id}
+                  icon={badge.icon as any}
+                  title={badge.title}
+                  isEarned={badge.isEarned}
+                />
+              ))}
+            </View>
+          </View>
         </View>
-
-        <Pressable
-          style={styles.logoutButton}
-          onPress={() =>
-            Alert.alert('Logout', 'Are you sure you want to logout?', [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-              },
-              {
-                text: 'Logout',
-                style: 'destructive',
-                onPress: logout,
-              },
-            ])
-          }>
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
-
-        <View style={styles.bottomSpacing} />
+        {/* Statistics Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Statistics</Text>
+          <View style={styles.statisticsGrid}>
+            <StatisticRing
+              title="FAJR Ring"
+              current={userStats.fajrCount}
+              total={30}
+              color="#00BCD4"
+              backgroundColor="#E0F7FA"
+            />
+            <StatisticRing
+              title="ISHA Ring"
+              current={userStats.ishaCount}
+              total={30}
+              color="#00BCD4"
+              backgroundColor="#FFF3E0"
+            />
+            <StatisticRing
+              title="ZIKR Ring"
+              current={userStats.zikriCount}
+              total={18000}
+              color="#00BCD4"
+              backgroundColor="#FCE4EC"
+            />
+            <StatisticRing
+              title="Quran Ring"
+              current={userStats.quranMinutes}
+              total={450}
+              color="#00BCD4"
+              backgroundColor="#E0F2F1"
+              unit="min"
+            />
+          </View>
+        </View>
+        {/* Menu Section */}
+        <View style={styles.section}>
+          <MenuButton title="Edit Information" onPress={handleEditProfile} />
+          <MenuButton
+            title="Notification Settings"
+            onPress={handleNotificationSettings}
+          />
+          <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFF',
+  },
+  container: {
+    paddingTop: 30,
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
-    marginBottom: spacing.md,
-  },
-  headerTitle: {
-    ...typography.h1,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.primary,
-    marginBottom: spacing.md,
-    textAlign: 'center',
-  },
-  testButton: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    padding: 20,
     alignItems: 'center',
+    marginBottom: 16,
   },
-  standardButton: {
-    backgroundColor: colors.primary,
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginRight: 16,
   },
-  fakeCallButton: {
-    backgroundColor: '#FF6B35', // Orange color for fake call
+  userInfo: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  infoButton: {
-    backgroundColor: '#007AFF',
-  },
-  clearButton: {
-    backgroundColor: '#FF6B6B',
-  },
-  testButtonText: {
-    ...typography.button,
-    color: colors.white,
+  userName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 4,
   },
-  testButtonSubtext: {
-    ...typography.caption,
-    color: colors.white,
-    opacity: 0.9,
-    textAlign: 'center',
+  memberSince: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
-  logoutButton: {
-    backgroundColor: colors.error,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+    lineHeight: 16,
+    flex: 1,
+  },
+  section: {
+    marginBottom: 20,
+    paddingHorizontal: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginBottom: 12,
   },
-  logoutText: {
-    ...typography.button,
-    color: colors.white,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  bottomSpacing: {
-    marginBottom: 80,
-    height: spacing.xxl,
+  viewAll: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  badgesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  badgesCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  statisticsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
 });
 

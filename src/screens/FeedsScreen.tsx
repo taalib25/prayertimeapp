@@ -33,7 +33,7 @@ const feedItems: FeedItem[] = [
     id: '1',
     title: 'Morning Dhikr',
     description: 'Start your day with remembrance of Allah',
-    imagePath: require('../assets/images/reminder1.png'),
+    imagePath: require('../assets/images/reminderLarge1.png'),
     category: 'Reminders',
     backgroundColor: '#E8F5FE',
   },
@@ -41,7 +41,7 @@ const feedItems: FeedItem[] = [
     id: '2',
     title: 'Quran Recitation',
     description: '10 minutes of Quran after Fajr prayer',
-    imagePath: require('../assets/images/reminder2.png'),
+    imagePath: require('../assets/images/reminderLarge2.png'),
     category: 'Reminders',
     backgroundColor: '#FFF9C4',
   },
@@ -49,7 +49,7 @@ const feedItems: FeedItem[] = [
     id: '3',
     title: 'When you Miss THE FAJR PRAYER',
     description: 'It is going to be a miserable day with SHAITHAAN',
-    imagePath: require('../assets/images/reminder1.png'),
+    imagePath: require('../assets/images/reminderLarge1.png'),
     category: 'Events',
     backgroundColor: '#673AB7',
   },
@@ -57,7 +57,7 @@ const feedItems: FeedItem[] = [
     id: '4',
     title: 'Evening Duas',
     description: 'Protection duas before sleep',
-    imagePath: require('../assets/images/reminder2.png'),
+    imagePath: require('../assets/images/reminderLarge2.png'),
     category: 'Reminders',
     backgroundColor: '#E3F2FD',
   },
@@ -68,13 +68,11 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const FeedCard: React.FC<{item: FeedItem}> = ({item}) => {
   return (
-    <View style={styles.feedCard}>
-      <Image
+    <Image
         source={item.imagePath}
         style={styles.feedImage}
-        resizeMode="cover" // 'cover' to fill the card, 'contain' to show whole image
+        resizeMode="contain"
       />
-    </View>
   );
 };
 
@@ -192,7 +190,7 @@ const FeedsScreen: React.FC = () => {
           maxToRenderPerBatch={5}
           windowSize={5}
           getItemLayout={(_, index) => ({
-            length: 280, // Approximate height of each item
+            length: 280,
             offset: 280 * index,
             index,
           })}
@@ -291,8 +289,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   feedImage: {
-    width: '100%',
-    height: 180,
+    width: SCREEN_WIDTH - 24,
+    height: '100%',
   },
   feedContent: {
     padding: 16,

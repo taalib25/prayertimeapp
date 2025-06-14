@@ -16,6 +16,9 @@ import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
 import SalahIcon from '../assets/icons/salah.svg';
 import UserIcon from '../assets/icons/profile.svg';
 import callMoon from '../assets/icons/callMoon.svg';
+import CameraIcon from '../assets/icons/camera.svg';
+import CalendarIcon from '../assets/icons/calender.svg';
+import BackBtnIcon from '../assets/icons/backBtn.svg';
 
 export type IconName =
   | 'fajr'
@@ -30,7 +33,10 @@ export type IconName =
   | 'prayer-beads'
   | 'salah'
   | 'profile'
-  | 'callMoon';
+  | 'callMoon'
+  | 'camera'
+  | 'calendar'
+  | 'backBtn';
 
 interface SvgIconProps {
   name: IconName;
@@ -87,6 +93,9 @@ const getIconComponent = (name: IconName) => {
     'prayer-beads': PrayerBeadsIcon,
     profile: UserIcon,
     callMoon: callMoon,
+    camera: CameraIcon,
+    calendar: CalendarIcon,
+    backBtn : BackBtnIcon
   };
 
   return icons[name];
