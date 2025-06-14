@@ -7,18 +7,21 @@ import {
   Image,
   StyleSheet,
   ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SvgIcon from '../components/SvgIcon';
+import {colors, spacing, borderRadius} from '../utils/theme';
 
 interface InputWithLabelProps {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  secureTextEntry?: boolean;
   keyboardType?: any;
-  editable?: boolean;
-  isDate?: boolean;
-  setShowDatePicker?: (visible: boolean) => void;
+  multiline?: boolean;
 }
 
 const InputWithLabel: React.FC<InputWithLabelProps> = ({
@@ -26,52 +29,48 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
   value,
   onChangeText,
   placeholder,
-  secureTextEntry,
   keyboardType,
-  editable = true,
-  isDate,
-  setShowDatePicker,
+  multiline = false,
 }) => {
   return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
-      <View style={styles.inputWrapper}>
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          editable={editable && !isDate} // Ensure editable prop is handled correctly
-        />
-        {isDate && setShowDatePicker && (
-          <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
-            style={styles.dateIcon}>
-            {/* <Icon name="calendar-today" size={24} color="#007bff" /> */}
-            {/* <SvgIcon name="calendar" size={24} color="#007bff" /> */}
-          </TouchableOpacity>
-        )}
-      </View>
+      <TextInput
+        style={[styles.input, multiline && styles.multilineInput]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.text.muted}
+        keyboardType={keyboardType}
+        multiline={multiline}
+        numberOfLines={multiline ? 3 : 1}
+      />
     </View>
   );
 };
 
-interface CustomButtonProps {
+// Custom date input component
+interface DateInputProps {
+  label: string;
+  value: string;
   onPress: () => void;
-  title: string;
 }
 
-const CustomButton: React.FC<CustomButtonProps> = ({onPress, title}) => {
+const DateInput: React.FC<DateInputProps> = ({label, value, onPress}) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
-      <Text style={styles.buttonText}>{title}</Text>
-    </TouchableOpacity>
+    <View style={styles.inputContainer}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <TouchableOpacity style={styles.dateInput} onPress={onPress}>
+        <Text style={[styles.dateText, !value && styles.placeholderText]}>
+          {value || 'Select date'}
+        </Text>
+        <SvgIcon name="calendar" size={20} color={colors.text.muted} />
+      </TouchableOpacity>
+    </View>
   );
 };
 
-// Assuming EditProfileScreen is the main component in this file
+// Main EditProfileScreen component
 const EditProfileScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -79,172 +78,250 @@ const EditProfileScreen: React.FC = () => {
   const [address, setAddress] = useState('');
   const [birthday, setBirthday] = useState('');
   const [nearestMasjid, setNearestMasjid] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [profileImage, setProfileImage] = useState(
-    'https://example.com/default-profile.jpg',
-  );
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data loading - replace with actual API calls
+  // Load user data from AsyncStorage
   useEffect(() => {
-    // Simulate loading user data
-    setName('Mohamed Hijaz');
-    setEmail('user@example.com');
-    setMobile('1234567890');
-    setAddress('123 Main St');
-    setBirthday('01/01/1990');
-    setNearestMasjid('Central Masjid');
-    setProfileImage('https://example.com/profile.jpg');
+    loadUserData();
   }, []);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setBirthday(selectedDate.toLocaleDateString());
+  const loadUserData = async () => {
+    try {
+      const profileData = await AsyncStorage.getItem('userProfile');
+      if (profileData) {
+        const userData = JSON.parse(profileData);
+        setName(userData.username || '');
+        setEmail(userData.email || '');
+        setMobile(userData.mobile || '');
+        setAddress(userData.address || '');
+        setBirthday(userData.birthday || '');
+        setNearestMasjid(userData.masjid || '');
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
     }
   };
 
-  const handleSaveChanges = () => {
-    // Handle saving profile changes
-    console.log('Saving changes:', {
-      name,
-      email,
-      mobile,
-      address,
-      birthday,
-      nearestMasjid,
-    });
-    // API call would go here
+  const handleSaveChanges = async () => {
+    try {
+      setIsLoading(true);
+
+      // Get existing profile data
+      const existingData = await AsyncStorage.getItem('userProfile');
+      const currentData = existingData ? JSON.parse(existingData) : {};
+
+      // Update with new data
+      const updatedProfile = {
+        ...currentData,
+        username: name,
+        email: email,
+        mobile: mobile,
+        address: address,
+        birthday: birthday,
+        masjid: nearestMasjid,
+      };
+
+      await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save changes. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.profileHeader}>
-        <TouchableOpacity onPress={() => {}}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Profile Header */}
+        <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={
-               {uri: profileImage}
-              } // Provide a fallback default avatar
+              source={require('../assets/images/profile.png')}
               style={styles.profileImage}
             />
-            <View style={styles.cameraIconContainer}>
-              {/* <Icon name="photo-camera" size={20} color="#007bff" /> */}
-              {/* <SvgIcon name="camera" size={20} color="#007bff" /> */}
-            </View>
+            <View style={styles.statusIndicator} />
           </View>
+          <Text style={styles.profileName}>Mohamed Hijaz</Text>
+          <Text style={styles.memberSince}>Member Since Sep 2024</Text>
+        </View>
+
+        {/* Form Fields */}
+        <View style={styles.formContainer}>
+          <InputWithLabel
+            label="Name"
+            value={name}
+            onChangeText={setName}
+            placeholder="Enter your full name"
+          />
+
+          <InputWithLabel
+            label="E-mail"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Enter your email address"
+            keyboardType="email-address"
+          />
+
+          <InputWithLabel
+            label="Mobile"
+            value={mobile}
+            onChangeText={setMobile}
+            placeholder="Enter your mobile number"
+            keyboardType="phone-pad"
+          />
+
+          <InputWithLabel
+            label="Address"
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter your address"
+            multiline={true}
+          />
+
+          <DateInput
+            label="Birthday"
+            value={birthday}
+            onPress={() => {
+              // Future: Add date picker functionality
+              Alert.alert(
+                'Date Picker',
+                'Date picker functionality will be added',
+              );
+            }}
+          />
+
+          <InputWithLabel
+            label="Nearest Masjid"
+            value={nearestMasjid}
+            onChangeText={setNearestMasjid}
+            placeholder="Enter nearest masjid name"
+          />
+        </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          onPress={handleSaveChanges}
+          disabled={isLoading}>
+          <Text style={styles.saveButtonText}>
+            {isLoading ? 'Saving...' : 'Save Changes'}
+          </Text>
         </TouchableOpacity>
-      </View>
-
-      <InputWithLabel
-        label="Full Name"
-        value={name}
-        onChangeText={setName}
-        placeholder="Enter your full name"
-      />
-      <InputWithLabel
-        label="Email Address"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Enter your email"
-        keyboardType="email-address"
-      />
-      <InputWithLabel
-        label="Date of Birth"
-        value={birthday}
-        onChangeText={setBirthday} // This might be read-only and set via date picker
-        placeholder="YYYY-MM-DD"
-        isDate={true}
-        setShowDatePicker={setShowDatePicker}
-        editable={false} // Make date field non-editable directly
-      />
-
-      {/* Example of DateTimePickerModal, ensure it's correctly integrated if used
-            {showDatePicker && (
-                <DateTimePickerModal
-                    isVisible={showDatePicker}
-                    mode="date"
-                    onConfirm={onDateConfirm}
-                    onCancel={() => setShowDatePicker(false)}
-                    // date={dob ? new Date(dob) : new Date()} // Set initial date
-                />
-            )}
-            */}
-
-      <CustomButton title="Save Changes" onPress={handleSaveChanges} />
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
   container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: '#f8f9fa',
+    flex: 1,
+    backgroundColor: colors.white,
   },
   profileHeader: {
     alignItems: 'center',
-    marginVertical: 20,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: colors.white,
   },
   profileImageContainer: {
-    marginBottom: 10,
     position: 'relative',
+    marginBottom: spacing.md,
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: '#007bff',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.background.light,
   },
-  cameraIconContainer: {
+  statusIndicator: {
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.success,
+    borderWidth: 3,
+    borderColor: colors.white,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text.dark,
+    marginBottom: 4,
+  },
+  memberSince: {
+    fontSize: 14,
+    color: colors.text.muted,
+  },
+  formContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   inputLabel: {
     fontSize: 16,
-    color: '#495057',
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ced4da',
-    borderRadius: 8,
+    fontWeight: '500',
+    color: colors.text.dark,
+    marginBottom: spacing.sm,
   },
   input: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     fontSize: 16,
-    color: '#495057',
+    color: colors.text.dark,
+    backgroundColor: colors.white,
   },
-  dateIcon: {
-    padding: 10,
+  multilineInput: {
+    height: 80,
+    textAlignVertical: 'top',
   },
-  button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    borderRadius: 8,
+  dateInput: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    justifyContent: 'space-between',
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.white,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  dateText: {
+    fontSize: 16,
+    color: colors.text.dark,
   },
-  // Add any other styles your component uses
+  placeholderText: {
+    color: colors.text.muted,
+  },
+  saveButton: {
+    backgroundColor: colors.text.muted,
+    marginHorizontal: spacing.lg,
+    marginVertical: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    color: colors.white,
+    fontSize: 16,
+  },
 });
 
 export default EditProfileScreen;
