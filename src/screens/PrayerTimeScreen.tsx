@@ -6,6 +6,8 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Alert,
+  TouchableOpacity,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 
@@ -28,6 +30,8 @@ const PrayerTimeScreen = () => {
   const isLoading = prayerLoading || userLoading;
 
   const handleSeeAllReminders = () => {
+    console.log('See All Reminders Pressed');
+    Alert.alert('Feature Under Development');
     navigation.navigate('Feeds' as never);
   };
 
@@ -62,6 +66,17 @@ const PrayerTimeScreen = () => {
             </View>
 
             <View style={styles.container}>
+              {/* Section Header for Reminders - moved from ReminderSection */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Daily Reminders</Text>
+                <TouchableOpacity
+                  onPress={handleSeeAllReminders}
+                  style={styles.seeAllButton}
+                  activeOpacity={0.7}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Reminder Section */}
               <ReminderSection
                 maxItems={4}
@@ -105,6 +120,27 @@ const styles = StyleSheet.create({
     marginTop: -195,
     zIndex: 1,
     paddingBottom: 60,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginTop: 120,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: colors.primary,
+  },
+  seeAllButton: {
+    padding: 8,
+    borderRadius: 6,
+  },
+  seeAllText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
+    fontWeight: '600',
   },
   loader: {marginTop: 40},
   errorText: {

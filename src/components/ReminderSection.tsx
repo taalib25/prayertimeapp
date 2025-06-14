@@ -28,7 +28,8 @@ interface ReminderSectionProps {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = SCREEN_WIDTH * 0.47; // Reduced to 60% to show multiple cards
+const CARD_HEIGHT = 200; // Use height instead of width for sizing
+const CARD_SPACING = 0; // No spacing - cards touching each other
 
 // Mock API service
 const reminderApi = {
@@ -141,9 +142,6 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily Reminders</Text>
-        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.loadingText}>Loading reminders...</Text>
@@ -155,9 +153,6 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily Reminders</Text>
-        </View>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadReminders}>
@@ -171,9 +166,6 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   if (reminders.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily Reminders</Text>
-        </View>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No reminders available</Text>
         </View>
@@ -183,16 +175,6 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Daily Reminders</Text>
-        <TouchableOpacity
-          onPress={handleSeeAllPress}
-          style={styles.seeAllButton}
-          activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
-      </View>
-
       <View style={styles.remindersContainer}>
         <FlatList
           data={reminders}
@@ -203,10 +185,7 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.remindersList}
-          snapToAlignment="start"
-          decelerationRate="normal"
-          snapToInterval={CARD_WIDTH + 8}
-          pagingEnabled={false}
+          decelerationRate="fast"
         />
       </View>
 
@@ -220,55 +199,30 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 120,
     marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginVertical: 16,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.primary,
-  },
-  seeAllButton: {
-    padding: 8,
-    borderRadius: 6,
-  },
-  seeAllText: {
-    ...typography.bodyMedium,
-    color: colors.primary,
-    textAlign: 'left',
-    fontWeight: '600',
   },
   remindersContainer: {
     marginBottom: 20,
   },
   remindersList: {
-    paddingLeft: 0,
-    paddingRight: 0,
+    paddingHorizontal: 16,
   },
   reminderCard: {
-    width: CARD_WIDTH,
-    height: 180,
-    marginRight: 0, // Reduced margin for closer spacing
+    height: CARD_HEIGHT,
     borderRadius: 15,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    overflow: 'hidden',
+    marginRight: CARD_SPACING,
   },
   reminderImage: {
-    width: '100%',
     height: '100%',
+    aspectRatio: 1, // Keeps square aspect ratio based on height
     borderRadius: 15,
   },
   quoteText: {
-    ...typography.bodyMedium,
+    ...typography.h3,
+    fontSize: 16,
     color: colors.primary,
     textAlign: 'right',
-    marginTop: 10,
   },
   quoteSource: {
     ...typography.bodyMedium,
