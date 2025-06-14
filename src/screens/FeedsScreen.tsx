@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   ListRenderItem,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {colors} from '../utils/theme';
@@ -62,6 +63,21 @@ const feedItems: FeedItem[] = [
   },
 ];
 
+const CARD_BORDER_RADIUS = 8; // Less rounded
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+const FeedCard: React.FC<{item: FeedItem}> = ({item}) => {
+  return (
+    <View style={styles.feedCard}>
+      <Image
+        source={item.imagePath}
+        style={styles.feedImage}
+        resizeMode="cover" // 'cover' to fill the card, 'contain' to show whole image
+      />
+    </View>
+  );
+};
+
 const FeedsScreen: React.FC = () => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
@@ -100,19 +116,7 @@ const FeedsScreen: React.FC = () => {
       <TouchableOpacity
         style={[styles.feedItem, {backgroundColor: item.backgroundColor}]}
         activeOpacity={0.9}>
-        <Image
-          source={item.imagePath}
-          style={styles.feedImage}
-          resizeMode="cover"
-          // // Add default image placeholder to prevent layout shifts
-          // defaultSource={require('../assets/images/placeholder.png')}
-        />
-        <View style={styles.feedContent}>
-          <Text style={styles.feedTitle}>{item.title}</Text>
-          <Text style={styles.feedDescription} numberOfLines={3}>
-            {item.description}
-          </Text>
-        </View>
+       <FeedCard item={item} />
       </TouchableOpacity>
     ),
     [],
@@ -310,6 +314,19 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.text.secondary,
+  },
+  feedCard: {
+    height: 250, // Example height for feed cards
+    width: '100%', // Full width
+    borderRadius: CARD_BORDER_RADIUS, // Less rounded
+    overflow: 'hidden',
+    marginBottom: 16, // Spacing between cards
+    backgroundColor: colors.background.light, // Placeholder background
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: CARD_BORDER_RADIUS / 2, // Softer shadow
   },
 });
 
