@@ -15,6 +15,7 @@ import HomeIcon from '../assets/icons/home.svg';
 import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
 import SalahIcon from '../assets/icons/salah.svg';
 import UserIcon from '../assets/icons/profile.svg';
+import callMoon from '../assets/icons/callMoon.svg';
 
 export type IconName =
   | 'fajr'
@@ -28,7 +29,8 @@ export type IconName =
   | 'home'
   | 'prayer-beads'
   | 'salah'
-  | 'profile';
+  | 'profile'
+  | 'callMoon';
 
 interface SvgIconProps {
   name: IconName;
@@ -84,6 +86,7 @@ const getIconComponent = (name: IconName) => {
     salah: SalahIcon,
     'prayer-beads': PrayerBeadsIcon,
     profile: UserIcon,
+    callMoon: callMoon,
   };
 
   return icons[name];

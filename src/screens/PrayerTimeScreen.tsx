@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 
@@ -21,6 +22,12 @@ import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
+import CallWidget from '../components/CallWidget';
+
+const handleCallPreferenceSet = (preference: boolean) => {
+  console.log('Call preference set:', preference);
+  // Handle the call preference here
+};
 
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
@@ -31,7 +38,6 @@ const PrayerTimeScreen = () => {
 
   const handleSeeAllReminders = () => {
     console.log('See All Reminders Pressed');
-    Alert.alert('Feature Under Development');
     navigation.navigate('Feeds' as never);
   };
 
@@ -69,14 +75,17 @@ const PrayerTimeScreen = () => {
               {/* Section Header for Reminders - moved from ReminderSection */}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Daily Reminders</Text>
-                <TouchableOpacity
+                <Pressable
                   onPress={handleSeeAllReminders}
-                  style={styles.seeAllButton}
-                  activeOpacity={0.7}>
+                  style={styles.seeAllButton}>
                   <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
-
+ <Pressable
+                  onPress={handleSeeAllReminders}
+                  style={styles.seeAllButton}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </Pressable>
               {/* Reminder Section */}
               <ReminderSection
                 maxItems={4}
@@ -107,7 +116,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   prayerCardsContainer: {
-    zIndex: 2,
+    zIndex: 10, // Highest zIndex to be on top of everything
+    elevation: 10, // Corresponding elevation for Android
     marginHorizontal: 16,
     marginTop: -25,
     position: 'relative',
@@ -117,24 +127,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 7,
-    marginTop: -195,
-    zIndex: 1,
+    marginTop: -195, // Maintained original marginTop for UI consistency
+    zIndex: 1, // Lower zIndex, content will be under prayerCardsContainer
+    elevation: 1, // Corresponding elevation for Android
     paddingBottom: 60,
+    position: 'relative', // Added for robust zIndex behavior
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginTop: 120,
+    paddingHorizontal: 16, // Maintained original paddingHorizontal
+    marginTop: 150, // Maintained original marginTop
     marginBottom: 16,
+    zIndex: 2, // zIndex relative to parent 'container'
+    position: 'relative',
+    elevation: 2, // zIndex relative to parent 'container'
   },
   sectionTitle: {
     ...typography.h3,
     color: colors.primary,
   },
   seeAllButton: {
-    padding: 8,
+    padding: 8, // Maintained original padding
     borderRadius: 6,
   },
   seeAllText: {
