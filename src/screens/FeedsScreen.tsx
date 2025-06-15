@@ -16,6 +16,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import SvgIcon from '../components/SvgIcon';
 
 interface FeedItem {
   id: string;
@@ -63,16 +64,15 @@ const feedItems: FeedItem[] = [
   },
 ];
 
-const CARD_BORDER_RADIUS = 8; // Less rounded
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const FeedCard: React.FC<{item: FeedItem}> = ({item}) => {
   return (
     <Image
-        source={item.imagePath}
-        style={styles.feedImage}
-        resizeMode="contain"
-      />
+      source={item.imagePath}
+      style={styles.feedImage}
+      resizeMode="contain"
+    />
   );
 };
 
@@ -107,14 +107,11 @@ const FeedsScreen: React.FC = () => {
   const handleBackPress = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
-
   // Optimized render item function with useCallback to avoid recreating on each render
   const renderFeedItem: ListRenderItem<FeedItem> = useCallback(
     ({item}) => (
-      <TouchableOpacity
-        style={[styles.feedItem, {backgroundColor: item.backgroundColor}]}
-        activeOpacity={0.9}>
-       <FeedCard item={item} />
+      <TouchableOpacity style={styles.feedItem} activeOpacity={0.9}>
+        <FeedCard item={item} />
       </TouchableOpacity>
     ),
     [],
@@ -159,12 +156,16 @@ const FeedsScreen: React.FC = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.iconButton} onPress={handleBackPress}>
+          <View style={styles.squareIconContainer}>
+            <SvgIcon name="backBtn" size={25} color="#333" />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Feeds</Text>
-        <TouchableOpacity style={styles.searchButton}>
-          <Text style={styles.searchButtonText}>🔍</Text>
+        <TouchableOpacity style={styles.iconButton}>
+          <View style={styles.squareIconContainer}>
+            <SvgIcon name="search" size={25} color="#333" />
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -189,11 +190,6 @@ const FeedsScreen: React.FC = () => {
           initialNumToRender={4}
           maxToRenderPerBatch={5}
           windowSize={5}
-          getItemLayout={(_, index) => ({
-            length: 280,
-            offset: 280 * index,
-            index,
-          })}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No {selectedCategory} found</Text>
@@ -209,6 +205,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    paddingTop: 28, // Added for status bar margin
   },
   header: {
     flexDirection: 'row',
@@ -221,23 +218,19 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     ...typography.h3,
-    color: colors.text.dark,
+    color: colors.text.black,
     textAlign: 'center',
   },
-  backButton: {
-    padding: 8,
+  iconButton: {
+    padding: 4,
   },
-  backButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.dark,
-  },
-  searchButton: {
-    padding: 8,
-  },
-  searchButtonText: {
-    fontSize: 20,
-    color: colors.text.dark,
+  squareIconContainer: {
+    width: 36,
+    height: 36,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryContainer: {
     borderBottomWidth: 1,
@@ -282,15 +275,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   feedImage: {
-    width: SCREEN_WIDTH - 24,
-    height: '100%',
+    width: SCREEN_WIDTH-2,
+    height: undefined,
+    aspectRatio: 1, // Adjust this ratio based on your image dimensions
   },
   feedContent: {
     padding: 16,
@@ -312,19 +301,6 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.text.secondary,
-  },
-  feedCard: {
-    height: 250, // Example height for feed cards
-    width: '100%', // Full width
-    borderRadius: CARD_BORDER_RADIUS, // Less rounded
-    overflow: 'hidden',
-    marginBottom: 16, // Spacing between cards
-    backgroundColor: colors.background.light, // Placeholder background
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: CARD_BORDER_RADIUS / 2, // Softer shadow
   },
 });
 

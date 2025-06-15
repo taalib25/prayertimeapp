@@ -25,6 +25,7 @@ export const colors = {
     blue: '#3C4A9B', // Blue for links and highlights
     prayerBlue: '#29476F', // Prayer blue
     lightPrayerBlue: '#A2A2A2', // Prayer blue
+    black :'#242424'
   },
   background: {
     dark: '#135719E5', // Dark forest green

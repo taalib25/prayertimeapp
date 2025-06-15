@@ -21,6 +21,7 @@ import CalendarIcon from '../assets/icons/calender.svg';
 import BackBtnIcon from '../assets/icons/backBtn.svg';
 import MosqueIcon from '../assets/icons/mosque.svg';
 import QuranIcon from '../assets/icons/quran.svg';
+import SearchIcon from '../assets/icons/search.svg';
 
 export type IconName =
   | 'fajr'
@@ -40,7 +41,8 @@ export type IconName =
   | 'callMoon'
   | 'camera'
   | 'calendar'
-  | 'backBtn';
+  | 'backBtn'
+  | 'search';
 
 interface SvgIconProps {
   name: IconName;
@@ -102,6 +104,7 @@ const getIconComponent = (name: IconName) => {
     camera: CameraIcon,
     calendar: CalendarIcon,
     backBtn: BackBtnIcon,
+    search: SearchIcon,
   };
 
   return icons[name];
