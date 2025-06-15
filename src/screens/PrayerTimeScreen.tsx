@@ -81,11 +81,11 @@ const PrayerTimeScreen = () => {
                   <Text style={styles.seeAllText}>See All</Text>
                 </Pressable>
               </View>
- <Pressable
-                  onPress={handleSeeAllReminders}
-                  style={styles.seeAllButton}>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </Pressable>
+              <Pressable
+                onPress={handleSeeAllReminders}
+                style={styles.seeAllButton}>
+                <Text style={styles.seeAllText}>See All</Text>
+              </Pressable>
               {/* Reminder Section */}
               <ReminderSection
                 maxItems={4}
@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background.profilebg,
     paddingTop: 0,
-    marginBottom: 80,
   },
   scrollContainer: {
     flex: 1,
@@ -130,7 +129,7 @@ const styles = StyleSheet.create({
     marginTop: -195, // Maintained original marginTop for UI consistency
     zIndex: 1, // Lower zIndex, content will be under prayerCardsContainer
     elevation: 1, // Corresponding elevation for Android
-    paddingBottom: 60,
+    paddingBottom: 140, // Increased padding to account for tab bar
     position: 'relative', // Added for robust zIndex behavior
   },
   sectionHeader: {
