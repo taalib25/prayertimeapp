@@ -191,7 +191,6 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
 
       // Step 3: Login user
       await login(email, phoneNumber);
-
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);
@@ -217,7 +216,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 style={styles.logo}
                 resizeMode="contain"
               /> */}
-              <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
               <Text style={styles.title}>Verify your phone number</Text>
               <Text style={styles.subtitle}>
                 Enter your phone number to receive a verification code
@@ -251,7 +250,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           {/* OTP Verification Step */}
           {step === 2 && (
             <View>
-              <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
               <Text style={styles.title}>OTP Verification</Text>
               <Text
                 style={[
@@ -263,7 +262,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                     color: colors.text.dark,
                   },
                 ]}>
-                We've sent a code to{' '}
+                We've sent a code to
                 <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
               </Text>
               <View style={styles.otpContainer}>
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   logo: {
-   width: 100,
+    width: 100,
     height: 100,
     marginBottom: 40,
     marginLeft: -35,

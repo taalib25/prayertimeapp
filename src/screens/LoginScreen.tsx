@@ -31,7 +31,7 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({navigation}) => {
-  const [email, setEmail] = useState('ahmed@test.com'); 
+  const [email, setEmail] = useState('ahmed@test.com');
   const [password, setPassword] = useState('T@st1234');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
@@ -88,7 +88,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
                 style={styles.logo}
                 resizeMode="contain"
               /> */}
-                <SvgIcon name="fajrlogo" size={160} style={styles.logo}/>
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
               <Text style={styles.title}>Assalamu Alaikum!</Text>
               <Text style={styles.subtitle}>
                 Please login to access your account
@@ -128,7 +128,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
                 style={styles.loginButton}
               />
               <Text style={styles.registerText}>
-                Don't have an account?{' '}
+                Don't have an account?
                 <Text style={styles.registerLink}>Register Now</Text>
               </Text>
             </View>

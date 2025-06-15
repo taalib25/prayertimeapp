@@ -3,14 +3,16 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Image,
   StyleSheet,
   ScrollView,
   SafeAreaView,
   StatusBar,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from '../components/SvgIcon';
 import {colors, spacing, borderRadius} from '../utils/theme';
@@ -23,6 +25,7 @@ interface InputWithLabelProps {
   placeholder?: string;
   keyboardType?: any;
   multiline?: boolean;
+  error?: string;
 }
 
 const InputWithLabel: React.FC<InputWithLabelProps> = ({
@@ -32,12 +35,17 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
   placeholder,
   keyboardType,
   multiline = false,
+  error,
 }) => {
   return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
-        style={[styles.input, multiline && styles.multilineInput]}
+        style={[
+          styles.input,
+          multiline && styles.multilineInput,
+          error && styles.inputError,
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -46,6 +54,7 @@ const InputWithLabel: React.FC<InputWithLabelProps> = ({
         multiline={multiline}
         numberOfLines={multiline ? 3 : 1}
       />
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -61,13 +70,35 @@ const DateInput: React.FC<DateInputProps> = ({label, value, onPress}) => {
   return (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
-      <TouchableOpacity style={styles.dateInput} onPress={onPress}>
+      <Pressable
+        style={({pressed}) => [
+          styles.dateInput,
+          pressed && styles.pressedState,
+        ]}
+        onPress={onPress}>
         <Text style={[styles.dateText, !value && styles.placeholderText]}>
           {value || 'Select date'}
         </Text>
         <SvgIcon name="calendar" size={20} color={colors.text.muted} />
-      </TouchableOpacity>
+      </Pressable>
     </View>
+  );
+};
+
+// Loading dots component
+const LoadingDots: React.FC = () => {
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount(prev => (prev + 1) % 4);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Text style={styles.saveButtonText}>Saving{'.'.repeat(dotCount)}</Text>
   );
 };
 
@@ -80,6 +111,12 @@ const EditProfileScreen: React.FC = () => {
   const [dateOfBirth, setdateOfBirth] = useState('');
   const [nearestMasjid, setNearestMasjid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // Date picker states
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Validation states
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   // Load user data from AsyncStorage
   useEffect(() => {
@@ -97,21 +134,135 @@ const EditProfileScreen: React.FC = () => {
         setAddress(userData.address || '');
         setdateOfBirth(userData.dateOfBirth || '');
         setNearestMasjid(userData.masjid || '');
+
+        // Set initial date for picker if dateOfBirth exists
+        if (userData.dateOfBirth) {
+          const parsedDate = new Date(userData.dateOfBirth);
+          if (!isNaN(parsedDate.getTime())) {
+            setSelectedDate(parsedDate);
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);
     }
   };
 
+  // Handle date picker change
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+
+    if (selectedDate) {
+      setSelectedDate(selectedDate);
+      // Format date as string for display
+      const formattedDate = selectedDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      setdateOfBirth(formattedDate);
+    }
+  }; // Show date picker
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  // Handle profile picture update
+  const handleProfilePictureUpdate = () => {
+    Alert.alert(
+      'Update Profile Picture',
+      'Choose an option',
+      [
+        {
+          text: 'Camera',
+          onPress: () => {
+            // Future: Implement camera functionality
+            Alert.alert('Camera', 'Camera functionality will be implemented');
+          },
+        },
+        {
+          text: 'Gallery',
+          onPress: () => {
+            // Future: Implement gallery functionality
+            Alert.alert('Gallery', 'Gallery functionality will be implemented');
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateMobile = (mobile: string): boolean => {
+    const mobileRegex = /^[+]?[0-9]{10,15}$/;
+    return mobileRegex.test(mobile.replace(/\s/g, ''));
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: {[key: string]: string} = {};
+
+    // Name validation
+    if (!name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
+    }
+
+    // Email validation
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Mobile validation
+    if (!mobile.trim()) {
+      newErrors.mobile = 'Mobile number is required';
+    } else if (!validateMobile(mobile)) {
+      newErrors.mobile = 'Please enter a valid mobile number (10-15 digits)';
+    }
+
+    // Address validation
+    if (!address.trim()) {
+      newErrors.address = 'Address is required';
+    } else if (address.trim().length < 10) {
+      newErrors.address = 'Address must be at least 10 characters';
+    }
+
+    // Masjid validation
+    if (!nearestMasjid.trim()) {
+      newErrors.nearestMasjid = 'Nearest masjid is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   const handleSaveChanges = async () => {
+    // Clear previous errors
+    setErrors({});
+
+    // Validate form before saving
+    if (!validateForm()) {
+      setIsLoading(false);
+      Alert.alert('Validation Error', 'Please fix the errors and try again.');
+      return;
+    }
+
     try {
       setIsLoading(true);
 
       // Get existing profile data
       const existingData = await AsyncStorage.getItem('userProfile');
-      const currentData = existingData ? JSON.parse(existingData) : {};
-
-      // Update with new data
+      const currentData = existingData ? JSON.parse(existingData) : {}; // Update with new data
       const updatedProfile = {
         ...currentData,
         username: name,
@@ -144,12 +295,18 @@ const EditProfileScreen: React.FC = () => {
               source={require('../assets/images/profile.png')}
               style={styles.profileImage}
             />
-            <View style={styles.statusIndicator} />
+            <Pressable
+              style={({pressed}) => [
+                styles.cameraButton,
+                pressed && styles.pressedState,
+              ]}
+              onPress={handleProfilePictureUpdate}>
+              <SvgIcon name="camera" size={16} color={colors.white} />
+            </Pressable>
           </View>
           <Text style={styles.profileName}>Mohamed Hijaz</Text>
           <Text style={styles.memberSince}>Member Since Sep 2024</Text>
         </View>
-
         {/* Form Fields */}
         <View style={styles.formContainer}>
           <InputWithLabel
@@ -157,61 +314,69 @@ const EditProfileScreen: React.FC = () => {
             value={name}
             onChangeText={setName}
             placeholder="Enter your full name"
+            error={errors.name}
           />
-
           <InputWithLabel
             label="E-mail"
             value={email}
             onChangeText={setEmail}
             placeholder="Enter your email address"
             keyboardType="email-address"
+            error={errors.email}
           />
-
           <InputWithLabel
             label="Mobile"
             value={mobile}
             onChangeText={setMobile}
             placeholder="Enter your mobile number"
             keyboardType="phone-pad"
+            error={errors.mobile}
           />
-
           <InputWithLabel
             label="Address"
             value={address}
             onChangeText={setAddress}
             placeholder="Enter your address"
             multiline={true}
+            error={errors.address}
           />
-
           <DateInput
             label="Date Of Birth"
             value={dateOfBirth}
-            onPress={() => {
-              // Future: Add date picker functionality
-              Alert.alert(
-                'Date Picker',
-                'Date picker functionality will be added',
-              );
-            }}
+            onPress={showDatePickerModal}
           />
-
+          {/* Date Picker Modal */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onDateChange}
+              maximumDate={new Date()}
+            />
+          )}
           <InputWithLabel
             label="Nearest Masjid"
             value={nearestMasjid}
             onChangeText={setNearestMasjid}
             placeholder="Enter nearest masjid name"
+            error={errors.nearestMasjid}
           />
         </View>
-
         {/* Save Button */}
-        <TouchableOpacity
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+        <Pressable
+          style={({pressed}) => [
+            styles.saveButton,
+            isLoading && styles.saveButtonDisabled,
+            pressed && !isLoading && styles.pressedState,
+          ]}
           onPress={handleSaveChanges}
           disabled={isLoading}>
           <Text style={styles.saveButtonText}>
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? <LoadingDots /> : 'Save Changes'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
+        <View style={{height: spacing.xl}} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -224,6 +389,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    paddingTop: 30,
     backgroundColor: colors.white,
   },
   profileHeader: {
@@ -320,6 +486,40 @@ const styles = StyleSheet.create({
   saveButtonText: {
     ...typography.button,
     color: colors.white,
+  },
+  pressedState: {
+    opacity: 0.8,
+    transform: [{scale: 0.98}],
+  },
+  inputError: {
+    borderColor: colors.error || '#FF6B6B',
+    borderWidth: 2,
+  },
+  errorText: {
+    ...typography.bodyTiny,
+    color: colors.error || '#FF6B6B',
+    marginTop: 4,
+  },
+  cameraButton: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 
