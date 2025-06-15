@@ -199,13 +199,13 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    // marginBottom: 10,
   },
   remindersContainer: {
     marginBottom: 20,
   },
   remindersList: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   reminderCard: {
     height: CARD_HEIGHT,
