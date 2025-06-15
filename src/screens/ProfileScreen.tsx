@@ -236,7 +236,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               Member Since {userProfile.memberSince}
             </Text>
             <View style={styles.locationContainer}>
-              <SvgIcon name="masjid" size={16} color="#4CAF50" />
+              <SvgIcon name="masjid" size={30} color="#4CAF50" />
               <Text style={styles.locationText}>
                 {userProfile.masjid}
                 {'\n'}
@@ -248,15 +248,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         {/* Badges Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>/{totalBadges}
-                </Text>
-              <TouchableOpacity>
-                <Text style={styles.viewAll}>View All</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.sectionTitle}>
+              Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>
+              /{totalBadges}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAll}>View All</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.badgesCard}>
-            
             <View style={styles.badgesContainer}>
               {userStats.badges.map(badge => (
                 <BadgeCard
@@ -326,6 +326,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
         </View>
+        <View style={{height: 20}} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -374,23 +375,27 @@ const styles = StyleSheet.create({
   retryText: {
     ...typography.button,
     color: '#FFF',
-  },  header: {
+  },
+  header: {
     backgroundColor: '#FFF',
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    marginBottom: 7,
+    marginLeft: '10%',
   },
   profileImage: {
-    width: 80,
-    height: 80,
+    width: 90,
+    height: 90,
     borderRadius: 40,
     marginRight: 16,
   },
   userInfo: {
     flex: 1,
     justifyContent: 'center',
-  },  userName: {
+  },
+  userName: {
     ...typography.headerProfile,
     color: '#333',
     marginBottom: 4,
@@ -410,12 +415,12 @@ const styles = StyleSheet.create({
   locationText: {
     ...typography.caption,
     color: '#666',
-    marginLeft: 4,
+    marginLeft: 6,
     textAlign: 'left',
   },
   section: {
     marginBottom: 20,
-    marginTop: 16,
+    marginTop: 10,
     paddingHorizontal: 16,
   },
   sectionHeader: {
