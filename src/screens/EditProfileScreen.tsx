@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useNavigation} from '@react-navigation/native';
 import SvgIcon from '../components/SvgIcon';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
@@ -104,6 +105,7 @@ const LoadingDots: React.FC = () => {
 
 // Main EditProfileScreen component
 const EditProfileScreen: React.FC = () => {
+  const navigation = useNavigation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -111,6 +113,7 @@ const EditProfileScreen: React.FC = () => {
   const [dateOfBirth, setdateOfBirth] = useState('');
   const [nearestMasjid, setNearestMasjid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+ 
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -283,10 +286,21 @@ const EditProfileScreen: React.FC = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <Pressable
+          style={({pressed}) => [
+            styles.backButton,
+            pressed && styles.pressedState,
+          ]}
+          onPress={() => navigation.goBack()}>
+          <SvgIcon name="backBtn" size={28} color={colors.text.dark} />
+        </Pressable>
+      </View>
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
@@ -301,7 +315,7 @@ const EditProfileScreen: React.FC = () => {
                 pressed && styles.pressedState,
               ]}
               onPress={handleProfilePictureUpdate}>
-              <SvgIcon name="camera" size={16} color={colors.white} />
+              <SvgIcon name="camera" size={20} color={colors.white} />
             </Pressable>
           </View>
           <Text style={styles.profileName}>Mohamed Hijaz</Text>
@@ -504,22 +518,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 5,
     right: 5,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.white,
+  },
+  backButton: {
+    width: 48,
+    paddingTop: spacing.xxl,
+    height: 48,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    borderRadius: 24,
   },
 });
 
