@@ -21,6 +21,7 @@ import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
+import CallWidget from '../components/CallWidget';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
@@ -84,10 +85,17 @@ const PrayerTimeScreen = () => {
           )}
         </View>
 
+        
+
         {/* Main content container - always visible */}
         <View style={styles.container}>
           {/* Section Header for Reminders - always visible */}
+          <View style = {{height: 110,}}/>
+          <Animated.View style={{opacity: fadeAnim}}>
+            <CallWidget onCallPreferenceSet={handleCallPreferenceSet} />
+          </Animated.View>
           <View style={styles.sectionHeader}>
+            
             <Text style={styles.sectionTitle}>Daily Reminders</Text>
             <Pressable
               onPress={handleSeeAllReminders}
@@ -138,7 +146,7 @@ const styles = StyleSheet.create({
   prayerCardsContainer: {
     zIndex: 20,
     elevation: 20,
-    marginHorizontal: 12,
+    marginHorizontal: 20,
     marginTop: -25,
     marginBottom: 15,
     position: 'relative',
@@ -159,7 +167,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginTop: 120,
+    marginTop: 10,
     marginBottom: 16,
     zIndex: 30,
     position: 'relative',
@@ -196,6 +204,13 @@ const styles = StyleSheet.create({
     minHeight: 300,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  callWidgetPlaceholder: {
+    height: 120,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
   },
   errorText: {
     ...typography.body,

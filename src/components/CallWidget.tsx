@@ -1,141 +1,189 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from './SvgIcon';
+import {colors} from '../utils/theme';
+import {typography} from '../utils/typography';
 
 interface CallWidgetProps {
-    onCallPreferenceSet: (needsCall: boolean) => void;
+  onCallPreferenceSet: (needsCall: boolean) => void;
 }
 
 const STORAGE_KEY = 'prayer_app_call_preference';
 
-const CallWidget: React.FC<CallWidgetProps> = ({ onCallPreferenceSet }) => {
-    const [isVisible, setIsVisible] = useState(false);
+const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [hasResponded, setHasResponded] = useState(false);
 
-    useEffect(() => {
-        checkIfFirstTimeUser();
-    }, []);
+  useEffect(() => {
+    checkIfFirstTimeUser();
+  }, []);
 
-    const checkIfFirstTimeUser = async () => {
-        try {
-            const value = await AsyncStorage.getItem(STORAGE_KEY);
-            if (value === null) {
-                // First time user, show the widget
-                setIsVisible(true);
-            }
-        } catch (error) {
-            console.error('Error checking first time user status:', error);
+  const checkIfFirstTimeUser = async () => {
+    try {
+      const value = await AsyncStorage.getItem(STORAGE_KEY);
+      if (value === null) {
+        // First time user, show the widget
+        setIsVisible(true);
+      } else {
+        // User has already responded, check if they wanted calls
+        const preference = JSON.parse(value);
+        setHasResponded(true);
+        if (preference.needsCall) {
+          setIsVisible(true); // Show section if user wants calls
         }
-    };
-
-    const handlePreference = async (needsCall: boolean) => {
-        try {
-            // Save the user's preference
-            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ needsCall }));
-            // Hide the widget
-            setIsVisible(false);
-            // Call the callback function
-            onCallPreferenceSet(needsCall);
-        } catch (error) {
-            console.error('Error saving call preference:', error);
-        }
-    };
-
-    if (!isVisible) {
-        return null;
+      }
+    } catch (error) {
+      console.error('Error checking first time user status:', error);
     }
+  };
 
-    return (
-        <View style={styles.overlay}>
-            <View style={styles.container}>
-                <View style={styles.starContainer}>
-                    <SvgIcon name="callMoon" size={20}style={styles.star} />
-                </View>
-                <Text style={styles.title}>
-                    Do you want a wake-up call for daily Fajr prayer?
-                </Text>
-                <TouchableOpacity
-                    style={styles.yesButton}
-                    onPress={() => handlePreference(true)}
-                >
-                    <Text style={styles.yesButtonText}>Yes, I need a call</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.noButton}
-                    onPress={() => handlePreference(false)}
-                >
-                    <Text style={styles.noButtonText}>No, I'll wake up myself</Text>
-                </TouchableOpacity>
-            </View>
+  const handlePreference = async (needsCall: boolean) => {
+    try {
+      // Save the user's preference
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({needsCall}));
+      setHasResponded(true);
+
+      if (needsCall) {
+        setIsVisible(true); // Keep showing if they want calls
+      } else {
+        setIsVisible(false); // Hide if they don't want calls
+      }
+
+      // Call the callback function
+      onCallPreferenceSet(needsCall);
+    } catch (error) {
+      console.error('Error saving call preference:', error);
+    }
+  };
+  if (!isVisible) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header row with moon icon and title */}
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>
+         Do you want a wake-up call for daily Fajr prayer?
+        </Text>
+        <View style={styles.iconContainer}>
+          <SvgIcon name="callMoon" size={78} color="#FFD700" />
         </View>
-    );
+        
+      </View>
+
+      {!hasResponded ? (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.yesButton}
+            onPress={() => handlePreference(true)}>
+            <Text style={styles.yesButtonText}>Yes, I need a call</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.noButton}
+            onPress={() => handlePreference(false)}>
+            <Text style={styles.yesButtonText}>No, I'll wake up myself</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.activeContainer}>
+          <Text style={styles.activeText}>
+            ✓ Wake-up call service is active
+          </Text>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => setHasResponded(false)}>
+            <Text style={styles.settingsButtonText}>Change Settings</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
 };
 
-const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
+  container: {
+    backgroundColor: '#1F2554',
+    borderRadius: 12,
+    padding: 20,
+    paddingTop: 9,
+    paddingBottom: 26,
+    marginHorizontal: 5,
+    marginVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    container: {
-        width: width * 0.85,
-        maxWidth: 400,
-        backgroundColor: '#1F2554',
-        borderRadius: 15,
-        padding: 20,
-        alignItems: 'center',
-        overflow: 'hidden',
-    },
-    starContainer: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-    },
-    star: {
-        opacity: 0.8,
-    },
-    iconContainer: {
-        marginBottom: 15,
-    },
-    title: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20,
-    },
-    yesButton: {
-        width: '100%',
-        backgroundColor: '#4CAF50',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-    },
-    yesButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    noButton: {
-        width: '100%',
-        backgroundColor: '#3498db',
-        borderRadius: 8,
-        padding: 12,
-    },
-    noButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    // gap: 1,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    ...typography.h3,
+    color: '#FFFFFF',
+    flex: 1,
+  },
+  buttonContainer: {
+    gap: 16,
+  },
+  yesButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 120,
+    padding: 12,
+  },
+  yesButtonText: {
+    ...typography.headerProfile,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 18,
+  },
+  noButton: {
+    backgroundColor: '#3498db',
+    borderRadius: 120,
+    padding: 12,
+  },
+  noButtonText: {
+    ...typography.bodyMedium,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  activeContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  activeText: {
+    ...typography.bodyLarge,
+    color: '#4CAF50',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  settingsButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  settingsButtonText: {
+    ...typography.body,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
 });
 
 export default CallWidget;
