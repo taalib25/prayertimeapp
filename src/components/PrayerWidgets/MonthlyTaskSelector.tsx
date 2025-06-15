@@ -433,7 +433,7 @@ const spacing = {
 
 const styles = StyleSheet.create({
   container: {
-    height: 550,
+    height: 597,
     // backgroundColor: colors.background.light,
     borderRadius: 20,
     marginVertical: spacing.md,
