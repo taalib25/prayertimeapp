@@ -170,7 +170,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                   <View style={styles.iconContainer}>
                     <SvgIcon
                       name={prayer.name.toLowerCase() as IconName}
-                      size={22}
+                      size={26}
                     />
                     {attendanceType !== 'none' && (
                       <View style={styles.attendanceIndicator}>
@@ -214,7 +214,8 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
   );
 };
 
-const styles = StyleSheet.create({  container: {
+const styles = StyleSheet.create({
+  container: {
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
     padding: 1,
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({  container: {
     textAlign: 'center',
   },
   iconContainer: {
-    height: 24,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',

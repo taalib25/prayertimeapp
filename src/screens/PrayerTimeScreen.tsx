@@ -136,42 +136,44 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   prayerCardsContainer: {
-    zIndex: 10, // Highest zIndex to be on top of everything
-    elevation: 10, // Corresponding elevation for Android
+    zIndex: 20,
+    elevation: 20,
     marginHorizontal: 12,
-    // marginTop: -25,
-    // position: 'relative',
+    marginTop: -25,
+    marginBottom: 15,
+    position: 'relative',
   },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 7,
-    marginTop: -195, // Maintained original marginTop for UI consistency
-    zIndex: 1, // Lower zIndex, content will be under prayerCardsContainer
-    elevation: 1, // Corresponding elevation for Android
-    paddingBottom: 140, // Increased padding to account for tab bar
-    position: 'relative', // Added for robust zIndex behavior
+    marginTop: -120,
+    zIndex: 10,
+    elevation: 10,
+    paddingBottom: 140,
+    position: 'relative',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16, // Maintained original paddingHorizontal
-    marginTop: 150, // Maintained original marginTop
+    paddingHorizontal: 16,
+    marginTop: 120,
     marginBottom: 16,
-    zIndex: 2, // zIndex relative to parent 'container'
+    zIndex: 30,
     position: 'relative',
-    elevation: 2, // zIndex relative to parent 'container'
   },
   sectionTitle: {
     ...typography.h3,
     color: colors.primary,
   },
   seeAllButton: {
-    padding: 8, // Maintained original padding
+    padding: 8,
     borderRadius: 6,
-    zIndex: 1000,
+    zIndex: 50,
+    elevation: 50,
+    position: 'relative',
   },
   seeAllText: {
     ...typography.bodyMedium,

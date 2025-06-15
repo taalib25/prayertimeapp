@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     // height: 230,
     position: 'relative',
     overflow: 'hidden',
-    marginBottom: 9,
+    marginBottom: -12,
     marginTop: 24,
   },
   backgroundImage: {
