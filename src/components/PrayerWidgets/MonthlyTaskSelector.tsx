@@ -117,7 +117,7 @@ const EditModal: React.FC<EditModalProps> = ({
 export const CompactChallengeCard: React.FC<{
   id: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   current: number;
   total: number;
   backgroundColor: string;
@@ -190,7 +190,6 @@ export const CompactChallengeCard: React.FC<{
               </View>
             )}
           </AnimatedCircularProgress>
-
           {/* Show exceeded indicator */}
           {/* {exceededGoal && (
             <View style={styles.exceededIndicator}>
@@ -199,9 +198,11 @@ export const CompactChallengeCard: React.FC<{
           )} */}
         </View>
 
-        <Text style={[styles.compactSubtitle, {color: textColor}]}>
-          {subtitle}
-        </Text>
+        {subtitle && (
+          <Text style={[styles.compactSubtitle, {color: textColor}]}>
+            {subtitle}
+          </Text>
+        )}
 
         {/* {isEditable && (
           <View style={styles.todayContainer}>
@@ -504,11 +505,12 @@ const styles = StyleSheet.create({
   compactProgressValue: {
     ...typography.h3,
     textAlign: 'center',
-    fontSize: 24,
+    fontSize: 28,
+    lineHeight: 32,
   },
   compactProgressTotal: {
     ...typography.bodySmall,
-    fontSize: 12,
+    fontSize: 16,
   },
   exceededIndicator: {
     position: 'absolute',

@@ -247,15 +247,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         </View>
         {/* Badges Section */}
         <View style={styles.section}>
-          <View style={styles.badgesCard}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Badges {earnedBadges}/{totalBadges}
-              </Text>
+          <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>
+                Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>/{totalBadges}
+                </Text>
               <TouchableOpacity>
                 <Text style={styles.viewAll}>View All</Text>
               </TouchableOpacity>
             </View>
+          <View style={styles.badgesCard}>
+            
             <View style={styles.badgesContainer}>
               {userStats.badges.map(badge => (
                 <BadgeCard
@@ -272,15 +273,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Statistics</Text>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
           </View>
           <View style={styles.statisticsGrid}>
             <CompactChallengeCard
               id="fajr-ring"
               title="Fajr"
-              subtitle="Days"
               current={userStats.fajrCount}
               total={30}
               backgroundColor="#E0F7FA"
@@ -291,7 +288,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="isha-ring"
               title="Isha"
-              subtitle="Days"
               current={userStats.ishaCount}
               total={30}
               backgroundColor="#FFF3E0"
@@ -302,9 +298,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="zikr-ring"
               title="Zikr"
-              subtitle="Monthly"
               current={userStats.zikriCount}
-              total={18000}
+              total={180}
               backgroundColor="#FCE4EC"
               progressColor="#E91E63"
               textColor={colors.text.prayerBlue}
@@ -313,9 +308,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="quran-ring"
               title="Quran"
-              subtitle="Minutes"
               current={userStats.quranMinutes}
-              total={450}
+              total={40}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
