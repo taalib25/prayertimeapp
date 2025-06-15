@@ -1,5 +1,5 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import React, {useState, useEffect, useRef} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
@@ -13,47 +13,44 @@ const STORAGE_KEY = 'prayer_app_call_preference';
 
 const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [hasResponded, setHasResponded] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     checkIfFirstTimeUser();
   }, []);
-
   const checkIfFirstTimeUser = async () => {
     try {
       const value = await AsyncStorage.getItem(STORAGE_KEY);
       if (value === null) {
         // First time user, show the widget
         setIsVisible(true);
-      } else {
-        // User has already responded, check if they wanted calls
-        const preference = JSON.parse(value);
-        setHasResponded(true);
-        if (preference.needsCall) {
-          setIsVisible(true); // Show section if user wants calls
-        }
       }
+      // Don't show widget for returning users
     } catch (error) {
       console.error('Error checking first time user status:', error);
     }
   };
-
   const handlePreference = async (needsCall: boolean) => {
     try {
-      // Save the user's preference
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({needsCall}));
-      setHasResponded(true);
+      // Start fade-out animation immediately
+      setIsFadingOut(true);
 
-      if (needsCall) {
-        setIsVisible(true); // Keep showing if they want calls
-      } else {
-        setIsVisible(false); // Hide if they don't want calls
-      }
-
-      // Call the callback function
-      onCallPreferenceSet(needsCall);
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(async () => {
+        // Save preference and hide widget after animation completes
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({needsCall}));
+        setIsVisible(false);
+        onCallPreferenceSet(needsCall);
+      });
     } catch (error) {
       console.error('Error saving call preference:', error);
+      // Reset animation on error
+      fadeAnim.setValue(1);
+      setIsFadingOut(false);
     }
   };
   if (!isVisible) {
@@ -61,44 +58,31 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header row with moon icon and title */}
+    <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
+      {/* Header row with moon icon and title */}{' '}
       <View style={styles.headerRow}>
         <Text style={styles.title}>
-         Do you want a wake-up call for daily Fajr prayer?
+          Do you want a wake-up call for daily Fajr prayer?
         </Text>
         <View style={styles.iconContainer}>
           <SvgIcon name="callMoon" size={78} color="#FFD700" />
         </View>
-        
       </View>
-
-      {!hasResponded ? (
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.yesButton}
-            onPress={() => handlePreference(true)}>
-            <Text style={styles.yesButtonText}>Yes, I need a call</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.noButton}
-            onPress={() => handlePreference(false)}>
-            <Text style={styles.yesButtonText}>No, I'll wake up myself</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.activeContainer}>
-          <Text style={styles.activeText}>
-            ✓ Wake-up call service is active
-          </Text>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => setHasResponded(false)}>
-            <Text style={styles.settingsButtonText}>Change Settings</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.yesButton}
+          onPress={() => handlePreference(true)}
+          disabled={isFadingOut}>
+          <Text style={styles.yesButtonText}>Yes, I need a call</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.noButton}
+          onPress={() => handlePreference(false)}
+          disabled={isFadingOut}>
+          <Text style={styles.yesButtonText}>No, I'll wake up myself</Text>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
   );
 };
 
@@ -139,7 +123,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   yesButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
     borderRadius: 120,
     padding: 12,
   },
@@ -160,29 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     fontSize: 16,
-  },
-  activeContainer: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  activeText: {
-    ...typography.bodyLarge,
-    color: '#4CAF50',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  settingsButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  settingsButtonText: {
-    ...typography.body,
-    color: '#FFFFFF',
-    textAlign: 'center',
   },
 });
 

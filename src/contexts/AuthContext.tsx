@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      await AsyncStorage.clear();
       setUser(null);
     } catch (error) {
       console.error('Error during logout:', error);

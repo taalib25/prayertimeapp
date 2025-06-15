@@ -250,7 +250,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
         </View>
-        <View style={{height: 20}} />
+        <View style={{height: 120}} />
       </ScrollView>
     </SafeAreaView>
   );
