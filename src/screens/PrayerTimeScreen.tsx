@@ -172,7 +172,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 6,
     zIndex: 50,
-    elevation: 50,
     position: 'relative',
   },
   seeAllText: {
