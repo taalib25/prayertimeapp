@@ -284,7 +284,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               current={userStats.fajrCount}
               total={30}
               backgroundColor="#E0F7FA"
-              progressColor={colors.primary}
+              progressColor="#00BCD4"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
@@ -295,7 +295,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               current={userStats.ishaCount}
               total={30}
               backgroundColor="#FFF3E0"
-              progressColor={colors.primary}
+              progressColor="#FF9800"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
@@ -306,7 +306,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               current={userStats.zikriCount}
               total={18000}
               backgroundColor="#FCE4EC"
-              progressColor={colors.primary}
+              progressColor="#E91E63"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
@@ -317,7 +317,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               current={userStats.quranMinutes}
               total={450}
               backgroundColor="#E0F2F1"
-              progressColor={colors.primary}
+              progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
