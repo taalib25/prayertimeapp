@@ -6,9 +6,8 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
-  Alert,
-  TouchableOpacity,
   Pressable,
+  Animated,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 
@@ -22,7 +21,6 @@ import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
-import CallWidget from '../components/CallWidget';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
@@ -35,6 +33,19 @@ const PrayerTimeScreen = () => {
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, isLoading: userLoading} = useUser({uid: 1001});
   const isLoading = prayerLoading || userLoading;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [isLoading, fadeAnim]);
 
   const handleSeeAllReminders = () => {
     console.log('See All Reminders Pressed');
@@ -57,35 +68,46 @@ const PrayerTimeScreen = () => {
           mosqueLocation={user?.settings?.location}
           avatarImage={require('../assets/images/profile.png')}
         />
-
-        {isLoading ? (
-          <ActivityIndicator
-            size="large"
-            color={colors.accent}
-            style={styles.loader}
-          />
-        ) : (
-          <>
-            {/* Prayer Time Cards - positioned to overlap */}
-            <View style={styles.prayerCardsContainer}>
-              <PrayerTimeCards prayers={prayerTimes} />
+        {/* Prayer Time Cards - always visible with proper structure */}
+        <View style={styles.prayerCardsContainer}>
+          {isLoading ? (
+            <View style={styles.loadingCardsPlaceholder}>
+              <ActivityIndicator
+                size="large"
+                color={colors.accent}
+                style={styles.cardLoader}
+              />
             </View>
+          ) : (
+            <Animated.View style={{opacity: fadeAnim}}>
+              <PrayerTimeCards prayers={prayerTimes} />
+            </Animated.View>
+          )}
+        </View>
 
-            <View style={styles.container}>
-              {/* Section Header for Reminders - moved from ReminderSection */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Daily Reminders</Text>
-                <Pressable
-                  onPress={handleSeeAllReminders}
-                  style={styles.seeAllButton}>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </Pressable>
-              </View>
-              <Pressable
-                onPress={handleSeeAllReminders}
-                style={styles.seeAllButton}>
-                <Text style={styles.seeAllText}>See All</Text>
-              </Pressable>
+        {/* Main content container - always visible */}
+        <View style={styles.container}>
+          {/* Section Header for Reminders - always visible */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Daily Reminders</Text>
+            <Pressable
+              onPress={handleSeeAllReminders}
+              style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </Pressable>
+          </View>
+
+          {/* Content sections with loading states */}
+          {isLoading ? (
+            <View style={styles.contentLoadingContainer}>
+              <ActivityIndicator
+                size="large"
+                color={colors.accent}
+                style={styles.loader}
+              />
+            </View>
+          ) : (
+            <Animated.View style={{opacity: fadeAnim}}>
               {/* Reminder Section */}
               <ReminderSection
                 maxItems={4}
@@ -97,9 +119,9 @@ const PrayerTimeScreen = () => {
 
               {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeSelector userGoals={user?.goals} />
-            </View>
-          </>
-        )}
+            </Animated.View>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -150,6 +172,7 @@ const styles = StyleSheet.create({
   seeAllButton: {
     padding: 8, // Maintained original padding
     borderRadius: 6,
+    zIndex: 1000,
   },
   seeAllText: {
     ...typography.bodyMedium,
@@ -157,6 +180,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loader: {marginTop: 40},
+  cardLoader: {
+    marginTop: 60,
+    marginBottom: 40,
+  },
+  loadingCardsPlaceholder: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    marginHorizontal: 8,
+  },
+  contentLoadingContainer: {
+    minHeight: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   errorText: {
     ...typography.body,
     textAlign: 'center',
