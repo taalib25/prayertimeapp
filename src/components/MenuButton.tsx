@@ -1,6 +1,7 @@
 import React from 'react';
 import {TouchableOpacity, Text, StyleSheet, View} from 'react-native';
 import SvgIcon, {IconName} from './SvgIcon';
+import {typography} from '../utils/typography';
 
 interface MenuButtonProps {
   title: string;
@@ -18,11 +19,24 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.leftContent}>
-        {icon && <SvgIcon name={icon} size={20} color="#666" style={{ transform: [{ rotateY: '180deg' }] }} />}
+        {icon && (
+          <SvgIcon
+            name={icon}
+            size={20}
+            color="#666"
+            style={{transform: [{rotateY: '180deg'}]}}
+          />
+        )}
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      {showArrow && <SvgIcon name={"backBtn"} size={20} />}
+      {showArrow && (
+        <SvgIcon
+          name={'backBtn'}
+          size={20}
+          style={{transform: [{rotateY: '180deg'}]}}
+        />
+      )}
     </TouchableOpacity>
   );
 };
@@ -47,7 +61,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 16,
+    ...typography.bodyMedium,
     color: '#333',
     marginLeft: 12,
   },

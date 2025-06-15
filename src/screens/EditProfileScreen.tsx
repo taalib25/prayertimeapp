@@ -315,7 +315,7 @@ const EditProfileScreen: React.FC = () => {
                 pressed && styles.pressedState,
               ]}
               onPress={handleProfilePictureUpdate}>
-              <SvgIcon name="camera" size={20} color={colors.white} />
+              <SvgIcon name="camera" size={30} color={colors.white} />
             </Pressable>
           </View>
           <Text style={styles.profileName}>Mohamed Hijaz</Text>
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   cameraButton: {
     position: 'absolute',
     bottom: 5,
-    right: 5,
+    right: 1,
     width: 32,
     height: 32,
     alignItems: 'center',

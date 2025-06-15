@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,92 @@ import {
   ActivityIndicator,
   SafeAreaView,
   StatusBar,
+  Pressable,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BadgeCard from '../components/BadgeCard';
-import StatisticRing from '../components/StatisticRing';
+import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import MenuButton from '../components/MenuButton';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
+import {typography} from '../utils/typography';
+import { CompactChallengeCard } from '../components/PrayerWidgets/MonthlyTaskSelector';
+
+// CompactChallengeCard component extracted from MonthlyTaskSelector
+// const CompactChallengeCard: React.FC<{
+//   id: string;
+//   title: string;
+//   subtitle: string;
+//   current: number;
+//   total: number;
+//   backgroundColor: string;
+//   progressColor: string;
+//   textColor: string;
+//   isVisible: boolean;
+// }> = React.memo(
+//   ({
+//     title,
+//     subtitle,
+//     current,
+//     total,
+//     backgroundColor,
+//     progressColor,
+//     textColor,
+//     isVisible,
+//   }) => {
+//     const exceededGoal = current > total;
+//     const actualProgressColor = exceededGoal ? colors.success : progressColor;
+
+//     // Calculate progress percentage
+//     const progressPercentage = useMemo(() => {
+//       const percentage = exceededGoal
+//         ? 100
+//         : Math.min((current / total) * 100, 100);
+//       return Math.round(percentage);
+//     }, [current, total, exceededGoal]);
+
+//     return (
+//       <View style={[styles.compactCard, {backgroundColor}]}>
+//         <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
+
+//         <View style={styles.compactProgressContainer}>
+//           <AnimatedCircularProgress
+//             size={160}
+//             width={14}
+//             fill={progressPercentage}
+//             tintColor={actualProgressColor}
+//             backgroundColor={colors.background.surface}
+//             rotation={0}
+//             lineCap="round"
+//             duration={0}>
+//             {() => (
+//               <View style={styles.compactProgressText}>
+//                 <Text
+//                   style={[
+//                     styles.compactProgressValue,
+//                     {color: exceededGoal ? colors.success : textColor},
+//                   ]}>
+//                   {current}
+//                   <Text
+//                     style={[
+//                       styles.compactProgressTotal,
+//                       {color: exceededGoal ? colors.success : textColor},
+//                     ]}>
+//                     /{total}
+//                   </Text>
+//                 </Text>
+//               </View>
+//             )}
+//           </AnimatedCircularProgress>
+//         </View>
+
+//         <Text style={[styles.compactSubtitle, {color: textColor}]}>
+//           {subtitle}
+//         </Text>
+//       </View>
+//     );
+//   },
+// );
 
 interface ProfileScreenProps {
   navigation: any;
@@ -191,36 +270,56 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         </View>
         {/* Statistics Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistics</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Statistics</Text>
+            <TouchableOpacity style={styles.seeAllButton}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.statisticsGrid}>
-            <StatisticRing
-              title="FAJR Ring"
+            <CompactChallengeCard
+              id="fajr-ring"
+              title="Fajr"
+              subtitle="Days"
               current={userStats.fajrCount}
               total={30}
-              color="#00BCD4"
               backgroundColor="#E0F7FA"
+              progressColor={colors.primary}
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
             />
-            <StatisticRing
-              title="ISHA Ring"
+            <CompactChallengeCard
+              id="isha-ring"
+              title="Isha"
+              subtitle="Days"
               current={userStats.ishaCount}
               total={30}
-              color="#00BCD4"
               backgroundColor="#FFF3E0"
+              progressColor={colors.primary}
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
             />
-            <StatisticRing
-              title="ZIKR Ring"
+            <CompactChallengeCard
+              id="zikr-ring"
+              title="Zikr"
+              subtitle="Monthly"
               current={userStats.zikriCount}
               total={18000}
-              color="#00BCD4"
               backgroundColor="#FCE4EC"
+              progressColor={colors.primary}
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
             />
-            <StatisticRing
-              title="Quran Ring"
+            <CompactChallengeCard
+              id="quran-ring"
+              title="Quran"
+              subtitle="Minutes"
               current={userStats.quranMinutes}
               total={450}
-              color="#00BCD4"
               backgroundColor="#E0F2F1"
-              unit="min"
+              progressColor={colors.primary}
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
             />
           </View>
         </View>
@@ -284,21 +383,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   header: {
-    flexDirection: 'row',
     backgroundColor: '#FFF',
     padding: 20,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 16,
   },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginRight: 16,
+    marginBottom: 16,
   },
   userInfo: {
-    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   userName: {
@@ -306,22 +404,25 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    textAlign: 'center',
   },
   memberSince: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+    textAlign: 'center',
   },
   locationContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   locationText: {
     fontSize: 12,
     color: '#666',
     marginLeft: 4,
     lineHeight: 16,
-    flex: 1,
+    textAlign: 'center',
   },
   section: {
     marginBottom: 20,
@@ -362,6 +463,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  seeAllButton: {
+    padding: 8,
+    borderRadius: 6,
+  },
+  seeAllText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  // CompactChallengeCard styles from MonthlyTaskSelector
+  compactCard: {
+    width: '48%',
+    aspectRatio: 1.0,
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  compactTitle: {
+    ...typography.h3,
+    textAlign: 'left',
+    lineHeight: 24,
+    marginBottom: 6,
+  },
+  compactSubtitle: {
+    ...typography.body,
+    textAlign: 'center',
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  compactProgressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginVertical: 8,
+  },
+  compactProgressText: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  compactProgressValue: {
+    ...typography.h3,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  compactProgressTotal: {
+    ...typography.bodySmall,
+    fontSize: 12,
   },
 });
 

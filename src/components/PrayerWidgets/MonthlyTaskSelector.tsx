@@ -114,7 +114,7 @@ const EditModal: React.FC<EditModalProps> = ({
   );
 };
 
-const CompactChallengeCard: React.FC<{
+export const CompactChallengeCard: React.FC<{
   id: string;
   title: string;
   subtitle: string;
@@ -162,8 +162,8 @@ const CompactChallengeCard: React.FC<{
 
         <View style={styles.compactProgressContainer}>
           <AnimatedCircularProgress
-            size={120}
-            width={8} // Increased stroke thickness
+            size={140}
+            width={12} // Increased stroke thickness
             fill={progressPercentage}
             tintColor={actualProgressColor}
             backgroundColor={colors.background.surface}
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   compactProgressValue: {
     ...typography.h3,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 24,
   },
   compactProgressTotal: {
     ...typography.bodySmall,
