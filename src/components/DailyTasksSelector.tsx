@@ -267,10 +267,11 @@ const borderRadius = {
 const styles = StyleSheet.create({
   container: {
     height: 450, // Increased height for better scrolling
-    backgroundColor: colors.background.light,
+    backgroundColor: '#E1FFD1',
     borderRadius: 20,
     marginVertical: spacing.md,
     paddingVertical: spacing.sm,
+    marginHorizontal: spacing.sm,
   },
   pagerView: {
     flex: 1,
