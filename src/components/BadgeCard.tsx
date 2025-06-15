@@ -1,47 +1,86 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
+import Svg, {Polygon} from 'react-native-svg';
 import SvgIcon, {IconName} from './SvgIcon';
 
 interface BadgeCardProps {
   icon: IconName;
   title: string;
   isEarned?: boolean;
+  size?: number;
 }
+
+interface HexagonSVGProps {
+  size: number;
+  fillColor: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+}
+
+const HexagonSVG: React.FC<HexagonSVGProps> = ({
+  size,
+  fillColor,
+  strokeColor,
+  strokeWidth = 0,
+}) => {
+  // Calculate hexagon points for a regular hexagon
+  const radius = size / 2;
+  const centerX = size / 2;
+  const centerY = size / 2;
+
+  const points = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 3) * i - Math.PI / 2; // Start from top
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    points.push(`${x},${y}`);
+  }
+
+  const pointsString = points.join(' ');
+
+  return (
+    <Svg width={size} height={size}>
+      <Polygon
+        points={pointsString}
+        fill={fillColor}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
+      />
+    </Svg>
+  );
+};
 
 const BadgeCard: React.FC<BadgeCardProps> = ({
   icon,
   title,
   isEarned = false,
+  size = 80,
 }) => {
   const hexagonColor = isEarned ? '#4CAF50' : '#F5F5F5';
   const borderColor = isEarned ? '#4CAF50' : '#E0E0E0';
+  const iconSize = Math.round(size * 0.4);
 
   return (
     <View style={styles.container}>
       <View
         style={[
           styles.hexagonContainer,
+          {width: size, height: size},
           isEarned ? styles.earnedHexagon : styles.unearnedHexagon,
         ]}>
-        {/* Hexagon shape created with multiple Views */}
-        <View style={styles.hexagonInner}>
-          <View
-            style={[styles.hexagonTop, {borderBottomColor: hexagonColor}]}
-          />
-          <View
-            style={[
-              styles.hexagonMiddle,
-              {backgroundColor: hexagonColor},
-              !isEarned && {borderWidth: 2, borderColor: borderColor},
-            ]}>
-            <SvgIcon
-              name={icon}
-              size={24}
-              color={isEarned ? '#FFFFFF' : '#D0D0D0'}
-            />
-          </View>
-          <View
-            style={[styles.hexagonBottom, {borderTopColor: hexagonColor}]}
+        {/* SVG Hexagon Background */}
+        <HexagonSVG
+          size={size}
+          fillColor={hexagonColor}
+          strokeColor={!isEarned ? borderColor : undefined}
+          strokeWidth={!isEarned ? 2 : 0}
+        />
+        {/* Icon positioned absolutely over the hexagon */}
+        <View style={styles.iconContainer}>
+          <SvgIcon
+            name={icon}
+            size={iconSize}
+            color={isEarned ? '#FFFFFF' : '#D0D0D0'}
           />
         </View>
       </View>
@@ -60,41 +99,18 @@ const styles = StyleSheet.create({
   },
   hexagonContainer: {
     marginBottom: 12,
-    width: 85,
-    height: 85,
-  },
-  hexagonInner: {
-    width: 85,
-    height: 85,
+    position: 'relative',
     alignItems: 'center',
-  },
-  hexagonTop: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 25,
-    borderRightWidth: 25,
-    borderBottomWidth: 14,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
-  hexagonMiddle: {
-    width: 50,
-    height: 57,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: -1,
   },
-  hexagonBottom: {
-    width: 0,
-    height: 0,
-    borderStyle: 'solid',
-    borderLeftWidth: 25,
-    borderRightWidth: 25,
-    borderTopWidth: 14,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    marginTop: -1,
+  iconContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   earnedHexagon: {
     // Add shadow for earned badges
