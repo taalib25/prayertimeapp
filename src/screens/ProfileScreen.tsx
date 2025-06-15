@@ -18,7 +18,7 @@ import MenuButton from '../components/MenuButton';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import { CompactChallengeCard } from '../components/PrayerWidgets/MonthlyTaskSelector';
+import {CompactChallengeCard} from '../components/PrayerWidgets/MonthlyTaskSelector';
 
 // CompactChallengeCard component extracted from MonthlyTaskSelector
 // const CompactChallengeCard: React.FC<{
@@ -167,9 +167,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           zikriCount: 154,
           quranMinutes: 300,
           badges: [
-            {id: '1', title: 'Challenge 40', icon: 'salah', isEarned: true},
+            {id: '1', title: 'Challenge 40', icon: 'mosque', isEarned: true},
             {id: '2', title: 'Zikr Star', icon: 'prayer-beads', isEarned: true},
-            {id: '3', title: 'Recite Master', icon: 'profile', isEarned: false},
+            {id: '3', title: 'Recite Master', icon: 'quran', isEarned: false},
           ],
         };
         setUserStats(defaultStats);
@@ -354,8 +354,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   loadingText: {
+    ...typography.body,
     marginTop: 16,
-    fontSize: 16,
     color: '#666',
   },
   errorContainer: {
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorText: {
-    fontSize: 16,
+    ...typography.body,
     color: '#999',
     textAlign: 'center',
     marginBottom: 20,
@@ -378,9 +378,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   retryText: {
+    ...typography.button,
     color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   header: {
     backgroundColor: '#FFF',
@@ -400,14 +399,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...typography.headerProfile,
     color: '#333',
     marginBottom: 4,
     textAlign: 'center',
   },
   memberSince: {
-    fontSize: 14,
+    ...typography.bodySmall,
     color: '#666',
     marginBottom: 8,
     textAlign: 'center',
@@ -418,10 +416,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   locationText: {
-    fontSize: 12,
+    ...typography.caption,
     color: '#666',
     marginLeft: 4,
-    lineHeight: 16,
     textAlign: 'center',
   },
   section: {
@@ -435,12 +432,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...typography.h3,
     color: '#333',
   },
   viewAll: {
-    fontSize: 14,
+    ...typography.bodySmall,
     color: '#4CAF50',
     fontWeight: '600',
   },

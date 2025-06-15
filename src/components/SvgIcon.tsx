@@ -19,6 +19,8 @@ import callMoon from '../assets/icons/callMoon.svg';
 import CameraIcon from '../assets/icons/camera.svg';
 import CalendarIcon from '../assets/icons/calender.svg';
 import BackBtnIcon from '../assets/icons/backBtn.svg';
+import MosqueIcon from '../assets/icons/mosque.svg';
+import QuranIcon from '../assets/icons/quran.svg';
 
 export type IconName =
   | 'fajr'
@@ -27,6 +29,8 @@ export type IconName =
   | 'maghrib'
   | 'isha'
   | 'masjid'
+  | 'mosque'
+  | 'quran'
   | 'map'
   | 'fajrlogo'
   | 'home'
@@ -86,6 +90,8 @@ const getIconComponent = (name: IconName) => {
     maghrib: MaghribIcon,
     isha: IshaIcon,
     masjid: MasjidIcon,
+    mosque: MosqueIcon,
+    quran: QuranIcon,
     map: MapIcon,
     fajrlogo: FajrLogo,
     home: HomeIcon,
@@ -95,7 +101,7 @@ const getIconComponent = (name: IconName) => {
     callMoon: callMoon,
     camera: CameraIcon,
     calendar: CalendarIcon,
-    backBtn : BackBtnIcon
+    backBtn: BackBtnIcon,
   };
 
   return icons[name];
