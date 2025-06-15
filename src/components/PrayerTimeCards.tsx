@@ -173,7 +173,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
       </View>
 
       {/* External Attendance Indicators Container */}
-      {/* <View style={styles.attendanceRow}>
+      <View style={styles.attendanceRow}>
         {prayers.map((prayer, index) => {
           const prayerStatus = getPrayerStatus(prayer.name);
           const attendanceType = getAttendanceType(prayerStatus);
@@ -199,10 +199,10 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
             </TouchableOpacity>
           );
         })}
-      </View> */}
+      </View>
 
       {/* Modals */}
-      {/* {selectedPrayerForAttendance && (
+      {selectedPrayerForAttendance && (
         <AttendanceSelectionModal
           visible={attendancePopupVisible}
           currentAttendance={getAttendanceType(
@@ -215,7 +215,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
           }}
           prayerName={selectedPrayerForAttendance.displayName}
         />
-      )} */}
+      )}
 
       {selectedPrayer && (
         <PrayerReminderModal

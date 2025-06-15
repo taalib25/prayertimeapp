@@ -24,7 +24,6 @@ import {getCurrentDateString} from '../utils/helpers';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
-  // Handle the call preference here
 };
 
 const PrayerTimeScreen = () => {
