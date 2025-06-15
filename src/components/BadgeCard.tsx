@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 import Svg, {Polygon} from 'react-native-svg';
 import SvgIcon, {IconName} from './SvgIcon';
+import {typography} from '../utils/typography';
 
 interface BadgeCardProps {
   icon: IconName;
@@ -129,11 +130,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...typography.taskTitle,
     color: '#333',
     textAlign: 'center',
-    lineHeight: 18,
   },
   unearnedText: {
     color: '#999',

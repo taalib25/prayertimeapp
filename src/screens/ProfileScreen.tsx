@@ -374,49 +374,48 @@ const styles = StyleSheet.create({
   retryText: {
     ...typography.button,
     color: '#FFF',
-  },
-  header: {
+  },  header: {
     backgroundColor: '#FFF',
     padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 16,
   },
   profileImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 16,
+    marginRight: 16,
   },
   userInfo: {
-    alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
-  },
-  userName: {
+  },  userName: {
     ...typography.headerProfile,
     color: '#333',
     marginBottom: 4,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   memberSince: {
     ...typography.bodySmall,
     color: '#666',
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   locationText: {
     ...typography.caption,
     color: '#666',
     marginLeft: 4,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   section: {
     marginBottom: 20,
+    marginTop: 16,
     paddingHorizontal: 16,
   },
   sectionHeader: {
