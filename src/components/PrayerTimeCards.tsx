@@ -149,58 +149,43 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
       {/* Prayer Cards Container */}
       <View style={styles.container}>
         <View style={styles.prayerCardsRow}>
-          {prayers.map((prayer, index) => (
-            <View key={index} style={styles.prayerColumn}>
-              <View
-                style={[
-                  styles.prayerCard,
-                  prayer.isActive && styles.activeCard,
-                ]}>
-                <Text style={styles.prayerName}>{prayer.displayName}</Text>
+          {prayers.map((prayer, index) => {
+            const prayerStatus = getPrayerStatus(prayer.name);
+            const attendanceType = getAttendanceType(prayerStatus);
 
-                <View style={styles.iconContainer}>
-                  <SvgIcon
-                    name={prayer.name.toLowerCase() as IconName}
-                    size={22}
-                  />
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.prayerColumn}
+                onPress={() => handleAttendancePress(prayer)}
+                onLongPress={() => handleLongPress(prayer)}
+                activeOpacity={0.7}>
+                <View
+                  style={[
+                    styles.prayerCard,
+                    prayer.isActive && styles.activeCard,
+                  ]}>
+                  <Text style={styles.prayerName}>{prayer.displayName}</Text>
+
+                  <View style={styles.iconContainer}>
+                    <SvgIcon
+                      name={prayer.name.toLowerCase() as IconName}
+                      size={22}
+                    />
+                    {attendanceType !== 'none' && (
+                      <View style={styles.attendanceIndicator}>
+                        <Text style={styles.checkmark}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Text style={styles.prayerTime}>{prayer.time}</Text>
                 </View>
-
-                <Text style={styles.prayerTime}>{prayer.time}</Text>
-              </View>
-            </View>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
-
-      {/* External Attendance Indicators Container */}
-      <View style={styles.attendanceRow}>
-        {prayers.map((prayer, index) => {
-          const prayerStatus = getPrayerStatus(prayer.name);
-          const attendanceType = getAttendanceType(prayerStatus);
-
-          return (
-            <TouchableOpacity
-              key={index}
-              style={styles.attendanceContainer}
-              onPress={() => handleAttendancePress(prayer)}
-              activeOpacity={0.7}>
-              <View
-                style={[
-                  styles.attendanceCircle,
-                  {
-                    backgroundColor: getAttendanceColor(attendanceType),
-                    opacity: getAttendanceOpacity(attendanceType),
-                  },
-                ]}>
-                {attendanceType !== 'none' && (
-                  <Text style={styles.attendanceCheckmark}>✓</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
       {/* Modals */}
       {selectedPrayerForAttendance && (
         <AttendanceSelectionModal
@@ -216,8 +201,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
           prayerName={selectedPrayerForAttendance.displayName}
         />
       )}
-
-      {selectedPrayer && (
+      {/* {selectedPrayer && (
         <PrayerReminderModal
           visible={modalVisible}
           onClose={closeModal}
@@ -225,20 +209,24 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
           prayerTime={selectedPrayer.time}
           isNotification={reminderType === 'notification'}
         />
-      )}
+      )} */}
     </>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
+const styles = StyleSheet.create({  container: {
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
-    padding: 5,
-    paddingTop: 18,
-    marginHorizontal: 1,
-    marginTop: 5,
-    marginBottom: 65,
+    padding: 1,
+    paddingTop: 14,
+    paddingHorizontal: 13,
+    marginTop: 25,
+    shadowColor: '#000000',
+    shadowOffset: {width: 1, height: 2},
+    shadowOpacity: 0.102,
+    shadowRadius: 9,
+    elevation: 9,
+    // marginBottom: 20,
   },
   prayerCardsRow: {
     flexDirection: 'row',
@@ -253,9 +241,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    paddingHorizontal: 0,
+    paddingHorizontal: -1,
     width: '100%',
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: 6, // Space between card and attendance
@@ -282,38 +270,29 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
-  attendanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-    marginBottom: 36,
-    paddingHorizontal: 8,
-  },
-  attendanceContainer: {
-    alignItems: 'center',
+  attendanceIndicator: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.success,
     justifyContent: 'center',
-    padding: 2,
-    flex: 1,
-  },
-  attendanceCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 13,
     alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 3,
   },
-  attendanceCheckmark: {
-    color: '#fff',
-    fontSize: 14,
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 8,
     fontWeight: 'bold',
-    textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 10,
   },
 });
 

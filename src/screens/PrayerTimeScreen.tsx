@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
   prayerCardsContainer: {
     zIndex: 10, // Highest zIndex to be on top of everything
     elevation: 10, // Corresponding elevation for Android
-    marginHorizontal: 16,
-    marginTop: -25,
-    position: 'relative',
+    marginHorizontal: 12,
+    // marginTop: -25,
+    // position: 'relative',
   },
   container: {
     flex: 1,
