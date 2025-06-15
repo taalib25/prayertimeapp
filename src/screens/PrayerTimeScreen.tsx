@@ -18,6 +18,7 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import ReminderSection from '../components/ReminderSection';
+import MosqueStreakSection from '../components/MosqueStreakSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUser} from '../hooks/useUser';
 import {getCurrentDateString} from '../utils/helpers';
@@ -85,17 +86,14 @@ const PrayerTimeScreen = () => {
           )}
         </View>
 
-        
-
         {/* Main content container - always visible */}
         <View style={styles.container}>
           {/* Section Header for Reminders - always visible */}
-          <View style = {{height: 110,}}/>
+          <View style={{height: 110}} />
           <Animated.View style={{opacity: fadeAnim}}>
             <CallWidget onCallPreferenceSet={handleCallPreferenceSet} />
           </Animated.View>
           <View style={styles.sectionHeader}>
-            
             <Text style={styles.sectionTitle}>Daily Reminders</Text>
             <Pressable
               onPress={handleSeeAllReminders}
@@ -120,12 +118,14 @@ const PrayerTimeScreen = () => {
                 maxItems={4}
                 onSeeAllPress={handleSeeAllReminders}
               />
-
               {/* Section Header for Tasks */}
               <DailyTasksSelector />
-
               {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeSelector userGoals={user?.goals} />
+              {/* Mosque Attendance Streak Chart */}
+              <MosqueStreakSection
+                onSeeAllPress={() => console.log('Mosque streak details')}
+              />
             </Animated.View>
           )}
         </View>
