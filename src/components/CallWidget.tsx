@@ -4,12 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {USER_STORAGE_KEYS} from '../types/User';
 
 interface CallWidgetProps {
   onCallPreferenceSet: (needsCall: boolean) => void;
 }
-
-const STORAGE_KEY = 'prayer_app_call_preference';
 
 const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -21,7 +20,9 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   }, []);
   const checkIfFirstTimeUser = async () => {
     try {
-      const value = await AsyncStorage.getItem(STORAGE_KEY);
+      const value = await AsyncStorage.getItem(
+        USER_STORAGE_KEYS.CALL_PREFERENCE,
+      );
       if (value === null) {
         // First time user, show the widget
         setIsVisible(true);
@@ -42,7 +43,10 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
         useNativeDriver: true,
       }).start(async () => {
         // Save preference and hide widget after animation completes
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({needsCall}));
+        await AsyncStorage.setItem(
+          USER_STORAGE_KEYS.CALL_PREFERENCE,
+          JSON.stringify({needsCall}),
+        );
         setIsVisible(false);
         onCallPreferenceSet(needsCall);
       });
@@ -59,7 +63,7 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
 
   return (
     <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
-      {/* Header row with moon icon and title */}{' '}
+      {/* Header row with moon icon and title */}
       <View style={styles.headerRow}>
         <Text style={styles.title}>
           Do you want a wake-up call for daily Fajr prayer?
