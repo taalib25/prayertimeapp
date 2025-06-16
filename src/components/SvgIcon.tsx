@@ -22,6 +22,10 @@ import BackBtnIcon from '../assets/icons/backBtn.svg';
 import MosqueIcon from '../assets/icons/mosque.svg';
 import QuranIcon from '../assets/icons/quran.svg';
 import SearchIcon from '../assets/icons/search.svg';
+// Meeting status icons
+import AssignedIcon from '../assets/icons/assigned.svg';
+import AttendedIcon from '../assets/icons/attended.svg';
+import AbsentIcon from '../assets/icons/absent.svg';
 
 export type IconName =
   | 'fajr'
@@ -42,7 +46,10 @@ export type IconName =
   | 'camera'
   | 'calendar'
   | 'backBtn'
-  | 'search';
+  | 'search'
+  | 'assigned'
+  | 'attended'
+  | 'absent';
 
 interface SvgIconProps {
   name: IconName;
@@ -105,6 +112,9 @@ const getIconComponent = (name: IconName) => {
     calendar: CalendarIcon,
     backBtn: BackBtnIcon,
     search: SearchIcon,
+    assigned: AssignedIcon,
+    attended: AttendedIcon,
+    absent: AbsentIcon,
   };
 
   return icons[name];

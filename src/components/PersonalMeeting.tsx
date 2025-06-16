@@ -4,14 +4,14 @@ import MeetingCard from './MeetingCard';
 import {typography} from '../utils/typography';
 import {borderRadius, colors, spacing} from '../utils/theme';
 
-// Sample data for the meeting cards
+// Sample data for the meeting cards with enhanced statistic labels
 const personalizedMeeting = {
   title: 'Personalized Meeting',
   subtitle: '3 Days Remaining',
   persons: [
     {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
     {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
-    {name: 'Omar Abdullah  ', phone: '07712345700', completed: false},
+    {name: 'Omar Abdullah', phone: '07712345700', completed: false},
   ],
   stats: [
     {label: 'Assigned', value: '3'},
@@ -26,7 +26,7 @@ const meetingAttendance = {
   stats: [
     {label: 'Attended', value: '4'},
     {label: 'Absent', value: '1'},
-    {label: 'Excused', value: '2'},
+    {label: 'Completion Rate', value: '80%'},
   ],
 };
 
@@ -37,7 +37,7 @@ const handlePersonPress = (person: any, index: number) => {
 export class PersonalMeeting extends Component {
   render() {
     return (
-      <View>
+      <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
         </View>
@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
+    marginHorizontal: spacing.md,
   },
   header: {
     marginBottom: spacing.md,
