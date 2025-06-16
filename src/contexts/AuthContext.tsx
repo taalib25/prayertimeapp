@@ -1,43 +1,34 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface User {
-  id: string;
-  email: string;
-  phoneNumber: string;
-  isVerified: boolean;
-  name?: string;
-  createdAt: string;
-}
+import {AuthUser, USER_STORAGE_KEYS} from '../types/User';
+import UnifiedUserService from '../services/UnifiedUserService';
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, phoneNumber: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: Partial<User>) => void;
+  updateUser: (userData: Partial<AuthUser>) => void;
   isLoading: boolean;
   checkAuthState: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USER_STORAGE_KEY = '@prayer_app_user';
-
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const userService = UnifiedUserService.getInstance();
 
   useEffect(() => {
     checkAuthState();
   }, []);
-
   const checkAuthState = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const userData = await AsyncStorage.getItem(USER_STORAGE_KEY);
+      const userData = await AsyncStorage.getItem(USER_STORAGE_KEYS.AUTH_USER);
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
@@ -46,52 +37,100 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       return false;
     } catch (error) {
       console.error('Error checking auth state:', error);
-      // Clear invalid stored data
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      await AsyncStorage.removeItem(USER_STORAGE_KEYS.AUTH_USER);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
-
   const login = async (email: string, phoneNumber: string) => {
     try {
-      const userData: User = {
-        id: Date.now().toString(),
+      // Use consistent user ID (1001) for API compatibility
+      const userId = '1001';
+
+      const userData: AuthUser = {
+        id: userId,
         email,
         phoneNumber,
         isVerified: true,
-        name: email.split('@')[0], // Use part before @ as default name
+        name: email.split('@')[0],
         createdAt: new Date().toISOString(),
       };
 
-      await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+      await userService.saveAuthUser(userData);
       setUser(userData);
+
+      // Create/update user profile data using the unified service
+      const uid = parseInt(userId);
+      await createUserProfileData(uid, userData);
     } catch (error) {
       console.error('Error during login:', error);
       throw new Error('Failed to save user data');
     }
   };
+  // Separate function to handle user profile creation using unified service
+  const createUserProfileData = async (uid: number, userData: AuthUser) => {
+    try {
+      // Check if user profile already exists
+      const existingUser = await userService.getUserById(uid);
 
+      if (!existingUser) {
+        // Create new user profile
+        await userService.createUser(
+          uid,
+          {
+            username: userData.name || userData.email.split('@')[0],
+            email: userData.email,
+            phoneNumber: userData.phoneNumber,
+            location: 'Cairo, Egypt',
+            masjid: 'Al-Azhar Mosque',
+          },
+          {
+            monthlyZikrGoal: 1000,
+            monthlyQuranPagesGoal: 30,
+            monthlyCharityGoal: 100,
+            monthlyFastingDaysGoal: 15,
+          },
+          {
+            prayerSettings: 'standard',
+            preferredMadhab: 'hanafi',
+            appLanguage: 'en',
+            theme: 'light',
+            location: 'Cairo, Egypt',
+            masjid: 'Al-Azhar Mosque',
+          },
+        );
+      }
+    } catch (error) {
+      console.error('Error creating user profile data:', error);
+    }
+  };
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem(USER_STORAGE_KEY);
+      console.log('Starting logout process...');
+
+      // Remove auth user data
+      await userService.removeAuthUser();
+      console.log('Auth user data removed');
+
+      // Reset call preference to allow CallWidget to show again for new user
+      await AsyncStorage.removeItem(USER_STORAGE_KEYS.CALL_PREFERENCE);
+      console.log('Call preference reset');
+
       setUser(null);
+      console.log('Logout completed successfully');
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still clear user state even if storage removal fails
+      // Even if there's an error, we should still set user to null
       setUser(null);
     }
   };
 
-  const updateUser = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<AuthUser>) => {
     if (user) {
       try {
         const updatedUser = {...user, ...userData};
-        await AsyncStorage.setItem(
-          USER_STORAGE_KEY,
-          JSON.stringify(updatedUser),
-        );
+        await userService.saveAuthUser(updatedUser);
         setUser(updatedUser);
       } catch (error) {
         console.error('Error updating user:', error);

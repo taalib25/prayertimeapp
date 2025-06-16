@@ -100,7 +100,6 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
                   </View>
                 </View>
                 <View style={styles.progressContainer}>
-                  {' '}
                   <Progress.Bar
                     progress={progress}
                     width={null}

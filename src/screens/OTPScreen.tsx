@@ -20,6 +20,10 @@ import {
   otpVerificationSchema,
 } from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserPreferencesService from '../services/UserPreferencesService';
+import {initializeUserBackgroundTasks} from '../services/backgroundTasks';
+import SvgIcon from '../components/SvgIcon';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,7 +40,7 @@ interface Props {
 }
 
 const OTPScreen: React.FC<Props> = ({navigation, route}) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('0762348947'); // Dummy phone for testing
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Phone verification, 2: OTP verification
@@ -120,6 +124,57 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
   const {login} = useAuth();
   const email = route.params?.email || '';
 
+  const createDummyUserData = async () => {
+    try {
+      const uid = 1001;
+
+      // This function will be replaced by handling API response data
+      const dummyProfile = {
+        username: 'Ahmed Hassan',
+        email: email || 'ahmed@example.com',
+        phoneNumber: phoneNumber,
+      };
+
+      const dummyGoals = {
+        monthlyZikrGoal: 100,
+        monthlyQuranPagesGoal: 30,
+        monthlyCharityGoal: 5,
+        monthlyFastingDaysGoal: 6,
+      };
+
+      const dummySettings = {
+        prayerSettings: 'standard',
+        preferredMadhab: 'hanafi',
+        appLanguage: 'en',
+        theme: 'light',
+        location: 'Colombo, LK',
+        masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
+      };
+
+      // Store user data - this will be replaced by storing API response
+      await Promise.all([
+        AsyncStorage.setItem(
+          `user_${uid}_profile`,
+          JSON.stringify(dummyProfile),
+        ),
+        AsyncStorage.setItem(`user_${uid}_goals`, JSON.stringify(dummyGoals)),
+        AsyncStorage.setItem(
+          `user_${uid}_settings`,
+          JSON.stringify(dummySettings),
+        ),
+      ]);
+
+      // Initialize services
+      const preferencesService = UserPreferencesService.getInstance();
+      await preferencesService.initializeDefaultSettings(uid);
+      await initializeUserBackgroundTasks(uid);
+
+      console.log('✅ User data created successfully');
+    } catch (error) {
+      console.error('❌ Error creating user data:', error);
+    }
+  };
+
   const handleVerifyOTP = async () => {
     if (!validateOTP()) {
       return;
@@ -128,20 +183,16 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setIsLoading(true);
 
     try {
-      // For demo purposes, accept any complete OTP
-      // In a real app, verify with your backend
+      // Step 1: Verify OTP with API (currently dummy)
+      // const apiResponse = await verifyOTPWithAPI(phoneNumber, otp.join(''));
 
-      // Complete the login process
+      // Step 2: Create/update user data (will use API response)
+      await createDummyUserData();
+
+      // Step 3: Login user
       await login(email, phoneNumber);
-
-      // Navigate to main app
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'MainApp'}],
-      });
     } catch (error) {
-      // Error handling would go here
-    } finally {
+      console.error('Login error:', error);
       setIsLoading(false);
     }
   };
@@ -160,12 +211,12 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           {/* Phone Verification Step */}
           {step === 1 && (
             <View>
-              <Image
+              {/* <Image
                 source={require('../assets/icons/fajr-council.png')}
                 style={styles.logo}
                 resizeMode="contain"
-              />
-
+              /> */}
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
               <Text style={styles.title}>Verify your phone number</Text>
               <Text style={styles.subtitle}>
                 Enter your phone number to receive a verification code
@@ -181,7 +232,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                 keyboardType="phone-pad"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
-                placeholder="Enter your mobile number"
+                placeholder="eg :076 543 3423"
               />
               {errors.phoneNumber && (
                 <Text style={styles.errorText}>{errors.phoneNumber}</Text>
@@ -199,12 +250,8 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
           {/* OTP Verification Step */}
           {step === 2 && (
             <View>
-              <Image
-                source={require('../assets/icons/fajr-council.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>OTP Verification</Text>{' '}
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
+              <Text style={styles.title}>OTP Verification</Text>
               <Text
                 style={[
                   styles.phoneNumberText,
@@ -212,10 +259,10 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                     marginTop: 80,
                     marginBottom: 24,
                     ...typography.body,
-                    color: colors.accent,
+                    color: colors.text.dark,
                   },
                 ]}>
-                We've sent a code to{' '}
+                We've sent a code to
                 <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
               </Text>
               <View style={styles.otpContainer}>
@@ -242,7 +289,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
               />
               <View style={styles.resendContainer}>
                 <Text style={styles.resendText}>
-                  Didn't receive the code?{' '}
+                  Didn't receive the code?
                   <Text onPress={handleResendOTP} style={styles.resendLink}>
                     Resend
                   </Text>
@@ -273,6 +320,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginBottom: 40,
+    marginLeft: -35,
     alignSelf: 'flex-start',
   },
   title: {
@@ -324,7 +372,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     width: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.text.lightDark,
     borderRadius: 8,
     height: 56,
     marginBottom: 24,

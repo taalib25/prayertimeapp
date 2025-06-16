@@ -1,68 +1,35 @@
-import SQLite from 'react-native-sqlite-storage';
+import {getPrayerTimesForDate, import2025PrayerTimes} from './PrayerServices';
 
-SQLite.enablePromise(true);
+let isInitialized = false;
 
-let database: SQLite.SQLiteDatabase | null = null;
-
-export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
-  if (database) {
-    return database;
-  }
-
-  return initDatabase();
-};
-
-export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
-  if (database) {
-    return database;
+export const initializePrayerTimesDatabase = async (): Promise<void> => {
+  if (isInitialized) {
+    console.log('Database already initialized, skipping...');
+    return;
   }
 
   try {
-    database = await SQLite.openDatabase({
-      name: 'prayer_app.db',
-      location: 'default',
-    });
+    console.log('🔄 Checking if prayer times data exists...');
 
-    await createTables();
+    // Check multiple dates to ensure data completeness
+    const testDates = ['2025-01-01', '2025-06-01', '2025-12-31'];
+    const existingData = await Promise.all(
+      testDates.map(date => getPrayerTimesForDate(date)),
+    );
 
-    return database;
+    const hasCompleteData = existingData.every(data => data !== null);
+
+    if (!hasCompleteData) {
+      console.log('📥 Importing 2025 prayer times...');
+      await import2025PrayerTimes();
+      console.log('✅ Prayer times imported successfully');
+    } else {
+      console.log('✅ Complete prayer times data already exists');
+    }
+
+    isInitialized = true;
   } catch (error) {
-    console.error('Database initialization failed:', error);
+    console.error('❌ Error initializing prayer times database:', error);
     throw error;
-  }
-};
-
-async function createTables(): Promise<void> {
-  if (!database) throw new Error('Database not initialized');
-
-  await database.executeSql(`
-    CREATE TABLE IF NOT EXISTS prayer_times (
-      date TEXT PRIMARY KEY,
-      fajr TEXT,
-      sunrise TEXT,
-      dhuhr TEXT,
-      asr TEXT,
-      maghrib TEXT,
-      isha TEXT
-    )
-  `);
-
-  await database.executeSql(`
-    CREATE TABLE IF NOT EXISTS prayer_tracking (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      prayer_name TEXT NOT NULL,
-      completed INTEGER NOT NULL DEFAULT 0,
-      completion_type TEXT,
-      completed_at TEXT,
-      UNIQUE(date, prayer_name)
-    )
-  `);
-}
-
-export const closeDatabase = async (): Promise<void> => {
-  if (database) {
-    await database.close();
-    database = null;
   }
 };

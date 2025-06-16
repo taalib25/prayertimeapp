@@ -1,267 +1,376 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback, useEffect, useMemo} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
+  Pressable,
+  Alert,
+  TextInput,
+  Modal,
 } from 'react-native';
 import PagerView from 'react-native-pager-view';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withTiming,
-} from 'react-native-reanimated';
-import Svg, {Circle} from 'react-native-svg';
+import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import {colors} from '../../utils/theme';
 import {typography} from '../../utils/typography';
+import {
+  MonthlyTaskProvider,
+  useMonthlyTask,
+} from '../../contexts/MonthlyTaskContext';
 
-
-interface MonthData {
-  monthLabel: string;
-  year: number;
-  zikr: {current: number; total: number};
-  quran: {current: number; total: number};
-  fajr: {current: number; total: number};
-  isha: {current: number; total: number};
+interface UserGoals {
+  monthlyZikrGoal: number;
+  monthlyQuranPagesGoal: number;
+  monthlyCharityGoal: number;
+  monthlyFastingDaysGoal: number;
 }
 
-// Generate data for the past 3 months
-const getMonthlyData = (): MonthData[] => {
-  const today = new Date();
-  const months = [];
+interface MonthlyChallengeProps {
+  userGoals?: UserGoals;
+}
 
-  for (let i = 2; i >= 0; i--) {
-    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    const monthName = date.toLocaleDateString('en-US', {month: 'long'});
-    const year = date.getFullYear();
-    const daysInMonth = new Date(year, date.getMonth() + 1, 0).getDate();
+interface EditModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSave: (value: number) => Promise<void>;
+  currentValue: number;
+  title: string;
+  isLoading: boolean;
+}
 
-    months.push({
-      monthLabel: monthName,
-      year: year,
-      zikr: {
-        current: Math.floor(Math.random() * 2500) + 1500,
-        total: 3000,
-      },
-      quran: {
-        current: Math.floor(Math.random() * 200) + 150,
-        total: 300,
-      },
-      fajr: {
-        current:
-          Math.floor(Math.random() * daysInMonth) +
-          Math.floor(daysInMonth * 0.6),
-        total: daysInMonth,
-      },
-      isha: {
-        current:
-          Math.floor(Math.random() * daysInMonth) +
-          Math.floor(daysInMonth * 0.7),
-        total: daysInMonth,
-      },
-    });
-  }
+const EditModal: React.FC<EditModalProps> = ({
+  visible,
+  onClose,
+  onSave,
+  currentValue,
+  title,
+  isLoading,
+}) => {
+  const [tempValue, setTempValue] = useState(currentValue);
 
-  return months;
+  React.useEffect(() => {
+    setTempValue(currentValue);
+  }, [currentValue, visible]);
+
+  const handleSave = async () => {
+    try {
+      await onSave(tempValue);
+      onClose();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update progress');
+    }
+  };
+
+  const handleTextChange = (text: string) => {
+    const num = parseInt(text) || 0;
+    setTempValue(Math.max(0, num));
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.countContainer}>
+            <TextInput
+              style={styles.countInput}
+              value={tempValue.toString()}
+              onChangeText={handleTextChange}
+              keyboardType="numeric"
+              autoFocus
+              selectTextOnFocus
+              textAlign="center"
+              editable={!isLoading}
+            />
+          </View>
+
+          <Text style={styles.modalTitle}>{title}</Text>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={onClose}
+              disabled={isLoading}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                isLoading && styles.saveButtonDisabled,
+              ]}
+              onPress={handleSave}
+              disabled={isLoading}>
+              <Text style={styles.saveButtonText}>
+                {isLoading ? 'Saving...' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 };
 
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-const CompactChallengeCard: React.FC<{
+export const CompactChallengeCard: React.FC<{
+  id: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   current: number;
   total: number;
   backgroundColor: string;
   progressColor: string;
   textColor: string;
   isVisible: boolean;
-}> = ({
-  title,
-  subtitle,
-  current,
-  total,
-  backgroundColor,
-  progressColor,
-  textColor,
-  isVisible,
-}) => {
-  const progress = useSharedValue(0);
-  const exceededGoal = current > total;
-  const actualProgressColor = exceededGoal ? colors.success : progressColor;
-
-  React.useEffect(() => {
-    if (isVisible) {
-      // Calculate appropriate percentage, but cap at 100% for the circle visual
-      const progressPercentage = exceededGoal ? 100 : (current / total) * 100;
-      progress.value = withTiming(progressPercentage, {
-        duration: 1200,
-      });
-    } else {
-      progress.value = 0;
-    }
-  }, [current, total, isVisible, exceededGoal]);
-
-  const animatedProps = useAnimatedProps(() => {
-    const percentage = progress.value;
-    const radius = 35;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-    return {
-      strokeDashoffset,
-    };
-  });
-
-  return (
-    <View style={[styles.compactCard, {backgroundColor}]}>
-      <Text style={[styles.compactTitle, {color: textColor}]}>{title} </Text>
-     
-
-      <View style={styles.compactProgressContainer}>
-        <Svg height="150" width="150" viewBox="0 0 80 80">
-          <Circle
-            cx="40"
-            cy="40"
-            r="35"
-            stroke={colors.background.surface}
-            strokeWidth="6"
-            fill="transparent"
-          />
-          {/* Show completed circle when exceeding goal */}
-          {exceededGoal && (
-            <Circle
-              cx="40"
-              cy="40"
-              r="35"
-              stroke={colors.background.surface}
-              strokeWidth="6"
-              strokeDasharray="3,3"
-              fill="transparent"
-            />
-          )}
-          <AnimatedCircle
-            cx="40"
-            cy="40"
-            r="35"
-            stroke={actualProgressColor}
-            strokeWidth="6"
-            strokeDasharray={`${2 * Math.PI * 35}`}
-            strokeLinecap="round"
-            fill="transparent"
-            transform="rotate(-90, 40, 40)"
-            animatedProps={animatedProps}
-          />
-        </Svg>
-
-        <View style={styles.compactProgressText}>
-          <Text
-            style={[
-              styles.compactProgressValue,
-              {color: exceededGoal ? colors.success : textColor},
-            ]}>
-            {current}
-            <Text
-              style={[
-                styles.compactProgressTotal,
-                {color: exceededGoal ? colors.success : textColor},
-              ]}>
-              /{total}
-            </Text>
-          </Text>
-        </View>
-      </View>
-       <Text style={[styles.compactSubtitle, {color: textColor}]}>
-        {subtitle}
-      </Text>
-    </View>
-  );
-};
-
-const MonthlyChallengeSelector: React.FC = () => {
-  const monthlyData = getMonthlyData();
-  const [currentPage, setCurrentPage] = useState(monthlyData.length - 1);
-  const pagerRef = useRef<PagerView>(null);
-
-  React.useEffect(() => {
-    // Start animation immediately for the current month
-  }, []);
-
-  const handlePageSelected = (e: any) => {
-    const position = e.nativeEvent.position;
-    setCurrentPage(position);
-  };
-
-  const MonthView: React.FC<{monthData: MonthData; index: number}> = ({
-    monthData,
-    index,
+  isEditable?: boolean;
+  onEdit?: () => void;
+  todayValue?: number;
+}> = React.memo(
+  ({
+    id,
+    title,
+    subtitle,
+    current,
+    total,
+    backgroundColor,
+    progressColor,
+    textColor,
+    isVisible,
+    isEditable = false,
+    onEdit,
+    todayValue = 0,
   }) => {
-    const isVisible = currentPage === index;
+    const exceededGoal = current > total;
+    const actualProgressColor = exceededGoal ? colors.success : progressColor;
+
+    // Calculate progress percentage
+    const progressPercentage = useMemo(() => {
+      const percentage = exceededGoal
+        ? 100
+        : Math.min((current / total) * 100, 100);
+      return Math.round(percentage);
+    }, [current, total, exceededGoal]);
 
     return (
-      <View style={styles.monthContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.monthTitle}>
-            {monthData.monthLabel} {monthData.year}
+      <Pressable
+        style={[styles.compactCard, {backgroundColor}]}
+        onPress={isEditable ? onEdit : undefined}
+        disabled={!isEditable}>
+        <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
+
+        <View style={styles.compactProgressContainer}>
+          <AnimatedCircularProgress
+            size={140}
+            width={12} // Increased stroke thickness
+            fill={progressPercentage}
+            tintColor={actualProgressColor}
+            backgroundColor={colors.background.surface}
+            rotation={0}
+            lineCap="round"
+            duration={0} // No animation - instant update
+          >
+            {() => (
+              <View style={styles.compactProgressText}>
+                <Text
+                  style={[
+                    styles.compactProgressValue,
+                    {color: exceededGoal ? colors.success : textColor},
+                  ]}>
+                  {current}
+                  <Text
+                    style={[
+                      styles.compactProgressTotal,
+                      {color: exceededGoal ? colors.success : textColor},
+                    ]}>
+                    /{total}
+                  </Text>
+                </Text>
+              </View>
+            )}
+          </AnimatedCircularProgress>
+          {/* Show exceeded indicator */}
+          {/* {exceededGoal && (
+            <View style={styles.exceededIndicator}>
+              <Text style={styles.exceededText}>Goal Exceeded! 🎉</Text>
+            </View>
+          )} */}
+        </View>
+
+        {subtitle && (
+          <Text style={[styles.compactSubtitle, {color: textColor}]}>
+            {subtitle}
           </Text>
-        </View>
+        )}
 
-        <View style={styles.compactCardsGrid}>
-          <CompactChallengeCard
-            title="Zikr"
-            subtitle="Monthly"
-            current={monthData.zikr.current}
-            total={monthData.zikr.total}
-            backgroundColor="#E8F5E8"
-            progressColor={colors.emerald}
-            textColor={colors.text.prayerBlue}
-            isVisible={isVisible}
-          />
-
-          <CompactChallengeCard
-            title="Quran"
-            subtitle="Minutes"
-            current={monthData.quran.current}
-            total={monthData.quran.total}
-            backgroundColor="#E3F2FD"
-            progressColor={colors.accent}
-            textColor={colors.text.prayerBlue}
-            isVisible={isVisible}
-          />
-
-          <CompactChallengeCard
-            title="Fajr"
-            subtitle="Days"
-            current={monthData.fajr.current}
-            total={monthData.fajr.total}
-            backgroundColor="#FFF3E0"
-            progressColor={colors.success}
-            textColor={colors.text.prayerBlue}
-            isVisible={isVisible}
-          />
-
-          <CompactChallengeCard
-            title="Isha"
-            subtitle="Days"
-            current={monthData.isha.current}
-            total={monthData.isha.total}
-            backgroundColor="#FCE4EC"
-            progressColor={colors.error}
-            textColor={colors.text.prayerBlue}
-            isVisible={isVisible}
-          />
-        </View>
-      </View>
+        {/* {isEditable && (
+          <View style={styles.todayContainer}>
+            <Text style={styles.todayText}>Today: {todayValue}</Text>
+            <Text style={styles.editHint}>Tap to edit</Text>
+          </View>
+        )} */}
+      </Pressable>
     );
+  },
+  // Simplified comparison - only re-render when essential values change
+  (prevProps, nextProps) => {
+    return (
+      prevProps.current === nextProps.current &&
+      prevProps.total === nextProps.total &&
+      prevProps.todayValue === nextProps.todayValue &&
+      prevProps.isVisible === nextProps.isVisible
+    );
+  },
+);
+
+const MonthlyChallengeContent: React.FC = () => {
+  const {
+    monthlyData,
+    todayData,
+    isLoading,
+    updateZikr,
+    updateQuran,
+    getCurrentMonthIndex,
+  } = useMonthlyTask();
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const pagerRef = useRef<PagerView>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingType, setEditingType] = useState<'zikr' | 'quran' | null>(null);
+
+  // Update current page when monthly data loads
+  useEffect(() => {
+    if (monthlyData.length > 0) {
+      const initialPage = getCurrentMonthIndex();
+      setCurrentPage(initialPage);
+      setTimeout(() => {
+        pagerRef.current?.setPage(initialPage);
+      }, 100);
+    }
+  }, [monthlyData, getCurrentMonthIndex]);
+
+  const handleEdit = useCallback((type: 'zikr' | 'quran') => {
+    setEditingType(type);
+    setEditModalVisible(true);
+  }, []);
+
+  const handleSaveEdit = useCallback(
+    async (value: number) => {
+      if (editingType === 'zikr') {
+        await updateZikr(value);
+      } else if (editingType === 'quran') {
+        await updateQuran(value);
+      }
+    },
+    [editingType, updateZikr, updateQuran],
+  );
+
+  const handlePageSelected = useCallback((e: any) => {
+    setCurrentPage(e.nativeEvent.position);
+  }, []);
+
+  const getModalProps = () => {
+    if (editingType === 'zikr') {
+      return {
+        title: 'Update Zikr Count',
+        currentValue: todayData.zikr,
+      };
+    } else if (editingType === 'quran') {
+      return {
+        title: 'Update Quran Pages',
+        currentValue: todayData.quranPages,
+      };
+    }
+    return {
+      title: '',
+      currentValue: 0,
+    };
   };
+
+  // Memoized MonthView component for better performance
+  const MonthView = React.memo<{monthData: any; index: number}>(
+    ({monthData, index}) => {
+      const isVisible = currentPage === index;
+      const isCurrentMonth = index === monthlyData.length - 1;
+
+      return (
+        <View style={styles.monthContainer}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.monthTitle}>
+              {monthData.monthLabel} {monthData.year}
+            </Text>
+          </View>
+
+          <View style={styles.compactCardsGrid}>
+            <CompactChallengeCard
+              id={`${monthData.monthLabel}-${monthData.year}-zikr`}
+              title="Zikr"
+              subtitle="Monthly"
+              current={monthData.zikr.current}
+              total={monthData.zikr.total}
+              backgroundColor="#E8F5E8"
+              progressColor={colors.lightBlue}
+              textColor={colors.text.prayerBlue}
+              isVisible={isVisible}
+              isEditable={isCurrentMonth}
+              onEdit={() => handleEdit('zikr')}
+              todayValue={isCurrentMonth ? todayData.zikr : 0}
+            />
+
+            <CompactChallengeCard
+              id={`${monthData.monthLabel}-${monthData.year}-quran`}
+              title="Quran"
+              subtitle="Pages"
+              current={monthData.quran.current}
+              total={monthData.quran.total}
+              backgroundColor="#E3F2FD"
+              progressColor={colors.lightBlue}
+              textColor={colors.text.prayerBlue}
+              isVisible={isVisible}
+              isEditable={isCurrentMonth}
+              onEdit={() => handleEdit('quran')}
+              todayValue={isCurrentMonth ? todayData.quranPages : 0}
+            />
+
+            <CompactChallengeCard
+              id={`${monthData.monthLabel}-${monthData.year}-fajr`}
+              title="Fajr"
+              subtitle="Days"
+              current={monthData.fajr.current}
+              total={monthData.fajr.total}
+              backgroundColor="#FFF3E0"
+              progressColor={colors.lightBlue}
+              textColor={colors.text.prayerBlue}
+              isVisible={isVisible}
+            />
+
+            <CompactChallengeCard
+              id={`${monthData.monthLabel}-${monthData.year}-isha`}
+              title="Isha"
+              subtitle="Days"
+              current={monthData.isha.current}
+              total={monthData.isha.total}
+              backgroundColor="#FCE4EC"
+              progressColor={colors.lightBlue}
+              textColor={colors.text.prayerBlue}
+              isVisible={isVisible}
+            />
+          </View>
+        </View>
+      );
+    },
+    (prevProps, nextProps) =>
+      prevProps.monthData === nextProps.monthData &&
+      prevProps.index === nextProps.index,
+  );
 
   return (
     <View style={styles.container}>
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={monthlyData.length - 1}
+        initialPage={0}
         onPageSelected={handlePageSelected}
         pageMargin={8}>
         {monthlyData.map((monthData, index) => (
@@ -274,21 +383,43 @@ const MonthlyChallengeSelector: React.FC = () => {
       </PagerView>
 
       {/* Pagination Indicator */}
-      <View style={styles.paginationContainer}>
-        {monthlyData.map((_, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => pagerRef.current?.setPage(index)}>
-            <View
-              style={[
-                styles.paginationDot,
-                currentPage === index && styles.paginationDotActive,
-              ]}
-            />
-          </TouchableOpacity>
-        ))}
-      </View>
+      {monthlyData.length > 1 && (
+        <View style={styles.paginationContainer}>
+          {monthlyData.map((monthData, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => pagerRef.current?.setPage(index)}>
+              <View
+                style={[
+                  styles.paginationDot,
+                  currentPage === index && styles.paginationDotActive,
+                  index === getCurrentMonthIndex() &&
+                    styles.paginationDotCurrent,
+                ]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      <EditModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        onSave={handleSaveEdit}
+        isLoading={isLoading}
+        {...getModalProps()}
+      />
     </View>
+  );
+};
+
+const MonthlyChallengeSelector: React.FC<MonthlyChallengeProps> = ({
+  userGoals,
+}) => {
+  return (
+    <MonthlyTaskProvider userGoals={userGoals}>
+      <MonthlyChallengeContent />
+    </MonthlyTaskProvider>
   );
 };
 
@@ -302,10 +433,10 @@ const spacing = {
 
 const styles = StyleSheet.create({
   container: {
-    height: 550,
-    backgroundColor: colors.background.light,
+    height: 597,
+    // backgroundColor: colors.background.light,
     borderRadius: 20,
-    marginVertical: spacing.md,
+    // marginVertical: spacing.md,
     paddingVertical: spacing.sm,
   },
   pagerView: {
@@ -313,7 +444,7 @@ const styles = StyleSheet.create({
   },
   pageContainer: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   monthContainer: {
     flex: 1,
@@ -325,8 +456,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   monthTitle: {
-    ...typography.h3,
-    color: colors.primary,
+    ...typography.h2,
+    color: colors.text.prayerBlue,
     textAlign: 'left',
   },
   compactCardsGrid: {
@@ -365,25 +496,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    marginVertical: 8,
   },
   compactProgressText: {
-    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
   },
   compactProgressValue: {
     ...typography.h3,
     textAlign: 'center',
+    fontSize: 28,
+    lineHeight: 32,
   },
   compactProgressTotal: {
     ...typography.bodySmall,
+    fontSize: 16,
+  },
+  exceededIndicator: {
+    position: 'absolute',
+    bottom: -25,
+    alignItems: 'center',
   },
   exceededText: {
     ...typography.caption,
     color: colors.success,
-    position: 'absolute',
-    bottom: -18,
+    fontSize: 10,
     textAlign: 'center',
+    fontWeight: '600',
   },
   paginationContainer: {
     flexDirection: 'row',
@@ -403,6 +542,104 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  paginationDotCurrent: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: 'transparent',
+  },
+  todayContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  todayText: {
+    ...typography.caption,
+    color: colors.text.prayerBlue,
+    fontWeight: '600',
+  },
+  editHint: {
+    ...typography.caption,
+    color: colors.text.prayerBlue,
+    opacity: 0.7,
+    fontSize: 10,
+  },
+
+  // Simplified Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 32,
+    width: '80%',
+    maxWidth: 320,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  countContainer: {
+    marginBottom: 24,
+  },
+  countInput: {
+    fontSize: 72,
+    fontWeight: 'bold',
+    color: colors.primary,
+    textAlign: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+    minWidth: 120,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  modalTitle: {
+    ...typography.h2,
+    color: colors.text.prayerBlue,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.text.muted,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    ...typography.bodyMedium,
+    color: colors.text.secondary,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: colors.text.muted,
+  },
+  saveButtonText: {
+    ...typography.bodyMedium,
+    color: 'white',
+    fontWeight: '600',
   },
 });
 

@@ -20,7 +20,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       case 'Salah':
         return 'salah';
       case 'Profile':
-        return 'user';
+        return 'profile';
       default:
         return 'home';
     }
@@ -33,14 +33,18 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
           const isFocused = state.index === index;
 
           const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
+            try {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name);
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            } catch (error) {
+              console.error('Tab navigation error:', error);
             }
           };
 
@@ -55,11 +59,14 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
               style={styles.tabButton}>
               <SvgIcon
                 name={iconName}
-                size={24}
-                style={isFocused ? styles.activeIcon : styles.inactiveIcon}
+                size={29}
+                color={isFocused ? colors.primary : colors.text.lightPrayerBlue}
               />
               <Text
-                style={[styles.tabLabel, isFocused && styles.focusedTabLabel]}>
+                style={[
+                  styles.tabLabel,
+                  isFocused ? styles.focusedTabLabel : styles.unfocusedTabLabel,
+                ]}>
                 {route.name}
               </Text>
             </TouchableOpacity>
@@ -80,37 +87,34 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.white,
-    height: 60,
+    // height: 60,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -1},
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 5,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 8,
   },
   tabButton: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: spacing.xs,
-  },
-  activeIcon: {
-    opacity: 1,
-    // We can't directly change the SVG fill color, but we can modify opacity
-  },
-  inactiveIcon: {
-    opacity: 0.6,
+    paddingTop: spacing.sm,
   },
   tabLabel: {
-    ...typography.caption,
-    fontSize: 10,
-    color: colors.text.muted,
-    marginTop: 2,
+    ...typography.body,
+    fontSize: 12,
+    marginTop: 1,
   },
   focusedTabLabel: {
-    color: colors.text.blue,
-
+    color: colors.primary,
+    ...typography.bodyMedium,
+    fontSize: 14,
+  },
+  unfocusedTabLabel: {
+    color: colors.text.lightPrayerBlue,
   },
 });
 

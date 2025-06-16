@@ -1,5 +1,6 @@
 import React from 'react';
 import {ViewStyle} from 'react-native';
+import {colors} from '../utils/theme';
 
 // Import your custom SVG icons
 import FajrIcon from '../assets/icons/Fajr.svg';
@@ -13,7 +14,18 @@ import FajrLogo from '../assets/icons/fajr-logo.svg';
 import HomeIcon from '../assets/icons/home.svg';
 import PrayerBeadsIcon from '../assets/icons/prayer-beads.svg';
 import SalahIcon from '../assets/icons/salah.svg';
-import UserIcon from '../assets/icons/user.svg';
+import UserIcon from '../assets/icons/profile.svg';
+import callMoon from '../assets/icons/callMoon.svg';
+import CameraIcon from '../assets/icons/camera.svg';
+import CalendarIcon from '../assets/icons/calender.svg';
+import BackBtnIcon from '../assets/icons/backBtn.svg';
+import MosqueIcon from '../assets/icons/mosque.svg';
+import QuranIcon from '../assets/icons/quran.svg';
+import SearchIcon from '../assets/icons/search.svg';
+// Meeting status icons
+import AssignedIcon from '../assets/icons/assigned.svg';
+import AttendedIcon from '../assets/icons/attended.svg';
+import AbsentIcon from '../assets/icons/absent.svg';
 
 export type IconName =
   | 'fajr'
@@ -22,30 +34,61 @@ export type IconName =
   | 'maghrib'
   | 'isha'
   | 'masjid'
+  | 'mosque'
+  | 'quran'
   | 'map'
   | 'fajrlogo'
   | 'home'
   | 'prayer-beads'
   | 'salah'
-  | 'user';
+  | 'profile'
+  | 'callMoon'
+  | 'camera'
+  | 'calendar'
+  | 'backBtn'
+  | 'search'
+  | 'assigned'
+  | 'attended'
+  | 'absent';
 
 interface SvgIconProps {
   name: IconName;
   size?: number;
   color?: string;
+  stroke?: string;
   style?: ViewStyle;
 }
 
-const SvgIcon: React.FC<SvgIconProps> = ({name, size = 24, color, style}) => {
+const SvgIcon: React.FC<SvgIconProps> = ({
+  name,
+  size = 24,
+  color,
+  stroke,
+  style,
+}) => {
   const IconComponent = getIconComponent(name);
 
   if (!IconComponent) {
     return null;
   }
 
-  return (
-    <IconComponent width={size} height={size} style={style} />
-  );
+  const iconProps: any = {
+    width: size,
+    height: size,
+    style: style,
+  };
+
+  // Since SVGs use currentColor, pass color directly
+  if (color) {
+    iconProps.color = color;
+  }
+
+  // Allow explicit stroke override if needed
+  if (stroke) {
+    iconProps.stroke = stroke;
+  }
+
+  return <IconComponent {...iconProps} />;
 };
 
 const getIconComponent = (name: IconName) => {
@@ -56,12 +99,22 @@ const getIconComponent = (name: IconName) => {
     maghrib: MaghribIcon,
     isha: IshaIcon,
     masjid: MasjidIcon,
+    mosque: MosqueIcon,
+    quran: QuranIcon,
     map: MapIcon,
     fajrlogo: FajrLogo,
     home: HomeIcon,
-    salah : SalahIcon,
+    salah: SalahIcon,
     'prayer-beads': PrayerBeadsIcon,
-    user: UserIcon,
+    profile: UserIcon,
+    callMoon: callMoon,
+    camera: CameraIcon,
+    calendar: CalendarIcon,
+    backBtn: BackBtnIcon,
+    search: SearchIcon,
+    assigned: AssignedIcon,
+    attended: AttendedIcon,
+    absent: AbsentIcon,
   };
 
   return icons[name];

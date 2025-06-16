@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useCallback, useMemo, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,9 @@ import {
 import PagerView from 'react-native-pager-view';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {useRecentDailyTasks} from '../hooks/useDailyTasks';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const MOCK_USER_ID = 1001;
 
 interface Task {
   id: string;
@@ -25,98 +26,31 @@ interface DayTasks {
   tasks: Task[];
 }
 
-// Dynamic data for the last 3 days
-const getMockData = (): DayTasks[] => {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-  const dayBefore = new Date(today);
-  dayBefore.setDate(today.getDate() - 2);
-
-  const formatDateISO = (date: Date) => date.toISOString().split('T')[0];
-
-  const formatDayLabel = (
-    date: Date,
-    isToday: boolean,
-    isYesterday: boolean,
-  ) => {
-    if (isToday) return 'Today';
-    if (isYesterday) return 'Yesterday';
-
-    const options: Intl.DateTimeFormatOptions = {
-      month: 'short',
-      day: 'numeric',
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
-
-  return [
-    {
-      dateISO: formatDateISO(dayBefore),
-      dayLabel: formatDayLabel(dayBefore, false, false),
-      tasks: [
-        {id: 'db1', title: 'FAJR at Masjid', completed: true},
-        {id: 'db2', title: 'Read Surah Al-Kahf', completed: false},
-        {id: 'db3', title: 'Give Charity', completed: true},
-        {id: 'db4', title: 'Evening Zikr', completed: false},
-        {id: 'db5', title: 'Help a neighbor', completed: true},
-        {id: 'db6', title: 'Study Islamic history', completed: false},
-        {id: 'db7', title: 'Dua after Maghrib', completed: true},
-        {id: 'db8', title: 'Read Hadith collection', completed: false},
-      ],
-    },
-    {
-      dateISO: formatDateISO(yesterday),
-      dayLabel: formatDayLabel(yesterday, false, true),
-      tasks: [
-        {id: 'y1', title: 'Morning Zikr', completed: true},
-        {id: 'y2', title: 'Call Parents', completed: true},
-        {id: 'y3', title: '100 x Asthagfirullah', completed: false},
-        {id: 'y4', title: 'Plan for tomorrow', completed: true},
-        {id: 'y5', title: 'Read Hadith', completed: false},
-        {id: 'y6', title: 'Dua before sleep', completed: true},
-        {id: 'y7', title: 'Listen to Quran recitation', completed: false},
-        {id: 'y8', title: 'Practice patience', completed: true},
-        {id: 'y9', title: 'Reflect on blessings', completed: false},
-      ],
-    },
-    {
-      dateISO: formatDateISO(today),
-      dayLabel: formatDayLabel(today, true, false),
-      tasks: [
-        {id: 't1', title: 'FAJR at Masjid', completed: false},
-        {
-          id: 't2',
-          title: '500 x La hawla wala kuwwatha illa billah',
-          completed: false,
-        },
-        {id: 't3', title: '100 x Asthagfirullah', completed: false},
-        {id: 't4', title: '15 mins of Quran', completed: false},
-        {id: 't5', title: 'ISHA at Masjid', completed: false},
-        {id: 't6', title: 'Make Dua for family', completed: false},
-        {id: 't7', title: 'Reflect on day', completed: false},
-      ],
-    },
-  ];
-};
-
 interface TaskItemProps {
   item: Task;
   onToggleComplete: (taskId: string) => void;
+  isToday: boolean;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({item, onToggleComplete}) => {
+const TaskItem: React.FC<TaskItemProps> = ({
+  item,
+  onToggleComplete,
+  isToday,
+}) => {
   return (
     <TouchableOpacity
       style={[
         styles.taskItemContainer,
         item.completed && styles.taskItemCompleted,
+        !isToday && styles.taskItemDisabled,
       ]}
-      onPress={() => onToggleComplete(item.id)}>
+      onPress={() => isToday && onToggleComplete(item.id)}
+      disabled={!isToday}>
       <Text
         style={[
           styles.taskItemText,
           item.completed && styles.taskItemTextCompleted,
+          !isToday && styles.taskItemTextDisabled,
         ]}>
         {item.title}
       </Text>
@@ -124,6 +58,7 @@ const TaskItem: React.FC<TaskItemProps> = ({item, onToggleComplete}) => {
         style={[
           styles.taskRadioCircle,
           item.completed && styles.taskRadioCircleCompleted,
+          !isToday && styles.taskRadioCircleDisabled,
         ]}>
         {item.completed && <View style={styles.taskRadioInnerCircle} />}
       </View>
@@ -134,14 +69,17 @@ const TaskItem: React.FC<TaskItemProps> = ({item, onToggleComplete}) => {
 interface DayViewProps {
   dayTasks: DayTasks;
   onTaskToggle: (dateISO: string, taskId: string) => void;
+  isToday: boolean;
 }
 
-const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
+const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle, isToday}) => {
   const shouldScroll = dayTasks.tasks.length > 5;
 
   return (
     <View style={styles.dayViewContainer}>
-      <Text style={styles.dayLabel}>{dayTasks.dayLabel}</Text>
+      <Text style={[styles.dayLabel, !isToday && styles.dayLabelPast]}>
+        {dayTasks.dayLabel}
+      </Text>
       <ScrollView
         style={[
           styles.scrollViewStyle,
@@ -159,6 +97,7 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
             key={task.id}
             item={task}
             onToggleComplete={taskId => onTaskToggle(dayTasks.dateISO, taskId)}
+            isToday={isToday}
           />
         ))}
       </ScrollView>
@@ -167,59 +106,143 @@ const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle}) => {
 };
 
 const DailyTasksSelector: React.FC = () => {
-  const [dailyData, setDailyData] = useState<DayTasks[]>(getMockData());
-  const [currentPage, setCurrentPage] = useState(
-    dailyData.length > 0 ? dailyData.length - 1 : 0,
-  );
-  const pagerRef = useRef<PagerView>(null);
+  const {recentTasks, isLoading, error, toggleSpecialTaskForDate} =
+    useRecentDailyTasks({
+      uid: MOCK_USER_ID,
+      daysBack: 3,
+    });
 
-  const handleTaskToggle = (dateISO: string, taskId: string) => {
-    setDailyData(prevData =>
-      prevData.map(day => {
-        if (day.dateISO === dateISO) {
-          return {
-            ...day,
-            tasks: day.tasks.map(task =>
-              task.id === taskId ? {...task, completed: !task.completed} : task,
-            ),
-          };
-        }
-        return day;
-      }),
-    );
-  };
+  const handleTaskToggle = useCallback(
+    (dateISO: string, taskId: string) => {
+      toggleSpecialTaskForDate(dateISO, taskId);
+    },
+    [toggleSpecialTaskForDate],
+  );
+
+  const transformedDailyData = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+
+    const formatDayLabel = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      if (dateStr === today) return 'Today';
+      if (dateStr === yesterdayStr) return 'Yesterday';
+
+      const options: Intl.DateTimeFormatOptions = {
+        month: 'short',
+        day: 'numeric',
+      };
+      return date.toLocaleDateString('en-US', options);
+    };
+
+    // Filter out days with no tasks and reverse order (oldest first, so today ends up last/rightmost)
+    const tasksWithData = recentTasks
+      .filter(dayData => dayData.specialTasks.length > 0)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort oldest to newest
+      .map(dayData => ({
+        dateISO: dayData.date,
+        dayLabel: formatDayLabel(dayData.date),
+        tasks: dayData.specialTasks.map(task => ({
+          id: task.id,
+          title: task.title,
+          completed: task.completed,
+        })),
+        isToday: dayData.date === today,
+      }));
+
+    return tasksWithData;
+  }, [recentTasks]);
+
+  // Find today's index for initial page
+  const todayIndex = transformedDailyData.findIndex(
+    dayTasks => dayTasks.isToday,
+  );
+  const initialPage =
+    todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
+
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const pagerRef = useRef<PagerView>(null);
 
   const handlePageSelected = (e: any) => {
     setCurrentPage(e.nativeEvent.position);
   };
+
+  // Update current page when data changes
+  useEffect(() => {
+    const newTodayIndex = transformedDailyData.findIndex(
+      dayTasks => dayTasks.isToday,
+    );
+    if (newTodayIndex >= 0 && newTodayIndex !== currentPage) {
+      setCurrentPage(newTodayIndex);
+    }
+  }, [transformedDailyData]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <Text style={typography.body}>Loading tasks...</Text>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {justifyContent: 'center', alignItems: 'center'},
+        ]}>
+        <Text style={[typography.body, {color: colors.error}]}>{error}</Text>
+      </View>
+    );
+  }
+
+  // Hide component if no tasks found
+  if (transformedDailyData.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={dailyData.length > 0 ? dailyData.length - 1 : 0}
+        initialPage={initialPage}
         onPageSelected={handlePageSelected}>
-        {dailyData.map((dayTasks, index) => (
+        {transformedDailyData.map((dayTasks, index) => (
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
-            <DayView dayTasks={dayTasks} onTaskToggle={handleTaskToggle} />
+            <DayView
+              dayTasks={dayTasks}
+              onTaskToggle={handleTaskToggle}
+              isToday={dayTasks.isToday}
+            />
           </View>
         ))}
       </PagerView>
 
-      {/* Pagination Indicator */}
-      <View style={styles.paginationContainer}>
-        {dailyData.map((_, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.paginationDot,
-              currentPage === index && styles.paginationDotActive,
-            ]}
-            onPress={() => pagerRef.current?.setPage(index)}
-          />
-        ))}
-      </View>
+      {transformedDailyData.length > 1 && (
+        <View style={styles.paginationContainer}>
+          {transformedDailyData.map((_, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.paginationDot,
+                currentPage === index && styles.paginationDotActive,
+              ]}
+              onPress={() => pagerRef.current?.setPage(index)}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -244,10 +267,11 @@ const borderRadius = {
 const styles = StyleSheet.create({
   container: {
     height: 450, // Increased height for better scrolling
-    backgroundColor: colors.background.light,
+    backgroundColor: '#E1FFD1',
     borderRadius: 20,
     marginVertical: spacing.md,
     paddingVertical: spacing.sm,
+    marginHorizontal: spacing.sm,
   },
   pagerView: {
     flex: 1,
@@ -271,11 +295,15 @@ const styles = StyleSheet.create({
     minHeight: 340, // Ensure content is taller than container to enable scrolling
   },
   dayLabel: {
-    ...typography.h3,
+    ...typography.h2,
     color: colors.text.prayerBlue,
-    marginBottom: spacing.sm, // Reduced for more compact layout
+    marginBottom: spacing.md, // Reduced for more compact layout
     marginLeft: spacing.xs,
-    lineHeight: 26, // Reduced line height for more compact text
+    lineHeight: 30, // Reduced line height for more compact text
+  },
+  dayLabelPast: {
+    color: colors.text.prayerBlue,
+    opacity: 0.9,
   },
   taskItemContainer: {
     backgroundColor: colors.white,
@@ -298,6 +326,8 @@ const styles = StyleSheet.create({
     borderColor: colors.success,
     borderWidth: 1,
   },
+  taskItemDisabled: {
+  },
   taskItemText: {
     ...typography.bodyMedium,
     color: colors.text.blue,
@@ -311,6 +341,8 @@ const styles = StyleSheet.create({
     color: colors.forest,
     opacity: 0.8,
   },
+  taskItemTextDisabled: {
+  },
   taskRadioCircle: {
     width: 20, // Reduced size for more compact layout
     height: 20,
@@ -322,6 +354,9 @@ const styles = StyleSheet.create({
   },
   taskRadioCircleCompleted: {
     backgroundColor: colors.primary,
+  },
+  taskRadioCircleDisabled: {
+
   },
   taskRadioInnerCircle: {
     width: 6, // Reduced size proportionally

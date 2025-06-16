@@ -40,7 +40,6 @@ const Challenge40Card: React.FC<Challenge40CardProps> = ({
 
       <View style={styles.progressContainer}>
         <Svg height="140" width="140" viewBox="0 0 100 100">
-          {' '}
           {/* Background Circle */}
           <Circle
             cx="50"

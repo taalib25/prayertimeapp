@@ -66,6 +66,9 @@ const PrayerReminderModal: React.FC<PrayerReminderModalProps> = ({
       reminderDate.setDate(reminderDate.getDate() + 1);
     }
 
+    console.log(
+      `Setting reminder for ${prayerName} at ${reminderDate.toLocaleString()}`,
+    );
     if (isNotification) {
       await createNotification(prayerName, reminderDate, repeat);
     } else {
@@ -187,7 +190,7 @@ const PrayerReminderModal: React.FC<PrayerReminderModalProps> = ({
           <View style={styles.modalView}>
             <View style={styles.dragIndicator} />
             <Text style={styles.modalTitle}>
-              {isNotification ? 'Set Notification' : 'Set Alarm'} for{' '}
+              {isNotification ? 'Set Notification' : 'Set Alarm'} for
               {prayerName}
             </Text>
             <Text style={styles.prayerTimeText}>Prayer Time: {prayerTime}</Text>
