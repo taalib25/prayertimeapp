@@ -11,7 +11,6 @@ import {
   StatusBar,
   Pressable,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import BadgeCard from '../components/BadgeCard';
 import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import MenuButton from '../components/MenuButton';
@@ -19,92 +18,23 @@ import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/PrayerWidgets/MonthlyTaskSelector';
+import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
-interface UserProfile {
-  username: string;
-  email: string;
-  profileImage?: string;
-  memberSince: string;
-  location: string;
-  masjid: string;
-}
-
-interface UserStats {
-  fajrCount: number;
-  ishaCount: number;
-  zikriCount: number;
-  quranMinutes: number;
-  badges: Array<{
-    id: string;
-    title: string;
-    icon: string;
-    isEarned: boolean;
-  }>;
-}
-
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      setIsLoading(true);
-
-      // Load user profile data
-      const profileData = await AsyncStorage.getItem('userProfile');
-      const statsData = await AsyncStorage.getItem('userStats');
-
-      if (profileData) {
-        setUserProfile(JSON.parse(profileData));
-      } else {
-        // Set default user data if none exists
-        const defaultProfile: UserProfile = {
-          username: 'Mohamed Hijaz',
-          email: 'mohamed.hijaz@example.com',
-          memberSince: 'Sep 2024',
-          location: 'Gothatuwa',
-          masjid: 'Masjid Ul Jabbar Jumma Masjid',
-        };
-        setUserProfile(defaultProfile);
-        await AsyncStorage.setItem(
-          'userProfile',
-          JSON.stringify(defaultProfile),
-        );
-      }
-
-      if (statsData) {
-        setUserStats(JSON.parse(statsData));
-      } else {
-        // Set default stats data if none exists
-        const defaultStats: UserStats = {
-          fajrCount: 25,
-          ishaCount: 20,
-          zikriCount: 154,
-          quranMinutes: 300,
-          badges: [
-            {id: '1', title: 'Challenge 40', icon: 'mosque', isEarned: true},
-            {id: '2', title: 'Zikr Star', icon: 'prayer-beads', isEarned: true},
-            {id: '3', title: 'Recite Master', icon: 'quran', isEarned: false},
-          ],
-        };
-        setUserStats(defaultStats);
-        await AsyncStorage.setItem('userStats', JSON.stringify(defaultStats));
-      }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    userData,
+    profile,
+    stats,
+    displayName,
+    mosqueInfo,
+    isLoading,
+    error,
+    updateProfile,
+  } = useAppUser();
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
@@ -126,20 +56,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
       </View>
     );
   }
-
-  if (!userProfile || !userStats) {
+  if (error || !profile || !stats) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Failed to load profile data</Text>
-        <TouchableOpacity onPress={loadUserData} style={styles.retryButton}>
+        <TouchableOpacity
+          onPress={() => {
+            // Refresh by calling the hook again
+            console.log('Retrying to load user data...');
+          }}
+          style={styles.retryButton}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const earnedBadges = userStats.badges.filter(badge => badge.isEarned).length;
-  const totalBadges = userStats.badges.length;
+  const earnedBadges = stats.badges.filter(badge => badge.isEarned).length;
+  const totalBadges = stats.badges.length;
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
@@ -148,24 +82,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         <View style={styles.header}>
           <Image
             source={
-              userProfile.profileImage
-                ? {uri: userProfile.profileImage}
+              profile.profileImage
+                ? {uri: profile.profileImage}
                 : require('../assets/images/profile.png')
             }
             style={styles.profileImage}
           />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{userProfile.username}</Text>
+            <Text style={styles.userName}>{displayName}</Text>
             <Text style={styles.memberSince}>
-              Member Since {userProfile.memberSince}
+              Member Since {profile.memberSince || 'Recently'}
             </Text>
             <View style={styles.locationContainer}>
-              <SvgIcon name="masjid" size={30} color="#4CAF50" />
+              <SvgIcon name="masjid" size={32} color="#4CAF50" />
               <Text style={styles.locationText}>
-                {userProfile.masjid}
-                {'\n'}
-                {userProfile.location}
-              </Text>
+                {mosqueInfo?.name || 'Local Mosque'}
+                  </Text>
             </View>
           </View>
         </View>
@@ -182,7 +114,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           </View>
           <View style={styles.badgesCard}>
             <View style={styles.badgesContainer}>
-              {userStats.badges.map(badge => (
+              {stats.badges.map(badge => (
                 <BadgeCard
                   key={badge.id}
                   icon={badge.icon as any}
@@ -202,7 +134,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="fajr-ring"
               title="Fajr"
-              current={userStats.fajrCount}
+              current={stats.fajrCount}
               total={30}
               backgroundColor="#E0F7FA"
               progressColor="#00BCD4"
@@ -212,7 +144,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="isha-ring"
               title="Isha"
-              current={userStats.ishaCount}
+              current={stats.ishaCount}
               total={30}
               backgroundColor="#FFF3E0"
               progressColor="#FF9800"
@@ -222,7 +154,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="zikr-ring"
               title="Zikr"
-              current={userStats.zikriCount}
+              current={stats.zikriCount}
               total={180}
               backgroundColor="#FCE4EC"
               progressColor="#E91E63"
@@ -232,7 +164,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="quran-ring"
               title="Quran"
-              current={userStats.quranMinutes}
+              current={stats.quranMinutes}
               total={40}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
@@ -341,6 +273,8 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 6,
     textAlign: 'left',
+    width: '70%',
+  
   },
   section: {
     marginBottom: 20,

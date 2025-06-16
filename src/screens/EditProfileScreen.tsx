@@ -13,11 +13,12 @@ import {
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
 import SvgIcon from '../components/SvgIcon';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
+import {UserUpdateData} from '../types/User';
 
 interface InputWithLabelProps {
   label: string;
@@ -106,6 +107,13 @@ const LoadingDots: React.FC = () => {
 // Main EditProfileScreen component
 const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation();
+  const {
+    profile,
+    updateProfile,
+    displayName,
+    isLoading: userLoading,
+  } = useAppUser();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -113,7 +121,7 @@ const EditProfileScreen: React.FC = () => {
   const [dateOfBirth, setdateOfBirth] = useState('');
   const [nearestMasjid, setNearestMasjid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
- 
+
   // Date picker states
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -121,35 +129,25 @@ const EditProfileScreen: React.FC = () => {
   // Validation states
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  // Load user data from AsyncStorage
+  // Load user data from unified user system
   useEffect(() => {
-    loadUserData();
-  }, []);
+    if (profile) {
+      setName(profile.username || '');
+      setEmail(profile.email || '');
+      setMobile(profile.phoneNumber || '');
+      setAddress(profile.address || '');
+      setdateOfBirth(profile.dateOfBirth || '');
+      setNearestMasjid(profile.masjid || '');
 
-  const loadUserData = async () => {
-    try {
-      const profileData = await AsyncStorage.getItem('userProfile');
-      if (profileData) {
-        const userData = JSON.parse(profileData);
-        setName(userData.username || '');
-        setEmail(userData.email || '');
-        setMobile(userData.mobile || '');
-        setAddress(userData.address || '');
-        setdateOfBirth(userData.dateOfBirth || '');
-        setNearestMasjid(userData.masjid || '');
-
-        // Set initial date for picker if dateOfBirth exists
-        if (userData.dateOfBirth) {
-          const parsedDate = new Date(userData.dateOfBirth);
-          if (!isNaN(parsedDate.getTime())) {
-            setSelectedDate(parsedDate);
-          }
+      // Set initial date for picker if dateOfBirth exists
+      if (profile.dateOfBirth) {
+        const parsedDate = new Date(profile.dateOfBirth);
+        if (!isNaN(parsedDate.getTime())) {
+          setSelectedDate(parsedDate);
         }
       }
-    } catch (error) {
-      console.error('Error loading user data:', error);
     }
-  };
+  }, [profile]);
 
   // Handle date picker change
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -263,20 +261,18 @@ const EditProfileScreen: React.FC = () => {
     try {
       setIsLoading(true);
 
-      // Get existing profile data
-      const existingData = await AsyncStorage.getItem('userProfile');
-      const currentData = existingData ? JSON.parse(existingData) : {}; // Update with new data
-      const updatedProfile = {
-        ...currentData,
+      // Create update data object
+      const updateData: UserUpdateData = {
         username: name,
         email: email,
-        mobile: mobile,
+        phoneNumber: mobile,
         address: address,
         dateOfBirth: dateOfBirth,
         masjid: nearestMasjid,
       };
 
-      await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      // Use unified user system to update profile
+      await updateProfile(updateData);
 
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
@@ -306,7 +302,11 @@ const EditProfileScreen: React.FC = () => {
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={require('../assets/images/profile.png')}
+              source={
+                profile?.profileImage
+                  ? {uri: profile.profileImage}
+                  : require('../assets/images/profile.png')
+              }
               style={styles.profileImage}
             />
             <Pressable
@@ -318,8 +318,10 @@ const EditProfileScreen: React.FC = () => {
               <SvgIcon name="camera" size={30} color={colors.white} />
             </Pressable>
           </View>
-          <Text style={styles.profileName}>Mohamed Hijaz</Text>
-          <Text style={styles.memberSince}>Member Since Sep 2024</Text>
+          <Text style={styles.profileName}>{displayName}</Text>
+          <Text style={styles.memberSince}>
+            Member Since {profile?.memberSince || 'Recently'}
+          </Text>
         </View>
         {/* Form Fields */}
         <View style={styles.formContainer}>

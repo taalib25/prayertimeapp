@@ -20,9 +20,10 @@ import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSel
 import ReminderSection from '../components/ReminderSection';
 import MosqueStreakSection from '../components/MosqueStreakSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
-import {useUser} from '../hooks/useUser';
+import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
 import {getCurrentDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
+import PersonalMeeting from '../components/PersonalMeeting';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
@@ -32,7 +33,15 @@ const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {user, isLoading: userLoading} = useUser({uid: 1001});
+  const {
+    userData,
+    profile,
+    settings,
+    goals,
+    displayName,
+    mosqueInfo,
+    isLoading: userLoading,
+  } = useAppUser();
   const isLoading = prayerLoading || userLoading;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -63,10 +72,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.settings?.location}
-          userName={user?.profile?.username}
-          mosqueName={user?.settings?.masjid}
-          mosqueLocation={user?.settings?.location}
+          location={settings?.location || mosqueInfo?.location}
+          userName={displayName}
+          mosqueName={settings?.masjid || mosqueInfo?.name}
+          mosqueLocation={settings?.location || mosqueInfo?.location}
           avatarImage={require('../assets/images/profile.png')}
         />
         {/* Prayer Time Cards - always visible with proper structure */}
@@ -85,7 +94,6 @@ const PrayerTimeScreen = () => {
             </Animated.View>
           )}
         </View>
-
         {/* Main content container - always visible */}
         <View style={styles.container}>
           {/* Section Header for Reminders - always visible */}
@@ -121,11 +129,13 @@ const PrayerTimeScreen = () => {
               {/* Section Header for Tasks */}
               <DailyTasksSelector />
               {/* Monthly Challenge Cards with user goals */}
-              <MonthlyChallengeSelector userGoals={user?.goals} />
+              <MonthlyChallengeSelector userGoals={goals || undefined} />
               {/* Mosque Attendance Streak Chart */}
               <MosqueStreakSection
                 onSeeAllPress={() => console.log('Mosque streak details')}
               />
+
+              <PersonalMeeting />
             </Animated.View>
           )}
         </View>
