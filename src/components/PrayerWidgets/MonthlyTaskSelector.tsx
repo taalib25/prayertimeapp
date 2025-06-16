@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     ...typography.h3,
     textAlign: 'center',
     fontSize: 28,
-    lineHeight: 32,
+    lineHeight: 36,
   },
   compactProgressTotal: {
     ...typography.bodySmall,

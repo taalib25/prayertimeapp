@@ -54,7 +54,6 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
       setFajrCallEnabled(!value);
     }
   };
- 
   const handleBack = () => {
     navigation.goBack();
   };

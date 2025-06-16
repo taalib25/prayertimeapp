@@ -100,7 +100,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
             <Text style={styles.memberSince}>
-              Member Since {profile.memberSince || 'Recently'}
+              Member Since {profile.memberSince || 'Sep 2024'}
             </Text>
             <View style={styles.locationContainer}>
               <SvgIcon name="masjid" size={32} color="#4CAF50" />
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
-    marginTop: 10,
+    marginTop: 30,
     paddingHorizontal: 16,
   },
   sectionHeader: {
