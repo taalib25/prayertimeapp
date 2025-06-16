@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
+  Alert,
 } from 'react-native';
 import BadgeCard from '../components/BadgeCard';
 import {AnimatedCircularProgress} from 'react-native-circular-progress';
@@ -19,22 +20,16 @@ import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/PrayerWidgets/MonthlyTaskSelector';
 import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
+import {useAuth} from '../contexts/AuthContext';
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
-  const {
-    userData,
-    profile,
-    stats,
-    displayName,
-    mosqueInfo,
-    isLoading,
-    error,
-    updateProfile,
-  } = useAppUser();
+  const {logout} = useAuth();
+  const {profile, stats, displayName, mosqueInfo, isLoading, error} =
+    useAppUser();
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
@@ -43,9 +38,23 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const handleNotificationSettings = () => {
     navigation.navigate('NotificationScreen');
   };
-
   const handleCallerSettings = () => {
+    console.log('stats >>>>>>>>>>', stats);
     navigation.navigate('CallerSettings');
+  };
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: logout,
+      },
+    ]);
   };
 
   if (isLoading) {
@@ -97,7 +106,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               <SvgIcon name="masjid" size={32} color="#4CAF50" />
               <Text style={styles.locationText}>
                 {mosqueInfo?.name || 'Local Mosque'}
-                  </Text>
+              </Text>
             </View>
           </View>
         </View>
@@ -181,6 +190,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             onPress={handleNotificationSettings}
           />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
+
+          {/* Logout Button */}
+          <Pressable style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </Pressable>
         </View>
         <View style={{height: 120}} />
       </ScrollView>
@@ -274,7 +288,6 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     textAlign: 'left',
     width: '70%',
-  
   },
   section: {
     marginBottom: 20,
@@ -374,6 +387,19 @@ const styles = StyleSheet.create({
   compactProgressTotal: {
     ...typography.bodySmall,
     fontSize: 12,
+  },
+  logoutButton: {
+    backgroundColor: colors.error,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    marginHorizontal: 4,
+  },
+  logoutText: {
+    ...typography.button,
+    color: colors.white,
+    fontWeight: '600',
   },
 });
 

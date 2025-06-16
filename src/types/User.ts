@@ -120,9 +120,9 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
 };
 
 export const DEFAULT_USER_STATS: UserStats = {
-  fajrCount: 25,
-  dhuhrCount: 20,
-  asrCount: 22,
+  fajrCount: 0,
+  dhuhrCount: 0,
+  asrCount: 0,
   maghribCount: 28,
   ishaCount: 20,
   zikriCount: 154,

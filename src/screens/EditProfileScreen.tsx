@@ -271,8 +271,8 @@ const EditProfileScreen: React.FC = () => {
         masjid: nearestMasjid,
       };
 
-      // Use unified user system to update profile
-      await updateProfile(updateData);
+      // // Use unified user system to update profile
+      // await updateProfile(updateData);
 
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {

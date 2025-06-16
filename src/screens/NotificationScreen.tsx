@@ -13,10 +13,9 @@ import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
 import UnifiedNotificationService from '../services/UnifiedNotificationService';
-import {useAuth} from '../contexts/AuthContext';
 
 const NotificationScreen: React.FC = () => {
-  const {logout} = useAuth(); // Sample data for the meeting cards with enhanced icons support
+  // Sample data for the meeting cards with enhanced icons support
   const personalizedMeeting = {
     title: 'Personalized Meeting',
     subtitle: '3 Days Remaining',
@@ -166,7 +165,6 @@ const NotificationScreen: React.FC = () => {
         {/* Notification Testing Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔔 Notification Testing</Text>
-
           {/* <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
             onPress={initializeDailyPrayers}>
@@ -175,7 +173,6 @@ const NotificationScreen: React.FC = () => {
               Smart daily repeating notifications
             </Text>
           </TouchableOpacity> */}
-
           <TouchableOpacity
             style={[styles.testButton, styles.standardButton]}
             onPress={testSimpleNotification}>
@@ -200,7 +197,6 @@ const NotificationScreen: React.FC = () => {
               See all scheduled notifications
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.testButton, styles.clearButton]}
             onPress={clearAllNotifications}>
@@ -210,24 +206,6 @@ const NotificationScreen: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
-        <Pressable
-          style={styles.logoutButton}
-          onPress={() =>
-            Alert.alert('Logout', 'Are you sure you want to logout?', [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-              },
-              {
-                text: 'Logout',
-                style: 'destructive',
-                onPress: logout,
-              },
-            ])
-          }>
-          <Text style={styles.logoutText}>Logout</Text>
-        </Pressable>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -290,17 +268,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     opacity: 0.9,
     textAlign: 'center',
-  },
-  logoutButton: {
-    backgroundColor: colors.error,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  logoutText: {
-    ...typography.button,
-    color: colors.white,
   },
   bottomSpacing: {
     marginBottom: 80,
