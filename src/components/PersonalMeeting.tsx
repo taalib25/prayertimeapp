@@ -16,7 +16,7 @@ const personalizedMeeting = {
   stats: [
     {label: 'Assigned', value: '3'},
     {label: 'Completed', value: '1'},
-    {label: 'Remaining', value: '2'},
+    {label: 'Absent', value: '2'},
   ],
 };
 
@@ -24,9 +24,9 @@ const meetingAttendance = {
   title: 'Meeting Attendance',
   subtitle: 'Last 5 meetings',
   stats: [
-    {label: 'Attended', value: '4'},
-    {label: 'Absent', value: '1'},
-    {label: 'Completion Rate', value: '80%'},
+    {label: 'Completed', value: '1'},
+    {label: 'Absent', value: '2'},
+    {label: 'Assigned', value: '3'},
   ],
 };
 
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    marginHorizontal: spacing.md,
+    // marginHorizontal: spacing.md,
   },
   header: {
     marginBottom: spacing.md,
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    // paddingTop: spacing.lg,
   },
   section: {
     marginBottom: spacing.lg,

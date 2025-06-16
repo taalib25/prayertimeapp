@@ -1,7 +1,9 @@
+
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
+import SvgIcon from './SvgIcon';
 
 interface Person {
   name: string;
@@ -33,7 +35,6 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
-
       {persons.map((person, index) => (
         <TouchableOpacity
           key={index}
@@ -48,7 +49,6 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
           />
         </TouchableOpacity>
       ))}
-
       {stats.length > 0 && (
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => {
@@ -56,41 +56,45 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
             const isRemaining = stat.label.toLowerCase().includes('remaining');
             const isAssigned = stat.label.toLowerCase().includes('assigned');
             const isAttended = stat.label.toLowerCase().includes('attended');
+            const isAbsent = stat.label.toLowerCase().includes('absent');
+            const isExcused = stat.label.toLowerCase().includes('excused');
             const isPercent = String(stat.value).includes('%');
 
+            // Get the appropriate icon and color based on the stat type
+            let iconName: 'assigned' | 'attended' | 'absent' | undefined;
+            let iconColor = colors.text.muted;
+
+            if (isAssigned) {
+              iconName = 'assigned';
+              iconColor = '#2982D5';
+            } else if (isCompleted || isAttended) {
+              iconName = 'attended';
+              iconColor = '#20B83F';
+            } else if (isAbsent || isExcused) {
+              iconName = 'absent';
+              iconColor = '#FF2626';
+            }
+
             return (
-              <View
-                key={index}
-                style={[
-                  styles.statItem,
-                  isCompleted && styles.statCompleted,
-                  isRemaining && styles.statRemaining,
-                  isAssigned && styles.statAssigned,
-                  isAttended && styles.statAttended,
-                  isPercent && styles.statPercent,
-                ]}>
-                <Text
-                  style={[
-                    styles.statValue,
-                    isCompleted && styles.statValueCompleted,
-                    isRemaining && styles.statValueRemaining,
-                    isAssigned && styles.statValueAssigned,
-                    isAttended && styles.statValueAttended,
-                    isPercent && styles.statValuePercent,
-                  ]}>
-                  {stat.value}
-                </Text>
-                <Text
-                  style={[
-                    styles.statLabel,
-                    isCompleted && styles.statLabelCompleted,
-                    isRemaining && styles.statLabelRemaining,
-                    isAssigned && styles.statLabelAssigned,
-                    isAttended && styles.statLabelAttended,
-                    isPercent && styles.statLabelPercent,
-                  ]}>
-                  {stat.label}
-                </Text>
+              <View key={index} style={styles.statItem}>
+                <View style={styles.statRowContainer}>
+                  {iconName && (
+                    <SvgIcon name={iconName} size={28} color={iconColor} />
+                  )}
+                  <Text style={styles.dashSeparator}>-</Text>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      isCompleted && styles.statValueCompleted,
+                      isRemaining && styles.statValueRemaining,
+                      isAssigned && styles.statValueAssigned,
+                      (isAttended || isCompleted) && styles.statValueAttended,
+                      (isAbsent || isExcused) && styles.statValueAbsent,
+                      isPercent && styles.statValuePercent,
+                    ]}>
+                    {stat.value}
+                  </Text>
+                </View>
               </View>
             );
           })}
@@ -106,6 +110,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   header: {
     marginBottom: spacing.md,
@@ -168,67 +180,47 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     flex: 1,
     marginHorizontal: spacing.xs / 2,
-    borderWidth: 1.5,
-    minHeight: 60,
+    minHeight: 40, // Reduced for row layout
     justifyContent: 'center',
   },
-  statAssigned: {
-    borderColor: '#2196F3',
+  statRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statCompleted: {
-    borderColor: '#4CAF50',
+  dashSeparator: {
+    ...typography.h2,
+    fontWeight: '700',
+    fontSize: 18,
+    marginHorizontal: spacing.xs,
+    color: colors.text.muted,
   },
-  statRemaining: {
-    borderColor: '#FF9800',
-  },
-  statAttended: {
-    borderColor: '#4CAF50',
-  },
-  statPercent: {
-    borderColor: '#9C27B0',
+  statIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statValue: {
     ...typography.h2,
-    // fontWeight: '800',
-    marginBottom: spacing.xs / 3,
+    fontWeight: '700',
     fontSize: 18,
   },
   statValueAssigned: {
-    color: '#1976D2',
+    color: '#2982D5',
   },
   statValueCompleted: {
-    color: '#388E3C',
+    color: '#20B83F',
   },
   statValueRemaining: {
     color: '#F57C00',
   },
   statValueAttended: {
-    color: '#388E3C',
+    color: '#20B83F',
+  },
+  statValueAbsent: {
+    color: '#FF2626',
   },
   statValuePercent: {
     color: '#7B1FA2',
-  },
-  statLabel: {
-    ...typography.bodyMedium,
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 13,
-    lineHeight: 15,
-  },
-  statLabelAssigned: {
-    color: '#1565C0',
-  },
-  statLabelCompleted: {
-    color: '#2E7D32',
-  },
-  statLabelRemaining: {
-    color: '#EF6C00',
-  },
-  statLabelAttended: {
-    color: '#2E7D32',
-  },
-  statLabelPercent: {
-    color: '#6A1B9A',
   },
 });
 

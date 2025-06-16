@@ -16,15 +16,14 @@ import UnifiedNotificationService from '../services/UnifiedNotificationService';
 import {useAuth} from '../contexts/AuthContext';
 
 const NotificationScreen: React.FC = () => {
-  const {logout} = useAuth();
-  // Sample data for the meeting cards
+  const {logout} = useAuth(); // Sample data for the meeting cards with enhanced icons support
   const personalizedMeeting = {
     title: 'Personalized Meeting',
     subtitle: '3 Days Remaining',
     persons: [
       {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
       {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
-      {name: 'Omar Abdullah  ', phone: '07712345700', completed: false},
+      {name: 'Omar Abdullah', phone: '07712345700', completed: false},
     ],
     stats: [
       {label: 'Assigned', value: '3'},
@@ -39,7 +38,7 @@ const NotificationScreen: React.FC = () => {
     stats: [
       {label: 'Attended', value: '4'},
       {label: 'Absent', value: '1'},
-      {label: 'Excused', value: '2'},
+      {label: 'Completion Rate', value: '80%'},
     ],
   };
 

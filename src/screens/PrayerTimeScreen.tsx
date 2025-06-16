@@ -130,12 +130,15 @@ const PrayerTimeScreen = () => {
               <DailyTasksSelector />
               {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeSelector userGoals={goals || undefined} />
+
+               <PersonalMeeting />
+               
               {/* Mosque Attendance Streak Chart */}
               <MosqueStreakSection
                 onSeeAllPress={() => console.log('Mosque streak details')}
               />
 
-              <PersonalMeeting />
+             
             </Animated.View>
           )}
         </View>

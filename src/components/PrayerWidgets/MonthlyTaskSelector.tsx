@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     height: 597,
     // backgroundColor: colors.background.light,
     borderRadius: 20,
-    marginVertical: spacing.md,
+    // marginVertical: spacing.md,
     paddingVertical: spacing.sm,
   },
   pagerView: {
