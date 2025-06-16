@@ -16,6 +16,7 @@ import OTPScreen from './src/screens/OTPScreen';
 import FakeCallScreen from './src/screens/FakeCallScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
+import CallerSettingScreen from './src/screens/CallerSettingScreen';
 // import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
@@ -41,6 +42,7 @@ export type RootStackParamList = {
   Feeds: undefined;
   NotificationScreen: undefined;
   EditProfileScreen: undefined;
+  CallerSettings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -168,6 +170,14 @@ function AppNavigator() {
             <Stack.Screen
               name="EditProfileScreen"
               component={EditProfileScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="CallerSettings"
+              component={CallerSettingScreen}
               options={{
                 headerShown: false,
                 presentation: 'card',

@@ -12,10 +12,9 @@ const MosqueStreakChart: React.FC<MosqueStreakChartProps> = ({
   title = '40 Day Challenge',
 }) => {
   const screenWidth = Dimensions.get('window').width;
-
   // Simple dummy data for 40-day challenge showing 10 data points
-  // Each point represents 4 days, showing mosque attendance streak
-  const streakData = [0, 3, 4, 0, 2, 3, 0, 2, 3, 0];
+  // Each point represents 4 days, showing mosque attendance streak (1-10 scale)
+  const streakData = [2, 7, 8, 3, 5, 9, 4, 6, 8, 5];
 
   // Labels showing day ranges (4-day intervals)
   const labels = [
@@ -35,7 +34,7 @@ const MosqueStreakChart: React.FC<MosqueStreakChartProps> = ({
     datasets: [
       {
         data: streakData,
-        color: (opacity = 1) => colors.primary, // Use theme primary green
+        color: (opacity = 1) => colors.primary,
         strokeWidth: 2,
       },
     ],
@@ -64,6 +63,8 @@ const MosqueStreakChart: React.FC<MosqueStreakChartProps> = ({
     style: {
       borderRadius: 0,
     },
+    yAxisMin: 1,
+    yAxisMax: 10,
   };
 
   return (
@@ -86,8 +87,10 @@ const MosqueStreakChart: React.FC<MosqueStreakChartProps> = ({
           withOuterLines={false}
           withHorizontalLines={false}
           withVerticalLines={false}
-          fromZero={true}
-          segments={10}
+          fromZero={false}
+          segments={9}
+          yAxisMin={1}
+          yAxisMax={10}
         />
       </View>
     </View>
