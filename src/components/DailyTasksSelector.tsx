@@ -118,7 +118,6 @@ const DailyTasksSelector: React.FC = () => {
     },
     [toggleSpecialTaskForDate],
   );
-
   const transformedDailyData = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
 
@@ -138,20 +137,40 @@ const DailyTasksSelector: React.FC = () => {
       return date.toLocaleDateString('en-US', options);
     };
 
-    // Filter out days with no tasks and reverse order (oldest first, so today ends up last/rightmost)
+    // Demo dummy tasks - same for all days
+    const dummyTasks = [
+      {id: 't1', title: '100 x Subhaan Allah', completed: false},
+      {
+        id: 't2',
+        title: '500 x La hawla wala kuwwatha illa billah',
+        completed: false,
+      },
+      {id: 't3', title: '100 x Asthagfirullah', completed: false},
+      {id: 't4', title: '15 mins of Quran', completed: false},
+      {id: 't5', title: 'ISHA at Masjid', completed: false},
+      {id: 't6', title: 'Make Dua for family', completed: false},
+      {id: 't7', title: 'Reflect on day', completed: false},
+    ];
+
+    // Map all recent tasks and add dummy tasks to days that don't have tasks
     const tasksWithData = recentTasks
-      .filter(dayData => dayData.specialTasks.length > 0)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort oldest to newest
-      .map(dayData => ({
-        dateISO: dayData.date,
-        dayLabel: formatDayLabel(dayData.date),
-        tasks: dayData.specialTasks.map(task => ({
-          id: task.id,
-          title: task.title,
-          completed: task.completed,
-        })),
-        isToday: dayData.date === today,
-      }));
+      .map(dayData => {
+        // Use actual tasks if available, otherwise use dummy tasks for demo
+        const tasksToShow =
+          dayData.specialTasks.length > 0 ? dayData.specialTasks : dummyTasks;
+
+        return {
+          dateISO: dayData.date,
+          dayLabel: formatDayLabel(dayData.date),
+          tasks: tasksToShow.map(task => ({
+            id: task.id,
+            title: task.title,
+            completed: task.completed,
+          })),
+          isToday: dayData.date === today,
+        };
+      });
 
     return tasksWithData;
   }, [recentTasks]);
@@ -326,8 +345,7 @@ const styles = StyleSheet.create({
     borderColor: colors.success,
     borderWidth: 1,
   },
-  taskItemDisabled: {
-  },
+  taskItemDisabled: {},
   taskItemText: {
     ...typography.bodyMedium,
     color: colors.text.blue,
@@ -341,8 +359,7 @@ const styles = StyleSheet.create({
     color: colors.forest,
     opacity: 0.8,
   },
-  taskItemTextDisabled: {
-  },
+  taskItemTextDisabled: {},
   taskRadioCircle: {
     width: 20, // Reduced size for more compact layout
     height: 20,
@@ -355,9 +372,7 @@ const styles = StyleSheet.create({
   taskRadioCircleCompleted: {
     backgroundColor: colors.primary,
   },
-  taskRadioCircleDisabled: {
-
-  },
+  taskRadioCircleDisabled: {},
   taskRadioInnerCircle: {
     width: 6, // Reduced size proportionally
     height: 6,
