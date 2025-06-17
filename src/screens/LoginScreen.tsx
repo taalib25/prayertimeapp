@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   Image,
+  ToastAndroid,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -20,6 +21,7 @@ import {colors} from '../utils/theme';
 import {loginSchema, LoginFormData} from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
 import SvgIcon from '../components/SvgIcon';
+import {loginUser} from '../services/api/ApiExamples';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,22 +33,23 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({navigation}) => {
-  const [email, setEmail] = useState('ahmed@test.com');
-  const [password, setPassword] = useState('T@st1234');
+  const [username, setUsername] = useState('ahmed_test');
+  const [password, setPassword] = useState('test123');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+  const [errors, setErrors] = useState<{username?: string; password?: string}>(
+    {},
+  );
   const {login} = useAuth();
-
   const validateForm = (): boolean => {
     try {
-      loginSchema.parse({email, password});
+      loginSchema.parse({username, password});
       setErrors({});
       return true;
     } catch (error: any) {
-      const fieldErrors: {email?: string; password?: string} = {};
+      const fieldErrors: {username?: string; password?: string} = {};
       error.errors.forEach((err: any) => {
         const field = err.path[0] as keyof LoginFormData;
-        if (field === 'email' || field === 'password') {
+        if (field === 'username' || field === 'password') {
           fieldErrors[field] = err.message;
         }
       });
@@ -54,18 +57,32 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
       return false;
     }
   };
-
   const handleLoginPress = async () => {
     if (!validateForm()) {
       return;
     }
-
     setIsLoading(true);
+    const loginResponse = await loginUser(username, password);
 
+    if (!loginResponse.success) {
+      setIsLoading(false);
+      ToastAndroid.show(
+       'Login failed. Please try again.',
+        ToastAndroid.LONG,
+      );
+      return;
+    }
+
+    // If login is successful
+    ToastAndroid.show('Login successful! Redirecting...', ToastAndroid.SHORT);
     try {
-      // For demo purposes, accept any valid email/password format
-      // Navigate to OTP for verification with dummy phone number
-      navigation.navigate('OTP', {email});
+      // Simulate API call or actual login logic
+      // await login(username, password); // Assuming login context function handles actual login
+      navigation.navigate('OTP', {
+        email: username,
+        username: username,
+        password: password,
+      });
     } catch (error) {
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
@@ -93,20 +110,18 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
               <Text style={styles.subtitle}>
                 Please login to access your account
               </Text>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>Username</Text>
               <TextInput
-                style={[styles.input, errors.email && styles.inputError]}
-                placeholder="Enter your email address"
+                style={[styles.input, errors.username && styles.inputError]}
+                placeholder="Enter your username"
                 placeholderTextColor={colors.text.muted}
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
               />
-              {errors.email && (
-                <Text style={styles.errorText}>{errors.email}</Text>
+              {errors.username && (
+                <Text style={styles.errorText}>{errors.username}</Text>
               )}
-
               <Text style={styles.inputLabel}>Password</Text>
               <TextInput
                 style={[styles.input, errors.password && styles.inputError]}
@@ -119,7 +134,6 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
               {errors.password && (
                 <Text style={styles.errorText}>{errors.password}</Text>
               )}
-
               <Text style={styles.forgotPassword}>Forgot Password?</Text>
               <CustomButton
                 title={isLoading ? 'Logging in...' : 'Login'}

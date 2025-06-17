@@ -1,25 +1,25 @@
 import {z} from 'zod';
 
-// Email validation schema
-export const emailSchema = z
+// Username validation schema
+export const usernameSchema = z
   .string()
-  .min(1, 'Email is required')
-  .email('Please enter a valid email address')
+  .min(1, 'Username is required')
+  .min(3, 'Username must be at least 3 characters')
   .trim();
 
 // Password validation schema
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .regex(/^(?=.*[a-z])/, 'Password must contain at least one lowercase letter')
-  .regex(/^(?=.*[A-Z])/, 'Password must contain at least one uppercase letter')
-  .regex(/^(?=.*\d)/, 'Password must contain at least one number');
+  .min(6, 'Password must be at least 6 characters');
 
 // Phone number validation schema
 export const phoneSchema = z
   .string()
   .min(1, 'Phone number is required')
-  .regex(/^0\d{9}$/, 'Please enter a valid phone number (10 digits starting with 0)')
+  .regex(
+    /^0\d{9}$/,
+    'Please enter a valid phone number (10 digits starting with 0)',
+  )
   .length(10, 'Phone number must be exactly 10 digits');
 
 // OTP validation schema
@@ -30,7 +30,7 @@ export const otpSchema = z
 
 // Login form validation schema
 export const loginSchema = z.object({
-  email: emailSchema,
+  username: usernameSchema,
   password: passwordSchema,
 });
 
@@ -46,7 +46,7 @@ export const otpVerificationSchema = z.object({
 
 // Combined validation for full user registration
 export const userRegistrationSchema = z.object({
-  email: emailSchema,
+  username: usernameSchema,
   password: passwordSchema,
   phoneNumber: phoneSchema,
 });

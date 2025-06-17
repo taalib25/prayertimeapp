@@ -8,6 +8,7 @@
 export interface AuthUser {
   id: string;
   email: string;
+  username?: string;
   phoneNumber: string;
   isVerified: boolean;
   name?: string;

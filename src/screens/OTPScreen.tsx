@@ -24,6 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserPreferencesService from '../services/UserPreferencesService';
 import {initializeUserBackgroundTasks} from '../services/backgroundTasks';
 import SvgIcon from '../components/SvgIcon';
+import notifee from '@notifee/react-native';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -35,13 +36,16 @@ interface Props {
   route: {
     params?: {
       email?: string;
+      username?: string;
+      password?: string;
     };
   };
 }
 
-const OTPScreen: React.FC<Props> = ({navigation, route}) => {
+const OTPScreen: React.FC<Props> = ({route}) => {
   const [phoneNumber, setPhoneNumber] = useState('0762348947'); // Dummy phone for testing
   const [otp, setOtp] = useState(['', '', '', '']);
+  const [generatedOtp, setGeneratedOtp] = useState<string>(''); // Store the generated OTP
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: Phone verification, 2: OTP verification
   const [errors, setErrors] = useState<{phoneNumber?: string; otp?: string}>(
@@ -50,10 +54,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null]);
 
   // Animation values
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
   const phoneInputRef = useRef<TextInput>(null);
-
   // Start with focus on phone input
   useEffect(() => {
     setTimeout(() => phoneInputRef.current?.focus(), 300);
@@ -72,11 +73,21 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
       return false;
     }
   };
-
   const validateOTP = (): boolean => {
     const otpString = otp.join('');
     try {
+      // First validate format
       otpVerificationSchema.parse({otp: otpString});
+
+      // Then check if it matches the generated OTP
+      if (otpString !== generatedOtp) {
+        setErrors(prev => ({
+          ...prev,
+          otp: 'Invalid OTP. Please check the code sent to your notification.',
+        }));
+        return false;
+      }
+
       setErrors(prev => ({...prev, otp: undefined}));
       return true;
     } catch (error: any) {
@@ -86,23 +97,85 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     }
   };
 
-  const handlePhoneSubmit = () => {
+  // Generate random 4-digit OTP
+  const generateOTP = (): string => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  // Send OTP via notification
+  const sendOTPNotification = async (otpCode: string): Promise<void> => {
+    try {
+      // Request notification permission
+      await notifee.requestPermission();
+
+      // Create notification channel
+      const channelId = await notifee.createChannel({
+        id: 'otp-verification',
+        name: 'OTP Verification',
+        importance: 4, // High importance
+        sound: 'default',
+      });
+
+      // Send notification with OTP
+      await notifee.displayNotification({
+        title: '🔐 Your OTP Code',
+        body: `Your verification code is: ${otpCode}`,
+        data: {
+          type: 'otp-verification',
+          otpCode: otpCode,
+          phoneNumber: phoneNumber,
+        },
+        android: {
+          channelId,
+          importance: 4,
+          pressAction: {
+            id: 'default',
+          },
+        },
+        ios: {
+          sound: 'default',
+          criticalVolume: 1.0,
+        },
+      });
+
+      console.log(`📱 OTP sent via notification: ${otpCode}`);
+    } catch (error) {
+      console.error('❌ Error sending OTP notification:', error);
+      throw error;
+    }
+  };
+  const handlePhoneSubmit = async () => {
     if (!validatePhoneNumber()) {
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate API request
-    setTimeout(() => {
-      setIsLoading(false);
-      // Simply change step without complex animation
-      setStep(2);
-      // Focus on first OTP input after a short delay
+    try {
+      // Generate random 4-digit OTP
+      const newOtp = generateOTP();
+      setGeneratedOtp(newOtp);
+
+      // Send OTP via notification
+      await sendOTPNotification(newOtp);
+
+      // Simulate API request delay
       setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 100);
-    }, 1000);
+        setIsLoading(false);
+        setStep(2);
+        // Focus on first OTP input after a short delay
+        setTimeout(() => {
+          inputRefs.current[0]?.focus();
+        }, 100);
+      }, 1500);
+    } catch (error) {
+      console.error('❌ Error sending OTP:', error);
+      setIsLoading(false);
+      setErrors(prev => ({
+        ...prev,
+        phoneNumber: 'Failed to send OTP. Please try again.',
+      }));
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -120,18 +193,17 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
       inputRefs.current[index + 1]?.focus();
     }
   };
-
   const {login} = useAuth();
   const email = route.params?.email || '';
+  const username = route.params?.username || '';
+  const password = route.params?.password || '';
 
   const createDummyUserData = async () => {
     try {
-      const uid = 1001;
-
-      // This function will be replaced by handling API response data
+      const uid = 1001; // This function will be replaced by handling API response data
       const dummyProfile = {
-        username: 'Ahmed Hassan',
-        email: email || 'ahmed@example.com',
+        username: username || 'Ahmed Hassan',
+        email: email || username || 'ahmed@example.com',
         phoneNumber: phoneNumber,
       };
 
@@ -174,7 +246,6 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
       console.error('❌ Error creating user data:', error);
     }
   };
-
   const handleVerifyOTP = async () => {
     if (!validateOTP()) {
       return;
@@ -183,23 +254,45 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
     setIsLoading(true);
 
     try {
-      // Step 1: Verify OTP with API (currently dummy)
+      console.log(`✅ OTP verified successfully: ${otp.join('')}`);
+
+      // Step 1: Verify OTP with API (currently using local verification)
       // const apiResponse = await verifyOTPWithAPI(phoneNumber, otp.join(''));
 
       // Step 2: Create/update user data (will use API response)
       await createDummyUserData();
 
       // Step 3: Login user
-      await login(email, phoneNumber);
+      await login(username || email, phoneNumber);
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       setIsLoading(false);
+      setErrors(prev => ({
+        ...prev,
+        otp: 'Verification failed. Please try again.',
+      }));
     }
   };
-
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     setOtp(['', '', '', '']);
-    // Resend logic would go here
+    setErrors(prev => ({...prev, otp: undefined}));
+
+    try {
+      // Generate new OTP
+      const newOtp = generateOTP();
+      setGeneratedOtp(newOtp);
+
+      // Send new OTP via notification
+      await sendOTPNotification(newOtp);
+
+      console.log(`🔄 OTP resent: ${newOtp}`);
+    } catch (error) {
+      console.error('❌ Error resending OTP:', error);
+      setErrors(prev => ({
+        ...prev,
+        otp: 'Failed to resend OTP. Please try again.',
+      }));
+    }
   };
 
   return (
@@ -263,8 +356,14 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
                   },
                 ]}>
                 We've sent a code to
-                <Text style={styles.phoneNumberText}>{phoneNumber}</Text>
+                <Text style={styles.phoneNumberText}> {phoneNumber}</Text>
               </Text>
+              {/* Debug info - remove in production */}
+              {/* {generatedOtp && (
+                <Text style={styles.debugText}>
+                  🔍 Debug: OTP is {generatedOtp}
+                </Text>
+              )} */}
               <View style={styles.otpContainer}>
                 {[0, 1, 2, 3].map(index => (
                   <TextInput
@@ -289,7 +388,7 @@ const OTPScreen: React.FC<Props> = ({navigation, route}) => {
               />
               <View style={styles.resendContainer}>
                 <Text style={styles.resendText}>
-                  Didn't receive the code?
+                  Didn't receive the code?{" "}
                   <Text onPress={handleResendOTP} style={styles.resendLink}>
                     Resend
                   </Text>
@@ -399,6 +498,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
     marginLeft: 4,
+  },
+  debugText: {
+    ...typography.caption,
+    color: colors.primary,
+    backgroundColor: '#f0f8ff',
+    padding: 8,
+    borderRadius: 4,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: 'bold',
   },
 });
 
