@@ -321,7 +321,7 @@ const MonthlyChallengeContent: React.FC = () => {
             <CompactChallengeCard
               id={`${monthData.monthLabel}-${monthData.year}-quran`}
               title="Quran"
-              subtitle="Pages"
+              subtitle="Minutes"
               current={monthData.quran.current}
               total={monthData.quran.total}
               backgroundColor="#E3F2FD"
