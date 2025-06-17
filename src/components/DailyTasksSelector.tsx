@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     color: colors.text.blue,
     flex: 1,
     marginRight: spacing.sm, // Reduced margin for more compact layout
-    lineHeight: 18, // Reduced line height for more compact text
+    lineHeight: 25, // Reduced line height for more compact text
     fontSize: 14, // Slightly smaller font for more compact layout
   },
   taskItemTextCompleted: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: spacing.xs, // Reduced for more compact layout
-    paddingBottom: spacing.sm,
+    // paddingBottom: spacing.sm,
   },
   paginationDot: {
     width: 8,

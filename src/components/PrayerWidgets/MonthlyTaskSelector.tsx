@@ -251,8 +251,8 @@ const MonthlyChallengeContent: React.FC = () => {
   }, [monthlyData, getCurrentMonthIndex]);
 
   const handleEdit = useCallback((type: 'zikr' | 'quran') => {
-    setEditingType(type);
-    setEditModalVisible(true);
+    // setEditingType(type);
+    // setEditModalVisible(true);
   }, []);
 
   const handleSaveEdit = useCallback(
@@ -278,7 +278,7 @@ const MonthlyChallengeContent: React.FC = () => {
       };
     } else if (editingType === 'quran') {
       return {
-        title: 'Update Quran Pages',
+        title: 'Update Quran Minutes',
         currentValue: todayData.quranPages,
       };
     }

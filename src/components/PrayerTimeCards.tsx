@@ -123,27 +123,6 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
     setModalVisible(true);
   };
 
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedPrayer(null);
-  };
-
-  const getAttendanceColor = (attendance: AttendanceType) => {
-    switch (attendance) {
-      case 'home':
-        return colors.success; // Green for home
-      case 'masjid':
-        return colors.text.prayerBlue; // Prayer blue for masjid
-      case 'none':
-      default:
-        return colors.text.muted; // Gray for none
-    }
-  };
-
-  const getAttendanceOpacity = (attendance: AttendanceType) => {
-    return attendance === 'none' ? 0.3 : 1;
-  };
-
   return (
     <>
       {/* Prayer Cards Container */}
@@ -165,8 +144,16 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                     styles.prayerCard,
                     prayer.isActive && styles.activeCard,
                   ]}>
-                  <Text style={styles.prayerName}>{prayer.displayName}</Text>
-
+                  <Text
+                    style={
+                      prayer.displayName === 'Maghrib'
+                        ? styles.maghribName
+                        : styles.prayerName
+                    }
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}>
+                    {prayer.displayName}
+                  </Text>
                   <View style={styles.iconContainer}>
                     <SvgIcon
                       name={prayer.name.toLowerCase() as IconName}
@@ -178,8 +165,9 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                       </View>
                     )}
                   </View>
-
-                  <Text style={styles.prayerTime}>{prayer.time}</Text>
+                  <Text style={styles.prayerTime} numberOfLines={1}>
+                    {prayer.time}
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
@@ -219,8 +207,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
     padding: 1,
-    paddingTop: 14,
-    paddingHorizontal: 13,
+    paddingTop: 16, // Increased top padding
+    paddingHorizontal: 16, // Increased horizontal padding
     marginTop: 25,
     shadowColor: '#000000',
     shadowOffset: {width: 1, height: 2},
@@ -232,22 +220,24 @@ const styles = StyleSheet.create({
   prayerCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12, // Increased bottom margin
   },
   prayerColumn: {
     flex: 1,
     alignItems: 'center',
+    marginHorizontal: 2, // Added horizontal margin between columns
   },
   prayerCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: -1,
+    paddingVertical: 12, // Increased vertical padding
+    paddingHorizontal: 4, // Increased horizontal padding
     width: '100%',
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
-    marginBottom: 6, // Space between card and attendance
+    // marginBottom: 8, // Increased space between card and attendance
+    minHeight: 110, // Added minimum height to prevent cramping
   },
   activeCard: {
     borderColor: '#4CE047',
@@ -255,31 +245,42 @@ const styles = StyleSheet.create({
   prayerName: {
     ...typography.prayerCard,
     color: colors.text.prayerBlue,
-    marginBottom: 13,
-    fontSize: 15,
+    marginBottom: 12, // Slightly reduced but still spacious
+    fontSize: 13, // Slightly reduced font size to prevent wrapping
     textAlign: 'center',
+    lineHeight: 16, // Added line height for better text spacing
+  },
+  maghribName: {
+    ...typography.prayerCard,
+    color: colors.text.prayerBlue,
+    marginBottom: 12,
+    fontSize: 13, // Smaller font size specifically for Maghrib
+    textAlign: 'center',
+    lineHeight: 16, // Slightly bolder to maintain readability
   },
   prayerTime: {
     ...typography.prayerCard,
-    fontSize: 15,
+    fontSize: 13, // Slightly reduced font size to prevent wrapping
     color: colors.text.prayerBlue,
-    marginTop: 15,
-    marginBottom: 5,
+    marginTop: 12, // Reduced top margin
+    marginBottom: 6, // Increased bottom margin
     textAlign: 'center',
+    lineHeight: 16, // Added line height for better text spacing
   },
   iconContainer: {
-    height: 30,
+    height: 32, // Increased height for better spacing
+    width: 32, // Added width for consistent sizing
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   attendanceIndicator: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    top: -6, // Adjusted position
+    right: -6, // Adjusted position
+    width: 16, // Slightly larger for better visibility
+    height: 16,
+    borderRadius: 8,
     backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
@@ -291,9 +292,9 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     color: '#FFFFFF',
-    fontSize: 8,
+    fontSize: 9, // Slightly larger for better visibility
     fontWeight: 'bold',
-    lineHeight: 10,
+    lineHeight: 12,
   },
 });
 

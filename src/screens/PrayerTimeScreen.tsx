@@ -49,7 +49,7 @@ const PrayerTimeScreen = () => {
     if (!isLoading) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
+        duration: 300,
         useNativeDriver: true,
       }).start();
     } else {
