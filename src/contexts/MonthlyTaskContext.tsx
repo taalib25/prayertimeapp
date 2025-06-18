@@ -122,7 +122,6 @@ export const MonthlyTaskProvider: React.FC<{
     updateQuranForDate,
     refetch: refetchDaily,
   } = useRecentDailyTasks({
-    uid: MOCK_USER_ID,
     daysBack: 1,
   });
 
@@ -142,7 +141,7 @@ export const MonthlyTaskProvider: React.FC<{
     const todayTask = recentTasks.find(task => task.date === today);
     return {
       zikr: optimisticUpdates.zikr ?? (todayTask?.totalZikrCount || 0),
-      quranPages: optimisticUpdates.quran ?? (todayTask?.quranPagesRead || 0),
+      quranPages: optimisticUpdates.quran ?? (todayTask?.quranMinutes || 0),
     };
   }, [recentTasks, optimisticUpdates]);
 
@@ -161,7 +160,7 @@ export const MonthlyTaskProvider: React.FC<{
         task => task.date === new Date().toISOString().split('T')[0],
       );
       const originalTodayZikr = todayTaskData?.totalZikrCount || 0;
-      const originalTodayQuran = todayTaskData?.quranPagesRead || 0;
+      const originalTodayQuran = todayTaskData?.quranMinutes || 0;
 
       // Calculate differences
       const zikrDifference =

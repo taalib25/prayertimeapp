@@ -63,8 +63,6 @@ const DatabaseScreen: React.FC = () => {
           date: (record as any).date || '',
           day: (record as any).day || '',
           fajr: (record as any).fajr || '',
-          shuruq: (record as any).shuruq || '',
-          dhuha: (record as any).dhuha || '',
           dhuhr: (record as any).dhuhr || '',
           asr: (record as any).asr || '',
           maghrib: (record as any).maghrib || '',
@@ -75,28 +73,23 @@ const DatabaseScreen: React.FC = () => {
         }));
       } else if (selectedTable === 'daily_tasks') {
         // Use the modular function to get recent daily tasks
-        const MOCK_USER_ID = 1; // TODO: Replace with actual user ID from auth context
         const daysBack = 30; // Get last 30 days of data
 
         try {
-          const tasks = await getRecentDailyTasks(MOCK_USER_ID, daysBack);
+          const tasks = await getRecentDailyTasks(daysBack);
           console.log(`📊 Found ${tasks.length} daily task records`);
           setRecordCount(tasks.length);
 
           data = tasks.map(task => ({
-            id: `${task.uid}-${task.date}`,
-            uid: task.uid,
+            id: task.date, // Use date as ID since it's now the primary key
             date: task.date,
             fajr_status: task.fajrStatus,
             dhuhr_status: task.dhuhrStatus,
             asr_status: task.asrStatus,
             maghrib_status: task.maghribStatus,
             isha_status: task.ishaStatus,
-            tahajjud_completed: task.tahajjudCompleted ? 'Yes' : 'No',
-            duha_completed: task.duhaCompleted ? 'Yes' : 'No',
             total_zikr_count: task.totalZikrCount,
             quran_minutes: task.quranMinutes,
-            quran_pages_read: task.quranPagesRead,
             special_tasks_count: task.specialTasks.length,
             special_tasks_summary: task.specialTasks
               .map(t => `${t.title}: ${t.completed ? '✅' : '❌'}`)
@@ -113,20 +106,14 @@ const DatabaseScreen: React.FC = () => {
 
           data = records.map(record => ({
             id: record.id,
-            uid: (record as any).uid || '',
             date: (record as any).date || '',
             fajr_status: (record as any).fajrStatus || '',
             dhuhr_status: (record as any).dhuhrStatus || '',
             asr_status: (record as any).asrStatus || '',
             maghrib_status: (record as any).maghribStatus || '',
             isha_status: (record as any).ishaStatus || '',
-            tahajjud_completed: (record as any).tahajjudCompleted
-              ? 'Yes'
-              : 'No',
-            duha_completed: (record as any).duhaCompleted ? 'Yes' : 'No',
             total_zikr_count: (record as any).totalZikrCount || 0,
             quran_minutes: (record as any).quranMinutes || 0,
-            quran_pages_read: (record as any).quranPagesRead || 0,
             special_tasks: (record as any).specialTasks || '',
             created_at: new Date(
               (record as any).createdAt,
@@ -196,8 +183,6 @@ const DatabaseScreen: React.FC = () => {
           plainObject.date = (record as any).date || '';
           plainObject.day = (record as any).day || '';
           plainObject.fajr = (record as any).fajr || '';
-          plainObject.shuruq = (record as any).shuruq || '';
-          plainObject.dhuha = (record as any).dhuha || '';
           plainObject.dhuhr = (record as any).dhuhr || '';
           plainObject.asr = (record as any).asr || '';
           plainObject.maghrib = (record as any).maghrib || '';
@@ -211,22 +196,14 @@ const DatabaseScreen: React.FC = () => {
           ).toLocaleDateString();
         } else if (selectedTable === 'daily_tasks') {
           plainObject.id = record.id;
-          plainObject.uid = (record as any).uid || '';
           plainObject.date = (record as any).date || '';
           plainObject.fajr_status = (record as any).fajrStatus || '';
           plainObject.dhuhr_status = (record as any).dhuhrStatus || '';
           plainObject.asr_status = (record as any).asrStatus || '';
           plainObject.maghrib_status = (record as any).maghribStatus || '';
           plainObject.isha_status = (record as any).ishaStatus || '';
-          plainObject.tahajjud_completed = (record as any).tahajjudCompleted
-            ? 'Yes'
-            : 'No';
-          plainObject.duha_completed = (record as any).duhaCompleted
-            ? 'Yes'
-            : 'No';
           plainObject.total_zikr_count = (record as any).totalZikrCount || 0;
           plainObject.quran_minutes = (record as any).quranMinutes || 0;
-          plainObject.quran_pages_read = (record as any).quranPagesRead || 0;
           plainObject.special_tasks = (record as any).specialTasks || '';
           plainObject.created_at = new Date(
             (record as any).createdAt,

@@ -42,7 +42,7 @@ export interface PrayerStatus {
   displayName: string;
   time: string;
   isCompleted: boolean;
-  completionType?: 'jamath' | 'individual' | 'qaza';
+  completionType?: 'home' | 'mosque';
   isActive: boolean;
 }
 

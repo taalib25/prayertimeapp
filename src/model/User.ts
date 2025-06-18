@@ -13,9 +13,6 @@ export default class UserModel extends Model {
   @field('prayer_settings') prayerSettings!: string;
   @field('monthly_zikr_goal') monthlyZikrGoal!: number;
   @field('monthly_quran_pages_goal') monthlyQuranPagesGoal!: number;
-  @field('monthly_charity_goal') monthlyCharityGoal!: number;
-  @field('monthly_fasting_days_goal') monthlyFastingDaysGoal!: number;
-  @field('preferred_madhab') preferredMadhab!: string;
   @field('app_language') appLanguage!: string;
   @field('theme') theme!: string;
 

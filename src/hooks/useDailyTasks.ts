@@ -1,173 +1,230 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 import {AppState} from 'react-native';
 import {
   getRecentDailyTasks,
   updatePrayerStatus,
-  updateSpecialTaskStatus,
   updateZikrCount,
-  updateQuranPages,
+  updateQuranMinutes,
   checkAndCreateTodayTasks,
-  getRecentMonthsData,
   DailyTaskData,
+  getRecentMonthsData,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
-import {checkBackgroundTasksHealth} from '../services/backgroundTasks';
 
 interface UseRecentDailyTasksProps {
-  uid: number;
   daysBack?: number;
 }
 
 export const useRecentDailyTasks = ({
-  uid,
   daysBack = 3,
-}: UseRecentDailyTasksProps) => {
+}: UseRecentDailyTasksProps = {}) => {
   const [recentTasks, setRecentTasks] = useState<DailyTaskData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh trigger
+  const isUpdatingRef = useRef(false); // Prevent concurrent updates
 
-  const fetchRecentTasks = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      // console.log('🔄 Starting fetchRecentTasks...');
-
-      // Only check and create TODAY's tasks if they don't exist
-      const today = new Date().toISOString().split('T')[0];
-      console.log(`📅 Today is: ${today}`);
-
-      await checkAndCreateTodayTasks(uid);
-
-      // Ensure notification services are healthy (don't recreate tasks)
-      await checkBackgroundTasksHealth(uid);
-
-      // Fetch recent tasks (this will NOT create tasks, just fetch existing ones)
-      const tasks = await getRecentDailyTasks(uid, daysBack);
-
-      console.log(`📊 Fetched ${tasks.length} recent task records`);
-
-      // Sort tasks by date (newest first) for proper display order
-      const sortedTasks = tasks.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
-
-      // Log the task data for debugging
-      sortedTasks.forEach(task => {
-        console.log(
-          `📋 ${task.date}: ${task.specialTasks.length} special tasks`,
-        );
-      });
-
-      setRecentTasks(sortedTasks);
-    } catch (err) {
-      setError('Failed to fetch recent daily tasks');
-      console.error('Error fetching recent daily tasks:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [uid, daysBack]);
-
-  const toggleSpecialTaskForDate = useCallback(
-    async (date: string, taskId: string) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Prevent toggling tasks for previous days
-      if (date !== today) {
-        console.log('Cannot toggle tasks for previous days');
-        return;
-      }
-
-      const dayTasks = recentTasks.find(task => task.date === date);
-      if (!dayTasks) return;
-
-      const task = dayTasks.specialTasks.find(t => t.id === taskId);
-      if (!task) return;
-
+  const fetchRecentTasks = useCallback(
+    async (skipLog = false) => {
       try {
-        await updateSpecialTaskStatus(uid, date, taskId, !task.completed);
-        await fetchRecentTasks();
+        if (!skipLog) {
+          console.log('🔄 Hook: Starting fetchRecentTasks...');
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        // Check and create today's tasks if needed
+        await checkAndCreateTodayTasks();
+
+        // Fetch recent tasks
+        const tasks = await getRecentDailyTasks(daysBack);
+
+        if (!skipLog) {
+          console.log(`📋 Hook: Received ${tasks.length} daily tasks`);
+        }
+
+        // Enhanced logging for today's task
+        if (tasks.length > 0) {
+          const today = new Date().toISOString().split('T')[0];
+          const todayTask = tasks.find(t => t.date === today);
+          if (todayTask) {
+            if (!skipLog) {
+              console.log("📅 Hook: Today's task found:", {
+                date: todayTask.date,
+                fajr: todayTask.fajrStatus,
+                dhuhr: todayTask.dhuhrStatus,
+                asr: todayTask.asrStatus,
+                maghrib: todayTask.maghribStatus,
+                isha: todayTask.ishaStatus,
+              });
+            }
+          } else {
+            console.log('❌ Hook: No task found for today:', today);
+            console.log(
+              '❌ Hook: Available dates:',
+              tasks.map(t => t.date),
+            );
+          }
+        } else {
+          console.log('❌ Hook: No tasks found at all');
+        }
+
+        // Update state with new data
+        setRecentTasks(tasks);
+
+        if (!skipLog) {
+          console.log('✅ Hook: State updated with new tasks');
+        }
+
+        return tasks; // Return the fetched tasks
       } catch (err) {
-        console.error('Error toggling special task:', err);
-        setError('Failed to update task');
+        setError('Failed to fetch recent daily tasks');
+        console.error('❌ Hook: Error fetching recent daily tasks:', err);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
     },
-    [uid, recentTasks, fetchRecentTasks],
+    [daysBack],
   );
+
+  // Force refresh function
+  const forceRefresh = useCallback(async () => {
+    console.log('🔄 Hook: Force refresh triggered');
+    setRefreshKey(prev => prev + 1);
+    await fetchRecentTasks();
+  }, [fetchRecentTasks]);
 
   const updatePrayerForDate = useCallback(
     async (date: string, prayerName: string, status: PrayerStatus) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Prevent updating prayers for previous days
-      if (date !== today) {
-        console.log('Cannot update prayers for previous days');
+      // Prevent concurrent updates
+      if (isUpdatingRef.current) {
+        console.log('⏸️ Hook: Update already in progress, skipping...');
         return;
       }
 
+      isUpdatingRef.current = true;
+
       try {
-        await updatePrayerStatus(uid, date, prayerName, status);
-        await fetchRecentTasks();
+        console.log(`🎯 Hook: updatePrayerForDate called`);
+        console.log(`   Date: ${date}`);
+        console.log(`   Prayer: ${prayerName}`);
+        console.log(`   Status: ${status}`);
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Only allow updating today's prayers
+        if (date !== today) {
+          console.log('❌ Hook: Cannot update prayers for previous days');
+          return;
+        }
+
+        // Enforce lowercase for consistency
+        const lcPrayer = prayerName.toLowerCase();
+
+        // Validate prayer name
+        if (!['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(lcPrayer)) {
+          console.error(`❌ Hook: Invalid prayer name: ${prayerName}`);
+          return;
+        }
+
+        console.log(`🔧 Hook: Calling updatePrayerStatus...`);
+
+        // Call the database update function
+        await updatePrayerStatus(date, lcPrayer, status);
+
+        console.log(
+          `🔄 Hook: Database update completed, now refreshing data...`,
+        );
+
+        // Wait a bit to ensure database write is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Force refresh the tasks data
+        await forceRefresh();
+
+        console.log(`✅ Hook: Complete flow finished successfully`);
       } catch (err) {
-        console.error('Error updating prayer:', err);
+        console.error('❌ Hook: Error in updatePrayerForDate:', err);
         setError('Failed to update prayer status');
+        throw err;
+      } finally {
+        isUpdatingRef.current = false;
       }
     },
-    [uid, fetchRecentTasks],
+    [forceRefresh],
   );
-
   const updateZikrForDate = useCallback(
     async (date: string, count: number) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Prevent updating zikr for previous days
-      if (date !== today) {
-        console.log('Cannot update zikr for previous days');
+      if (isUpdatingRef.current) {
+        console.log('⏸️ Hook: Zikr update already in progress, skipping...');
         return;
       }
 
+      isUpdatingRef.current = true;
+
       try {
-        await updateZikrCount(uid, date, count);
-        await fetchRecentTasks();
+        const today = new Date().toISOString().split('T')[0];
+
+        // Only allow updating today's zikr
+        if (date !== today) {
+          console.log('Cannot update zikr for previous days');
+          return;
+        }
+
+        await updateZikrCount(date, count);
+        await forceRefresh();
       } catch (err) {
         console.error('Error updating zikr:', err);
         setError('Failed to update zikr count');
+      } finally {
+        isUpdatingRef.current = false;
       }
     },
-    [uid, fetchRecentTasks],
+    [forceRefresh],
   );
 
   const updateQuranForDate = useCallback(
-    async (date: string, pages: number) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      // Prevent updating Quran for previous days
-      if (date !== today) {
-        console.log('Cannot update Quran for previous days');
+    async (date: string, minutes: number) => {
+      if (isUpdatingRef.current) {
+        console.log('⏸️ Hook: Quran update already in progress, skipping...');
         return;
       }
 
+      isUpdatingRef.current = true;
+
       try {
-        await updateQuranPages(uid, date, pages);
-        await fetchRecentTasks();
+        const today = new Date().toISOString().split('T')[0];
+
+        // Only allow updating today's Quran minutes
+        if (date !== today) {
+          console.log('Cannot update Quran for previous days');
+          return;
+        }
+
+        await updateQuranMinutes(date, minutes);
+        await forceRefresh();
       } catch (err) {
         console.error('Error updating Quran:', err);
-        setError('Failed to update Quran pages');
+        setError('Failed to update Quran minutes');
+      } finally {
+        isUpdatingRef.current = false;
       }
     },
-    [uid, fetchRecentTasks],
+    [forceRefresh],
   );
 
+  // Initial load
   useEffect(() => {
     fetchRecentTasks();
-  }, [fetchRecentTasks]);
+  }, [fetchRecentTasks, refreshKey]);
 
+  // App state change listener
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') {
-        console.log("🔄 App became active, checking for today's tasks only...");
-        // Only check for today's tasks, don't recreate everything
-        fetchRecentTasks();
+        forceRefresh();
       }
     };
 
@@ -178,22 +235,22 @@ export const useRecentDailyTasks = ({
     return () => {
       subscription?.remove();
     };
-  }, [fetchRecentTasks]);
+  }, [forceRefresh]);
 
   return {
     recentTasks,
     isLoading,
     error,
-    toggleSpecialTaskForDate,
     updatePrayerForDate,
     updateZikrForDate,
     updateQuranForDate,
-    refetch: fetchRecentTasks,
+    fetchRecentTasks,
+    refetch: forceRefresh, // Use forceRefresh instead of fetchRecentTasks
+    forceRefresh, // Expose force refresh specifically
   };
 };
 
 /**
- * Hook for monthly aggregated data
  */
 export const useMonthlyData = ({
   uid,
@@ -233,3 +290,10 @@ export const useMonthlyData = ({
     refetch: fetchMonthlyData,
   };
 };
+
+// (Removed duplicate and broken code for useMonthlyData.)
+// If you want to keep the monthly data hook, ensure only the correct implementation remains below.
+// Also, make sure getRecentMonthsData is imported if you use it, e.g.:
+// import { getRecentMonthsData } from '../services/db/dailyTaskServices';
+// Also, make sure getRecentMonthsData is imported if you use it, e.g.:
+// import { getRecentMonthsData } from '../services/db/dailyTaskServices';

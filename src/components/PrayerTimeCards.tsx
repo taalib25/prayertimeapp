@@ -1,16 +1,14 @@
-import React, {useState, useCallback, useMemo} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 import {IconName} from './SvgIcon';
-import PrayerReminderModal from './PrayerReminderModal';
 import AttendanceSelectionModal, {
   AttendanceType,
 } from './AttendanceSelectionModal';
 import {useRecentDailyTasks} from '../hooks/useDailyTasks';
 import {PrayerStatus} from '../model/DailyTasks';
-import { updatePrayerRecord } from '../services/ApiExamples';
 
 interface PrayerTime {
   name: string;
@@ -23,123 +21,178 @@ interface PrayerTimeCardsProps {
   prayers: PrayerTime[];
 }
 
-const MOCK_USER_ID = 1001;
-
 const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedPrayer, setSelectedPrayer] = useState<PrayerTime | null>(null);
-  const [reminderType, setReminderType] = useState<'notification' | 'alarm'>(
-    'notification',
-  );
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
     useState<PrayerTime | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const {recentTasks, updatePrayerForDate} = useRecentDailyTasks({
-    uid: MOCK_USER_ID,
-    daysBack: 1,
-  });
+  const {recentTasks, updatePrayerForDate, forceRefresh, isLoading, error} =
+    useRecentDailyTasks({
+      daysBack: 1,
+    });
 
-  // Get today's task data
+  // Get today's task data with better error handling
   const todayData = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return recentTasks.find(task => task.date === today);
-  }, [recentTasks]);
+    const data = recentTasks.find(task => task.date === today)
+
+    return data || null;
+  }, [recentTasks, isLoading]);
+
+  // Auto-refresh when component mounts or when needed
+  useEffect(() => {
+    if (!todayData && !isLoading && recentTasks.length === 0) {
+      console.log('🔄 No today data found, forcing refresh...');
+      forceRefresh();
+    }
+  }, [todayData, isLoading, recentTasks.length, forceRefresh]);
 
   const getPrayerStatus = useCallback(
     (prayerName: string): PrayerStatus => {
-      if (!todayData) return 'pending';
-
-      // Access prayer status properties directly from the data
-      switch (prayerName.toLowerCase()) {
-        case 'fajr':
-          return (todayData.fajrStatus as PrayerStatus) || 'pending';
-        case 'dhuhr':
-          return (todayData.dhuhrStatus as PrayerStatus) || 'pending';
-        case 'asr':
-          return (todayData.asrStatus as PrayerStatus) || 'pending';
-        case 'maghrib':
-          return (todayData.maghribStatus as PrayerStatus) || 'pending';
-        case 'isha':
-          return (todayData.ishaStatus as PrayerStatus) || 'pending';
-        default:
-          return 'pending';
+      if (!todayData) {
+        console.log(`❌ No todayData available for ${prayerName}`);
+        return 'none';
       }
+
+      const lcPrayerName = prayerName.toLowerCase();
+
+      let status: PrayerStatus;
+      switch (lcPrayerName) {
+        case 'fajr':
+          status = todayData.fajrStatus as PrayerStatus;
+          break;
+        case 'dhuhr':
+          status = todayData.dhuhrStatus as PrayerStatus;
+          break;
+        case 'asr':
+          status = todayData.asrStatus as PrayerStatus;
+          break;
+        case 'maghrib':
+          status = todayData.maghribStatus as PrayerStatus;
+          break;
+        case 'isha':
+          status = todayData.ishaStatus as PrayerStatus;
+          break;
+        default:
+          status = 'none';
+      }
+
+      console.log(
+        `📊 getPrayerStatus: ${lcPrayerName} = "${status}" (from todayData)`,
+      );
+      return status;
     },
     [todayData],
   );
 
   const getAttendanceType = useCallback(
     (status: PrayerStatus): AttendanceType => {
-      switch (status) {
-        case 'individual':
-          return 'home';
-        case 'jamath':
-        case 'completed':
-          return 'masjid';
-        default:
-          return 'none';
+      console.log(`🔍 Converting status "${status}" to attendance type`);
+
+      // Direct mapping - make sure this matches exactly what we store
+      if (status === 'home') {
+        return 'home';
+      } else if (status === 'mosque') {
+        return 'mosque';
+      } else {
+        return 'none';
       }
     },
     [],
   );
 
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
+    console.log(`Opening modal for prayer: ${prayer.name}`);
     setSelectedPrayerForAttendance(prayer);
     setAttendancePopupVisible(true);
   }, []);
-
   const handleAttendanceSelect = useCallback(
     async (attendance: AttendanceType) => {
-      if (!selectedPrayerForAttendance) return;
-
-      const today = new Date().toISOString().split('T')[0];
-      let newStatus: PrayerStatus;
-
-      switch (attendance) {
-        case 'home':
-          newStatus = 'individual';
-          break;
-        case 'masjid':
-          newStatus = 'jamath';
-          break;
-        case 'none':
-        default:
-          newStatus = 'pending';
-          break;
+      if (!selectedPrayerForAttendance || isUpdating) {
+        console.log('⏸️ Cannot update: no prayer selected or already updating');
+        return;
       }
 
-      //added the prayer api call to update the prayer status
-      await updatePrayerForDate(
-        today,
-        selectedPrayerForAttendance.name,
-        newStatus,
-      );
-    console.log(
-    
-       selectedPrayerForAttendance.name, // prayerType
-        today,// prayerDate
-        (attendance === 'masjid' || attendance === 'home') ? 'prayed' : 'missed', // status
-        attendance === 'masjid' ? 'mosque' : attendance === 'home' ? 'home' : undefined, // location
-    );
+      setIsUpdating(true);
 
-    //dhuhr dhuhr 2025-06-17 individual home
+      const today = new Date().toISOString().split('T')[0];
+      let newStatus: PrayerStatus = 'none';
 
-      await updatePrayerRecord(
-        selectedPrayerForAttendance.name, // prayerType
-        today,// prayerDate
-        (attendance === 'masjid' || attendance === 'home') ? 'prayed' : 'missed', // status
-        attendance === 'masjid' ? 'mosque' : attendance === 'home' ? 'home' : undefined, // location
+      // Clear mapping
+      if (attendance === 'home') {
+        newStatus = 'home';
+      } else if (attendance === 'mosque') {
+        newStatus = 'mosque';
+      } else {
+        newStatus = 'none';
+      }
+
+      console.log(
+        `🎯 MODAL SELECTION: ${attendance} -> ${newStatus} for ${selectedPrayerForAttendance.name}`,
       );
+
+      try {
+        const prayerName = selectedPrayerForAttendance.name.toLowerCase();
+
+        console.log(
+          `🔄 Starting database update: ${prayerName} => ${newStatus}`,
+        );
+
+        // Update in database - the hook will handle refreshing
+        await updatePrayerForDate(today, prayerName, newStatus);
+
+        console.log(`📱 Database update call completed`);
+
+        // Wait a bit more for state to update
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Verify the update worked
+        const updatedData = recentTasks.find(task => task.date === today);
+        if (updatedData) {
+          const updatedStatus = getPrayerStatus(prayerName);
+          console.log(
+            `🔍 Final verification: ${prayerName} status is "${updatedStatus}"`,
+          );
+
+          if (updatedStatus === newStatus) {
+            console.log(`✅ SUCCESS: Status correctly updated to ${newStatus}`);
+          } else {
+            console.log(
+              `❌ FAILED: Expected "${newStatus}", got "${updatedStatus}"`,
+            );
+            // Force another refresh if the status doesn't match
+            console.log('🔄 Forcing additional refresh...');
+            await forceRefresh();
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to update prayer status:', error);
+        Alert.alert(
+          'Update Failed',
+          `Could not update prayer status. Please try again.`,
+        );
+      } finally {
+        setIsUpdating(false);
+        // Close modal after everything is done
+        setAttendancePopupVisible(false);
+        setSelectedPrayerForAttendance(null);
+      }
     },
-    [selectedPrayerForAttendance, updatePrayerForDate],
+    [
+      selectedPrayerForAttendance,
+      isUpdating,
+      updatePrayerForDate,
+      recentTasks,
+      getPrayerStatus,
+      forceRefresh,
+    ],
   );
 
-  const handleLongPress = (prayer: PrayerTime) => {
-    setSelectedPrayer(prayer);
-    setReminderType('notification');
-    setModalVisible(true);
-  };
+  const handleModalClose = useCallback(() => {
+    setAttendancePopupVisible(false);
+    setSelectedPrayerForAttendance(null);
+  }, []);
 
   return (
     <>
@@ -150,17 +203,23 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
             const prayerStatus = getPrayerStatus(prayer.name);
             const attendanceType = getAttendanceType(prayerStatus);
 
+            // Enhanced logging for debugging
+            console.log(
+              `🎨 Rendering ${prayer.name}: status="${prayerStatus}", type="${attendanceType}"`,
+            );
+
             return (
               <TouchableOpacity
                 key={index}
                 style={styles.prayerColumn}
                 onPress={() => handleAttendancePress(prayer)}
-                onLongPress={() => handleLongPress(prayer)}
                 activeOpacity={0.7}>
                 <View
                   style={[
                     styles.prayerCard,
                     prayer.isActive && styles.activeCard,
+                    prayerStatus === 'home' && styles.homeCard,
+                    prayerStatus === 'mosque' && styles.mosqueCard,
                   ]}>
                   <Text
                     style={
@@ -177,8 +236,15 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                       name={prayer.name.toLowerCase() as IconName}
                       size={26}
                     />
-                    {attendanceType !== 'none' && (
-                      <View style={styles.attendanceIndicator}>
+                    {/* Show indicator for both home and mosque */}
+                    {(prayerStatus === 'home' || prayerStatus === 'mosque') && (
+                      <View
+                        style={[
+                          styles.attendanceIndicator,
+                          prayerStatus === 'home'
+                            ? styles.homeIndicator
+                            : styles.mosqueIndicator,
+                        ]}>
                         <Text style={styles.checkmark}>✓</Text>
                       </View>
                     )}
@@ -186,36 +252,32 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                   <Text style={styles.prayerTime} numberOfLines={1}>
                     {prayer.time}
                   </Text>
+
+                  {/* DEBUG: Show both status and attendance type */}
+                  <Text style={{fontSize: 8, color: '#999', marginTop: 2}}>
+                    {prayerStatus} | {attendanceType}
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
-      {/* Modals */}
-      {selectedPrayerForAttendance && (
-        <AttendanceSelectionModal
-          visible={attendancePopupVisible}
-          currentAttendance={getAttendanceType(
-            getPrayerStatus(selectedPrayerForAttendance.name),
-          )}
-          onSelect={handleAttendanceSelect}
-          onClose={() => {
-            setAttendancePopupVisible(false);
-            setSelectedPrayerForAttendance(null);
-          }}
-          prayerName={selectedPrayerForAttendance.displayName}
-        />
-      )}
-      {/* {selectedPrayer && (
-        <PrayerReminderModal
-          visible={modalVisible}
-          onClose={closeModal}
-          prayerName={selectedPrayer.displayName}
-          prayerTime={selectedPrayer.time}
-          isNotification={reminderType === 'notification'}
-        />
-      )} */}
+      {/* Attendance Selection Modal */}
+      <AttendanceSelectionModal
+        visible={attendancePopupVisible}
+        currentAttendance={
+          selectedPrayerForAttendance
+            ? getAttendanceType(
+                getPrayerStatus(selectedPrayerForAttendance.name),
+              )
+            : 'none'
+        }
+        onSelect={handleAttendanceSelect}
+        onClose={handleModalClose}
+        prayerName={selectedPrayerForAttendance?.displayName || ''}
+        isUpdating={isUpdating}
+      />
     </>
   );
 };
@@ -225,37 +287,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.prayerCard,
     borderRadius: 20,
     padding: 1,
-    paddingTop: 16, // Increased top padding
-    paddingHorizontal: 16, // Increased horizontal padding
+    paddingTop: 16,
+    paddingHorizontal: 16,
     marginTop: 25,
     shadowColor: '#000000',
     shadowOffset: {width: 1, height: 2},
     shadowOpacity: 0.102,
     shadowRadius: 9,
     elevation: 9,
-    // marginBottom: 20,
   },
   prayerCardsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12, // Increased bottom margin
+    marginBottom: 12,
   },
   prayerColumn: {
     flex: 1,
     alignItems: 'center',
-    marginHorizontal: 2, // Added horizontal margin between columns
+    marginHorizontal: 2,
   },
   prayerCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12, // Increased vertical padding
-    paddingHorizontal: 4, // Increased horizontal padding
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     width: '100%',
     borderRadius: 8,
     borderWidth: 2,
     borderColor: 'transparent',
-    // marginBottom: 8, // Increased space between card and attendance
-    minHeight: 110, // Added minimum height to prevent cramping
+    minHeight: 110,
   },
   activeCard: {
     borderColor: '#4CE047',
@@ -263,40 +323,40 @@ const styles = StyleSheet.create({
   prayerName: {
     ...typography.prayerCard,
     color: colors.text.prayerBlue,
-    marginBottom: 12, // Slightly reduced but still spacious
-    fontSize: 13, // Slightly reduced font size to prevent wrapping
+    marginBottom: 12,
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16, // Added line height for better text spacing
+    lineHeight: 16,
   },
   maghribName: {
     ...typography.prayerCard,
     color: colors.text.prayerBlue,
     marginBottom: 12,
-    fontSize: 13, // Smaller font size specifically for Maghrib
+    fontSize: 13,
     textAlign: 'center',
-    lineHeight: 16, // Slightly bolder to maintain readability
+    lineHeight: 16,
   },
   prayerTime: {
     ...typography.prayerCard,
-    fontSize: 13, // Slightly reduced font size to prevent wrapping
+    fontSize: 13,
     color: colors.text.prayerBlue,
-    marginTop: 12, // Reduced top margin
-    marginBottom: 6, // Increased bottom margin
+    marginTop: 12,
+    marginBottom: 6,
     textAlign: 'center',
-    lineHeight: 16, // Added line height for better text spacing
+    lineHeight: 16,
   },
   iconContainer: {
-    height: 32, // Increased height for better spacing
-    width: 32, // Added width for consistent sizing
+    height: 32,
+    width: 32,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   attendanceIndicator: {
     position: 'absolute',
-    top: -6, // Adjusted position
-    right: -6, // Adjusted position
-    width: 16, // Slightly larger for better visibility
+    top: -6,
+    right: -6,
+    width: 16,
     height: 16,
     borderRadius: 8,
     backgroundColor: colors.success,
@@ -310,9 +370,21 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     color: '#FFFFFF',
-    fontSize: 9, // Slightly larger for better visibility
+    fontSize: 9,
     fontWeight: 'bold',
     lineHeight: 12,
+  },
+  homeCard: {
+    borderColor: '#4DABF7',
+  },
+  mosqueCard: {
+    borderColor: '#4CE047',
+  },
+  homeIndicator: {
+    backgroundColor: '#4DABF7',
+  },
+  mosqueIndicator: {
+    backgroundColor: colors.success,
   },
 });
 

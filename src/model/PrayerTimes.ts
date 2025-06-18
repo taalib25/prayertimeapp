@@ -7,8 +7,6 @@ export default class PrayerTimesModel extends Model {
   @field('date') date!: string;
   @field('day') day!: string;
   @field('fajr') fajr!: string;
-  @field('shuruq') shuruq!: string;
-  @field('dhuha') dhuha!: string;
   @field('dhuhr') dhuhr!: string;
   @field('asr') asr!: string;
   @field('maghrib') maghrib!: string;
@@ -23,11 +21,6 @@ export default class PrayerTimesModel extends Model {
     switch (prayerName.toLowerCase()) {
       case 'fajr':
         return this.fajr;
-      case 'shuruq':
-      case 'sunrise':
-        return this.shuruq;
-      case 'dhuha':
-        return this.dhuha;
       case 'dhuhr':
         return this.dhuhr;
       case 'asr':
