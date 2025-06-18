@@ -63,6 +63,26 @@ export interface UpdateProfileRequest {
   phoneNumber?: string;
 }
 
+export interface UpdatePrayerRequest {
+  prayer_type: string;
+  prayer_date: string;
+  status: string;
+  location?: string;
+  notes?: string;
+}
+
+export interface PrayerRecord {
+  id: string;
+  prayer_type: string;
+  prayer_date: string;
+  status: string;
+  location?: string;
+  notes?: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /**
  * Prayer App API Endpoints
  * Uses the ApiService for consistent HTTP requests
@@ -181,7 +201,56 @@ class PrayerAppAPI {
   ): Promise<ApiResponse<UserProfile>> {
     return this.apiService.put<UserProfile>('/user/profile', data);
   }
+  /**
+   * Update prayer record
+   */
+  async updatePrayer(
+    data: UpdatePrayerRequest,
+  ): Promise<ApiResponse<PrayerRecord>> {
+    // Force enable logging for debugging
+    this.apiService.setLogging(true);
 
+    try {
+      console.log('🔐 updatePrayer - Checking auth token...');
+
+      // Check if auth token exists
+      const AsyncStorage =
+        require('@react-native-async-storage/async-storage').default;
+      const token = await AsyncStorage.getItem('auth_token');
+
+      if (token) {
+        console.log('✅ Auth token found:', token.substring(0, 20) + '...');
+      } else {
+        console.log('❌ No auth token found in storage');
+      }
+
+      console.log('🌐 Making API call to /prayers with data:', data);
+      console.log(
+        '🌐 Full URL will be:',
+        this.apiService.getConfig().baseURL + '/prayers',
+      );
+
+      const response = await this.apiService.post<PrayerRecord>(
+        '/prayers',
+        data,
+      );
+      console.log('✅ Prayer updated successfully:', response);
+      return response;
+    } catch (error: any) {
+      console.error('❌ updatePrayer error details:');
+      console.error('   Status:', error.response?.status);
+      console.error('   URL:', error.config?.url);
+      console.error('   Full URL:', error.config?.baseURL + error.config?.url);
+      console.error('   Headers:', error.config?.headers);
+      console.error('   Response data:', error.response?.data);
+
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
   // ========== HELPER METHODS ==========
 
   /**

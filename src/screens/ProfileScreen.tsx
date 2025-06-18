@@ -183,7 +183,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           </View>
         </View>
         {/* Menu Section */}
-        <View style={styles.section}>
+        <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
           <MenuButton
             title="Notification Settings"
@@ -291,9 +291,15 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 20,
-    marginTop: 30,
+    marginTop: 10,
     paddingHorizontal: 16,
   },
+  menuSection: {
+    marginBottom: 20,
+    marginTop: 101,
+    paddingHorizontal: 16,
+  },
+
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

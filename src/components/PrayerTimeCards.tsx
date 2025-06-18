@@ -10,6 +10,7 @@ import AttendanceSelectionModal, {
 } from './AttendanceSelectionModal';
 import {useRecentDailyTasks} from '../hooks/useDailyTasks';
 import {PrayerStatus} from '../model/DailyTasks';
+import { updatePrayerRecord } from '../services/ApiExamples';
 
 interface PrayerTime {
   name: string;
@@ -108,10 +109,27 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
           break;
       }
 
+      //added the prayer api call to update the prayer status
       await updatePrayerForDate(
         today,
         selectedPrayerForAttendance.name,
         newStatus,
+      );
+    console.log(
+    
+       selectedPrayerForAttendance.name, // prayerType
+        today,// prayerDate
+        (attendance === 'masjid' || attendance === 'home') ? 'prayed' : 'missed', // status
+        attendance === 'masjid' ? 'mosque' : attendance === 'home' ? 'home' : undefined, // location
+    );
+
+    //dhuhr dhuhr 2025-06-17 individual home
+
+      await updatePrayerRecord(
+        selectedPrayerForAttendance.name, // prayerType
+        today,// prayerDate
+        (attendance === 'masjid' || attendance === 'home') ? 'prayed' : 'missed', // status
+        attendance === 'masjid' ? 'mosque' : attendance === 'home' ? 'home' : undefined, // location
       );
     },
     [selectedPrayerForAttendance, updatePrayerForDate],

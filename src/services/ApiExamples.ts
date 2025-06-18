@@ -154,8 +154,38 @@ export const getWeeklyPrayerTimes = async () => {
 };
 
 /**
- * Example: Create prayer times
+ * Example: Update a prayer record
  */
+export const updatePrayerRecord = async (
+  prayerType: string,
+  prayerDate: string,
+  status: string,
+  location?: string,
+  notes?: string,
+) => {
+  try {
+    // Prepare the payload
+    const payload: any = {
+      prayer_type: prayerType,
+      prayer_date: prayerDate,
+      status,
+    };
+    if (location) payload.location = location;
+    if (notes) payload.notes = notes; // Call the API's updatePrayer method
+    const response = await api.updatePrayer(payload);
+
+    if (response.success) {
+      console.log('✅ Prayer record updated:', response.data);
+      return {success: true, prayer: response.data};
+    } else {
+      console.log('❌ Failed to update prayer record:', response.error);
+      return {success: false, error: response.error};
+    }
+  } catch (error) {
+    console.error('❌ Update prayer record error:', error);
+    return {success: false, error: 'Failed to update prayer record'};
+  }
+};
 export const createPrayerTimesForDate = async (
   date: string,
   fajr: string,

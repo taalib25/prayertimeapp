@@ -34,8 +34,6 @@ const PrayerTimeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {
-    userData,
-    profile,
     settings,
     goals,
     displayName,

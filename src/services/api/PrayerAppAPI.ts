@@ -118,7 +118,7 @@ class PrayerAppAPI {
    * Get prayer times for a specific date
    */
   async getPrayerTimes(date: string): Promise<ApiResponse<PrayerTimesResponse>> {
-    return this.apiService.get<PrayerTimesResponse>(`/prayer-times/${date}`);
+    return this.apiService.get<PrayerTimesResponse>(`/prayers`);
   }
 
   /**
@@ -137,7 +137,18 @@ class PrayerAppAPI {
       params.limit = limit;
     }
 
-    return this.apiService.get<PrayerTimesResponse[]>('/prayer-times', params);
+    return this.apiService.get<PrayerTimesResponse[]>('/prayers', params);
+  }
+
+
+  async updatePrayer( payload: any): Promise<any> {
+    try {
+      const response = await this.apiService.post(`/prayers`, payload);
+      console.log('Prayer updated successfully:', response.data);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
   }
 
   /**
@@ -146,7 +157,7 @@ class PrayerAppAPI {
   async createPrayerTimes(
     data: Omit<PrayerTimesResponse, 'sunrise'>
   ): Promise<ApiResponse<PrayerTimesResponse>> {
-    return this.apiService.post<PrayerTimesResponse>('/prayer-times', data);
+    return this.apiService.post<PrayerTimesResponse>('/prayers', data);
   }
 
   /**
@@ -155,7 +166,7 @@ class PrayerAppAPI {
   async bulkImportPrayerTimes(
     prayerTimes: Omit<PrayerTimesResponse, 'sunrise'>[]
   ): Promise<ApiResponse<{imported: number; failed: number; errors: any[]}>> {
-    return this.apiService.post('/prayer-times/bulk-import', {prayerTimes});
+    return this.apiService.post('/prayers/bulk-import', {prayerTimes});
   }
 
   // ========== USER MANAGEMENT ENDPOINTS ==========
