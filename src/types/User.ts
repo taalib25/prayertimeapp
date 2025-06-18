@@ -179,6 +179,7 @@ export type UserSettingsUpdate = Partial<UserSettings>;
 // Storage keys
 export const USER_STORAGE_KEYS = {
   AUTH_USER: '@prayer_app_user',
+  AUTH_TOKEN: 'auth_token',
   PROFILE: (uid: number) => `user_${uid}_profile`,
   GOALS: (uid: number) => `user_${uid}_goals`,
   SETTINGS: (uid: number) => `user_${uid}_settings`,

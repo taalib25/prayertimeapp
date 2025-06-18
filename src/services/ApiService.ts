@@ -52,15 +52,19 @@ class ApiService {
     }
     return ApiService.instance;
   }
-
   private setupInterceptors(): void {
     // Request interceptor - automatically add auth token
     this.axiosInstance.interceptors.request.use(
       async config => {
         try {
-          const token = await AsyncStorage.getItem('auth_token');
+          // Use UnifiedUserService for auth token (lazy import to avoid circular dependency)
+          const UnifiedUserService = require('./UnifiedUserService').default;
+          const userService = UnifiedUserService.getInstance();
+          const token = await userService.getAuthToken();
+          
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('🔑 ApiService: Auth token added to request header');
           }
 
           if (this.config.enableLogging) {
@@ -113,13 +117,13 @@ class ApiService {
         return Promise.reject(error);
       },
     );
-  }
-
-  private async handleAuthError(): Promise<void> {
+  }  private async handleAuthError(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      // You can add navigation to login screen here if needed
-      console.log('🔒 Auth token removed due to 401 error');
+      // Use UnifiedUserService for auth token cleanup
+      const UnifiedUserService = require('./UnifiedUserService').default;
+      const userService = UnifiedUserService.getInstance();
+      await userService.clearAuthToken();
+      console.log('🔒 Auth token removed due to 401 error via UnifiedUserService');
     } catch (error) {
       console.error('❌ Error handling auth error:', error);
     }
@@ -297,13 +301,14 @@ class ApiService {
       // Other error
       return error.message || 'An unexpected error occurred.';
     }
-  }
-
-  // Set auth token manually
+  }  // Set auth token manually
   async setAuthToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('auth_token', token);
-      console.log('🔑 Auth token set successfully');
+      // Use UnifiedUserService for auth token storage
+      const UnifiedUserService = require('./UnifiedUserService').default;
+      const userService = UnifiedUserService.getInstance();
+      await userService.setAuthToken(token);
+      console.log('🔑 Auth token set via UnifiedUserService');
     } catch (error) {
       console.error('❌ Error setting auth token:', error);
     }
@@ -312,8 +317,11 @@ class ApiService {
   // Clear auth token
   async clearAuthToken(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      console.log('🔓 Auth token cleared');
+      // Use UnifiedUserService for auth token cleanup
+      const UnifiedUserService = require('./UnifiedUserService').default;
+      const userService = UnifiedUserService.getInstance();
+      await userService.clearAuthToken();
+      console.log('🔓 Auth token cleared via UnifiedUserService');
     } catch (error) {
       console.error('❌ Error clearing auth token:', error);
     }

@@ -76,6 +76,64 @@ class UnifiedUserService {
     }
   }
 
+  // ========== AUTH TOKEN OPERATIONS ==========
+
+  /**
+   * Set authentication token
+   */
+  async setAuthToken(token: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(USER_STORAGE_KEYS.AUTH_TOKEN, token);
+      console.log(
+        '🔑 Auth token set in UnifiedUserService:',
+        token.substring(0, 20) + '...',
+      );
+    } catch (error) {
+      console.error('❌ Error setting auth token:', error);
+    }
+  }
+
+  /**
+   * Get authentication token
+   */
+  async getAuthToken(): Promise<string | null> {
+    try {
+      const token = await AsyncStorage.getItem(USER_STORAGE_KEYS.AUTH_TOKEN);
+      if (token) {
+        console.log(
+          '✅ Auth token retrieved from UnifiedUserService:',
+          token.substring(0, 20) + '...',
+        );
+      } else {
+        console.log('❌ No auth token found in UnifiedUserService');
+      }
+      return token;
+    } catch (error) {
+      console.error('❌ Error getting auth token:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear authentication token
+   */
+  async clearAuthToken(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(USER_STORAGE_KEYS.AUTH_TOKEN);
+      console.log('🔓 Auth token cleared from UnifiedUserService');
+    } catch (error) {
+      console.error('❌ Error clearing auth token:', error);
+    }
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  async isAuthenticated(): Promise<boolean> {
+    const token = await this.getAuthToken();
+    return !!token;
+  }
+
   // ========== USER PROFILE OPERATIONS ==========
 
   /**

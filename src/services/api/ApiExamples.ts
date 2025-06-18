@@ -277,20 +277,3 @@ export const checkAuthentication = async () => {
     return {authenticated: false};
   }
 };
-
-// ========== CONFIGURATION EXAMPLES ==========
-
-/**
- * Example: Configure API for development/production
- */
-export const configureAPI = (environment: 'development' | 'production') => {
-  if (environment === 'development') {
-    api.updateBaseURL('http://localhost:3000/api/v1');
-    api.setLogging(true);
-    console.log('🔧 API configured for development');
-  } else {
-    api.updateBaseURL('https://api.prayerapp.com/v1');
-    api.setLogging(false);
-    console.log('🔧 API configured for production');
-  }
-};

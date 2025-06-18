@@ -1,4 +1,5 @@
 import ApiService, {ApiResponse} from './api/ApiService';
+import UnifiedUserService from './UnifiedUserService';
 
 // Type definitions for API requests/responses
 export interface LoginRequest {
@@ -90,9 +91,11 @@ export interface PrayerRecord {
 class PrayerAppAPI {
   private static instance: PrayerAppAPI;
   private apiService: ApiService;
+  private userService: UnifiedUserService;
 
   private constructor() {
     this.apiService = ApiService.getInstance();
+    this.userService = UnifiedUserService.getInstance();
   }
 
   static getInstance(): PrayerAppAPI {
@@ -211,18 +214,12 @@ class PrayerAppAPI {
     this.apiService.setLogging(true);
 
     try {
-      console.log('🔐 updatePrayer - Checking auth token...');
+      console.log(
+        '🔐 updatePrayer - Checking auth token via UnifiedUserService...',
+      );
 
-      // Check if auth token exists
-      const AsyncStorage =
-        require('@react-native-async-storage/async-storage').default;
-      const token = await AsyncStorage.getItem('auth_token');
-
-      if (token) {
-        console.log('✅ Auth token found:', token.substring(0, 20) + '...');
-      } else {
-        console.log('❌ No auth token found in storage');
-      }
+      // Check if auth token exists using UnifiedUserService
+      const token = await this.userService.getAuthToken();
 
       console.log('🌐 Making API call to /prayers with data:', data);
       console.log(
@@ -252,11 +249,11 @@ class PrayerAppAPI {
     }
   }
   // ========== HELPER METHODS ==========
-
   /**
    * Set authentication token
    */
   async setAuthToken(token: string): Promise<void> {
+    await this.userService.setAuthToken(token);
     return this.apiService.setAuthToken(token);
   }
 
@@ -264,6 +261,7 @@ class PrayerAppAPI {
    * Clear authentication token
    */
   async clearAuthToken(): Promise<void> {
+    await this.userService.clearAuthToken();
     return this.apiService.clearAuthToken();
   }
 

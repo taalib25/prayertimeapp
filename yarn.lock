@@ -5966,6 +5966,11 @@ react-native-circular-progress@^1.4.1:
   dependencies:
     prop-types "^15.8.1"
 
+react-native-fancy-table@^0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/react-native-fancy-table/-/react-native-fancy-table-0.1.7.tgz#53937b278240cbbabcbe5addf5967c03e36262bc"
+  integrity sha512-e9+4ShupYMkBTF+8yx8oyWhZhAKsw7y835NMqRBSXQ5cSygzOXrztpS07TNE89ZJPJ0x8PfFv1Ac3Ofj1ySfFw==
+
 react-native-gesture-handler@^2.25.0:
   version "2.25.0"
   resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-2.25.0.tgz#3a5a8912ea4f5e68ab211a9fa5a191c08ad50883"

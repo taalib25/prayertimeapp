@@ -43,6 +43,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     navigation.navigate('CallerSettings');
   };
 
+  const handleDatabaseView = () => {
+    navigation.navigate('DatabaseScreen');
+  };
+
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       {
@@ -190,6 +194,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             onPress={handleNotificationSettings}
           />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
+          <MenuButton title="Database Explorer" onPress={handleDatabaseView} />
 
           {/* Logout Button */}
           <Pressable style={styles.logoutButton} onPress={handleLogout}>

@@ -30,13 +30,14 @@ import {
 } from './src/services/backgroundTasks';
 import {colors} from './src/utils/theme';
 import FeedsScreen from './src/screens/FeedsScreen';
+import DatabaseScreen from './src/screens/DatabaseScreen';
 // Types
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   OTP: {email: string};
   MainApp: undefined;
-  // DatabaseTest: undefined;
+  DatabaseScreen: undefined;
   PrayerChallenge: undefined;
   FakeCallScreen: undefined;
   Feeds: undefined;
@@ -178,6 +179,14 @@ function AppNavigator() {
             <Stack.Screen
               name="CallerSettings"
               component={CallerSettingScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="DatabaseScreen"
+              component={DatabaseScreen}
               options={{
                 headerShown: false,
                 presentation: 'card',
