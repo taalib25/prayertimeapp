@@ -5,12 +5,14 @@ import UnifiedUserService from './UnifiedUserService';
 export interface LoginRequest {
   username: string;
   password: string;
+  otpCode?: string; // OTP code for verification step
 }
 
 export interface LoginResponse {
   user: {
     id: string;
     username: string;
+    email: string;
     phoneNumber: string;
     isVerified: boolean;
     name: string;

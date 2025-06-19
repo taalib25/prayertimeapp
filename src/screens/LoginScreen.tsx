@@ -62,28 +62,31 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
       return;
     }
     setIsLoading(true);
-    const loginResponse = await loginUser(username, password);
 
-    if (!loginResponse.success) {
-      setIsLoading(false);
-      ToastAndroid.show(
-       'Login failed. Please try again.',
-        ToastAndroid.LONG,
-      );
-      return;
-    }
-
-    // If login is successful
-    ToastAndroid.show('Login successful! Redirecting...', ToastAndroid.SHORT);
     try {
-      // Simulate API call or actual login logic
-      // await login(username, password); // Assuming login context function handles actual login
+      console.log('🔐 Initial login attempt to trigger OTP...');
+      // Call the initial login to trigger OTP sending
+      const loginResponse = await loginUser(username, password);
+
+      if (!loginResponse.success) {
+        setIsLoading(false);
+        ToastAndroid.show(
+          'Login failed. Please check your credentials.',
+          ToastAndroid.LONG,
+        );
+        return;
+      }
+
+      // If initial login is successful, navigate to OTP screen
+      console.log('✅ Initial login successful, OTP should be sent to email');
+      ToastAndroid.show('OTP sent to your email!', ToastAndroid.SHORT);
       navigation.navigate('OTP', {
         email: username,
         username: username,
         password: password,
       });
     } catch (error) {
+      console.error('❌ Login error:', error);
       Alert.alert('Error', 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);

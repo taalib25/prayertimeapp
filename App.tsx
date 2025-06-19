@@ -36,7 +36,7 @@ import DatabaseScreen from './src/screens/DatabaseScreen';
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
-  OTP: {email: string};
+  OTP: {email: string; username?: string; password?: string};
   MainApp: undefined;
   DatabaseScreen: undefined;
   PrayerChallenge: undefined;
