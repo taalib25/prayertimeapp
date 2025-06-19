@@ -49,6 +49,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: spacing.xl,
     paddingVertical: spacing.sm,
   },
   paginationDot: {
@@ -65,9 +66,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   paginationDotCurrent: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-    backgroundColor: 'transparent',
+    backgroundColor: colors.primary, // Use filled instead of outline
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
 });
 

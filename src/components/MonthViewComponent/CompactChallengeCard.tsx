@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import {View, Text, StyleSheet, Pressable} from 'react-native';
 import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import {colors} from '../../utils/theme';
-import {typography} from '../../utils/typography';
+import {fontFamilies, typography} from '../../utils/typography';
 
 interface CompactChallengeCardProps {
   id: string;
@@ -37,43 +37,49 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
       textColor,
       isVisible,
     }) => {
-      const exceededGoal = current > total;
-      const actualProgressColor = exceededGoal ? colors.success : progressColor;
-
-      // Calculate progress percentage
+      const goalReachedOrExceeded = current >= total;
+      const actualProgressColor = goalReachedOrExceeded
+        ? colors.success
+        : progressColor;
+      const actualTextColor = goalReachedOrExceeded
+        ? colors.success
+        : textColor; // Calculate progress percentage
       const progressPercentage = useMemo(() => {
-        const percentage = exceededGoal
+        const percentage = goalReachedOrExceeded
           ? 100
           : Math.min((current / total) * 100, 100);
         return Math.round(percentage);
-      }, [current, total, exceededGoal]);
+      }, [current, total, goalReachedOrExceeded]);
 
       return (
         <View style={[styles.compactCard, {backgroundColor}]}>
           <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
           <View style={styles.compactProgressContainer}>
             <AnimatedCircularProgress
-              size={140}
-              width={12} // Increased stroke thickness
+              size={170} // Increased from 140 to 160
+              width={15} // Increased stroke
               fill={progressPercentage}
               tintColor={actualProgressColor}
               backgroundColor={colors.background.surface}
               rotation={0}
               lineCap="round"
-              duration={0} // No animation - instant update
+              duration={5} // No animation - instant update
             >
               {() => (
                 <View style={styles.compactProgressText}>
                   <Text
                     style={[
                       styles.compactProgressValue,
-                      {color: exceededGoal ? colors.success : textColor},
-                    ]}>
+                      {color: actualTextColor},
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit={true}
+                    minimumFontScale={0.5}>
                     {current}
                     <Text
                       style={[
                         styles.compactProgressTotal,
-                        {color: exceededGoal ? colors.success : textColor},
+                        {color: actualTextColor},
                       ]}>
                       /{total}
                     </Text>
@@ -81,12 +87,6 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
                 </View>
               )}
             </AnimatedCircularProgress>
-            {/* Show exceeded indicator */}
-            {/* {exceededGoal && (
-            <View style={styles.exceededIndicator}>
-              <Text style={styles.exceededText}>Goal Exceeded! 🎉</Text>
-            </View>
-          )} */}
           </View>
           {subtitle && (
             <Text style={[styles.compactSubtitle, {color: textColor}]}>
@@ -142,16 +142,25 @@ const styles = StyleSheet.create({
   compactProgressText: {
     alignItems: 'center',
     justifyContent: 'center',
+    // Remove fixed width/height that might be constraining
+    flex: 1, // Allow container to expand
+    paddingHorizontal: 12, // Add more padding
+    paddingVertical: 8,
   },
   compactProgressValue: {
-    ...typography.h3,
     textAlign: 'center',
-    fontSize: 28,
-    lineHeight: 36,
+    ...typography.h3,
+
+    fontSize: 38, // Reduced from 32 to ensure it fits
+    lineHeight: 32, // Adjusted line height
+    color: 'inherit', // Use inherited color
   },
   compactProgressTotal: {
-    ...typography.bodySmall,
-    fontSize: 16,
+    fontFamily: fontFamilies.regular,
+    fontSize: 14, // Smaller for the total (/total)
+    fontWeight: '500',
+    opacity: 0.8, // Slightly faded to emphasize hierarchy
+    color: 'inherit', // Use inherited color
   },
   exceededIndicator: {
     position: 'absolute',
@@ -163,7 +172,6 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontSize: 10,
     textAlign: 'center',
-    fontWeight: '600',
   },
   todayContainer: {
     marginTop: 8,
@@ -172,7 +180,6 @@ const styles = StyleSheet.create({
   todayText: {
     ...typography.caption,
     color: colors.text.prayerBlue,
-    fontWeight: '600',
   },
   editHint: {
     ...typography.caption,

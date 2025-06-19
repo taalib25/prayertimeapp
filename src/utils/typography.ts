@@ -1,7 +1,7 @@
 import {TextStyle} from 'react-native';
 
 // Static font families for different weights
-const fontFamilies = {
+export const fontFamilies = {
   light: 'Sora-Light',
   regular: 'Sora-Regular',
   medium: 'Sora-Medium',
