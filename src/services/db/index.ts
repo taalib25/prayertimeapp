@@ -8,12 +8,6 @@ import DailyTasksModel from '../../model/DailyTasks';
 const adapter = new SQLiteAdapter({
   schema: prayerAppSchema,
   dbName: 'prayer_app.db',
-  migrations: {
-    validated: true,
-    minVersion: 1,
-    maxVersion: 1,
-    sortedMigrations: [],
-  },
   jsi: false,
   onSetUpError: error => {
     console.error('Database setup error:', error);

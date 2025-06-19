@@ -11,7 +11,6 @@ export const initializePrayerTimesDatabase = async (): Promise<void> => {
   try {
     console.log('🔄 Checking if prayer times data exists...');
 
-    // Check multiple dates to ensure data completeness
     const testDates = ['2025-01-01', '2025-06-01', '2025-12-31'];
     const existingData = await Promise.all(
       testDates.map(date => getPrayerTimesForDate(date)),
