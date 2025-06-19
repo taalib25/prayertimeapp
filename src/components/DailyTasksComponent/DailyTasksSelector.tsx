@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
 
     marginVertical: spacing.md,
     paddingVertical: spacing.md,
-    marginHorizontal: spacing.lg,
+    marginHorizontal: spacing.sm,
   },
   pagerView: {
     flex: 1,

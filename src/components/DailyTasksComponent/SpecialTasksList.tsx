@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.text.blue,
     marginBottom: spacing.xs,
-    fontSize: 18,
+    fontSize: 14,
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
