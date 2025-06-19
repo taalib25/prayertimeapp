@@ -2,7 +2,7 @@ import React, {useState, useRef, useCallback, useMemo, useEffect} from 'react';
 import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {colors, spacing} from '../../utils/theme';
-import {useRecentDailyTasks} from '../../hooks/useDailyTasks';
+import {useDailyTasksContext} from '../../contexts/DailyTasksContext';
 import DayView from './DayView';
 import PaginationDots from './PaginationDots';
 import {LoadingState, ErrorState} from './LoadingState';
@@ -10,30 +10,28 @@ import {transformDailyData} from './dataTransform';
 import {useTaskManager} from './useTaskManager';
 
 const DailyTasksSelector: React.FC = () => {
-  const {recentTasks, isLoading, error, refetch} = useRecentDailyTasks({
-    daysBack: 3,
-  });
+  // Use the centralized context instead of individual hook
+  const {dailyTasks, isLoading, error} = useDailyTasksContext();
 
   // Use the task manager for handling database operations
   const {handleTaskToggle} = useTaskManager();
 
-  // Wrap the handleTaskToggle to refresh data after update
-  const handleTaskToggleWithRefresh = useCallback(
+  // Since the context automatically refreshes, we don't need a separate refresh call
+  const handleTaskToggleSimple = useCallback(
     async (dateISO: string, taskId: string) => {
       try {
         await handleTaskToggle(dateISO, taskId);
-        // Refresh the data to show the updated state
-        await refetch();
+        // Context will automatically refresh all UIs
       } catch (error) {
         console.error('❌ Error in task toggle:', error);
       }
     },
-    [handleTaskToggle, refetch],
+    [handleTaskToggle],
   );
 
   const transformedDailyData = useMemo(() => {
-    return transformDailyData(recentTasks);
-  }, [recentTasks]);
+    return transformDailyData(dailyTasks);
+  }, [dailyTasks]);
 
   // Find today's index for initial page
   const todayIndex = transformedDailyData.findIndex(
@@ -84,7 +82,7 @@ const DailyTasksSelector: React.FC = () => {
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
             <DayView
               dayTasks={dayTasks}
-              onTaskToggle={handleTaskToggleWithRefresh}
+              onTaskToggle={handleTaskToggleSimple}
               isToday={dayTasks.isToday}
             />
           </View>

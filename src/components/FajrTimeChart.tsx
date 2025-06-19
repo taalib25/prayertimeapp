@@ -8,17 +8,15 @@ import {
   Dimensions,
 } from 'react-native';
 import {LineChart} from 'react-native-chart-kit';
-import {Q} from '@nozbe/watermelondb';
-import database from '../services/db/index';
-import DailyTasksModel, {PrayerStatus} from '../model/DailyTasks';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {useFajrChartData} from '../hooks/useContextualData';
 
 const screenWidth = Dimensions.get('window').width;
 
 interface FajrCompletionData {
   date: string;
-  fajrStatus: PrayerStatus;
+  fajrStatus: string;
   completionValue: number; // 0 = not at mosque, 1 = at mosque
   dayLabel: string;
 }
@@ -26,22 +24,17 @@ interface FajrCompletionData {
 const FajrTimeChart: React.FC = () => {
   const [currentCenterDate, setCurrentCenterDate] = useState(new Date());
   const [fajrData, setFajrData] = useState<FajrCompletionData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
+  // Use centralized context instead of direct database access
+  const {getFajrDataForDates} = useFajrChartData();
   // Helper function to format date as YYYY-MM-DD
   const formatDate = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
+
   // Helper function to convert prayer status to completion value (mosque only)
-  const statusToValue = (status: PrayerStatus): number => {
-    switch (status) {
-      case 'mosque':
-        return 1; // Only mosque attendance counts as completion
-      case 'home':
-      case 'none':
-      default:
-        return 0; // Home prayers and none are treated as not completed
-    }
+  const statusToValue = (status: string): number => {
+    return status === 'mosque' ? 1 : 0;
   };
 
   // Helper function to get day label
@@ -76,77 +69,30 @@ const FajrTimeChart: React.FC = () => {
     }
     return dates;
   }, []);
-  // Fetch Fajr completion data from daily_tasks database
+
+  // Fetch Fajr completion data using centralized context
   const fetchFajrCompletionData = useCallback(async () => {
     try {
-      setIsLoading(true);
       const dates = getDatesRange(currentCenterDate);
       const dateStrings = dates.map(formatDate);
-      const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
 
-      // Debug: Check what data exists in the database for recent dates
-      try {
-        const allRecentTasks = await dailyTasksCollection
-          .query(Q.sortBy('date', Q.desc), Q.take(10))
-          .fetch();
-        console.log(
-          '🗄️ Recent database entries:',
-          allRecentTasks.map(task => ({
-            date: task.date,
-            fajrStatus: task.fajrStatus,
-          })),
-        );
-      } catch (debugError) {
-        console.log('Debug query failed:', debugError);
-      }
+      // Get data from centralized context
+      const fajrContextData = getFajrDataForDates(dateStrings);
 
-      const fajrCompletionData: FajrCompletionData[] = [];
+      const fajrCompletionData: FajrCompletionData[] = fajrContextData.map(
+        (item, index) => ({
+          date: item.date,
+          fajrStatus: item.fajrStatus,
+          completionValue: item.completionValue,
+          dayLabel: getDayLabel(dates[index]),
+        }),
+      );
 
-      for (let i = 0; i < dates.length; i++) {
-        const date = dates[i];
-        const dateStr = dateStrings[i];
-
-        try {
-          // Try to get exact date first
-          const exactMatch = await dailyTasksCollection
-            .query(Q.where('date', dateStr))
-            .fetch();
-          let fajrStatus: PrayerStatus = 'none'; // Default fallback
-
-          if (exactMatch.length > 0) {
-            fajrStatus = exactMatch[0].fajrStatus as PrayerStatus;
-            console.log(`📊 Found Fajr status for ${dateStr}: ${fajrStatus}`);
-          } else {
-            console.log(`⚠️ No data found for ${dateStr}, using default: none`);
-          }
-
-          fajrCompletionData.push({
-            date: dateStr,
-            fajrStatus,
-            completionValue: statusToValue(fajrStatus),
-            dayLabel: getDayLabel(date),
-          });
-        } catch (error) {
-          console.error(
-            `Error fetching Fajr completion for ${dateStr}:`,
-            error,
-          );
-          // Add fallback data
-          fajrCompletionData.push({
-            date: dateStr,
-            fajrStatus: 'none',
-            completionValue: 0,
-            dayLabel: getDayLabel(date),
-          });
-        }
-      }
       setFajrData(fajrCompletionData);
     } catch (error) {
       console.error('Error fetching Fajr completion data:', error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [currentCenterDate, getDatesRange]);
+  }, [currentCenterDate, getFajrDataForDates, getDatesRange]);
   useEffect(() => {
     fetchFajrCompletionData();
   }, [fetchFajrCompletionData]);
@@ -180,18 +126,7 @@ const FajrTimeChart: React.FC = () => {
       compareDate.setHours(0, 0, 0, 0);
       return compareDate.getTime() === today.getTime();
     });
-  }; // Format completion value to status text for display (mosque only)
-  const formatCompletionStatus = (value: number): string => {
-    switch (value) {
-      case 1:
-        return 'Mosque';
-      case 0:
-      default:
-        return 'Not at Mosque';
-    }
-  };
-
-  // Prepare chart data with error handling
+  }; // Prepare chart data with error handling
   const getChartData = () => {
     if (fajrData.length === 0) {
       return {
@@ -232,19 +167,6 @@ const FajrTimeChart: React.FC = () => {
       maxValue: 1,
     };
   };
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>40 Challenge</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>

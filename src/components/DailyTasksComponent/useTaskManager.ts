@@ -1,11 +1,14 @@
 import {useCallback} from 'react';
 import {handleTaskCompletion} from './taskHandler';
 import {getSpecialTasksForDate, EnhancedSpecialTask} from './specialTasks';
+import {useDailyTasksContext} from '../../contexts/DailyTasksContext';
 
 /**
  * Hook to manage task operations with database integration
  */
 export const useTaskManager = () => {
+  const {refreshData} = useDailyTasksContext();
+
   /**
    * Handle task toggle with database update
    */
@@ -21,10 +24,8 @@ export const useTaskManager = () => {
         if (!taskTemplate) {
           console.error(`❌ Task ${taskId} not found in special tasks`);
           return;
-        }
-
-        // Call the toggle handler - it will determine current state and toggle it
-        await handleTaskCompletion(taskTemplate, dateISO);
+        } // Call the toggle handler - it will determine current state and toggle it
+        await handleTaskCompletion(taskTemplate, dateISO, refreshData);
 
         console.log(`✅ Task ${taskId} toggle operation completed`);
       } catch (error) {

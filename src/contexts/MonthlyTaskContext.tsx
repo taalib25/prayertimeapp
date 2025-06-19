@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {useMonthlyData} from '../hooks/useDailyTasks';
+import {useMonthlyAggregatedData} from '../hooks/useContextualData';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -40,14 +40,13 @@ export const MonthlyTaskProvider: React.FC<{
     monthlyFastingDaysGoal: 6,
   };
   const goals = userGoals || defaultGoals;
-  // Get monthly data for past 5 months using existing hook
-  const {monthlyData: rawMonthlyData} = useMonthlyData({
-    uid: MOCK_USER_ID,
-    monthsBack: 3,
-  });
+
+  // Get monthly data using the centralized context instead of direct database access
+  const {getMonthlyStats} = useMonthlyAggregatedData();
+
   // Transform raw data to format needed for UI
   const monthlyData = useMemo(() => {
-    // Generate all months for the past 5 months
+    // Generate all months for the past 3 months
     const today = new Date();
     const allMonths = [];
 
@@ -56,10 +55,8 @@ export const MonthlyTaskProvider: React.FC<{
       const monthName = monthDate.toLocaleDateString('en-US', {month: 'long'});
       const year = monthDate.getFullYear();
 
-      // Find existing data for this month
-      const existingData = rawMonthlyData?.find(
-        data => data.monthName === monthName && data.year === year,
-      );
+      // Get existing data for this month using centralized context
+      const existingData = getMonthlyStats(year, monthDate.getMonth());
 
       // Create month data with existing or default values
       allMonths.push({
@@ -89,7 +86,7 @@ export const MonthlyTaskProvider: React.FC<{
     }
 
     return allMonths;
-  }, [rawMonthlyData, goals]);
+  }, [getMonthlyStats, goals]);
 
   // Get current month index
   const getCurrentMonthIndex = useMemo(() => {

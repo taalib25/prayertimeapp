@@ -1,11 +1,12 @@
 import {
   updatePrayerStatus,
-  updateQuranMinutes,
-  updateZikrCount,
   getRecentDailyTasks,
 } from '../../services/db/dailyTaskServices';
 import {PrayerStatus} from '../../model/DailyTasks';
 import {EnhancedSpecialTask, TaskCategory} from './specialTasks';
+
+// Optional callback type for UI refresh
+type RefreshCallback = () => Promise<void>;
 
 /**
  * Get current values for a specific date
@@ -35,6 +36,7 @@ const getCurrentTaskData = async (dateISO: string) => {
 export const handleTaskCompletion = async (
   task: EnhancedSpecialTask,
   dateISO: string,
+  refreshCallback?: RefreshCallback, // Optional callback to refresh UI context
   forceCompleted?: boolean, // Optional: force a specific state
 ): Promise<void> => {
   try {
@@ -59,9 +61,13 @@ export const handleTaskCompletion = async (
             currentStatus === 'mosque' || currentStatus === 'home'
               ? 'none'
               : 'mosque';
-
           await updatePrayerStatus(dateISO, task.prayerName, newStatus);
           console.log(`✅ Prayer ${task.prayerName} toggled to: ${newStatus}`);
+
+          // Call refresh callback if provided
+          if (refreshCallback) {
+            await refreshCallback();
+          }
         }
         break;
 
@@ -72,12 +78,15 @@ export const handleTaskCompletion = async (
 
         const newQuranMinutes = isCurrentlyCompleted
           ? Math.max(0, currentQuranMinutes - task.amount) // Remove amount (toggle OFF)
-          : currentQuranMinutes + task.amount; // Add amount (toggle ON)
-
-        await updateQuranMinutes(dateISO, newQuranMinutes);
+          : currentQuranMinutes + task.amount; // Add amount (toggle ON)        await updateQuranMinutes(dateISO, newQuranMinutes);
         console.log(
           `✅ Quran minutes toggled from ${currentQuranMinutes} to: ${newQuranMinutes}`,
         );
+
+        // Call refresh callback if provided
+        if (refreshCallback) {
+          await refreshCallback();
+        }
         break;
 
       case 'zikr':
@@ -87,12 +96,15 @@ export const handleTaskCompletion = async (
 
         const newZikrCount = isZikrCurrentlyCompleted
           ? Math.max(0, currentZikrCount - task.amount) // Remove amount (toggle OFF)
-          : currentZikrCount + task.amount; // Add amount (toggle ON)
-
-        await updateZikrCount(dateISO, newZikrCount);
+          : currentZikrCount + task.amount; // Add amount (toggle ON)        await updateZikrCount(dateISO, newZikrCount);
         console.log(
           `✅ Zikr count toggled from ${currentZikrCount} to: ${newZikrCount}`,
         );
+
+        // Call refresh callback if provided
+        if (refreshCallback) {
+          await refreshCallback();
+        }
         break;
 
       default:
