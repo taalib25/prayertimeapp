@@ -1,7 +1,6 @@
 /**
  * Simplified User System
  * One user type with only essential fields
- * No need for multiple sub-types or complex categorization
  */
 
 // Main user interface - contains everything about the user
@@ -11,11 +10,11 @@ export interface User {
   email: string;
   phoneNumber: string;
 
-  // Simple targets (only zikr and quran as requested)
+  // Simple targets (only zikr and quran)
   zikriGoal: number; // monthly target
   quranGoal: number; // monthly pages target
 
-  // Simple settings by default
+  // Simple settings
   location: string;
   masjid: string;
   theme: 'light' | 'dark';
@@ -26,13 +25,11 @@ export interface User {
   updatedAt: string;
 }
 
-// System data - separate key for system-related data
+// System data - separate from user data
 export interface SystemData {
   authToken: string | null;
   hasSeenOnboarding: boolean;
   callPreference: boolean | null;
-  fajrReminderDuration: number | null; // Duration in minutes
-  fajrReminderTiming: 'before' | 'after' | null; // Before or after Fajr
 }
 
 // Default values
@@ -54,14 +51,12 @@ export const DEFAULT_SYSTEM: SystemData = {
   authToken: null,
   hasSeenOnboarding: false,
   callPreference: null,
-  fajrReminderDuration: null,
-  fajrReminderTiming: null,
 };
 
-// Storage keys - only two keys needed
+// Storage keys
 export const STORAGE_KEYS = {
-  USER: 'user_data', // All user profile and settings
-  SYSTEM: 'system_data', // Auth token, onboarding, call preference
+  USER: 'user_data',
+  SYSTEM: 'system_data',
 } as const;
 
 // Helper types for partial updates

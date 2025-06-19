@@ -1,13 +1,13 @@
 /**
  * Simple User Hook
- * Uses the simplified user system with one user type and minimal complexity
+ * Provides easy access to user data and system data
  */
 
 import {useState, useEffect, useCallback} from 'react';
-import {User, SystemData, UserUpdate, SystemUpdate} from '../types/User';
-import UserService from '../services/UserService';
+import {User, SystemData, UserUpdate, SystemUpdate} from '../types/SimpleUser';
+import SimpleUserService from '../services/SimpleUserService';
 
-interface UseUserReturn {
+interface UseSimpleUserReturn {
   // User data
   user: User | null;
 
@@ -43,13 +43,13 @@ interface UseUserReturn {
   clearError: () => void;
 }
 
-export const useUser = (): UseUserReturn => {
+export const useSimpleUser = (): UseSimpleUserReturn => {
   const [user, setUser] = useState<User | null>(null);
   const [systemData, setSystemData] = useState<SystemData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const userService = UserService.getInstance();
+  const userService = SimpleUserService.getInstance();
 
   // Load data
   const loadData = useCallback(async () => {
@@ -57,17 +57,13 @@ export const useUser = (): UseUserReturn => {
       setIsLoading(true);
       setError(null);
 
-      // Initialize default data if needed
-      await userService.initializeIfNeeded();
-
-      // Load user and system data
-      const [userData, systemData] = await Promise.all([
+      const [userData, systemInfo] = await Promise.all([
         userService.getUser(),
         userService.getSystemData(),
       ]);
 
       setUser(userData);
-      setSystemData(systemData);
+      setSystemData(systemInfo);
     } catch (err) {
       console.error('Error loading data:', err);
       setError('Failed to load data');
