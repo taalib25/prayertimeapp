@@ -6,6 +6,7 @@ import {
 } from '../../services/db/dailyTaskServices';
 import {PrayerStatus} from '../../model/DailyTasks';
 import {EnhancedSpecialTask, TaskCategory} from './specialTasks';
+import ApiTaskServices from '../../services/apiHandler';
 
 // Optional callback type for UI refresh
 type RefreshCallback = () => Promise<void>;
@@ -34,6 +35,7 @@ const getCurrentTaskData = async (dateISO: string) => {
 /**
  * Handle task completion based on category and update database accordingly
  * This is a TOGGLE function that determines current state and switches it
+ * Now includes API integration with local database fallback
  */
 export const handleTaskCompletion = async (
   task: EnhancedSpecialTask,
@@ -41,6 +43,8 @@ export const handleTaskCompletion = async (
   refreshCallback?: RefreshCallback, // Optional callback to refresh UI context
   forceCompleted?: boolean, // Optional: force a specific state
 ): Promise<void> => {
+  const apiService = ApiTaskServices.getInstance();
+
   try {
     console.log(`🔧 Handling task toggle: ${task.title}`);
 
@@ -58,12 +62,29 @@ export const handleTaskCompletion = async (
             taskForDate?.[
               `${task.prayerName}Status` as keyof typeof taskForDate
             ];
-
           const newStatus: PrayerStatus =
             currentStatus === 'mosque' || currentStatus === 'home'
               ? 'none'
               : 'mosque';
+
+          // Update local database
           await updatePrayerStatus(dateISO, task.prayerName, newStatus);
+
+          // Update via API (with error handling)
+          try {
+            await apiService.updatePrayerStatus(
+              dateISO,
+              task.prayerName,
+              newStatus,
+            );
+          } catch (apiError) {
+            console.warn(
+              `⚠️ API update failed for prayer ${task.prayerName}, but local DB updated:`,
+              apiError,
+            );
+            // Continue execution - local DB is updated, API will sync later
+          }
+
           console.log(`✅ Prayer ${task.prayerName} toggled to: ${newStatus}`);
 
           // Call refresh callback if provided
@@ -77,11 +98,24 @@ export const handleTaskCompletion = async (
         // For Quran: toggle between adding and removing the amount
         const currentQuranMinutes = currentData.quranMinutes;
         const isCurrentlyCompleted = currentQuranMinutes >= task.amount;
-
         const newQuranMinutes = isCurrentlyCompleted
           ? Math.max(0, currentQuranMinutes - task.amount) // Remove amount (toggle OFF)
           : currentQuranMinutes + task.amount; // Add amount (toggle ON)
+
+        // Update local database
         await updateQuranMinutes(dateISO, newQuranMinutes);
+
+        // Update via API (with error handling)
+        try {
+          await apiService.updateQuranMinutes(dateISO, newQuranMinutes);
+        } catch (apiError) {
+          console.warn(
+            `⚠️ API update failed for Quran, but local DB updated:`,
+            apiError,
+          );
+          // Continue execution - local DB is updated, API will sync later
+        }
+
         console.log(
           `✅ Quran minutes toggled from ${currentQuranMinutes} to: ${newQuranMinutes}`,
         );
@@ -96,11 +130,24 @@ export const handleTaskCompletion = async (
         // For Zikr: toggle between adding and removing the amount
         const currentZikrCount = currentData.zikrCount;
         const isZikrCurrentlyCompleted = currentZikrCount >= task.amount;
-
         const newZikrCount = isZikrCurrentlyCompleted
           ? Math.max(0, currentZikrCount - task.amount) // Remove amount (toggle OFF)
           : currentZikrCount + task.amount; // Add amount (toggle ON)
+
+        // Update local database
         await updateZikrCount(dateISO, newZikrCount);
+
+        // Update via API (with error handling)
+        try {
+          await apiService.updateZikrCount(dateISO, newZikrCount);
+        } catch (apiError) {
+          console.warn(
+            `⚠️ API update failed for Zikr, but local DB updated:`,
+            apiError,
+          );
+          // Continue execution - local DB is updated, API will sync later
+        }
+
         console.log(
           `✅ Zikr count toggled from ${currentZikrCount} to: ${newZikrCount}`,
         );

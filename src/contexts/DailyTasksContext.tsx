@@ -14,6 +14,7 @@ import {
   updateZikrCount,
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
+import ApiTaskServices from '../services/apiHandler';
 
 interface DailyTasksContextType {
   // Data
@@ -47,6 +48,9 @@ export const DailyTasksProvider: React.FC<{
   const [dailyTasks, setDailyTasks] = useState<DailyTaskData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get API service instance
+  const apiService = useMemo(() => ApiTaskServices.getInstance(), []);
 
   // Fetch data from database
   const fetchData = useCallback(async () => {
@@ -85,71 +89,154 @@ export const DailyTasksProvider: React.FC<{
     },
     [dailyTasks],
   );
-
-  // Update prayer status and refresh all UI
+  // Update prayer status with optimistic UI + API call
   const updatePrayerAndRefresh = useCallback(
     async (date: string, prayer: string, status: PrayerStatus) => {
+      const previousTasks = [...dailyTasks];
+
       try {
         console.log(
-          `🔄 DailyTasksContext: Updating ${prayer} to ${status} for ${date}`,
+          `🔄 DailyTasksContext: Optimistically updating ${prayer} to ${status} for ${date}`,
         );
 
+        // OPTIMISTIC UPDATE: Update UI immediately
+        const optimisticTasks = dailyTasks.map(task => {
+          if (task.date === date) {
+            const prayerKey =
+              `${prayer.toLowerCase()}Status` as keyof DailyTaskData;
+            return {
+              ...task,
+              [prayerKey]: status,
+            };
+          }
+          return task;
+        });
+        setDailyTasks(optimisticTasks);
+
+        // 1. Update local database
         await updatePrayerStatus(date, prayer, status);
 
-        // Refresh data to update all UIs
+        // 2. Update via API
+        await apiService.updatePrayerStatus(date, prayer, status);
+
+        // 3. Refresh from database to ensure consistency
         await fetchData();
 
-        console.log('✅ DailyTasksContext: Prayer updated and UI refreshed');
+        console.log(
+          '✅ DailyTasksContext: Prayer updated successfully (DB + API)',
+        );
       } catch (error) {
         console.error('❌ DailyTasksContext: Error updating prayer:', error);
+
+        // ROLLBACK: Restore previous state on error
+        setDailyTasks(previousTasks);
+        setError('Failed to update prayer. Please try again.');
+
+        // Clear error after 3 seconds
+        setTimeout(() => setError(null), 3000);
+
         throw error;
       }
     },
-    [fetchData],
+    [dailyTasks, fetchData, apiService],
   );
-
-  // Update Quran minutes and refresh all UI
+  // Update Quran minutes with optimistic UI + API call
   const updateQuranAndRefresh = useCallback(
     async (date: string, minutes: number) => {
+      const previousTasks = [...dailyTasks];
+
       try {
         console.log(
-          `🔄 DailyTasksContext: Updating Quran to ${minutes} minutes for ${date}`,
+          `🔄 DailyTasksContext: Optimistically updating Quran to ${minutes} minutes for ${date}`,
         );
 
+        // OPTIMISTIC UPDATE: Update UI immediately
+        const optimisticTasks = dailyTasks.map(task => {
+          if (task.date === date) {
+            return {
+              ...task,
+              quranMinutes: minutes,
+            };
+          }
+          return task;
+        });
+        setDailyTasks(optimisticTasks);
+
+        // 1. Update local database
         await updateQuranMinutes(date, minutes);
 
-        // Refresh data to update all UIs
+        // 2. Update via API
+        await apiService.updateQuranMinutes(date, minutes);
+
+        // 3. Refresh from database to ensure consistency
         await fetchData();
 
-        console.log('✅ DailyTasksContext: Quran updated and UI refreshed');
+        console.log(
+          '✅ DailyTasksContext: Quran updated successfully (DB + API)',
+        );
       } catch (error) {
         console.error('❌ DailyTasksContext: Error updating Quran:', error);
+
+        // ROLLBACK: Restore previous state on error
+        setDailyTasks(previousTasks);
+        setError('Failed to update Quran progress. Please try again.');
+
+        // Clear error after 3 seconds
+        setTimeout(() => setError(null), 3000);
+
         throw error;
       }
     },
-    [fetchData],
+    [dailyTasks, fetchData, apiService],
   );
-
-  // Update Zikr count and refresh all UI
+  // Update Zikr count with optimistic UI + API call
   const updateZikrAndRefresh = useCallback(
     async (date: string, count: number) => {
+      const previousTasks = [...dailyTasks];
+
       try {
         console.log(
-          `🔄 DailyTasksContext: Updating Zikr to ${count} count for ${date}`,
+          `🔄 DailyTasksContext: Optimistically updating Zikr to ${count} count for ${date}`,
         );
 
+        // OPTIMISTIC UPDATE: Update UI immediately
+        const optimisticTasks = dailyTasks.map(task => {
+          if (task.date === date) {
+            return {
+              ...task,
+              totalZikrCount: count,
+            };
+          }
+          return task;
+        });
+        setDailyTasks(optimisticTasks);
+
+        // 1. Update local database
         await updateZikrCount(date, count);
 
-        // Refresh data to update all UIs
+        // 2. Update via API
+        await apiService.updateZikrCount(date, count);
+
+        // 3. Refresh from database to ensure consistency
         await fetchData();
 
-        console.log('✅ DailyTasksContext: Zikr updated and UI refreshed');
+        console.log(
+          '✅ DailyTasksContext: Zikr updated successfully (DB + API)',
+        );
       } catch (error) {
         console.error('❌ DailyTasksContext: Error updating Zikr:', error);
+
+        // ROLLBACK: Restore previous state on error
+        setDailyTasks(previousTasks);
+        setError('Failed to update Zikr progress. Please try again.');
+
+        // Clear error after 3 seconds
+        setTimeout(() => setError(null), 3000);
+
         throw error;
       }
     },
-    [fetchData],
+    [dailyTasks, fetchData, apiService],
   );
 
   const value: DailyTasksContextType = useMemo(
