@@ -4,8 +4,6 @@ import {useMonthlyAggregatedData} from '../hooks/useContextualData';
 interface UserGoals {
   monthlyZikrGoal: number;
   monthlyQuranPagesGoal: number;
-  monthlyCharityGoal: number;
-  monthlyFastingDaysGoal: number;
 }
 
 interface MonthData {
@@ -36,8 +34,6 @@ export const MonthlyTaskProvider: React.FC<{
   const defaultGoals = {
     monthlyZikrGoal: 3000,
     monthlyQuranPagesGoal: 300,
-    monthlyCharityGoal: 5,
-    monthlyFastingDaysGoal: 6,
   };
   const goals = userGoals || defaultGoals;
 

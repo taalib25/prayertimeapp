@@ -12,6 +12,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
+import SimpleUserService from '../services/SimpleUserService';
 
 type OnboardingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -27,8 +28,11 @@ const OnboardingScreen: React.FC<Props> = ({
   navigation,
   onOnboardingComplete,
 }) => {
+  const userService = SimpleUserService.getInstance();
+
   const handleStartNow = async () => {
     try {
+      await userService.markOnboardingAsSeen();
       await onOnboardingComplete();
     } catch (error) {
       console.error('Error during onOnboardingComplete:', error);

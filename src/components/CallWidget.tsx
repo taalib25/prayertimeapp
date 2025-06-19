@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {USER_STORAGE_KEYS} from '../types/User';
+import {STORAGE_KEYS} from '../types/User';
 
 interface CallWidgetProps {
   onCallPreferenceSet: (needsCall: boolean) => void;
@@ -20,9 +20,7 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   }, []);
   const checkIfFirstTimeUser = async () => {
     try {
-      const value = await AsyncStorage.getItem(
-        USER_STORAGE_KEYS.CALL_PREFERENCE,
-      );
+      const value = await AsyncStorage.getItem(STORAGE_KEYS.SYSTEM);
       if (value === null) {
         // First time user, show the widget
         setIsVisible(true);
@@ -44,7 +42,7 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
       }).start(async () => {
         // Save preference and hide widget after animation completes
         await AsyncStorage.setItem(
-          USER_STORAGE_KEYS.CALL_PREFERENCE,
+          STORAGE_KEYS.SYSTEM,
           JSON.stringify({needsCall}),
         );
         setIsVisible(false);

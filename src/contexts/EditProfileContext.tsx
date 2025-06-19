@@ -1,7 +1,7 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import {Alert} from 'react-native';
-import {useAppUser} from '../hooks/useUnifiedUser';
-import {UserUpdateData} from '../types/User';
+import {useUser} from '../hooks/useUser';
+import {UserUpdate} from '../types/User';
 
 interface FormData {
   name: string;
@@ -46,7 +46,7 @@ interface EditProfileProviderProps {
 export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   children,
 }) => {
-  const {profile, updateProfile} = useAppUser();
+  const {user, updateUser} = useUser();
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -59,20 +59,19 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // Load user data from profile
+  // Load user data from user
   useEffect(() => {
-    if (profile) {
+    if (user) {
       setFormData({
-        name: profile.username || '',
-        email: profile.email || '',
-        mobile: profile.phoneNumber || '',
-        address: profile.address || '',
-        dateOfBirth: profile.dateOfBirth || '',
-        nearestMasjid: profile.masjid || '',
+        name: user.username || '',
+        email: user.email || '',
+        mobile: user.phoneNumber || '',
+        address: user.location || '',
+        dateOfBirth: '',
+        nearestMasjid: user.masjid || '',
       });
     }
-  }, [profile]);
+  }, [user]);
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData(prev => ({...prev, [field]: value}));
@@ -151,18 +150,16 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
     try {
       setIsLoading(true);
-
-      const updateData: UserUpdateData = {
+      const updateData: UserUpdate = {
         username: formData.name,
         email: formData.email,
         phoneNumber: formData.mobile,
-        address: formData.address,
-        dateOfBirth: formData.dateOfBirth,
+        location: formData.address,
         masjid: formData.nearestMasjid,
       };
 
-      // Uncomment when ready to save
-      // await updateProfile(updateData);
+      // Update user data
+      await updateUser(updateData);
 
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {

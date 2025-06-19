@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import {View, StyleSheet, Animated} from 'react-native';
 import {colors} from '../utils/theme';
-import {useAuth} from '../contexts/AuthContext';
+import SimpleUserService from '../services/SimpleUserService';
 import SvgIcon from '../components/SvgIcon';
 
 interface SplashScreenProps {
@@ -9,7 +9,7 @@ interface SplashScreenProps {
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
-  const {checkAuthState} = useAuth();
+  const userService = SimpleUserService.getInstance();
   const fadeAnim = React.useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
       try {
         // Reduced minimum splash screen time for better performance
         const [authResult] = await Promise.all([
-          checkAuthState(),
+          userService.isAuthenticated(),
           new Promise(resolve => setTimeout(resolve, 4000)), // Reduced from 6000 to 2000
         ]);
 
@@ -37,7 +37,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
     };
 
     checkAuth();
-  }, [fadeAnim, checkAuthState, onAuthCheck]);
+  }, [fadeAnim, userService, onAuthCheck]);
 
   return (
     <View style={styles.container}>

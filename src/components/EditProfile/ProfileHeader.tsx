@@ -3,10 +3,10 @@ import {View, Text, Pressable, Image, StyleSheet, Alert} from 'react-native';
 import SvgIcon from '../SvgIcon';
 import {colors, spacing} from '../../utils/theme';
 import {typography} from '../../utils/typography';
-import {useAppUser} from '../../hooks/useUnifiedUser';
+import {useUser} from '../../hooks/useUser';
 
 const ProfileHeader: React.FC = () => {
-  const {profile, displayName} = useAppUser();
+  const {user, displayName, userInitials} = useUser();
 
   const handleProfilePictureUpdate = () => {
     Alert.alert(
@@ -33,11 +33,13 @@ const ProfileHeader: React.FC = () => {
       {cancelable: true},
     );
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image
+        <View style={styles.profileImageContainer}>
+          <Text style={styles.profileImageText}>{userInitials}</Text>
+        </View>
+        {/*         <Image
           source={
             profile?.profileImage
               ? {uri: profile.profileImage}
@@ -45,6 +47,7 @@ const ProfileHeader: React.FC = () => {
           }
           style={styles.profileImage}
         />
+ */}
         <Pressable
           style={({pressed}) => [
             styles.cameraButton,
@@ -55,9 +58,7 @@ const ProfileHeader: React.FC = () => {
         </Pressable>
       </View>
       <Text style={styles.profileName}>{displayName}</Text>
-      <Text style={styles.memberSince}>
-        Member Since {profile?.memberSince || 'Recently'}
-      </Text>
+      <Text style={styles.memberSince}>Member Since Sep 2024</Text>
     </View>
   );
 };
@@ -78,6 +79,19 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: colors.background.light,
+  },
+  profileImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileImageText: {
+    ...typography.h2,
+    color: colors.white,
+    fontWeight: 'bold',
   },
   profileName: {
     ...typography.headerProfile,

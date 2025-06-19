@@ -11,8 +11,6 @@ import {
 interface UserGoals {
   monthlyZikrGoal: number;
   monthlyQuranPagesGoal: number;
-  monthlyCharityGoal: number;
-  monthlyFastingDaysGoal: number;
 }
 
 interface MonthlyChallengeContentProps {

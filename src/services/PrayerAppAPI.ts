@@ -1,5 +1,5 @@
 import ApiService, {ApiResponse} from './api/ApiService';
-import UnifiedUserService from './UnifiedUserService';
+import UserService from './UserService';
 
 // Type definitions for API requests/responses
 export interface LoginRequest {
@@ -93,11 +93,11 @@ export interface PrayerRecord {
 class PrayerAppAPI {
   private static instance: PrayerAppAPI;
   private apiService: ApiService;
-  private userService: UnifiedUserService;
+  private userService: UserService;
 
   private constructor() {
     this.apiService = ApiService.getInstance();
-    this.userService = UnifiedUserService.getInstance();
+    this.userService = UserService.getInstance();
   }
 
   static getInstance(): PrayerAppAPI {

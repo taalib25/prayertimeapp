@@ -19,7 +19,7 @@ import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSele
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
-import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
+import {useSimpleUser} from '../hooks/useSimpleUser';
 import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
@@ -33,15 +33,17 @@ const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {
-    settings,
-    goals,
-    displayName,
-    mosqueInfo,
-    isLoading: userLoading,
-  } = useAppUser();
+  const {user, displayName, isLoading: userLoading} = useSimpleUser();
   const isLoading = prayerLoading || userLoading;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  // Extract mosque info from user
+  const mosqueInfo = user
+    ? {
+        name: user.masjid,
+        location: user.location,
+      }
+    : null;
 
   useEffect(() => {
     if (!isLoading) {
@@ -70,10 +72,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={settings?.location || mosqueInfo?.location}
+          location={user?.location || 'Location not set'}
           userName={displayName}
-          mosqueName={settings?.masjid || mosqueInfo?.name}
-          mosqueLocation={settings?.location || mosqueInfo?.location}
+          mosqueName={user?.masjid || 'Local Mosque'}
+          mosqueLocation={user?.location || 'Location not set'}
           avatarImage={require('../assets/images/profile.png')}
         />
         {/* Prayer Time Cards - always visible with proper structure */}
@@ -88,7 +90,10 @@ const PrayerTimeScreen = () => {
             </View>
           ) : (
             <Animated.View style={{opacity: fadeAnim}}>
-              <PrayerTimeCards prayers={prayerTimes} />
+              <PrayerTimeCards
+                prayers={prayerTimes}
+                selectedDate={selectedDate}
+              />
             </Animated.View>
           )}
         </View>
@@ -127,7 +132,12 @@ const PrayerTimeScreen = () => {
               {/* Section Header for Tasks */}
               <DailyTasksSelector />
               {/* Monthly Challenge Cards with user goals */}
-              <MonthlyChallengeContent userGoals={goals || undefined} />
+              <MonthlyChallengeContent
+                userGoals={{
+                  monthlyZikrGoal: user?.zikriGoal || 600,
+                  monthlyQuranPagesGoal: user?.quranGoal || 30,
+                }}
+              />
               <FajrTimeChart />
             </Animated.View>
           )}

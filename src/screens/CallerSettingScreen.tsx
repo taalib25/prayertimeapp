@@ -8,11 +8,10 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {USER_STORAGE_KEYS} from '../types/User';
+import {useUser} from '../hooks/useUser';
 
 interface CallerSettingScreenProps {
   navigation: any;
@@ -35,6 +34,8 @@ const TIMING_OPTIONS = [
 const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   navigation,
 }) => {
+  const {systemData, updateSystemData} = useUser();
+
   const [fajrCallEnabled, setFajrCallEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState(DURATION_OPTIONS[1]); // Default: 10 minutes
@@ -48,28 +49,36 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   useEffect(() => {
     loadSettings();
   }, []);
-
   const loadSettings = async () => {
     try {
-      const saved = await AsyncStorage.getItem(
-        USER_STORAGE_KEYS.CALL_PREFERENCE,
-      );
-      if (saved !== null) {
-        setFajrCallEnabled(JSON.parse(saved));
+      // Load call preference from system data
+      if (
+        systemData?.callPreference !== null &&
+        systemData?.callPreference !== undefined
+      ) {
+        setFajrCallEnabled(systemData.callPreference);
       }
 
-      // Load duration and timing settings
-      const savedDuration = await AsyncStorage.getItem(
-        'fajr_reminder_duration',
-      );
-      if (savedDuration) {
-        const duration = JSON.parse(savedDuration);
+      // Load duration and timing settings from system data
+      if (
+        systemData?.fajrReminderDuration !== null &&
+        systemData?.fajrReminderDuration !== undefined
+      ) {
+        const duration =
+          DURATION_OPTIONS.find(
+            opt => opt.value === systemData.fajrReminderDuration,
+          ) || DURATION_OPTIONS[1];
         setSelectedDuration(duration);
       }
 
-      const savedTiming = await AsyncStorage.getItem('fajr_reminder_timing');
-      if (savedTiming) {
-        const timing = JSON.parse(savedTiming);
+      if (
+        systemData?.fajrReminderTiming !== null &&
+        systemData?.fajrReminderTiming !== undefined
+      ) {
+        const timing =
+          TIMING_OPTIONS.find(
+            opt => opt.value === systemData.fajrReminderTiming,
+          ) || TIMING_OPTIONS[0];
         setSelectedTiming(timing);
       }
     } catch (error) {
@@ -81,10 +90,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   const toggleFajrCall = async (value: boolean) => {
     try {
       setFajrCallEnabled(value);
-      await AsyncStorage.setItem(
-        USER_STORAGE_KEYS.CALL_PREFERENCE,
-        JSON.stringify(value),
-      ); // Close dropdowns when disabling Fajr call
+      await updateSystemData({callPreference: value});
+
+      // Close dropdowns when disabling Fajr call
       if (!value) {
         setShowDurationDropdown(false);
         setShowTimingDropdown(false);
@@ -101,24 +109,19 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   const saveDuration = async (duration: (typeof DURATION_OPTIONS)[0]) => {
     try {
       setSelectedDuration(duration);
-      await AsyncStorage.setItem(
-        'fajr_reminder_duration',
-        JSON.stringify(duration),
-      );
+      await updateSystemData({fajrReminderDuration: duration.value});
       toggleDurationDropdown();
       setShowSetAlarmButton(true); // Show set alarm button after change
     } catch (error) {
       console.error('Error saving duration:', error);
     }
   };
-
   const saveTiming = async (timing: (typeof TIMING_OPTIONS)[0]) => {
     try {
       setSelectedTiming(timing);
-      await AsyncStorage.setItem(
-        'fajr_reminder_timing',
-        JSON.stringify(timing),
-      );
+      await updateSystemData({
+        fajrReminderTiming: timing.value as 'before' | 'after',
+      });
       toggleTimingDropdown();
       setShowSetAlarmButton(true); // Show set alarm button after change
     } catch (error) {
@@ -368,7 +371,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             </TouchableOpacity>
           </View>
         )}
-      {/* Info Section */}
+        {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>How it works</Text>
@@ -379,9 +382,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             </Text>
           </View>
         </View>
-
       </View>
-      
     </SafeAreaView>
   );
 };
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   settingTitle: {
-    ...typography.bodyMedium ,
+    ...typography.bodyMedium,
     color: '#333',
     marginBottom: 4,
     fontWeight: '600',

@@ -19,7 +19,7 @@ import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
-import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
+import {useUser} from '../hooks/useUser';
 import {useAuth} from '../contexts/AuthContext';
 
 interface ProfileScreenProps {
@@ -28,8 +28,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {profile, stats, displayName, mosqueInfo, isLoading, error} =
-    useAppUser();
+  const {user, isLoading, error, displayName, userInitials} = useUser();
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
@@ -39,7 +38,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     navigation.navigate('NotificationScreen');
   };
   const handleCallerSettings = () => {
-    console.log('stats >>>>>>>>>>', stats);
+    console.log('user >>>>>>>>>>', user);
     navigation.navigate('CallerSettings');
   };
 
@@ -69,7 +68,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
       </View>
     );
   }
-  if (error || !profile || !stats) {
+
+  if (error || !user) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Failed to load profile data</Text>
@@ -85,100 +85,48 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     );
   }
 
-  const earnedBadges = stats.badges.filter(badge => badge.isEarned).length;
-  const totalBadges = stats.badges.length;
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Image
-            source={
-              profile.profileImage
-                ? {uri: profile.profileImage}
-                : require('../assets/images/profile.png')
-            }
-            style={styles.profileImage}
-          />
+          <View style={styles.profileImageContainer}>
+            <Text style={styles.profileImageText}>{userInitials}</Text>
+          </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.memberSince}>
-              Member Since {profile.memberSince || 'Sep 2024'}
-            </Text>
+            <Text style={styles.memberSince}>Member Since Sep 2024</Text>
             <View style={styles.locationContainer}>
               <SvgIcon name="masjid" size={32} color="#4CAF50" />
               <Text style={styles.locationText}>
-                {mosqueInfo?.name || 'Local Mosque'}
+                {user.masjid || 'Local Mosque'}
               </Text>
             </View>
           </View>
         </View>
-        {/* Badges Section */}
+
+        {/* Goals Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>
-              /{totalBadges}
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.badgesCard}>
-            <View style={styles.badgesContainer}>
-              {stats.badges.map(badge => (
-                <BadgeCard
-                  key={badge.id}
-                  icon={badge.icon as any}
-                  title={badge.title}
-                  isEarned={badge.isEarned}
-                />
-              ))}
-            </View>
-          </View>
-        </View>
-        {/* Statistics Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Statistics</Text>
+            <Text style={styles.sectionTitle}>Monthly Goals</Text>
           </View>
           <View style={styles.statisticsGrid}>
             <CompactChallengeCard
-              id="fajr-ring"
-              title="Fajr"
-              current={stats.fajrCount}
-              total={30}
-              backgroundColor="#E0F7FA"
-              progressColor="#00BCD4"
-              textColor={colors.text.prayerBlue}
-              isVisible={true}
-            />
-            <CompactChallengeCard
-              id="isha-ring"
-              title="Isha"
-              current={stats.ishaCount}
-              total={30}
-              backgroundColor="#FFF3E0"
-              progressColor="#FF9800"
-              textColor={colors.text.prayerBlue}
-              isVisible={true}
-            />
-            <CompactChallengeCard
-              id="zikr-ring"
-              title="Zikr"
-              current={stats.zikriCount}
-              total={180}
+              id="zikr-goal"
+              title="Zikr Goal"
+              current={Math.floor(user.zikriGoal * 0.6)} // Mock current progress
+              total={user.zikriGoal}
               backgroundColor="#FCE4EC"
               progressColor="#E91E63"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
             <CompactChallengeCard
-              id="quran-ring"
-              title="Quran"
-              current={stats.quranMinutes}
-              total={40}
+              id="quran-goal"
+              title="Quran Goal"
+              current={Math.floor(user.quranGoal * 0.4)} // Mock current progress
+              total={user.quranGoal}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
@@ -186,6 +134,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             />
           </View>
         </View>
+
+        {/* Settings Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Settings</Text>
+          </View>
+          <View style={styles.settingsInfo}>
+            <Text style={styles.settingItem}>Location: {user.location}</Text>
+            <Text style={styles.settingItem}>Theme: {user.theme}</Text>
+            <Text style={styles.settingItem}>Language: {user.language}</Text>
+          </View>
+        </View>
+
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
@@ -385,6 +346,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     marginVertical: 8,
+  },
+  profileImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  profileImageText: {
+    ...typography.h2,
+    color: colors.white,
+    fontWeight: 'bold',
+  },
+  settingsInfo: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 4,
+  },
+  settingItem: {
+    ...typography.body,
+    marginVertical: 4,
+    color: colors.text.secondary,
   },
   compactProgressText: {
     alignItems: 'center',

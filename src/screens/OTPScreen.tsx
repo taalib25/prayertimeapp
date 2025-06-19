@@ -15,11 +15,11 @@ import {colors} from '../utils/theme';
 import CustomButton from '../components/CustomButton';
 import {otpVerificationSchema} from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import UserPreferencesService from '../services/UserPreferencesService';
-import {initializeUserBackgroundTasks} from '../services/backgroundTasks';
 import SvgIcon from '../components/SvgIcon';
 import PrayerAppAPI from '../services/PrayerAppAPI';
+import UserService from '../services/UserService';
+import {User} from '../types/User';
+import {getTodayDateString} from '../utils/helpers';
 
 type OTPScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -37,20 +37,20 @@ interface Props {
   };
 }
 
-const OTPScreen: React.FC<Props> = ({route}) => {
+const OTPScreen: React.FC<Props> = ({route, navigation}) => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{otp?: string}>({});
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null]);
 
   // Get route params
-  const {login} = useAuth();
+  const {checkAuthState} = useAuth();
   const email = route.params?.email || '';
   const username = route.params?.username || '';
   const password = route.params?.password || '';
-
-  // API instance
+  // Services
   const api = PrayerAppAPI.getInstance();
+  const userService = UserService.getInstance();
 
   // Start with focus on first OTP input
   useEffect(() => {
@@ -83,8 +83,7 @@ const OTPScreen: React.FC<Props> = ({route}) => {
     if (value !== '' && index < 3) {
       inputRefs.current[index + 1]?.focus();
     }
-  };
-  // Simple login function for the exact response format
+  }; // Simple login function for the exact response format
   const loginUser = async (
     username: string,
     password: string,
@@ -104,15 +103,11 @@ const OTPScreen: React.FC<Props> = ({route}) => {
 
       // Handle the exact response format: { success, message, token, user }
       if (apiResponse.success) {
-        // Save auth token
-        if (apiResponse.token) {
-          await api.setAuthToken(apiResponse.token);
-        }
-
         return {
           success: true,
           user: apiResponse.user,
           token: apiResponse.token,
+          message: apiResponse.message,
         };
       } else {
         return {
@@ -123,57 +118,6 @@ const OTPScreen: React.FC<Props> = ({route}) => {
     } catch (error) {
       console.error('❌ Login error:', error);
       return {success: false, error: 'Network error occurred'};
-    }
-  };
-
-  // Create user data from API response
-  const createUserDataFromAPI = async (apiUserData: any) => {
-    try {
-      const uid = 1001;
-
-      const userProfile = {
-        username: apiUserData.username || username,
-        email: apiUserData.email || email,
-        phoneNumber: '', // Not provided in the response
-      };
-
-      const defaultGoals = {
-        monthlyZikrGoal: 600,
-        monthlyQuranPagesGoal: 30,
-        monthlyCharityGoal: 5,
-        monthlyFastingDaysGoal: 6,
-      };
-
-      const defaultSettings = {
-        prayerSettings: 'standard',
-        preferredMadhab: 'hanafi',
-        appLanguage: 'en',
-        theme: 'light',
-        location: 'Colombo, LK',
-        masjid: 'Local Masjid',
-      };
-
-      // Store user data
-      await Promise.all([
-        AsyncStorage.setItem(
-          `user_${uid}_profile`,
-          JSON.stringify(userProfile),
-        ),
-        AsyncStorage.setItem(`user_${uid}_goals`, JSON.stringify(defaultGoals)),
-        AsyncStorage.setItem(
-          `user_${uid}_settings`,
-          JSON.stringify(defaultSettings),
-        ),
-      ]);
-
-      // Initialize services
-      const preferencesService = UserPreferencesService.getInstance();
-      await preferencesService.initializeDefaultSettings(uid);
-      await initializeUserBackgroundTasks(uid);
-
-      console.log('✅ User data created from API response');
-    } catch (error) {
-      console.error('❌ Error creating user data from API:', error);
     }
   };
 
@@ -200,14 +144,33 @@ const OTPScreen: React.FC<Props> = ({route}) => {
       const response = await loginUser(username, password, otpCode);
 
       if (response.success && response.user) {
-        console.log('✅ OTP verified successfully');
+        console.log('✅ OTP verified successfully'); // Store auth token
+        if (response.token) {
+          await userService.setAuthToken(response.token);
+        }
 
-        // Create user data from API response
-        await createUserDataFromAPI(response.user);
+        // Create simplified user data
+        const userData: Partial<User> = {
+          username:
+            response.user.name || response.user.username || email.split('@')[0],
+          email: response.user.email || email,
+          phoneNumber: response.user.phoneNumber || response.user.phone || '',
+          location: 'Cairo, Egypt',
+          masjid: 'Al-Azhar Mosque',
+          zikriGoal: 600,
+          quranGoal: 30,
+          theme: 'light',
+          language: 'en',
+        };
 
-        // Login user in context
-        const userEmail = response.user.email || email;
-        await login(userEmail, ''); // No phone number in response
+        // Create the user
+        await userService.createUser(userData);
+
+        // Trigger auth state check to update UI
+        await checkAuthState();
+
+        // Navigate to main app (this should happen automatically after auth state update)
+        console.log('User successfully authenticated');
       } else {
         console.log('❌ OTP verification failed:', response.error);
         setErrors(prev => ({
