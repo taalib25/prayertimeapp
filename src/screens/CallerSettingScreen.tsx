@@ -358,19 +358,17 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             )}
           </View>
         </View>
-
         {/* Set Call Alarm Button */}
         {fajrCallEnabled && showSetAlarmButton && (
           <View style={styles.setAlarmSection}>
             <TouchableOpacity
               style={styles.setAlarmButton}
               onPress={handleSetCallAlarm}>
-              <Text style={styles.setAlarmButtonText}>⏰ Set Call Alarm</Text>
+              <Text style={styles.setAlarmButtonText}>Set Wake Up Call </Text>
             </TouchableOpacity>
           </View>
         )}
-
-        {/* Info Section */}
+      {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>How it works</Text>
@@ -381,7 +379,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             </Text>
           </View>
         </View>
+
       </View>
+      
     </SafeAreaView>
   );
 };
@@ -433,12 +433,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 80, // Increased margin to provide space for dropdowns
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    overflow: 'visible',
+    zIndex: 1,
   },
   sectionTitle: {
     ...typography.h3,
@@ -456,7 +458,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   settingTitle: {
-    ...typography.bodyMedium,
+    ...typography.bodyMedium ,
     color: '#333',
     marginBottom: 4,
     fontWeight: '600',
@@ -509,7 +511,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: '100%',
-    zIndex: 1000,
+    zIndex: 9999,
     minWidth: 140,
     maxWidth: 200,
     marginTop: 4,
@@ -518,13 +520,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 8,
     marginTop: 4,
-    elevation: 8,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.15,
     shadowRadius: 8,
     borderWidth: 1,
     borderColor: '#E8E8E8',
+    zIndex: 9999,
   },
   dropdownOption: {
     paddingVertical: 12,
@@ -582,29 +585,21 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   setAlarmSection: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   setAlarmButton: {
     backgroundColor: colors.primary,
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   setAlarmButtonText: {
-    ...typography.bodyMedium,
+    ...typography.h3,
     color: '#FFF',
-    fontWeight: '600',
-    fontSize: 16,
+    // fontSize: 16,
   },
   previewSection: {
     backgroundColor: '#FFF',
