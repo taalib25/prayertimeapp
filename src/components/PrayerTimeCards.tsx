@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
@@ -9,6 +9,7 @@ import AttendanceSelectionModal, {
 } from './AttendanceSelectionModal';
 import {PrayerStatus} from '../model/DailyTasks';
 import {usePrayerData} from '../hooks/useContextualData';
+import {getTodayDateString} from '../utils/helpers';
 
 interface PrayerTime {
   name: string;
@@ -19,15 +20,33 @@ interface PrayerTime {
 
 interface PrayerTimeCardsProps {
   prayers: PrayerTime[];
+  selectedDate?: string; // Add optional selectedDate prop
 }
 
-const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
+const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
+  prayers,
+  selectedDate,
+}) => {
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
-    useState<PrayerTime | null>(null);
+    useState<PrayerTime | null>(null); // Use centralized prayer data - pass selectedDate to get data for that specific date
+  // But tick marks should only show for today's date regardless
+  const {getPrayerStatus, updatePrayerStatus, isLoading, todayData} =
+    usePrayerData(selectedDate);
 
-  // Use centralized prayer data
-  const {getPrayerStatus, updatePrayerStatus, isLoading} = usePrayerData();
+  const isToday = useMemo(() => {
+    const today = getTodayDateString();
+    const result = selectedDate === today;
+    console.log(
+      `🗓️ PrayerTimeCards: selectedDate=${selectedDate}, today=${today}, isToday=${result}`,
+    );
+    return result;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    // This effect ensures component stays in sync with the daily task context
+    // No action needed here, just dependency tracking
+  }, [todayData]);
 
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
     setSelectedPrayerForAttendance(prayer);
@@ -107,19 +126,20 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
                         name={prayer.name.toLowerCase() as IconName}
                         size={26}
                       />
-                      {/* Show indicator for both home and mosque */}
-                      {(prayerStatus === 'home' ||
-                        prayerStatus === 'mosque') && (
-                        <View
-                          style={[
-                            styles.attendanceIndicator,
-                            prayerStatus === 'home'
-                              ? styles.homeIndicator
-                              : styles.mosqueIndicator,
-                          ]}>
-                          <Text style={styles.checkmark}>✓</Text>
-                        </View>
-                      )}
+                      {isToday &&
+                        selectedDate === getTodayDateString() &&
+                        (prayerStatus === 'home' ||
+                          prayerStatus === 'mosque') && (
+                          <View
+                            style={[
+                              styles.attendanceIndicator,
+                              prayerStatus === 'home'
+                                ? styles.homeIndicator
+                                : styles.mosqueIndicator,
+                            ]}>
+                            <Text style={styles.checkmark}>✓</Text>
+                          </View>
+                        )}
                     </View>
                     <Text style={styles.prayerTime} numberOfLines={1}>
                       {prayer.time}
