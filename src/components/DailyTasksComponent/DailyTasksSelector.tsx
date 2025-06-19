@@ -1,178 +1,39 @@
 import React, {useState, useRef, useCallback, useMemo, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {colors, spacing} from '../../utils/theme';
-import {typography} from '../../utils/typography';
 import {useRecentDailyTasks} from '../../hooks/useDailyTasks';
+import DayView from './DayView';
+import PaginationDots from './PaginationDots';
+import {LoadingState, ErrorState} from './LoadingState';
+import {transformDailyData} from './dataTransform';
+import {useTaskManager} from './useTaskManager';
 
-const MOCK_USER_ID = 1001;
-
-interface Task {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface DayTasks {
-  dateISO: string; // YYYY-MM-DD
-  dayLabel: string; // "Today", "Yesterday", or formatted date
-  tasks: Task[];
-}
-
-interface TaskItemProps {
-  item: Task;
-  onToggleComplete: (taskId: string) => void;
-  isToday: boolean;
-}
-
-const TaskItem: React.FC<TaskItemProps> = ({
-  item,
-  onToggleComplete,
-  isToday,
-}) => {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.taskItemContainer,
-        item.completed && styles.taskItemCompleted,
-        !isToday && styles.taskItemDisabled,
-      ]}
-      onPress={() => isToday && onToggleComplete(item.id)}
-      disabled={!isToday}>
-      <Text
-        style={[
-          styles.taskItemText,
-          item.completed && styles.taskItemTextCompleted,
-          !isToday && styles.taskItemTextDisabled,
-        ]}>
-        {item.title}
-      </Text>
-      <View
-        style={[
-          styles.taskRadioCircle,
-          item.completed && styles.taskRadioCircleCompleted,
-          !isToday && styles.taskRadioCircleDisabled,
-        ]}>
-        {item.completed && <View style={styles.taskRadioInnerCircle} />}
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-interface DayViewProps {
-  dayTasks: DayTasks;
-  onTaskToggle: (dateISO: string, taskId: string) => void;
-  isToday: boolean;
-}
-
-const DayView: React.FC<DayViewProps> = ({dayTasks, onTaskToggle, isToday}) => {
-  const shouldScroll = dayTasks.tasks.length > 5;
-
-  return (
-    <View style={styles.dayViewContainer}>
-      <Text style={[styles.dayLabel, !isToday && styles.dayLabelPast]}>
-        {dayTasks.dayLabel}
-      </Text>
-      <ScrollView
-        style={[
-          styles.scrollViewStyle,
-          !shouldScroll && {maxHeight: undefined},
-        ]}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.tasksScrollContainer,
-          !shouldScroll && {minHeight: undefined},
-        ]}
-        scrollEnabled={shouldScroll}
-        nestedScrollEnabled={shouldScroll}>
-        {dayTasks.tasks.map(task => (
-          <TaskItem
-            key={task.id}
-            item={task}
-            onToggleComplete={taskId => onTaskToggle(dayTasks.dateISO, taskId)}
-            isToday={isToday}
-          />
-        ))}
-      </ScrollView>
-    </View>
-  );
-};
 
 const DailyTasksSelector: React.FC = () => {
-  const {recentTasks, isLoading, error, toggleSpecialTaskForDate} =
-    useRecentDailyTasks({
-      uid: MOCK_USER_ID,
-      daysBack: 3,
-    });
+  const {recentTasks, isLoading, error, refetch} = useRecentDailyTasks({
+    daysBack: 3,
+  });
 
-  const handleTaskToggle = useCallback(
-    (dateISO: string, taskId: string) => {
-      toggleSpecialTaskForDate(dateISO, taskId);
+  // Use the task manager for handling database operations
+  const {handleTaskToggle} = useTaskManager();
+
+  // Wrap the handleTaskToggle to refresh data after update
+  const handleTaskToggleWithRefresh = useCallback(
+    async (dateISO: string, taskId: string) => {
+      try {
+        await handleTaskToggle(dateISO, taskId);
+        // Refresh the data to show the updated state
+        await refetch();
+      } catch (error) {
+        console.error('❌ Error in task toggle:', error);
+      }
     },
-    [toggleSpecialTaskForDate],
+    [handleTaskToggle, refetch],
   );
+
   const transformedDailyData = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-
-    const formatDayLabel = (dateStr: string) => {
-      const date = new Date(dateStr);
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-      if (dateStr === today) return 'Today';
-      if (dateStr === yesterdayStr) return 'Yesterday';
-
-      const options: Intl.DateTimeFormatOptions = {
-        month: 'short',
-        day: 'numeric',
-      };
-      return date.toLocaleDateString('en-US', options);
-    };
-
-    // Demo dummy tasks - same for all days
-    const dummyTasks = [
-      {id: 't1', title: '100 x Subhaan Allah', completed: false},
-      {
-        id: 't2',
-        title: '500 x La hawla wala kuwwatha illa billah',
-        completed: false,
-      },
-      {id: 't3', title: '100 x Asthagfirullah', completed: false},
-      {id: 't4', title: '15 mins of Quran', completed: false},
-      {id: 't5', title: 'ISHA at Masjid', completed: false},
-      {id: 't6', title: 'Make Dua for family', completed: false},
-      {id: 't7', title: 'Reflect on day', completed: false},
-    ];
-
-    // Map all recent tasks and add dummy tasks to days that don't have tasks
-    const tasksWithData = recentTasks
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort oldest to newest
-      .map(dayData => {
-        // Use actual tasks if available, otherwise use dummy tasks for demo
-        const tasksToShow =
-          dayData.specialTasks.length > 0 ? dayData.specialTasks : dummyTasks;
-
-        return {
-          dateISO: dayData.date,
-          dayLabel: formatDayLabel(dayData.date),
-          tasks: tasksToShow.map(task => ({
-            id: task.id,
-            title: task.title,
-            completed: task.completed,
-          })),
-          isToday: dayData.date === today,
-        };
-      });
-
-    return tasksWithData;
+    return transformDailyData(recentTasks);
   }, [recentTasks]);
 
   // Find today's index for initial page
@@ -198,31 +59,14 @@ const DailyTasksSelector: React.FC = () => {
       setCurrentPage(newTodayIndex);
     }
   }, [transformedDailyData]);
-
   // Show loading state
   if (isLoading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {justifyContent: 'center', alignItems: 'center'},
-        ]}>
-        <Text style={typography.body}>Loading tasks...</Text>
-      </View>
-    );
+    return <LoadingState />;
   }
 
   // Show error state
   if (error) {
-    return (
-      <View
-        style={[
-          styles.container,
-          {justifyContent: 'center', alignItems: 'center'},
-        ]}>
-        <Text style={[typography.body, {color: colors.error}]}>{error}</Text>
-      </View>
-    );
+    return <ErrorState error={error} />;
   }
 
   // Hide component if no tasks found
@@ -241,27 +85,18 @@ const DailyTasksSelector: React.FC = () => {
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
             <DayView
               dayTasks={dayTasks}
-              onTaskToggle={handleTaskToggle}
+              onTaskToggle={handleTaskToggleWithRefresh}
               isToday={dayTasks.isToday}
             />
           </View>
         ))}
       </PagerView>
 
-      {transformedDailyData.length > 1 && (
-        <View style={styles.paginationContainer}>
-          {transformedDailyData.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.paginationDot,
-                currentPage === index && styles.paginationDotActive,
-              ]}
-              onPress={() => pagerRef.current?.setPage(index)}
-            />
-          ))}
-        </View>
-      )}
+      <PaginationDots
+        totalPages={transformedDailyData.length}
+        currentPage={currentPage}
+        pagerRef={pagerRef}
+      />
     </View>
   );
 };
@@ -270,7 +105,7 @@ const DailyTasksSelector: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 450, // Increased height for better scrolling
+    height: 450,
     backgroundColor: '#E1FFD1',
     borderRadius: 20,
     marginVertical: spacing.md,
@@ -283,106 +118,6 @@ const styles = StyleSheet.create({
   pageContainer: {
     flex: 1,
     paddingHorizontal: spacing.sm,
-  },
-  dayViewContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
-  },
-  scrollViewStyle: {
-    flex: 1,
-    maxHeight: 320, // Set max height to ensure scrolling
-  },
-  tasksScrollContainer: {
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.xs,
-    minHeight: 340, // Ensure content is taller than container to enable scrolling
-  },
-  dayLabel: {
-    ...typography.h2,
-    color: colors.text.prayerBlue,
-    marginBottom: spacing.md, // Reduced for more compact layout
-    marginLeft: spacing.xs,
-    lineHeight: 30, // Reduced line height for more compact text
-  },
-  dayLabelPast: {
-    color: colors.text.prayerBlue,
-    opacity: 0.9,
-  },
-  taskItemContainer: {
-    backgroundColor: colors.white,
-    borderRadius: borderRadius.md, // Reduced for more compact look
-    paddingVertical: spacing.md, // Reduced for more compact layout
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm, // Reduced spacing between items
-    marginHorizontal: spacing.xs, // Added to prevent cutoff
-    shadowColor: colors.text.dark,
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.08, // Reduced shadow for cleaner look
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  taskItemCompleted: {
-    backgroundColor: colors.sage,
-    borderColor: colors.success,
-    borderWidth: 1,
-  },
-  taskItemDisabled: {},
-  taskItemText: {
-    ...typography.bodyMedium,
-    color: colors.text.blue,
-    flex: 1,
-    marginRight: spacing.sm, // Reduced margin for more compact layout
-    lineHeight: 25, // Reduced line height for more compact text
-    fontSize: 14, // Slightly smaller font for more compact layout
-  },
-  taskItemTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: colors.forest,
-    opacity: 0.8,
-  },
-  taskItemTextDisabled: {},
-  taskRadioCircle: {
-    width: 20, // Reduced size for more compact layout
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskRadioCircleCompleted: {
-    backgroundColor: colors.primary,
-  },
-  taskRadioCircleDisabled: {},
-  taskRadioInnerCircle: {
-    width: 6, // Reduced size proportionally
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.white,
-  },
-  paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: spacing.xs, // Reduced for more compact layout
-    // paddingBottom: spacing.sm,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.text.muted || '#ccc',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: colors.primary,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
   },
 });
 
