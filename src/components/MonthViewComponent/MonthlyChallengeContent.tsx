@@ -1,13 +1,9 @@
 import React, {useState, useRef, useCallback, useEffect} from 'react';
 import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
-import {
-  useMonthlyTask,
-  MonthlyTaskProvider,
-} from '../../contexts/MonthlyTaskContext';
 import {MonthView} from './MonthView';
 import {PaginationIndicator} from './PaginationIndicator';
-import {EditModal} from './EditModal';
+import { MonthlyTaskProvider, useMonthlyTask } from '../../contexts/MonthlyTaskContext';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -29,19 +25,10 @@ const spacing = {
 };
 
 const MonthlyChallengeContentInner: React.FC = () => {
-  const {
-    monthlyData,
-    todayData,
-    isLoading,
-    updateZikr,
-    updateQuran,
-    getCurrentMonthIndex,
-  } = useMonthlyTask();
+  const {monthlyData, getCurrentMonthIndex} = useMonthlyTask();
 
   const [currentPage, setCurrentPage] = useState(0);
   const pagerRef = useRef<PagerView>(null);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingType, setEditingType] = useState<'zikr' | 'quran' | null>(null);
 
   // Update current page when monthly data loads
   useEffect(() => {
@@ -54,22 +41,6 @@ const MonthlyChallengeContentInner: React.FC = () => {
     }
   }, [monthlyData, getCurrentMonthIndex]);
 
-  const handleEdit = useCallback((type: 'zikr' | 'quran') => {
-    // setEditingType(type);
-    // setEditModalVisible(true);
-  }, []);
-
-  const handleSaveEdit = useCallback(
-    async (value: number) => {
-      if (editingType === 'zikr') {
-        await updateZikr(value);
-      } else if (editingType === 'quran') {
-        await updateQuran(value);
-      }
-    },
-    [editingType, updateZikr, updateQuran],
-  );
-
   const handlePageSelected = useCallback((e: any) => {
     setCurrentPage(e.nativeEvent.position);
   }, []);
@@ -78,23 +49,9 @@ const MonthlyChallengeContentInner: React.FC = () => {
     pagerRef.current?.setPage(index);
   }, []);
 
-  const getModalProps = () => {
-    if (editingType === 'zikr') {
-      return {
-        title: 'Update Zikr Count',
-        currentValue: todayData.zikr,
-      };
-    } else if (editingType === 'quran') {
-      return {
-        title: 'Update Quran Minutes',
-        currentValue: todayData.quranPages,
-      };
-    }
-    return {
-      title: '',
-      currentValue: 0,
-    };
-  };
+  if (monthlyData.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -104,7 +61,7 @@ const MonthlyChallengeContentInner: React.FC = () => {
         initialPage={0}
         onPageSelected={handlePageSelected}
         pageMargin={8}>
-        {monthlyData.map((monthData, index) => (
+        {monthlyData.map((monthData: any, index: number) => (
           <View
             key={`${monthData.monthLabel}-${monthData.year}`}
             style={styles.pageContainer}>
@@ -113,8 +70,6 @@ const MonthlyChallengeContentInner: React.FC = () => {
               index={index}
               currentPage={currentPage}
               isCurrentMonth={index === monthlyData.length - 1}
-              todayData={todayData}
-              onEdit={handleEdit}
             />
           </View>
         ))}
@@ -125,14 +80,6 @@ const MonthlyChallengeContentInner: React.FC = () => {
         currentPage={currentPage}
         onPagePress={handlePagePress}
         getCurrentMonthIndex={getCurrentMonthIndex}
-      />
-
-      <EditModal
-        visible={editModalVisible}
-        onClose={() => setEditModalVisible(false)}
-        onSave={handleSaveEdit}
-        isLoading={isLoading}
-        {...getModalProps()}
       />
     </View>
   );
@@ -152,9 +99,7 @@ const MonthlyChallengeContent: React.FC<MonthlyChallengeContentProps> = ({
 const styles = StyleSheet.create({
   container: {
     height: 597,
-    // backgroundColor: colors.background.light,
     borderRadius: 20,
-    // marginVertical: spacing.md,
     paddingVertical: spacing.sm,
   },
   pagerView: {

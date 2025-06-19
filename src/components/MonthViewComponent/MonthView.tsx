@@ -18,8 +18,6 @@ interface MonthViewProps {
   index: number;
   currentPage: number;
   isCurrentMonth: boolean;
-  todayData: {zikr: number; quranPages: number};
-  onEdit: (type: 'zikr' | 'quran') => void;
 }
 
 const spacing = {
@@ -31,7 +29,7 @@ const spacing = {
 };
 
 export const MonthView: React.FC<MonthViewProps> = React.memo(
-  ({monthData, index, currentPage, isCurrentMonth, todayData, onEdit}) => {
+  ({monthData, index, currentPage, isCurrentMonth}) => {
     const isVisible = currentPage === index;
 
     return (
@@ -41,7 +39,6 @@ export const MonthView: React.FC<MonthViewProps> = React.memo(
             {monthData.monthLabel} {monthData.year}
           </Text>
         </View>
-
         <View style={styles.compactCardsGrid}>
           <CompactChallengeCard
             id={`${monthData.monthLabel}-${monthData.year}-zikr`}
@@ -53,9 +50,6 @@ export const MonthView: React.FC<MonthViewProps> = React.memo(
             progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
-            isEditable={isCurrentMonth}
-            onEdit={() => onEdit('zikr')}
-            todayValue={isCurrentMonth ? todayData.zikr : 0}
           />
 
           <CompactChallengeCard
@@ -68,9 +62,6 @@ export const MonthView: React.FC<MonthViewProps> = React.memo(
             progressColor={colors.lightBlue}
             textColor={colors.text.prayerBlue}
             isVisible={isVisible}
-            isEditable={isCurrentMonth}
-            onEdit={() => onEdit('quran')}
-            todayValue={isCurrentMonth ? todayData.quranPages : 0}
           />
 
           <CompactChallengeCard

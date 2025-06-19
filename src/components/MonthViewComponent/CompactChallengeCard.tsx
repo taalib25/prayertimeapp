@@ -14,9 +14,6 @@ interface CompactChallengeCardProps {
   progressColor: string;
   textColor: string;
   isVisible: boolean;
-  isEditable?: boolean;
-  onEdit?: () => void;
-  todayValue?: number;
 }
 
 const spacing = {
@@ -39,9 +36,6 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
       progressColor,
       textColor,
       isVisible,
-      isEditable = false,
-      onEdit,
-      todayValue = 0,
     }) => {
       const exceededGoal = current > total;
       const actualProgressColor = exceededGoal ? colors.success : progressColor;
@@ -55,12 +49,8 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
       }, [current, total, exceededGoal]);
 
       return (
-        <Pressable
-          style={[styles.compactCard, {backgroundColor}]}
-          onPress={isEditable ? onEdit : undefined}
-          disabled={!isEditable}>
+        <View style={[styles.compactCard, {backgroundColor}]}>
           <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
-
           <View style={styles.compactProgressContainer}>
             <AnimatedCircularProgress
               size={140}
@@ -98,20 +88,12 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
             </View>
           )} */}
           </View>
-
           {subtitle && (
             <Text style={[styles.compactSubtitle, {color: textColor}]}>
               {subtitle}
             </Text>
           )}
-
-          {/* {isEditable && (
-          <View style={styles.todayContainer}>
-            <Text style={styles.todayText}>Today: {todayValue}</Text>
-            <Text style={styles.editHint}>Tap to edit</Text>
-          </View>
-        )} */}
-        </Pressable>
+        </View>
       );
     },
     // Simplified comparison - only re-render when essential values change
@@ -119,7 +101,6 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
       return (
         prevProps.current === nextProps.current &&
         prevProps.total === nextProps.total &&
-        prevProps.todayValue === nextProps.todayValue &&
         prevProps.isVisible === nextProps.isVisible
       );
     },

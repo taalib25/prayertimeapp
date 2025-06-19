@@ -312,7 +312,6 @@ export const updateQuranMinutes = async (
   }
 };
 
-
 /**
  * Update special task completion status
  */
@@ -340,8 +339,8 @@ export const updateSpecialTaskStatus = async (
     // Update the specific special task
     await database.write(async () => {
       await targetTask.update(task => {
-        const specialTasks: SpecialTask[] = task.specialTasks 
-          ? JSON.parse(task.specialTasks) 
+        const specialTasks: SpecialTask[] = task.specialTasks
+          ? JSON.parse(task.specialTasks)
           : DEFAULT_DAILY_TASKS.specialTasks;
 
         const taskIndex = specialTasks.findIndex(t => t.id === taskId);
@@ -354,7 +353,11 @@ export const updateSpecialTaskStatus = async (
       });
     });
 
-    console.log(`✅ Updated special task "${taskId}" to ${completed ? 'completed' : 'not completed'} for ${date}`);
+    console.log(
+      `✅ Updated special task "${taskId}" to ${
+        completed ? 'completed' : 'not completed'
+      } for ${date}`,
+    );
   } catch (error) {
     console.error('❌ Failed to update special task status:', error);
     throw error;
@@ -432,20 +435,37 @@ export const getRecentMonthsData = async (
           (task.ishaStatus === 'home' || task.ishaStatus === 'mosque' ? 1 : 0)
         );
       }, 0);
-
       const totalQuranMinutes = monthTasks.reduce(
         (sum, task) => sum + (task.quranMinutes || 0),
         0,
       );
 
+      const totalZikrCount = monthTasks.reduce(
+        (sum, task) => sum + (task.totalZikrCount || 0),
+        0,
+      );
+
+      // Count Fajr and Isha completed days
+      const fajrCompletedDays = monthTasks.filter(
+        task => task.fajrStatus === 'home' || task.fajrStatus === 'mosque',
+      ).length;
+
+      const ishaCompletedDays = monthTasks.filter(
+        task => task.ishaStatus === 'home' || task.ishaStatus === 'mosque',
+      ).length;
+
       monthlyData.push({
-        month: monthName,
-        year: year,
+        monthName: monthName,
+        year: Number(year),
+        totalZikr: totalZikrCount,
+        totalQuranPages: totalQuranMinutes, // Using minutes for now
+        fajrCompletedDays,
+        ishaCompletedDays,
+        totalDays: monthTasks.length,
         prayerCompletionRate:
           totalPrayers > 0 ? (completedPrayers / totalPrayers) * 100 : 0,
         avgQuranMinutes:
           monthTasks.length > 0 ? totalQuranMinutes / monthTasks.length : 0,
-        totalDays: monthTasks.length,
       });
     }
 

@@ -1,15 +1,5 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-} from 'react';
-import {useRecentDailyTasks, useMonthlyData} from '../hooks/useDailyTasks';
-import {
-  updateZikrCount,
-  updateQuranMinutes,
-} from '../services/db/dailyTaskServices';
+import React, {createContext, useContext, useMemo} from 'react';
+import {useMonthlyData} from '../hooks/useDailyTasks';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -27,17 +17,8 @@ interface MonthData {
   isha: {current: number; total: number};
 }
 
-interface OptimisticUpdates {
-  zikr?: number;
-  quran?: number;
-}
-
 interface MonthlyTaskContextType {
   monthlyData: MonthData[];
-  todayData: {zikr: number; quranPages: number};
-  isLoading: boolean;
-  updateZikr: (value: number) => Promise<void>;
-  updateQuran: (value: number) => Promise<void>;
   getCurrentMonthIndex: () => number;
 }
 
@@ -46,6 +27,101 @@ const MonthlyTaskContext = createContext<MonthlyTaskContextType | undefined>(
 );
 
 const MOCK_USER_ID = 1001;
+
+export const MonthlyTaskProvider: React.FC<{
+  children: React.ReactNode;
+  userGoals?: UserGoals;
+}> = ({children, userGoals}) => {
+  // Default goals
+  const defaultGoals = {
+    monthlyZikrGoal: 3000,
+    monthlyQuranPagesGoal: 300,
+    monthlyCharityGoal: 5,
+    monthlyFastingDaysGoal: 6,
+  };
+  const goals = userGoals || defaultGoals;
+  // Get monthly data for past 5 months using existing hook
+  const {monthlyData: rawMonthlyData} = useMonthlyData({
+    uid: MOCK_USER_ID,
+    monthsBack: 3,
+  });
+  // Transform raw data to format needed for UI
+  const monthlyData = useMemo(() => {
+    // Generate all months for the past 5 months
+    const today = new Date();
+    const allMonths = [];
+
+    for (let i = 2; i >= 0; i--) {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthName = monthDate.toLocaleDateString('en-US', {month: 'long'});
+      const year = monthDate.getFullYear();
+
+      // Find existing data for this month
+      const existingData = rawMonthlyData?.find(
+        data => data.monthName === monthName && data.year === year,
+      );
+
+      // Create month data with existing or default values
+      allMonths.push({
+        monthLabel: monthName,
+        year: year,
+        zikr: {
+          current: existingData?.totalZikr || 0,
+          total: goals.monthlyZikrGoal,
+        },
+        quran: {
+          current: existingData?.totalQuranPages || 0,
+          total: goals.monthlyQuranPagesGoal,
+        },
+        fajr: {
+          current: existingData?.fajrCompletedDays || 0,
+          total:
+            existingData?.totalDays ||
+            new Date(year, monthDate.getMonth() + 1, 0).getDate(),
+        },
+        isha: {
+          current: existingData?.ishaCompletedDays || 0,
+          total:
+            existingData?.totalDays ||
+            new Date(year, monthDate.getMonth() + 1, 0).getDate(),
+        },
+      });
+    }
+
+    return allMonths;
+  }, [rawMonthlyData, goals]);
+
+  // Get current month index
+  const getCurrentMonthIndex = useMemo(() => {
+    return () => {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonthName = currentDate.toLocaleDateString('en-US', {
+        month: 'long',
+      });
+
+      const currentMonthIndex = monthlyData.findIndex(
+        month =>
+          month.year === currentYear && month.monthLabel === currentMonthName,
+      );
+
+      return currentMonthIndex >= 0
+        ? currentMonthIndex
+        : Math.max(0, monthlyData.length - 1);
+    };
+  }, [monthlyData]);
+
+  const value: MonthlyTaskContextType = {
+    monthlyData,
+    getCurrentMonthIndex,
+  };
+
+  return (
+    <MonthlyTaskContext.Provider value={value}>
+      {children}
+    </MonthlyTaskContext.Provider>
+  );
+};
 
 const getMonthNumber = (monthName: string): number => {
   const months = [
@@ -63,223 +139,6 @@ const getMonthNumber = (monthName: string): number => {
     'December',
   ];
   return months.indexOf(monthName);
-};
-
-const getMonthlyData = (
-  userGoals?: UserGoals,
-  monthlyData?: any[],
-): MonthData[] => {
-  const defaultGoals = {
-    monthlyZikrGoal: 3000,
-    monthlyQuranPagesGoal: 300,
-    monthlyCharityGoal: 5,
-    monthlyFastingDaysGoal: 6,
-  };
-
-  const goals = userGoals || defaultGoals;
-
-  return (
-    monthlyData?.map(monthData => ({
-      monthLabel: monthData.monthName,
-      year: monthData.year,
-      zikr: {
-        current: monthData.totalZikr,
-        total: goals.monthlyZikrGoal,
-      },
-      quran: {
-        current: monthData.totalQuranPages,
-        total: goals.monthlyQuranPagesGoal,
-      },
-      fajr: {
-        current: monthData.fajrCompletedDays,
-        total: monthData.totalDays,
-      },
-      isha: {
-        current: monthData.ishaCompletedDays,
-        total: monthData.totalDays,
-      },
-    })) || []
-  );
-};
-
-export const MonthlyTaskProvider: React.FC<{
-  children: React.ReactNode;
-  userGoals?: UserGoals;
-}> = ({children, userGoals}) => {
-  // Optimistic update state
-  const [optimisticUpdates, setOptimisticUpdates] = useState<OptimisticUpdates>(
-    {},
-  );
-  const [isUpdating, setIsUpdating] = useState(false);
-  // Data hooks
-  const {monthlyData: rawMonthlyData} = useMonthlyData({
-    uid: MOCK_USER_ID,
-    monthsBack: 3,
-  });
-  const {recentTasks} = useRecentDailyTasks({
-    daysBack: 1,
-  });
-
-  // Process and sort monthly data
-  const processedMonthlyData = useMemo(() => {
-    const data = getMonthlyData(userGoals, rawMonthlyData);
-    return data.sort((a, b) => {
-      const dateA = new Date(a.year, getMonthNumber(a.monthLabel));
-      const dateB = new Date(b.year, getMonthNumber(b.monthLabel));
-      return dateA.getTime() - dateB.getTime();
-    });
-  }, [userGoals, rawMonthlyData]);
-
-  // Today's data with optimistic updates
-  const todayData = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayTask = recentTasks.find(task => task.date === today);
-    return {
-      zikr: optimisticUpdates.zikr ?? (todayTask?.totalZikrCount || 0),
-      quranPages: optimisticUpdates.quran ?? (todayTask?.quranMinutes || 0),
-    };
-  }, [recentTasks, optimisticUpdates]);
-
-  // Enhanced monthly data with optimistic updates
-  const monthlyData = useMemo(() => {
-    if (!processedMonthlyData.length) return processedMonthlyData;
-
-    const updated = [...processedMonthlyData];
-    const currentMonthIndex = updated.length - 1;
-
-    if (currentMonthIndex >= 0 && Object.keys(optimisticUpdates).length > 0) {
-      const currentMonth = updated[currentMonthIndex];
-
-      // Get original today's values
-      const todayTaskData = recentTasks.find(
-        task => task.date === new Date().toISOString().split('T')[0],
-      );
-      const originalTodayZikr = todayTaskData?.totalZikrCount || 0;
-      const originalTodayQuran = todayTaskData?.quranMinutes || 0;
-
-      // Calculate differences
-      const zikrDifference =
-        (optimisticUpdates.zikr ?? originalTodayZikr) - originalTodayZikr;
-      const quranDifference =
-        (optimisticUpdates.quran ?? originalTodayQuran) - originalTodayQuran;
-
-      updated[currentMonthIndex] = {
-        ...currentMonth,
-        zikr: {
-          ...currentMonth.zikr,
-          current: Math.max(0, currentMonth.zikr.current + zikrDifference),
-        },
-        quran: {
-          ...currentMonth.quran,
-          current: Math.max(0, currentMonth.quran.current + quranDifference),
-        },
-      };
-    }
-
-    return updated;
-  }, [processedMonthlyData, recentTasks, optimisticUpdates]);
-
-  // Get current month index
-  const getCurrentMonthIndex = useCallback(() => {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonthName = currentDate.toLocaleDateString('en-US', {
-      month: 'long',
-    });
-
-    const currentMonthIndex = monthlyData.findIndex(
-      month =>
-        month.year === currentYear && month.monthLabel === currentMonthName,
-    );
-
-    return currentMonthIndex >= 0
-      ? currentMonthIndex
-      : Math.max(0, monthlyData.length - 1);
-  }, [monthlyData]);
-  // Update functions with optimistic updates
-  const updateZikr = useCallback(
-    async (value: number) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      try {
-        setIsUpdating(true);
-
-        // Optimistic update
-        setOptimisticUpdates(prev => ({...prev, zikr: value}));
-
-        // Database update
-        await updateZikrCount(today, value);
-
-        console.log(`✅ Zikr count updated: ${value}`);
-
-        // Clear optimistic update after successful database update
-        setOptimisticUpdates(prev => {
-          const {zikr, ...rest} = prev;
-          return rest;
-        });
-        setIsUpdating(false);
-      } catch (error) {
-        console.error('Failed to update zikr:', error);
-        // Revert optimistic update on error
-        setOptimisticUpdates(prev => {
-          const {zikr, ...rest} = prev;
-          return rest;
-        });
-        setIsUpdating(false);
-        throw error;
-      }
-    },
-    [], // No dependencies on refetch functions
-  );
-  const updateQuran = useCallback(
-    async (value: number) => {
-      const today = new Date().toISOString().split('T')[0];
-
-      try {
-        setIsUpdating(true);
-
-        // Optimistic update
-        setOptimisticUpdates(prev => ({...prev, quran: value}));
-
-        // Database update
-        await updateQuranMinutes(today, value);
-
-        console.log(`✅ Quran minutes updated: ${value}`);
-
-        // Clear optimistic update after successful database update
-        setOptimisticUpdates(prev => {
-          const {quran, ...rest} = prev;
-          return rest;
-        });
-        setIsUpdating(false);
-      } catch (error) {
-        console.error('Failed to update quran:', error);
-        // Revert optimistic update on error
-        setOptimisticUpdates(prev => {
-          const {quran, ...rest} = prev;
-          return rest;
-        });
-        setIsUpdating(false);
-        throw error;
-      }
-    },
-    [], // No dependencies on refetch functions
-  );
-
-  const value: MonthlyTaskContextType = {
-    monthlyData,
-    todayData,
-    isLoading: isUpdating,
-    updateZikr,
-    updateQuran,
-    getCurrentMonthIndex,
-  };
-
-  return (
-    <MonthlyTaskContext.Provider value={value}>
-      {children}
-    </MonthlyTaskContext.Provider>
-  );
 };
 
 export const useMonthlyTask = () => {
