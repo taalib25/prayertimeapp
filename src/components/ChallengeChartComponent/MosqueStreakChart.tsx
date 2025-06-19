@@ -1,9 +1,8 @@
 import React from 'react';
 import {View, Text, StyleSheet, Dimensions} from 'react-native';
 import {LineChart} from 'react-native-chart-kit';
-import {colors, spacing, borderRadius, shadows} from '../utils/theme';
-import {typography} from '../utils/typography';
-
+import {colors, spacing, borderRadius, shadows} from '../../utils/theme';
+import {typography} from '../../utils/typography';
 interface MosqueStreakChartProps {
   title?: string;
 }

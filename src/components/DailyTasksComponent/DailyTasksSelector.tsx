@@ -9,7 +9,6 @@ import {LoadingState, ErrorState} from './LoadingState';
 import {transformDailyData} from './dataTransform';
 import {useTaskManager} from './useTaskManager';
 
-
 const DailyTasksSelector: React.FC = () => {
   const {recentTasks, isLoading, error, refetch} = useRecentDailyTasks({
     daysBack: 3,
@@ -108,9 +107,10 @@ const styles = StyleSheet.create({
     height: 450,
     backgroundColor: '#E1FFD1',
     borderRadius: 20,
+
     marginVertical: spacing.md,
-    paddingVertical: spacing.sm,
-    marginHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    marginHorizontal: spacing.lg,
   },
   pagerView: {
     flex: 1,

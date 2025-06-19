@@ -18,12 +18,12 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSelector';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import ReminderSection from '../components/ReminderSection';
-import MosqueStreakSection from '../components/MosqueStreakSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
 import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
+import FajrTimeChart from '../components/FajrTimeChart';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
@@ -128,13 +128,7 @@ const PrayerTimeScreen = () => {
               <DailyTasksSelector />
               {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeContent userGoals={goals || undefined} />
-
-              <PersonalMeeting />
-
-              {/* Mosque Attendance Streak Chart */}
-              <MosqueStreakSection
-                onSeeAllPress={() => console.log('Mosque streak details')}
-              />
+              <FajrTimeChart />
             </Animated.View>
           )}
         </View>

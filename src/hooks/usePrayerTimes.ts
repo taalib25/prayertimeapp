@@ -27,51 +27,69 @@ export const usePrayerTimes = (date: string) => {
   const lastFetchDateRef = useRef<string>('');
 
   // Memoize prayer time conversion to avoid recalculation
-  const convertPrayerTimes = useCallback((dbData: PrayerTimesData): PrayerWithMinutes[] => {
-    return [
-      {name: 'fajr', displayName: 'Fajr', time: dbData.fajr, totalMinutes: 0},
-      {name: 'dhuhr', displayName: 'Dhuhr', time: dbData.dhuhr, totalMinutes: 0},
-      {name: 'asr', displayName: 'Asr', time: dbData.asr, totalMinutes: 0},
-      {name: 'maghrib', displayName: 'Maghrib', time: dbData.maghrib, totalMinutes: 0},
-      {name: 'isha', displayName: 'Isha', time: dbData.isha, totalMinutes: 0},
-    ].map(prayer => {
-      const [hours, minutes] = prayer.time.split(':').map(Number);
-      return {
-        ...prayer,
-        totalMinutes: hours * 60 + minutes,
-      };
-    });
-  }, []);
+  const convertPrayerTimes = useCallback(
+    (dbData: PrayerTimesData): PrayerWithMinutes[] => {
+      return [
+        {name: 'fajr', displayName: 'Fajr', time: dbData.fajr, totalMinutes: 0},
+        {
+          name: 'dhuhr',
+          displayName: 'Dhuhr',
+          time: dbData.dhuhr,
+          totalMinutes: 0,
+        },
+        {name: 'asr', displayName: 'Asr', time: dbData.asr, totalMinutes: 0},
+        {
+          name: 'maghrib',
+          displayName: 'Maghrib',
+          time: dbData.maghrib,
+          totalMinutes: 0,
+        },
+        {name: 'isha', displayName: 'Isha', time: dbData.isha, totalMinutes: 0},
+      ].map(prayer => {
+        const [hours, minutes] = prayer.time.split(':').map(Number);
+        return {
+          ...prayer,
+          totalMinutes: hours * 60 + minutes,
+        };
+      });
+    },
+    [],
+  );
 
   // Optimized function to find active prayer using cached data
-  const findActivePrayer = useCallback((prayers: PrayerWithMinutes[]): PrayerTime[] => {
-    const currentTime = new Date();
-    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+  const findActivePrayer = useCallback(
+    (prayers: PrayerWithMinutes[]): PrayerTime[] => {
+      const currentTime = new Date();
+      const currentMinutes =
+        currentTime.getHours() * 60 + currentTime.getMinutes();
 
-    let activePrayerIndex = -1;
-    let minDifference = Infinity;
+      let activePrayerIndex = -1;
+      let minDifference = Infinity;
 
-    // Find the next prayer more efficiently
-    for (let i = 0; i < prayers.length; i++) {
-      const prayerTime = prayers[i].totalMinutes;
-      const difference = prayerTime >= currentMinutes 
-        ? prayerTime - currentMinutes 
-        : (prayerTime + 24 * 60) - currentMinutes;
+      // Find the next prayer more efficiently
+      for (let i = 0; i < prayers.length; i++) {
+        const prayerTime = prayers[i].totalMinutes;
+        const difference =
+          prayerTime >= currentMinutes
+            ? prayerTime - currentMinutes
+            : prayerTime + 24 * 60 - currentMinutes;
 
-      if (difference < minDifference) {
-        minDifference = difference;
-        activePrayerIndex = i;
+        if (difference < minDifference) {
+          minDifference = difference;
+          activePrayerIndex = i;
+        }
       }
-    }
 
-    // Return only the necessary data
-    return prayers.map((prayer, index) => ({
-      name: prayer.name,
-      displayName: prayer.displayName,
-      time: prayer.time,
-      isActive: index === activePrayerIndex,
-    }));
-  }, []);
+      // Return only the necessary data
+      return prayers.map((prayer, index) => ({
+        name: prayer.name,
+        displayName: prayer.displayName,
+        time: prayer.time,
+        isActive: index === activePrayerIndex,
+      }));
+    },
+    [],
+  );
 
   // Update active prayer status without refetching data
   const updateActivePrayer = useCallback(() => {
@@ -99,7 +117,7 @@ export const usePrayerTimes = (date: string) => {
         const convertedPrayers = convertPrayerTimes(dbPrayerTimes);
         cachedPrayerTimesRef.current = convertedPrayers;
         lastFetchDateRef.current = date;
-        
+
         const prayersWithActive = findActivePrayer(convertedPrayers);
         setPrayerTimes(prayersWithActive);
       } else {
@@ -137,12 +155,15 @@ export const usePrayerTimes = (date: string) => {
   }, [fetchPrayerTimes, updateActivePrayer]);
 
   // Memoize the return value to prevent unnecessary re-renders
-  const memoizedReturn = useMemo(() => ({
-    prayerTimes,
-    isLoading,
-    error,
-    refetch: fetchPrayerTimes,
-  }), [prayerTimes, isLoading, error, fetchPrayerTimes]);
+  const memoizedReturn = useMemo(
+    () => ({
+      prayerTimes,
+      isLoading,
+      error,
+      refetch: fetchPrayerTimes,
+    }),
+    [prayerTimes, isLoading, error, fetchPrayerTimes],
+  );
 
   return memoizedReturn;
 };
