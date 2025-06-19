@@ -1,7 +1,7 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import DailyTasksModel, {PrayerStatus} from '../../model/DailyTasks';
-import { getTodayDateString } from '../../utils/helpers';
+import {getTodayDateString, formatDateString} from '../../utils/helpers';
 
 export interface DailyTaskData {
   date: string; // Primary key
@@ -44,28 +44,24 @@ export const getRecentDailyTasks = async (
 ): Promise<DailyTaskData[]> => {
   try {
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+    const today = getTodayDateString();
 
-    // Use local date approach to avoid timezone issues
-    const todayDate = new Date();
-    const year = todayDate.getFullYear();
-    const month = String(todayDate.getMonth() + 1).padStart(2, '0');
-    const day = String(todayDate.getDate()).padStart(2, '0');
-    const today = `${year}-${month}-${day}`;
+    // Generate all dates in range (today and previous days)
+    const allDates = [];
+    for (let i = 0; i < daysBack; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      allDates.push(formatDateString(date));
+    }
 
-    // Calculate the date range
-    const endDate = today;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (daysBack - 1));
-    const startYear = startDate.getFullYear();
-    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
-    const startDay = String(startDate.getDate()).padStart(2, '0');
-    const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+    // Calculate start date for query
+    const startDate = allDates[allDates.length - 1];
 
     // Query for the date range
     const tasks = await dailyTasksCollection
       .query(
-        Q.where('date', Q.gte(startDateStr)),
-        Q.where('date', Q.lte(endDate)),
+        Q.where('date', Q.gte(startDate)),
+        Q.where('date', Q.lte(today)),
         Q.sortBy('date', Q.desc),
       )
       .fetch();
@@ -85,43 +81,30 @@ export const getRecentDailyTasks = async (
         : [],
     }));
 
-    // Check if today's task exists
+    // Check if today's task exists and create if needed
     const todayTask = transformedTasks.find(task => task.date === today);
-
     if (!todayTask) {
-      // Create today's task if it doesn't exist
       console.log(`📝 Creating today's task for ${today}`);
       const newTodayTask = await createDailyTasks(today);
-      transformedTasks.unshift(newTodayTask); // Add to beginning (most recent)
-    } // Generate all dates in range and fill with placeholders for missing dates
-    const allDates = [];
-    for (let i = 0; i < daysBack; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      allDates.push(`${year}-${month}-${day}`);
+      transformedTasks.unshift(newTodayTask);
     }
 
+    // Create complete task list with placeholders for missing dates
     const completeTasks = allDates.map(date => {
       const existingTask = transformedTasks.find(task => task.date === date);
-      if (existingTask) {
-        return existingTask;
-      }
-
-      // For past dates, return empty placeholder
-      return {
-        date,
-        fajrStatus: 'none' as PrayerStatus,
-        dhuhrStatus: 'none' as PrayerStatus,
-        asrStatus: 'none' as PrayerStatus,
-        maghribStatus: 'none' as PrayerStatus,
-        ishaStatus: 'none' as PrayerStatus,
-        totalZikrCount: 0,
-        quranMinutes: 0,
-        specialTasks: [],
-      };
+      return (
+        existingTask || {
+          date,
+          fajrStatus: 'none' as PrayerStatus,
+          dhuhrStatus: 'none' as PrayerStatus,
+          asrStatus: 'none' as PrayerStatus,
+          maghribStatus: 'none' as PrayerStatus,
+          ishaStatus: 'none' as PrayerStatus,
+          totalZikrCount: 0,
+          quranMinutes: 0,
+          specialTasks: [],
+        }
+      );
     });
 
     return completeTasks;
@@ -289,12 +272,6 @@ export const updateZikrCount = async (
     const existingTasks = await dailyTasksCollection
       .query(Q.where('date', date))
       .fetch();
-
-    if (existingTasks.length === 0) {
-      await createDailyTasks(date);
-      return updateZikrCount(date, count);
-    }
-
     await database.write(async () => {
       await existingTasks[0].update(task => {
         task.totalZikrCount = count;
@@ -322,11 +299,6 @@ export const updateQuranMinutes = async (
       .query(Q.where('date', date))
       .fetch();
 
-    if (existingTasks.length === 0) {
-      await createDailyTasks(date);
-      return updateQuranMinutes(date, minutes);
-    }
-
     await database.write(async () => {
       await existingTasks[0].update(task => {
         task.quranMinutes = minutes;
@@ -336,6 +308,55 @@ export const updateQuranMinutes = async (
     console.log(`✅ Updated Quran minutes for ${date}: ${minutes} minutes`);
   } catch (error) {
     console.error('Error updating Quran minutes:', error);
+    throw error;
+  }
+};
+
+
+/**
+ * Update special task completion status
+ */
+export const updateSpecialTaskStatus = async (
+  date: string,
+  taskId: string,
+  completed: boolean,
+): Promise<void> => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+    const today = getTodayDateString();
+
+    // Only allow updating today's tasks
+    if (date !== today) {
+      throw new Error('Cannot update special tasks for previous days');
+    }
+
+    // Get existing task (assuming it exists)
+    const existingTasks = await dailyTasksCollection
+      .query(Q.where('date', date))
+      .fetch();
+
+    const targetTask = existingTasks[0];
+
+    // Update the specific special task
+    await database.write(async () => {
+      await targetTask.update(task => {
+        const specialTasks: SpecialTask[] = task.specialTasks 
+          ? JSON.parse(task.specialTasks) 
+          : DEFAULT_DAILY_TASKS.specialTasks;
+
+        const taskIndex = specialTasks.findIndex(t => t.id === taskId);
+        if (taskIndex === -1) {
+          throw new Error(`Special task with ID "${taskId}" not found`);
+        }
+
+        specialTasks[taskIndex].completed = completed;
+        task.specialTasks = JSON.stringify(specialTasks);
+      });
+    });
+
+    console.log(`✅ Updated special task "${taskId}" to ${completed ? 'completed' : 'not completed'} for ${date}`);
+  } catch (error) {
+    console.error('❌ Failed to update special task status:', error);
     throw error;
   }
 };
