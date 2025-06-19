@@ -34,10 +34,6 @@ const SpecialTaskItem: React.FC<SpecialTaskItemProps> = React.memo(
             ]}>
             {task.title}
           </Text>
-
-          <Text style={styles.taskInfo}>
-            {task.category} • {task.amount} {task.unit}
-          </Text>
         </View>
 
         <View
@@ -99,9 +95,9 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
         case 'prayer':
           return colors.success; // Green for prayers
         case 'quran':
-          return colors.lightBlue; // Blue for Quran
+          return colors.success; // Blue for Quran
         case 'zikr':
-          return '#FF9800'; // Orange for Zikr
+          return colors.primary; // Orange for Zikr
         default:
           return colors.primary;
       }
@@ -113,7 +109,7 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
           <SpecialTaskItem
             key={task.id}
             task={task}
-            color={getTaskColor(task.category)}
+            color={colors.primary}
             onPress={() => handleTaskPress(task.id)}
             disabled={!isToday}
           />
@@ -122,22 +118,6 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     );
   },
 );
-
-/**
- * Get color based on task category
- */
-const getTaskColor = (category: string): string => {
-  switch (category) {
-    case 'prayer':
-      return colors.success; // Green for prayers
-    case 'quran':
-      return colors.lightBlue; // Blue for Quran
-    case 'zikr':
-      return '#FF9800'; // Orange for Zikr
-    default:
-      return colors.primary;
-  }
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -170,11 +150,10 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   taskTitle: {
-    ...typography.body,
-    fontWeight: '600',
+    ...typography.h3,
     color: colors.text.blue,
     marginBottom: spacing.xs,
-    fontSize: 14,
+    fontSize: 18,
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',

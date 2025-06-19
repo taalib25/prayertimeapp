@@ -2,8 +2,14 @@ import React, {useMemo} from 'react';
 import {View, Text, ScrollView, StyleSheet} from 'react-native';
 import {colors, spacing} from '../../utils/theme';
 import {typography} from '../../utils/typography';
-import TaskItem, {Task} from './TaskItem';
 import SpecialTasksList from './SpecialTasksList';
+
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
 interface DayTasks {
   dateISO: string; // YYYY-MM-DD

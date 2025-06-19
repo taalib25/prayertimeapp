@@ -2,7 +2,6 @@
 export {default as DailyTasksSelector} from './DailyTasksSelector';
 
 // Sub-components
-export {default as TaskItem} from './TaskItem';
 export {default as DayView} from './DayView';
 export {default as PaginationDots} from './PaginationDots';
 export {LoadingState, ErrorState} from './LoadingState';
