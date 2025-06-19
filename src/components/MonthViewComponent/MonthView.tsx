@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   monthContainer: {
     flex: 1,
     paddingTop: spacing.sm,
+    paddingBottom: spacing.md, // Add bottom padding to prevent cutoff
   },
   titleContainer: {
     alignItems: 'flex-start',
@@ -117,6 +118,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.md, // Add bottom padding for the grid
   },
 });
 

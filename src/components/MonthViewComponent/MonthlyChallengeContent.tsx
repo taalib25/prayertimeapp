@@ -3,7 +3,10 @@ import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {MonthView} from './MonthView';
 import {PaginationIndicator} from './PaginationIndicator';
-import { MonthlyTaskProvider, useMonthlyTask } from '../../contexts/MonthlyTaskContext';
+import {
+  MonthlyTaskProvider,
+  useMonthlyTask,
+} from '../../contexts/MonthlyTaskContext';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -98,7 +101,7 @@ const MonthlyChallengeContent: React.FC<MonthlyChallengeContentProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 597,
+    height: 680,
     borderRadius: 20,
     paddingVertical: spacing.sm,
   },
