@@ -82,8 +82,23 @@ const FajrTimeChart: React.FC = () => {
       setIsLoading(true);
       const dates = getDatesRange(currentCenterDate);
       const dateStrings = dates.map(formatDate);
-
       const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+      // Debug: Check what data exists in the database for recent dates
+      try {
+        const allRecentTasks = await dailyTasksCollection
+          .query(Q.sortBy('date', Q.desc), Q.take(10))
+          .fetch();
+        console.log(
+          '🗄️ Recent database entries:',
+          allRecentTasks.map(task => ({
+            date: task.date,
+            fajrStatus: task.fajrStatus,
+          })),
+        );
+      } catch (debugError) {
+        console.log('Debug query failed:', debugError);
+      }
 
       const fajrCompletionData: FajrCompletionData[] = [];
 
@@ -125,7 +140,6 @@ const FajrTimeChart: React.FC = () => {
           });
         }
       }
-
       setFajrData(fajrCompletionData);
     } catch (error) {
       console.error('Error fetching Fajr completion data:', error);
@@ -192,6 +206,18 @@ const FajrTimeChart: React.FC = () => {
       };
     } // Get completion values (0-1 scale for mosque only)
     const validData = fajrData.map(item => item.completionValue);
+
+    // Debug: Log chart data being rendered
+    console.log('📈 Chart data being rendered:', {
+      labels: fajrData.map(item => item.dayLabel),
+      data: validData,
+      rawFajrData: fajrData.map(item => ({
+        date: item.date,
+        status: item.fajrStatus,
+        value: item.completionValue,
+      })),
+    });
+
     return {
       labels: fajrData.map(item => item.dayLabel),
       datasets: [
@@ -271,36 +297,6 @@ const FajrTimeChart: React.FC = () => {
           segments={1}
         />
       </View>
-      {/* <View style={styles.dataContainer}>
-        {fajrData.length > 0 ? (
-          fajrData.map((item, index) => (
-            <View key={item.date} style={styles.dataItem}>
-              <Text
-                style={[
-                  styles.dataLabel,
-                  index === 3 && styles.todayLabel, // Highlight today (middle item)
-                ]}>
-                {item.dayLabel}
-              </Text>
-              <View style={styles.statusContainer}>
-                <View
-                  style={[
-                    styles.statusIndicator,
-                    item.completionValue === 1 && styles.mosqueIndicator,
-                    item.completionValue === 0 && styles.notMosqueIndicator,
-                  ]}
-                />
-                <Text
-                  style={[styles.dataTime, index === 3 && styles.todayTime]}>
-                  {formatCompletionStatus(item.completionValue)}
-                </Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.noDataText}>Loading mosque attendance...</Text>
-        )}
-      </View> */}
     </View>
   );
 };
@@ -336,7 +332,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },  navButton: {
+  },
+  navButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
