@@ -7,10 +7,31 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
-import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
+import {typography} from '../utils/typography';
 
 export type AttendanceType = 'home' | 'mosque' | 'none';
+
+// Option configuration for cleaner rendering - Focus on Masjid and None
+const ATTENDANCE_OPTIONS = [
+  {
+    type: 'mosque' as AttendanceType,
+    label: 'At Masjid',
+    description: 'Prayed in congregation',
+    priority: 1, // Main focus option
+  },
+  {
+    type: 'none' as AttendanceType,
+    label: 'Not Prayed',
+    description: 'Clear prayer status',
+    priority: 2,
+  },
+  // {
+  //   type: 'home' as AttendanceType,
+  //   label: 'At Home',
+  //   description: 'Prayed individually',
+  // },
+];
 
 interface AttendanceSelectionModalProps {
   visible: boolean;
@@ -18,7 +39,6 @@ interface AttendanceSelectionModalProps {
   onSelect: (attendance: AttendanceType) => void;
   onClose: () => void;
   prayerName: string;
-  isUpdating?: boolean; // Add loading state prop
 }
 
 const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
@@ -27,127 +47,78 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   onSelect,
   onClose,
   prayerName,
-  isUpdating = false,
 }) => {
+  // Simple selection handler
   const handleSelect = (attendance: AttendanceType) => {
-    if (isUpdating) {
-      console.log('📱 Modal: Update in progress, ignoring selection');
-      return;
-    }
-
-    console.log(`📱 Modal: User selected ${attendance} for ${prayerName}`);
-    console.log(`📱 Modal: Current attendance was ${currentAttendance}`);
-
-    // Call the parent's onSelect function
     onSelect(attendance);
-
-    // Note: Don't close modal here, let parent handle it after successful update
   };
 
-  // Debug log the modal state
-  console.log(
-    `🎭 Modal rendered: visible=${visible}, current=${currentAttendance}, prayer=${prayerName}`,
-  );
+  // Get status display text
+  // Render option row with enhanced styling for main focus
+  const renderOption = (option: any) => {
+    const isSelected = currentAttendance === option.type;
+    const isMasjid = option.type === 'mosque'; // Get circle style based on type with enhanced focus for masjid
+    const getCircleStyle = () => {
+      switch (option.type) {
+        case 'none':
+          return [styles.statusCircle, styles.noneCircle];
+        case 'home':
+          return [styles.statusCircle, styles.homeCircle];
+        case 'mosque':
+          return [styles.statusCircle, styles.masjidCircle];
+        default:
+          return [styles.statusCircle, styles.noneCircle];
+      }
+    }; // Enhanced container styling for main focus
+    const getContainerStyle = () => {
+      if (isSelected) {
+        return [styles.optionRow, styles.optionSelected];
+      }
+      return [styles.optionRow];
+    };
 
+    return (
+      <TouchableOpacity
+        key={option.type}
+        style={getContainerStyle()}
+        onPress={() => handleSelect(option.type)}
+        activeOpacity={0.7}>
+        <View style={getCircleStyle()} />
+        <View style={styles.optionTextContainer}>
+          <Text
+            style={[
+              styles.optionLabel,
+              isMasjid && {color: '#16A34A', fontWeight: '700'}, // Enhanced styling for masjid
+            ]}>
+            {option.label}
+          </Text>
+          <Text style={styles.optionDescription}>{option.description}</Text>
+        </View>
+        {isSelected && (
+          <View style={styles.checkContainer}>
+            <Text style={styles.checkmark}>✓</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
   return (
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent>
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.container} onPress={e => e.stopPropagation()}>
-
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.prayerTitle}>{prayerName}</Text>
-            <Text style={styles.subtitle}>
-              {isUpdating ? 'Updating...' : 'Update prayer status'}
-            </Text>
+            <Text style={styles.subtitle}>Update prayer status</Text>
           </View>
           {/* Options List */}
           <View style={styles.optionsContainer}>
-            {/* Not Prayed Option */}
-            <TouchableOpacity
-              style={[
-                styles.optionRow,
-                currentAttendance === 'none' && styles.optionSelected,
-                isUpdating && styles.optionDisabled,
-              ]}
-              onPress={() => handleSelect('none')}
-              activeOpacity={isUpdating ? 1 : 0.7}
-              disabled={isUpdating}>
-              <View style={[styles.statusCircle, styles.noneCircle]} />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionLabel}>Not Prayed</Text>
-                <Text style={styles.optionDescription}>
-                  Clear prayer status
-                </Text>
-              </View>
-              {currentAttendance === 'none' && (
-                <View style={styles.checkContainer}>
-                  <Text style={styles.checkmark}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            {/* At Home Option */}
-            <TouchableOpacity
-              style={[
-                styles.optionRow,
-                currentAttendance === 'home' && styles.optionSelected,
-                isUpdating && styles.optionDisabled,
-              ]}
-              onPress={() => handleSelect('home')}
-              activeOpacity={isUpdating ? 1 : 0.7}
-              disabled={isUpdating}>
-              <View style={[styles.statusCircle, styles.homeCircle]} />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionLabel}>At Home</Text>
-                <Text style={styles.optionDescription}>
-                  Prayed individually
-                </Text>
-              </View>
-              {currentAttendance === 'home' && (
-                <View style={styles.checkContainer}>
-                  <Text style={styles.checkmark}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            {/* At Masjid Option */}
-            <TouchableOpacity
-              style={[
-                styles.optionRow,
-                currentAttendance === 'mosque' && styles.optionSelected,
-                isUpdating && styles.optionDisabled,
-              ]}
-              onPress={() => handleSelect('mosque')}
-              activeOpacity={isUpdating ? 1 : 0.7}
-              disabled={isUpdating}>
-              <View style={[styles.statusCircle, styles.masjidCircle]} />
-              <View style={styles.optionTextContainer}>
-                <Text style={styles.optionLabel}>At Masjid</Text>
-                <Text style={styles.optionDescription}>
-                  Prayed in congregation
-                </Text>
-              </View>
-              {currentAttendance === 'mosque' && (
-                <View style={styles.checkContainer}>
-                  <Text style={styles.checkmark}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-          {/* Current Status Display */}
-          <View style={styles.statusDisplay}>
-            <Text style={styles.statusDisplayText}>
-              Current:{' '}
-              {currentAttendance === 'none'
-                ? 'Not Prayed'
-                : currentAttendance === 'home'
-                ? 'At Home'
-                : 'At Mosque'}
-            </Text>
+            {ATTENDANCE_OPTIONS.map(renderOption)}
           </View>
           {/* Close Button */}
           <TouchableOpacity
@@ -184,13 +155,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prayerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...typography.h3,
+    fontSize: 26,
     color: 'white',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    ...typography.bodySmall,
     color: 'rgba(255, 255, 255, 0.85)',
   },
   optionsContainer: {
@@ -208,9 +179,6 @@ const styles = StyleSheet.create({
   optionSelected: {
     backgroundColor: '#F8FAF8',
   },
-  optionDisabled: {
-    opacity: 0.5,
-  },
   statusCircle: {
     width: 20,
     height: 20,
@@ -225,19 +193,21 @@ const styles = StyleSheet.create({
   },
   masjidCircle: {
     backgroundColor: colors.success,
+    borderWidth: 2,
+    borderColor: colors.primary, // Enhanced border for focus
+    transform: [{scale: 1.1}], // Slightly larger for emphasis
   },
   optionTextContainer: {
     flex: 1,
     paddingRight: 8,
   },
   optionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.bodyMedium,
     color: '#333333',
     marginBottom: 2,
   },
   optionDescription: {
-    fontSize: 13,
+    ...typography.bodyTiny,
     color: '#666666',
   },
   checkContainer: {
@@ -249,6 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkmark: {
+    ...typography.caption,
     color: 'white',
     fontWeight: 'bold',
     fontSize: 14,
@@ -262,8 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   closeText: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.button,
     color: '#666',
   },
   statusDisplay: {
@@ -275,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusDisplayText: {
-    fontSize: 12,
+    ...typography.caption,
     color: '#666',
     fontStyle: 'italic',
   },

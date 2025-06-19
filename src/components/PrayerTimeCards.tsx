@@ -7,8 +7,16 @@ import {IconName} from './SvgIcon';
 import AttendanceSelectionModal, {
   AttendanceType,
 } from './AttendanceSelectionModal';
-import {useRecentDailyTasks} from '../hooks/useDailyTasks';
 import {PrayerStatus} from '../model/DailyTasks';
+import {
+  updatePrayerStatus,
+  createDailyTasks,
+  DailyTaskData,
+} from '../services/db/dailyTaskServices';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
+import {Q} from '@nozbe/watermelondb';
+import { getTodayDateString } from '../utils/helpers';
 
 interface PrayerTime {
   name: string;
@@ -25,168 +33,165 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
     useState<PrayerTime | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const {recentTasks, updatePrayerForDate, forceRefresh, isLoading, error} =
-    useRecentDailyTasks({
-      daysBack: 1,
-    });
+  // Simple local state for immediate UI updates
+  const [localPrayerStatuses, setLocalPrayerStatuses] = useState<
+    Record<string, PrayerStatus>
+  >({});
 
-  // Get today's task data with better error handling
-  const todayData = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const data = recentTasks.find(task => task.date === today)
+  // Current day's task data
+  const [todayData, setTodayData] = useState<DailyTaskData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    return data || null;
-  }, [recentTasks, isLoading]);
 
-  // Auto-refresh when component mounts or when needed
-  useEffect(() => {
-    if (!todayData && !isLoading && recentTasks.length === 0) {
-      console.log('🔄 No today data found, forcing refresh...');
-      forceRefresh();
+  const getTodayTask = useCallback(async (): Promise<DailyTaskData> => {
+    try {
+      const todayStr = getTodayDateString();
+      console.log(`📅 Today's date: ${todayStr}`);
+
+      const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+
+      // Try to get the latest task
+      const latestTasks = await dailyTasksCollection
+        .query(Q.sortBy('date', Q.desc), Q.take(1))
+        .fetch();
+
+      if (latestTasks.length > 0) {
+        const latestTask = latestTasks[0];
+        if (latestTask.date === todayStr) {
+          console.log(`✅ Found today's task: ${latestTask.date}`);
+          return {
+            date: latestTask.date,
+            fajrStatus: latestTask.fajrStatus as PrayerStatus,
+            dhuhrStatus: latestTask.dhuhrStatus as PrayerStatus,
+            asrStatus: latestTask.asrStatus as PrayerStatus,
+            maghribStatus: latestTask.maghribStatus as PrayerStatus,
+            ishaStatus: latestTask.ishaStatus as PrayerStatus,
+            totalZikrCount: latestTask.totalZikrCount,
+            quranMinutes: latestTask.quranMinutes || 0,
+            specialTasks: latestTask.specialTasks
+              ? JSON.parse(latestTask.specialTasks)
+              : [],
+          };
+        }
+      }
+
+      // If no task for today exists, create a new one
+      console.log(`📝 Creating new task for today: ${todayStr}`);
+      return await createDailyTasks(todayStr);
+    } catch (error) {
+      console.error("❌ Error getting today's task:", error);
+      throw error;
     }
-  }, [todayData, isLoading, recentTasks.length, forceRefresh]);
+  }, [getTodayDateString]);
+
+  // Load today's data on component mount
+  useEffect(() => {
+    const loadTodayData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getTodayTask();
+        console.log(`📅 Today's task loaded: ${data.date}`);
+        setTodayData(data);
+      } catch (error) {
+        console.error("❌ Failed to load today's data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTodayData();
+  }, [getTodayTask]);
 
   const getPrayerStatus = useCallback(
     (prayerName: string): PrayerStatus => {
-      if (!todayData) {
-        console.log(`❌ No todayData available for ${prayerName}`);
-        return 'none';
-      }
-
       const lcPrayerName = prayerName.toLowerCase();
 
-      let status: PrayerStatus;
+      // Check local state first (for immediate UI updates)
+      if (localPrayerStatuses[lcPrayerName]) {
+        return localPrayerStatuses[lcPrayerName];
+      }
+
+      // Fall back to database data
+      if (!todayData || isLoading) return 'none';
+
       switch (lcPrayerName) {
         case 'fajr':
-          status = todayData.fajrStatus as PrayerStatus;
-          break;
+          return todayData.fajrStatus as PrayerStatus;
         case 'dhuhr':
-          status = todayData.dhuhrStatus as PrayerStatus;
-          break;
+          return todayData.dhuhrStatus as PrayerStatus;
         case 'asr':
-          status = todayData.asrStatus as PrayerStatus;
-          break;
+          return todayData.asrStatus as PrayerStatus;
         case 'maghrib':
-          status = todayData.maghribStatus as PrayerStatus;
-          break;
+          return todayData.maghribStatus as PrayerStatus;
         case 'isha':
-          status = todayData.ishaStatus as PrayerStatus;
-          break;
+          return todayData.ishaStatus as PrayerStatus;
         default:
-          status = 'none';
-      }
-
-      console.log(
-        `📊 getPrayerStatus: ${lcPrayerName} = "${status}" (from todayData)`,
-      );
-      return status;
-    },
-    [todayData],
-  );
-
-  const getAttendanceType = useCallback(
-    (status: PrayerStatus): AttendanceType => {
-      console.log(`🔍 Converting status "${status}" to attendance type`);
-
-      // Direct mapping - make sure this matches exactly what we store
-      if (status === 'home') {
-        return 'home';
-      } else if (status === 'mosque') {
-        return 'mosque';
-      } else {
-        return 'none';
+          return 'none';
       }
     },
-    [],
+    [todayData, localPrayerStatuses, isLoading],
   );
 
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
-    console.log(`Opening modal for prayer: ${prayer.name}`);
     setSelectedPrayerForAttendance(prayer);
     setAttendancePopupVisible(true);
   }, []);
   const handleAttendanceSelect = useCallback(
     async (attendance: AttendanceType) => {
-      if (!selectedPrayerForAttendance || isUpdating) {
-        console.log('⏸️ Cannot update: no prayer selected or already updating');
-        return;
-      }
+      if (!selectedPrayerForAttendance) return;
 
-      setIsUpdating(true);
+      const prayerName = selectedPrayerForAttendance.name.toLowerCase();
+      const newStatus: PrayerStatus = attendance;
 
-      const today = new Date().toISOString().split('T')[0];
-      let newStatus: PrayerStatus = 'none';
+      // 1. UPDATE UI IMMEDIATELY (optimistic update)
+      setLocalPrayerStatuses(prev => ({
+        ...prev,
+        [prayerName]: newStatus,
+      }));
 
-      // Clear mapping
-      if (attendance === 'home') {
-        newStatus = 'home';
-      } else if (attendance === 'mosque') {
-        newStatus = 'mosque';
-      } else {
-        newStatus = 'none';
-      }
-
-      console.log(
-        `🎯 MODAL SELECTION: ${attendance} -> ${newStatus} for ${selectedPrayerForAttendance.name}`,
-      );
-
+      // 2. CLOSE MODAL IMMEDIATELY
+      setAttendancePopupVisible(false);
+      setSelectedPrayerForAttendance(null); // 3. UPDATE DATABASE IN BACKGROUND
       try {
-        const prayerName = selectedPrayerForAttendance.name.toLowerCase();
+        const todayStr = getTodayDateString();
 
+        await updatePrayerStatus(todayStr, prayerName, newStatus);
         console.log(
-          `🔄 Starting database update: ${prayerName} => ${newStatus}`,
+          `✅✅✅✅✅ Database updated: ${prayerName} = ${newStatus} = ${todayStr}`,
         );
 
-        // Update in database - the hook will handle refreshing
-        await updatePrayerForDate(today, prayerName, newStatus);
+        // 4. UPDATE LOCAL STATE TO REFLECT DATABASE CHANGES
+        setTodayData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            [`${prayerName}Status`]: newStatus,
+          } as DailyTaskData;
+        });
 
-        console.log(`📱 Database update call completed`);
-
-        // Wait a bit more for state to update
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        // Verify the update worked
-        const updatedData = recentTasks.find(task => task.date === today);
-        if (updatedData) {
-          const updatedStatus = getPrayerStatus(prayerName);
-          console.log(
-            `🔍 Final verification: ${prayerName} status is "${updatedStatus}"`,
-          );
-
-          if (updatedStatus === newStatus) {
-            console.log(`✅ SUCCESS: Status correctly updated to ${newStatus}`);
-          } else {
-            console.log(
-              `❌ FAILED: Expected "${newStatus}", got "${updatedStatus}"`,
-            );
-            // Force another refresh if the status doesn't match
-            console.log('🔄 Forcing additional refresh...');
-            await forceRefresh();
-          }
-        }
+        // 5. CLEAR OPTIMISTIC UPDATE SINCE DATABASE IS NOW UPDATED
+        setLocalPrayerStatuses(prev => {
+          const updated = {...prev};
+          delete updated[prayerName];
+          return updated;
+        });
       } catch (error) {
-        console.error('❌ Failed to update prayer status:', error);
+        console.error('❌ Database update failed:', error);
+
+        // 4. REVERT UI IF DATABASE UPDATE FAILS
+        setLocalPrayerStatuses(prev => {
+          const updated = {...prev};
+          delete updated[prayerName]; // Remove local override to show database state
+          return updated;
+        });
         Alert.alert(
           'Update Failed',
-          `Could not update prayer status. Please try again.`,
+          'Could not save prayer status. Please try again.',
         );
-      } finally {
-        setIsUpdating(false);
-        // Close modal after everything is done
-        setAttendancePopupVisible(false);
-        setSelectedPrayerForAttendance(null);
       }
     },
-    [
-      selectedPrayerForAttendance,
-      isUpdating,
-      updatePrayerForDate,
-      recentTasks,
-      getPrayerStatus,
-      forceRefresh,
-    ],
+    [selectedPrayerForAttendance, getTodayDateString],
   );
 
   const handleModalClose = useCallback(() => {
@@ -194,89 +199,81 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({prayers}) => {
     setSelectedPrayerForAttendance(null);
   }, []);
 
+
   return (
     <>
       {/* Prayer Cards Container */}
       <View style={styles.container}>
-        <View style={styles.prayerCardsRow}>
-          {prayers.map((prayer, index) => {
-            const prayerStatus = getPrayerStatus(prayer.name);
-            const attendanceType = getAttendanceType(prayerStatus);
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading prayers...</Text>
+          </View>
+        ) : (
+          <View style={styles.prayerCardsRow}>
+            {prayers.map((prayer, index) => {
+              const prayerStatus = getPrayerStatus(prayer.name);
 
-            // Enhanced logging for debugging
-            console.log(
-              `🎨 Rendering ${prayer.name}: status="${prayerStatus}", type="${attendanceType}"`,
-            );
-
-            return (
-              <TouchableOpacity
-                key={index}
-                style={styles.prayerColumn}
-                onPress={() => handleAttendancePress(prayer)}
-                activeOpacity={0.7}>
-                <View
-                  style={[
-                    styles.prayerCard,
-                    prayer.isActive && styles.activeCard,
-                    prayerStatus === 'home' && styles.homeCard,
-                    prayerStatus === 'mosque' && styles.mosqueCard,
-                  ]}>
-                  <Text
-                    style={
-                      prayer.displayName === 'Maghrib'
-                        ? styles.maghribName
-                        : styles.prayerName
-                    }
-                    numberOfLines={1}
-                    adjustsFontSizeToFit={true}>
-                    {prayer.displayName}
-                  </Text>
-                  <View style={styles.iconContainer}>
-                    <SvgIcon
-                      name={prayer.name.toLowerCase() as IconName}
-                      size={26}
-                    />
-                    {/* Show indicator for both home and mosque */}
-                    {(prayerStatus === 'home' || prayerStatus === 'mosque') && (
-                      <View
-                        style={[
-                          styles.attendanceIndicator,
-                          prayerStatus === 'home'
-                            ? styles.homeIndicator
-                            : styles.mosqueIndicator,
-                        ]}>
-                        <Text style={styles.checkmark}>✓</Text>
-                      </View>
-                    )}
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.prayerColumn}
+                  onPress={() => handleAttendancePress(prayer)}
+                  activeOpacity={0.7}>
+                  <View
+                    style={[
+                      styles.prayerCard,
+                      prayer.isActive && styles.activeCard,
+                    ]}>
+                    <Text
+                      style={
+                        prayer.displayName === 'Maghrib'
+                          ? styles.maghribName
+                          : styles.prayerName
+                      }
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}>
+                      {prayer.displayName}
+                    </Text>
+                    <View style={styles.iconContainer}>
+                      <SvgIcon
+                        name={prayer.name.toLowerCase() as IconName}
+                        size={26}
+                      />
+                      {/* Show indicator for both home and mosque */}
+                      {(prayerStatus === 'home' ||
+                        prayerStatus === 'mosque') && (
+                        <View
+                          style={[
+                            styles.attendanceIndicator,
+                            prayerStatus === 'home'
+                              ? styles.homeIndicator
+                              : styles.mosqueIndicator,
+                          ]}>
+                          <Text style={styles.checkmark}>✓</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.prayerTime} numberOfLines={1}>
+                      {prayer.time}
+                    </Text>
                   </View>
-                  <Text style={styles.prayerTime} numberOfLines={1}>
-                    {prayer.time}
-                  </Text>
-
-                  {/* DEBUG: Show both status and attendance type */}
-                  <Text style={{fontSize: 8, color: '#999', marginTop: 2}}>
-                    {prayerStatus} | {attendanceType}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </View>
       {/* Attendance Selection Modal */}
       <AttendanceSelectionModal
         visible={attendancePopupVisible}
         currentAttendance={
           selectedPrayerForAttendance
-            ? getAttendanceType(
-                getPrayerStatus(selectedPrayerForAttendance.name),
-              )
+            ? getPrayerStatus(selectedPrayerForAttendance.name)
             : 'none'
         }
         onSelect={handleAttendanceSelect}
         onClose={handleModalClose}
         prayerName={selectedPrayerForAttendance?.displayName || ''}
-        isUpdating={isUpdating}
       />
     </>
   );
@@ -295,6 +292,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.102,
     shadowRadius: 9,
     elevation: 9,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 110,
+    paddingVertical: 20,
+  },
+  loadingText: {
+    ...typography.prayerCard,
+    color: colors.text.prayerBlue,
+    fontSize: 14,
   },
   prayerCardsRow: {
     flexDirection: 'row',
@@ -373,12 +381,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     lineHeight: 12,
-  },
-  homeCard: {
-    borderColor: '#4DABF7',
-  },
-  mosqueCard: {
-    borderColor: '#4CE047',
   },
   homeIndicator: {
     backgroundColor: '#4DABF7',
