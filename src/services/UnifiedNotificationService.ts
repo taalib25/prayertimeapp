@@ -10,6 +10,7 @@ import notifee, {
 import {Platform} from 'react-native';
 import UserPreferencesService from './UserPreferencesService';
 import {getPrayerTimesForDate} from './db/PrayerServices';
+import { getTodayDateString } from '../utils/helpers';
 
 class UnifiedNotificationService {
   private static instance: UnifiedNotificationService;
@@ -121,7 +122,7 @@ class UnifiedNotificationService {
    */
   async scheduleDailyPrayerNotifications(
     uid: number,
-    checkDate: string = new Date().toISOString().split('T')[0],
+    checkDate: string = getTodayDateString(),
   ): Promise<void> {
     try {
       console.log(`🔔 Checking prayer notifications for ${checkDate}...`);
@@ -491,7 +492,7 @@ class UnifiedNotificationService {
    */
   async scheduleTodayPrayerNotifications(uid: number): Promise<void> {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayDateString();
       await this.scheduleDailyPrayerNotifications(uid, today);
     } catch (error) {
       console.error('❌ Error scheduling today prayer notifications:', error);

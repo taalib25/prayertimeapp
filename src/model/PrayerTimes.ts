@@ -1,5 +1,6 @@
 import {Model} from '@nozbe/watermelondb';
 import {field, date, readonly} from '@nozbe/watermelondb/decorators';
+import { getTodayDateString } from '../utils/helpers';
 
 export default class PrayerTimesModel extends Model {
   static table = 'prayer_times';
@@ -36,7 +37,7 @@ export default class PrayerTimesModel extends Model {
 
   // Check if prayer times are for today
   get isToday(): boolean {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     return this.date === today;
   }
 }

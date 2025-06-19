@@ -1,5 +1,6 @@
 import {Model} from '@nozbe/watermelondb';
 import {field, date, readonly, text} from '@nozbe/watermelondb/decorators';
+import { getTodayDateString } from '../utils/helpers';
 
 export type PrayerStatus =
   | 'none'
@@ -8,7 +9,6 @@ export type PrayerStatus =
 
 export default class DailyTasksModel extends Model {
   static table = 'daily_tasks';
-
   @text('date') date!: string;
   @text('fajr_status') fajrStatus!: string;
   @text('dhuhr_status') dhuhrStatus!: string;
@@ -24,28 +24,8 @@ export default class DailyTasksModel extends Model {
 
   // Helper methods
   get isToday(): boolean {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     return this.date === today;
-  }
-
-  getPrayerStatus(prayerName: string): PrayerStatus {
-    const capitalizedName =
-      prayerName.charAt(0).toUpperCase() + prayerName.slice(1).toLowerCase();
-
-    switch (capitalizedName) {
-      case 'Fajr':
-        return this.fajrStatus as PrayerStatus;
-      case 'Dhuhr':
-        return this.dhuhrStatus as PrayerStatus;
-      case 'Asr':
-        return this.asrStatus as PrayerStatus;
-      case 'Maghrib':
-        return this.maghribStatus as PrayerStatus;
-      case 'Isha':
-        return this.ishaStatus as PrayerStatus;
-      default:
-        return 'none';
-    }
   }
 
   get completedPrayers(): number {

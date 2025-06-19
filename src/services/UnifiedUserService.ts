@@ -20,6 +20,7 @@ import {
   USER_STORAGE_KEYS,
   AuthUser,
 } from '../types/User';
+import { getTodayDateString } from '../utils/helpers';
 
 class UnifiedUserService {
   private static instance: UnifiedUserService;
@@ -172,7 +173,7 @@ class UnifiedUserService {
         goals,
         settings,
         stats,
-        createdAt: profile.createdAt || new Date().toISOString(),
+        createdAt: profile.createdAt || getTodayDateString(),
         updatedAt: new Date().toISOString(),
       };
 

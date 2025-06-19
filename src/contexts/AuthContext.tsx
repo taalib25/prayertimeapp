@@ -2,6 +2,7 @@ import React, {createContext, useContext, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AuthUser, USER_STORAGE_KEYS} from '../types/User';
 import UnifiedUserService from '../services/UnifiedUserService';
+import { getTodayDateString } from '../utils/helpers';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -54,7 +55,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         phoneNumber,
         isVerified: true,
         name: email.split('@')[0],
-        createdAt: new Date().toISOString(),
+        createdAt: getTodayDateString(),
       };
 
       await userService.saveAuthUser(userData);

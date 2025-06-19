@@ -21,7 +21,7 @@ import ReminderSection from '../components/ReminderSection';
 import MosqueStreakSection from '../components/MosqueStreakSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
-import {getCurrentDateString} from '../utils/helpers';
+import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
 
@@ -31,7 +31,7 @@ const handleCallPreferenceSet = (preference: boolean) => {
 
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
-  const [selectedDate, setSelectedDate] = useState(getCurrentDateString());
+  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {
     settings,

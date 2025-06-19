@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UnifiedNotificationService from './UnifiedNotificationService';
 import UserPreferencesService from './UserPreferencesService';
+import { getTodayDateString } from '../utils/helpers';
 
 /**
  * Initialize notification services for a user
@@ -26,7 +27,7 @@ export const initializeUserBackgroundTasks = async (
     // Initialize user preferences if needed
     await preferencesService.initializeDefaultSettings(uid);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     await notificationService.scheduleDailyPrayerNotifications(uid, today);
 
     console.log(`✅ Notification services initialized for user ${uid}`);

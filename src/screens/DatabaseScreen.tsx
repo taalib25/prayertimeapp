@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import {useDatabase} from '../services/db/databaseProvider';
 import {Q} from '@nozbe/watermelondb';
-import {observeAllPrayerTimes} from '../services/db/PrayerServices';
 import {getRecentDailyTasks} from '../services/db/dailyTaskServices';
 
 interface TableData {
@@ -90,7 +89,6 @@ const DatabaseScreen: React.FC = () => {
             isha_status: task.ishaStatus,
             total_zikr_count: task.totalZikrCount,
             quran_minutes: task.quranMinutes,
-            special_tasks_count: task.specialTasks.length,
             special_tasks_summary: task.specialTasks
               .map(t => `${t.title}: ${t.completed ? '✅' : '❌'}`)
               .join(' | '),
