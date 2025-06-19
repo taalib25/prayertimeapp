@@ -1,5 +1,7 @@
 import {
   updatePrayerStatus,
+  updateQuranMinutes,
+  updateZikrCount,
   getRecentDailyTasks,
 } from '../../services/db/dailyTaskServices';
 import {PrayerStatus} from '../../model/DailyTasks';
@@ -78,7 +80,8 @@ export const handleTaskCompletion = async (
 
         const newQuranMinutes = isCurrentlyCompleted
           ? Math.max(0, currentQuranMinutes - task.amount) // Remove amount (toggle OFF)
-          : currentQuranMinutes + task.amount; // Add amount (toggle ON)        await updateQuranMinutes(dateISO, newQuranMinutes);
+          : currentQuranMinutes + task.amount; // Add amount (toggle ON)
+        await updateQuranMinutes(dateISO, newQuranMinutes);
         console.log(
           `✅ Quran minutes toggled from ${currentQuranMinutes} to: ${newQuranMinutes}`,
         );
@@ -96,7 +99,8 @@ export const handleTaskCompletion = async (
 
         const newZikrCount = isZikrCurrentlyCompleted
           ? Math.max(0, currentZikrCount - task.amount) // Remove amount (toggle OFF)
-          : currentZikrCount + task.amount; // Add amount (toggle ON)        await updateZikrCount(dateISO, newZikrCount);
+          : currentZikrCount + task.amount; // Add amount (toggle ON)
+        await updateZikrCount(dateISO, newZikrCount);
         console.log(
           `✅ Zikr count toggled from ${currentZikrCount} to: ${newZikrCount}`,
         );
