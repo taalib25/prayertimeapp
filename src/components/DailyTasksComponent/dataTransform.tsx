@@ -1,7 +1,12 @@
 import {DailyTaskData} from '../../services/db/dailyTaskServices';
-import {Task} from './TaskItem';
 import {getSpecialTasksForDate, convertToRegularTasks} from './specialTasks';
 import {getTodayDateString} from '../../utils/helpers';
+
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
 interface DayTasks {
   dateISO: string;

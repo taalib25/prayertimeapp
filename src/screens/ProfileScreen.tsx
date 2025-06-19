@@ -18,7 +18,7 @@ import MenuButton from '../components/MenuButton';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {CompactChallengeCard} from '../components/PrayerWidgets/MonthlyTaskSelector';
+import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
 import {useUnifiedUser, useAppUser} from '../hooks/useUnifiedUser';
 import {useAuth} from '../contexts/AuthContext';
 

@@ -16,7 +16,7 @@ import {colors} from '../utils/theme';
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
 import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSelector';
-import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
+import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import ReminderSection from '../components/ReminderSection';
 import MosqueStreakSection from '../components/MosqueStreakSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
@@ -127,7 +127,7 @@ const PrayerTimeScreen = () => {
               {/* Section Header for Tasks */}
               <DailyTasksSelector />
               {/* Monthly Challenge Cards with user goals */}
-              <MonthlyChallengeSelector userGoals={goals || undefined} />
+              <MonthlyChallengeContent userGoals={goals || undefined} />
 
               <PersonalMeeting />
 

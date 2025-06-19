@@ -82,10 +82,3 @@ export const useMonthlyData = ({
     refetch: fetchMonthlyData,
   };
 };
-
-// (Removed duplicate and broken code for useMonthlyData.)
-// If you want to keep the monthly data hook, ensure only the correct implementation remains below.
-// Also, make sure getRecentMonthsData is imported if you use it, e.g.:
-// import { getRecentMonthsData } from '../services/db/dailyTaskServices';
-// Also, make sure getRecentMonthsData is imported if you use it, e.g.:
-// import { getRecentMonthsData } from '../services/db/dailyTaskServices';

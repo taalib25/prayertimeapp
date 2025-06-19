@@ -10,6 +10,5 @@ export {LoadingState, ErrorState} from './LoadingState';
 export {transformDailyData} from './dataTransform';
 
 // Types
-export type {Task, TaskItemProps} from './TaskItem';
 export type {DayTasks, DayViewProps} from './DayView';
 export type {DayTasks as TransformedDayTasks} from './dataTransform';
