@@ -19,11 +19,11 @@ import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSele
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import ReminderSection from '../components/ReminderSection';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
-import {useSimpleUser} from '../hooks/useSimpleUser';
 import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
 import FajrTimeChart from '../components/FajrTimeChart';
+import { useUser } from '../hooks/useUser';
 
 const handleCallPreferenceSet = (preference: boolean) => {
   console.log('Call preference set:', preference);
@@ -33,7 +33,7 @@ const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {user, displayName, isLoading: userLoading} = useSimpleUser();
+  const {user, displayName, isLoading: userLoading} = useUser();
   const isLoading = prayerLoading || userLoading;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 

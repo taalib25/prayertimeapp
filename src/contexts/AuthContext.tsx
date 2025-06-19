@@ -1,17 +1,15 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AuthUser, USER_STORAGE_KEYS} from '../types/User';
-import UnifiedUserService from '../services/UnifiedUserService';
-import { getTodayDateString } from '../utils/helpers';
+import {User} from '../types/User';
+import UserService from '../services/UserService';
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
+  isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, phoneNumber: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (userData: Partial<AuthUser>) => void;
-  isLoading: boolean;
   checkAuthState: () => Promise<boolean>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,104 +17,64 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
   children,
 }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const userService = UnifiedUserService.getInstance();
+  const userService = UserService.getInstance();
 
   useEffect(() => {
     checkAuthState();
   }, []);
+
   const checkAuthState = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const userData = await AsyncStorage.getItem(USER_STORAGE_KEYS.AUTH_USER);
-      if (userData) {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
+
+      // Check if user is authenticated
+      const isAuth = await userService.isAuthenticated();
+
+      if (isAuth) {
+        // Load user data
+        const userData = await userService.getUser();
+        setUser(userData);
         return true;
       }
+
       return false;
     } catch (error) {
       console.error('Error checking auth state:', error);
-      await AsyncStorage.removeItem(USER_STORAGE_KEYS.AUTH_USER);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
+
   const login = async (email: string, phoneNumber: string) => {
     try {
-      // Use consistent user ID (1001) for API compatibility
-      const userId = '1001';
-
-      const userData: AuthUser = {
-        id: userId,
+      // Create user data
+      const userData = await userService.createUser({
+        username: email.split('@')[0],
         email,
         phoneNumber,
-        isVerified: true,
-        name: email.split('@')[0],
-        createdAt: getTodayDateString(),
-      };
+        location: 'Cairo, Egypt',
+        masjid: 'Al-Azhar Mosque',
+      });
 
-      await userService.saveAuthUser(userData);
+      // Set auth token
+      await userService.setAuthToken('user_authenticated');
+
       setUser(userData);
-
-      // Create/update user profile data using the unified service
-      const uid = parseInt(userId);
-      await createUserProfileData(uid, userData);
     } catch (error) {
       console.error('Error during login:', error);
-      throw new Error('Failed to save user data');
+      throw new Error('Failed to login');
     }
   };
-  // Separate function to handle user profile creation using unified service
-  const createUserProfileData = async (uid: number, userData: AuthUser) => {
-    try {
-      // Check if user profile already exists
-      const existingUser = await userService.getUserById(uid);
 
-      if (!existingUser) {
-        // Create new user profile
-        await userService.createUser(
-          uid,
-          {
-            username: userData.name || userData.email.split('@')[0],
-            email: userData.email,
-            phoneNumber: userData.phoneNumber,
-            location: 'Cairo, Egypt',
-            masjid: 'Al-Azhar Mosque',
-          },
-          {
-            monthlyZikrGoal: 1000,
-            monthlyQuranPagesGoal: 30,
-            monthlyCharityGoal: 100,
-            monthlyFastingDaysGoal: 15,
-          },
-          {
-            prayerSettings: 'standard',
-            preferredMadhab: 'hanafi',
-            appLanguage: 'en',
-            theme: 'light',
-            location: 'Cairo, Egypt',
-            masjid: 'Al-Azhar Mosque',
-          },
-        );
-      }
-    } catch (error) {
-      console.error('Error creating user profile data:', error);
-    }
-  };
   const logout = async () => {
     try {
       console.log('Starting logout process...');
 
-      // Remove auth user data
-      await userService.removeAuthUser();
-      console.log('Auth user data removed');
-
-      // Reset call preference to allow CallWidget to show again for new user
-      await AsyncStorage.removeItem(USER_STORAGE_KEYS.CALL_PREFERENCE);
-      console.log('Call preference reset');
+      // Clear all data
+      await userService.clearAllData();
 
       setUser(null);
       console.log('Logout completed successfully');
@@ -127,11 +85,10 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
     }
   };
 
-  const updateUser = async (userData: Partial<AuthUser>) => {
+  const updateUser = async (userData: Partial<User>) => {
     if (user) {
       try {
-        const updatedUser = {...user, ...userData};
-        await userService.saveAuthUser(updatedUser);
+        const updatedUser = await userService.updateUser(userData);
         setUser(updatedUser);
       } catch (error) {
         console.error('Error updating user:', error);
@@ -139,23 +96,25 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       }
     }
   };
-
-  const value: AuthContextType = {
-    user,
-    isAuthenticated: !!user,
-    login,
-    logout,
-    updateUser,
-    isLoading,
-    checkAuthState,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        checkAuthState,
+        updateUser,
+      }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

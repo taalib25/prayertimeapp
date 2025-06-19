@@ -113,7 +113,7 @@ class PrayerAppAPI {
    * User Login
    */
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    return this.apiService.post<LoginResponse>('/api/login', data);
+    return this.apiService.post<LoginResponse>('/login', data);
   }
 
   /**

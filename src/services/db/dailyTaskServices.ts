@@ -168,10 +168,10 @@ export const updatePrayerStatus = async (
     const lcPrayer = prayerName.toLowerCase();
     const today = getTodayDateString();
 
-    // Only allow updating today's prayers
-    if (date !== today) {
-      throw new Error('Cannot update prayers for previous days');
-    }
+    // // Only allow updating today's prayers
+    // if (date !== today) {
+    //   throw new Error('Cannot update prayers for previous days');
+    // }
 
     // Validate prayer name
     if (!['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(lcPrayer)) {

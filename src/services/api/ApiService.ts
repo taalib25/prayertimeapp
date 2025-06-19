@@ -4,7 +4,7 @@ import axios, {
   AxiosResponse,
   AxiosError,
 } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import UserService from '../UserService';
 
 // Generic API response structure
 export interface ApiResponse<T = any> {
@@ -26,10 +26,12 @@ class ApiService {
   private static instance: ApiService;
   private axiosInstance: AxiosInstance;
   private config: ApiConfig;
-
+  private userService: UserService;
   private constructor() {
+    this.userService = UserService.getInstance();
+
     this.config = {
-      baseURL: 'http://13.60.193.171:5000', // Replace with your actual API URL
+      baseURL: 'http://13.60.193.171:5000/api',
       timeout: 10000, // 10 seconds
       enableLogging: __DEV__, // Enable logging in development only
     };
@@ -52,19 +54,53 @@ class ApiService {
     }
     return ApiService.instance;
   }
-
   private setupInterceptors(): void {
     // Request interceptor - automatically add auth token
     this.axiosInstance.interceptors.request.use(
-      async (config) => {
+      async config => {
         try {
-          const token = await AsyncStorage.getItem('auth_token');
+          console.log(
+            '🔍 ApiService: Checking for auth token via UserService...',
+          );
+
+          // Get auth token from UserService using the simplified user system
+          const token = await this.userService.getAuthToken();
+
+          console.log('🔑 ApiService: Auth token exists:', !!token);
+          console.log(
+            '🔑 ApiService: Auth token length:',
+            token ? token.length : 0,
+          );
+          console.log(
+            '🔑 ApiService: Auth token preview:',
+            token ? `${token.substring(0, 10)}...` : 'null',
+          );
+
+          // Log the full URL being called for debugging 404 errors
+          const fullUrl = this.config.baseURL + config.url;
+          console.log('🌐 ApiService: Full URL being called:', fullUrl);
+          console.log(
+            '🌐 ApiService: Request method:',
+            config.method?.toUpperCase(),
+          );
+          console.log('🌐 ApiService: Base URL:', this.config.baseURL);
+          console.log('🌐 ApiService: Endpoint path:', config.url);
+
           if (token) {
+            console.log(
+              '🔑 ApiService: Setting Authorization header with Bearer token',
+            );
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('✅ ApiService: Authorization header set successfully');
+          } else {
+            console.log('⚠️ ApiService: No auth token found in system data');
           }
 
           if (this.config.enableLogging) {
-            console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+            console.log(
+              `🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`,
+            );
+            console.log('📋 Request Headers:', config.headers);
             if (config.data) {
               console.log('📤 Request Data:', config.data);
             }
@@ -72,30 +108,49 @@ class ApiService {
 
           return config;
         } catch (error) {
-          console.error('❌ Error in request interceptor:', error);
+          console.error(
+            '❌ Error in request interceptor accessing auth token:',
+            error,
+          );
           return config;
         }
       },
-      (error) => {
+      error => {
         console.error('❌ Request interceptor error:', error);
         return Promise.reject(error);
-      }
+      },
     );
 
     // Response interceptor - handle responses and errors consistently
     this.axiosInstance.interceptors.response.use(
       (response: AxiosResponse) => {
         if (this.config.enableLogging) {
-          console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+          console.log(
+            `✅ API Response: ${response.status} ${response.config.url}`,
+          );
           console.log('📥 Response Data:', response.data);
         }
         return response;
       },
       (error: AxiosError) => {
         if (this.config.enableLogging) {
-          console.error(`❌ API Error: ${error.response?.status} ${error.config?.url}`);
+          console.error(
+            `❌ API Error: ${error.response?.status} ${error.config?.url}`,
+          );
           if (error.response?.data) {
             console.error('📥 Error Data:', error.response.data);
+          }
+          // Enhanced 404 debugging
+          if (error.response?.status === 404) {
+            console.error('🔍 404 Error Details:');
+            console.error(
+              '   Full URL:',
+              (error.config?.baseURL || '') + (error.config?.url || ''),
+            );
+            console.error('   Method:', error.config?.method?.toUpperCase());
+            console.error('   Base URL:', error.config?.baseURL);
+            console.error('   Endpoint:', error.config?.url);
+            console.error('   Headers:', error.config?.headers);
           }
         }
 
@@ -105,15 +160,16 @@ class ApiService {
         }
 
         return Promise.reject(error);
-      }
+      },
     );
   }
-
   private async handleAuthError(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      // You can add navigation to login screen here if needed
-      console.log('🔒 Auth token removed due to 401 error');
+      console.log(
+        '🔒 ApiService: Handling 401 auth error - clearing auth token',
+      );
+      await this.userService.clearAuthToken();
+      console.log('🔒 Auth token removed due to 401 error via UserService');
     } catch (error) {
       console.error('❌ Error handling auth error:', error);
     }
@@ -123,7 +179,7 @@ class ApiService {
   async get<T = any>(
     endpoint: string,
     params?: Record<string, any>,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.get(endpoint, {
@@ -140,7 +196,7 @@ class ApiService {
   async post<T = any>(
     endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.post(endpoint, data, config);
@@ -154,7 +210,7 @@ class ApiService {
   async put<T = any>(
     endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.put(endpoint, data, config);
@@ -167,7 +223,7 @@ class ApiService {
   // Generic DELETE request
   async delete<T = any>(
     endpoint: string,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.delete(endpoint, config);
@@ -181,7 +237,7 @@ class ApiService {
   async patch<T = any>(
     endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.patch(endpoint, data, config);
@@ -195,7 +251,7 @@ class ApiService {
   async upload<T = any>(
     endpoint: string,
     formData: FormData,
-    onUploadProgress?: (progressEvent: any) => void
+    onUploadProgress?: (progressEvent: any) => void,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await this.axiosInstance.post(endpoint, formData, {
@@ -213,7 +269,11 @@ class ApiService {
   // Format successful response consistently
   private formatResponse<T>(response: AxiosResponse): ApiResponse<T> {
     // If the response already follows our format, return it as is
-    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      'success' in response.data
+    ) {
       return response.data as ApiResponse<T>;
     }
 
@@ -228,15 +288,19 @@ class ApiService {
   // Handle errors consistently
   private handleError<T>(error: AxiosError): ApiResponse<T> {
     const response = error.response;
-    
+
     // If the error response follows our format, return it
-    if (response?.data && typeof response.data === 'object' && 'success' in response.data) {
+    if (
+      response?.data &&
+      typeof response.data === 'object' &&
+      'success' in response.data
+    ) {
       return response.data as ApiResponse<T>;
     }
 
     // Create a consistent error response
     const errorMessage = this.getErrorMessage(error);
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -264,7 +328,7 @@ class ApiService {
         case 401:
           return 'Authentication required. Please login again.';
         case 403:
-          return 'Access denied. You don\'t have permission.';
+          return "Access denied. You don't have permission.";
         case 404:
           return 'Resource not found.';
         case 422:
@@ -284,24 +348,36 @@ class ApiService {
       return error.message || 'An unexpected error occurred.';
     }
   }
-
   // Set auth token manually
   async setAuthToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('auth_token', token);
-      console.log('🔑 Auth token set successfully');
+      console.log('🔑 ApiService: Setting auth token via UserService');
+      await this.userService.setAuthToken(token);
+      console.log('🔑 Auth token set successfully via UserService');
     } catch (error) {
       console.error('❌ Error setting auth token:', error);
     }
   }
-
   // Clear auth token
   async clearAuthToken(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      console.log('🔓 Auth token cleared');
+      console.log('🔓 ApiService: Clearing auth token via UserService');
+      await this.userService.clearAuthToken();
+      console.log('🔓 Auth token cleared via UserService');
     } catch (error) {
       console.error('❌ Error clearing auth token:', error);
+    }
+  }
+
+  // Get auth token for debugging
+  async getAuthToken(): Promise<string | null> {
+    try {
+      const token = await this.userService.getAuthToken();
+      console.log('🔍 ApiService: Current auth token exists:', !!token);
+      return token;
+    } catch (error) {
+      console.error('❌ Error getting auth token:', error);
+      return null;
     }
   }
 
@@ -320,7 +396,7 @@ class ApiService {
 
   // Get current config
   getConfig(): ApiConfig {
-    return { ...this.config };
+    return {...this.config};
   }
 }
 

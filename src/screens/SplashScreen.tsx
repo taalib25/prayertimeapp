@@ -1,15 +1,15 @@
 import React, {useEffect} from 'react';
 import {View, StyleSheet, Animated} from 'react-native';
 import {colors} from '../utils/theme';
-import SimpleUserService from '../services/SimpleUserService';
 import SvgIcon from '../components/SvgIcon';
+import UserService from '../services/UserService';
 
 interface SplashScreenProps {
   onAuthCheck: (isAuthenticated: boolean) => void;
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
-  const userService = SimpleUserService.getInstance();
+  const userService = UserService.getInstance();
   const fadeAnim = React.useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {

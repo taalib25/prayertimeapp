@@ -36,7 +36,7 @@ class ApiTaskServices {
       const location = status === 'mosque' ? 'mosque' : 'home';
 
       const response = await this.api.updatePrayer({
-        prayer_type: prayerName.toLowerCase(),
+        prayer_type: prayerName.charAt(0).toUpperCase() + prayerName.slice(1).toLowerCase(),
         prayer_date: date,
         status: apiStatus,
         location: location,
@@ -121,13 +121,13 @@ class ApiTaskServices {
   private convertPrayerStatusToApi(status: PrayerStatus): string {
     switch (status) {
       case 'mosque':
-        return 'completed_mosque';
+        return 'prayed';
       case 'home':
-        return 'completed_home';
+        return 'none';
       case 'none':
-        return 'not_completed';
+        return 'missed';
       default:
-        return 'not_completed';
+        return 'missed';
     }
   }
 

@@ -2,51 +2,59 @@ import {useMemo} from 'react';
 import {useDailyTasksContext} from '../contexts/DailyTasksContext';
 import {DailyTaskData} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
+import { getTodayDateString } from '../utils/helpers';
 
 /**
  * Hook to get prayer times data using the centralized context
- * Replaces direct database calls in PrayerTimeCards
+ * Enhanced to support any date, not just today
  */
-export const usePrayerData = () => {
-  const {dailyTasks, getTodayData, updatePrayerAndRefresh} =
+export const usePrayerData = (targetDate?: string) => {
+  const {dailyTasks, getTodayData, getDataForDate, updatePrayerAndRefresh} =
     useDailyTasksContext();
 
-  const todayData = useMemo(() => getTodayData(), [getTodayData]);
+  // Get data for the specified date or today's data if no date specified
+  const targetData = useMemo(() => {
+    if (targetDate) {
+      return getDataForDate(targetDate);
+    }
+    return getTodayData();
+  }, [targetDate, getDataForDate, getTodayData]);
 
   const getPrayerStatus = useMemo(() => {
     return (prayerName: string): PrayerStatus => {
-      if (!todayData) return 'none';
+      if (!targetData) return 'none';
 
       const lcPrayerName = prayerName.toLowerCase();
       switch (lcPrayerName) {
         case 'fajr':
-          return todayData.fajrStatus;
+          return targetData.fajrStatus;
         case 'dhuhr':
-          return todayData.dhuhrStatus;
+          return targetData.dhuhrStatus;
         case 'asr':
-          return todayData.asrStatus;
+          return targetData.asrStatus;
         case 'maghrib':
-          return todayData.maghribStatus;
+          return targetData.maghribStatus;
         case 'isha':
-          return todayData.ishaStatus;
+          return targetData.ishaStatus;
         default:
           return 'none';
       }
     };
-  }, [todayData]);
+  }, [targetData]);
 
   const updatePrayerStatus = useMemo(() => {
     return async (prayerName: string, status: PrayerStatus) => {
-      const today = new Date().toISOString().split('T')[0];
+      // Always update today's data for prayer status changes
+      const today = getTodayDateString();
       await updatePrayerAndRefresh(today, prayerName, status);
     };
   }, [updatePrayerAndRefresh]);
 
   return {
-    todayData,
+    todayData: targetData, // Return the target data (could be today or another date)
     getPrayerStatus,
     updatePrayerStatus,
-    isLoading: !todayData,
+    isLoading: !targetData,
   };
 };
 
