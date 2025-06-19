@@ -5,8 +5,6 @@ export interface PrayerTimesData {
   date: string;
   day: string;
   fajr: string;
-  shuruq: string;
-  dhuha: string;
   dhuhr: string;
   asr: string;
   maghrib: string;
@@ -62,8 +60,6 @@ export const getPrayerTimesForDate = async (
         date: prayerTime.date,
         day: prayerTime.day,
         fajr: prayerTime.fajr,
-        shuruq: prayerTime.shuruq,
-        dhuha: prayerTime.dhuha,
         dhuhr: prayerTime.dhuhr,
         asr: prayerTime.asr,
         maghrib: prayerTime.maghrib,
@@ -128,8 +124,6 @@ export const getPrayerTimesForDate = async (
       date: targetDate,
       day: getDayName(targetDate),
       fajr: startPrayerTime.fajr,
-      shuruq: startPrayerTime.shuruq,
-      dhuha: startPrayerTime.dhuha,
       dhuhr: startPrayerTime.dhuhr,
       asr: startPrayerTime.asr,
       maghrib: startPrayerTime.maghrib,
@@ -168,8 +162,6 @@ export const createOrUpdatePrayerTimes = async (
         await existing[0].update(prayerTime => {
           prayerTime.day = data.day;
           prayerTime.fajr = data.fajr;
-          prayerTime.shuruq = data.shuruq;
-          prayerTime.dhuha = data.dhuha;
           prayerTime.dhuhr = data.dhuhr;
           prayerTime.asr = data.asr;
           prayerTime.maghrib = data.maghrib;
@@ -185,8 +177,6 @@ export const createOrUpdatePrayerTimes = async (
           prayerTime.date = data.date;
           prayerTime.day = data.day;
           prayerTime.fajr = data.fajr;
-          prayerTime.shuruq = data.shuruq;
-          prayerTime.dhuha = data.dhuha;
           prayerTime.dhuhr = data.dhuhr;
           prayerTime.asr = data.asr;
           prayerTime.maghrib = data.maghrib;
@@ -242,8 +232,6 @@ export const bulkImportPrayerTimes = async (
           await existing[0].update(prayerTime => {
             prayerTime.day = data.day;
             prayerTime.fajr = data.fajr;
-            prayerTime.shuruq = data.shuruq;
-            prayerTime.dhuha = data.dhuha;
             prayerTime.dhuhr = data.dhuhr;
             prayerTime.asr = data.asr;
             prayerTime.maghrib = data.maghrib;
@@ -256,8 +244,6 @@ export const bulkImportPrayerTimes = async (
             prayerTime.date = data.date;
             prayerTime.day = data.day;
             prayerTime.fajr = data.fajr;
-            prayerTime.shuruq = data.shuruq;
-            prayerTime.dhuha = data.dhuha;
             prayerTime.dhuhr = data.dhuhr;
             prayerTime.asr = data.asr;
             prayerTime.maghrib = data.maghrib;
