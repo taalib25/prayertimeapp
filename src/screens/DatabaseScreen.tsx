@@ -56,9 +56,7 @@ const DatabaseScreen: React.FC = () => {
 
         console.log(`📊 Found ${records.length} prayer time records`);
         setRecordCount(records.length);
-
         data = records.map(record => ({
-          id: record.id,
           date: (record as any).date || '',
           day: (record as any).day || '',
           fajr: (record as any).fajr || '',
@@ -67,6 +65,7 @@ const DatabaseScreen: React.FC = () => {
           maghrib: (record as any).maghrib || '',
           isha: (record as any).isha || '',
           qibla_hour: (record as any).qiblaHour || '',
+          id: record.id,
           created_at: new Date((record as any).createdAt).toLocaleDateString(),
           updated_at: new Date((record as any).updatedAt).toLocaleDateString(),
         }));
@@ -78,9 +77,7 @@ const DatabaseScreen: React.FC = () => {
           const tasks = await getRecentDailyTasks(daysBack);
           console.log(`📊 Found ${tasks.length} daily task records`);
           setRecordCount(tasks.length);
-
           data = tasks.map(task => ({
-            id: task.date, // Use date as ID since it's now the primary key
             date: task.date,
             fajr_status: task.fajrStatus,
             dhuhr_status: task.dhuhrStatus,
@@ -89,9 +86,19 @@ const DatabaseScreen: React.FC = () => {
             isha_status: task.ishaStatus,
             total_zikr_count: task.totalZikrCount,
             quran_minutes: task.quranMinutes,
-            special_tasks_summary: task.specialTasks
-              .map(t => `${t.title}: ${t.completed ? '✅' : '❌'}`)
-              .join(' | '),
+            special_tasks_count: task.specialTasks.length,
+            completed_tasks: task.specialTasks.filter(t => t.completed).length,
+            special_tasks_summary:
+              task.specialTasks.length > 0
+                ? task.specialTasks
+                    .map(
+                      t =>
+                        `${t.title.substring(0, 15)}${
+                          t.title.length > 15 ? '...' : ''
+                        }: ${t.completed ? '✅' : '❌'}`,
+                    )
+                    .join(' | ')
+                : 'No tasks',
           }));
         } catch (error) {
           console.error('Error using modular daily tasks function:', error);
@@ -101,9 +108,7 @@ const DatabaseScreen: React.FC = () => {
             .query(Q.sortBy('date', Q.desc))
             .fetch();
           setRecordCount(records.length);
-
           data = records.map(record => ({
-            id: record.id,
             date: (record as any).date || '',
             fajr_status: (record as any).fajrStatus || '',
             dhuhr_status: (record as any).dhuhrStatus || '',
@@ -112,7 +117,8 @@ const DatabaseScreen: React.FC = () => {
             isha_status: (record as any).ishaStatus || '',
             total_zikr_count: (record as any).totalZikrCount || 0,
             quran_minutes: (record as any).quranMinutes || 0,
-            special_tasks: (record as any).specialTasks || '',
+            special_tasks_raw: (record as any).specialTasks || '',
+            id: record.id,
             created_at: new Date(
               (record as any).createdAt,
             ).toLocaleDateString(),
@@ -128,12 +134,18 @@ const DatabaseScreen: React.FC = () => {
         setHeaders([]);
         Alert.alert('Info', `No data found in ${selectedTable} table`);
         return;
-      }
+      } // Generate headers with predefined order
+      const predefinedOrder = getColumnOrder(selectedTable);
+      const availableColumns = Object.keys(data[0]);
 
-      // Generate headers from the first record
-      const tableHeaders = Object.keys(data[0]);
+      // Use predefined order if available, otherwise use natural order
+      const tableHeaders =
+        predefinedOrder.length > 0
+          ? predefinedOrder.filter(col => availableColumns.includes(col))
+          : availableColumns;
+
       setHeaders(tableHeaders);
-      console.log(`📋 Table headers: ${tableHeaders.join(', ')}`);
+      console.log(`📋 Table headers (ordered): ${tableHeaders.join(', ')}`);
 
       setTableData(data);
       console.log('✅ Table data loaded successfully using modular functions');
@@ -173,11 +185,8 @@ const DatabaseScreen: React.FC = () => {
 
       // Convert WatermelonDB records to plain objects
       const data: TableData[] = records.map(record => {
-        const plainObject: TableData = {};
-
-        // Get all fields from the record
+        const plainObject: TableData = {}; // Get all fields from the record
         if (selectedTable === 'prayer_times') {
-          plainObject.id = record.id;
           plainObject.date = (record as any).date || '';
           plainObject.day = (record as any).day || '';
           plainObject.fajr = (record as any).fajr || '';
@@ -186,6 +195,7 @@ const DatabaseScreen: React.FC = () => {
           plainObject.maghrib = (record as any).maghrib || '';
           plainObject.isha = (record as any).isha || '';
           plainObject.qibla_hour = (record as any).qiblaHour || '';
+          plainObject.id = record.id;
           plainObject.created_at = new Date(
             (record as any).createdAt,
           ).toLocaleDateString();
@@ -193,7 +203,6 @@ const DatabaseScreen: React.FC = () => {
             (record as any).updatedAt,
           ).toLocaleDateString();
         } else if (selectedTable === 'daily_tasks') {
-          plainObject.id = record.id;
           plainObject.date = (record as any).date || '';
           plainObject.fajr_status = (record as any).fajrStatus || '';
           plainObject.dhuhr_status = (record as any).dhuhrStatus || '';
@@ -202,7 +211,8 @@ const DatabaseScreen: React.FC = () => {
           plainObject.isha_status = (record as any).ishaStatus || '';
           plainObject.total_zikr_count = (record as any).totalZikrCount || 0;
           plainObject.quran_minutes = (record as any).quranMinutes || 0;
-          plainObject.special_tasks = (record as any).specialTasks || '';
+          plainObject.special_tasks_raw = (record as any).specialTasks || '';
+          plainObject.id = record.id;
           plainObject.created_at = new Date(
             (record as any).createdAt,
           ).toLocaleDateString();
@@ -212,13 +222,19 @@ const DatabaseScreen: React.FC = () => {
         }
 
         return plainObject;
-      });
-
-      // Generate headers from the first record
+      }); // Generate headers with predefined order
       if (data.length > 0) {
-        const tableHeaders = Object.keys(data[0]);
+        const predefinedOrder = getColumnOrder(selectedTable);
+        const availableColumns = Object.keys(data[0]);
+
+        // Use predefined order if available, otherwise use natural order
+        const tableHeaders =
+          predefinedOrder.length > 0
+            ? predefinedOrder.filter(col => availableColumns.includes(col))
+            : availableColumns;
+
         setHeaders(tableHeaders);
-        console.log(`📋 Table headers: ${tableHeaders.join(', ')}`);
+        console.log(`📋 Table headers (ordered): ${tableHeaders.join(', ')}`);
       }
 
       setTableData(data);
@@ -232,6 +248,44 @@ const DatabaseScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Define column order for better table organization
+  const getColumnOrder = (tableName: string): string[] => {
+    if (tableName === 'prayer_times') {
+      return [
+        'date',
+        'day',
+        'fajr',
+        'dhuhr',
+        'asr',
+        'maghrib',
+        'isha',
+        'qibla_hour',
+        'id',
+        'created_at',
+        'updated_at',
+      ];
+    } else if (tableName === 'daily_tasks') {
+      return [
+        'date',
+        'fajr_status',
+        'dhuhr_status',
+        'asr_status',
+        'maghrib_status',
+        'isha_status',
+        'total_zikr_count',
+        'quran_minutes',
+        'special_tasks_count',
+        'completed_tasks',
+        'special_tasks_summary',
+        'special_tasks_raw',
+        'id',
+        'created_at',
+        'updated_at',
+      ];
+    }
+    return [];
   };
 
   const loadTableData = async () => {
@@ -254,6 +308,111 @@ const DatabaseScreen: React.FC = () => {
     setTableData([]);
     setHeaders([]);
     setRecordCount(0);
+  };
+
+  // Helper function to format column headers
+  const formatColumnHeader = (header: string): string => {
+    const formattedHeader = header.replace(/_/g, ' ').toUpperCase();
+
+    // Special formatting for specific headers
+    switch (header) {
+      case 'special_tasks_summary':
+        return 'SPECIAL TASKS';
+      case 'special_tasks_count':
+        return 'TASK COUNT';
+      case 'completed_tasks':
+        return 'COMPLETED';
+      case 'special_tasks_raw':
+        return 'TASKS (RAW)';
+      case 'qibla_hour':
+        return 'QIBLA';
+      default:
+        return formattedHeader;
+    }
+  };
+
+  // Helper function to get column-specific styles
+  const getColumnStyle = (header: string) => {
+    switch (header) {
+      case 'date':
+        return {minWidth: 90, maxWidth: 90};
+      case 'day':
+        return {minWidth: 70, maxWidth: 70};
+      case 'fajr':
+      case 'dhuhr':
+      case 'asr':
+      case 'maghrib':
+      case 'isha':
+        return {minWidth: 65, maxWidth: 65, fontSize: 10};
+      case 'fajr_status':
+      case 'dhuhr_status':
+      case 'asr_status':
+      case 'maghrib_status':
+      case 'isha_status':
+        return {minWidth: 60, maxWidth: 60, fontSize: 10};
+      case 'total_zikr_count':
+        return {minWidth: 70, maxWidth: 70};
+      case 'quran_minutes':
+        return {minWidth: 70, maxWidth: 70};
+      case 'special_tasks_count':
+      case 'completed_tasks':
+        return {minWidth: 50, maxWidth: 50};
+      case 'special_tasks_summary':
+        return {minWidth: 250, maxWidth: 350};
+      case 'special_tasks_raw':
+        return {minWidth: 180, maxWidth: 250};
+      case 'qibla_hour':
+        return {minWidth: 60, maxWidth: 60};
+      case 'id':
+        return {minWidth: 80, maxWidth: 80, fontSize: 9};
+      case 'created_at':
+      case 'updated_at':
+        return {minWidth: 80, maxWidth: 80, fontSize: 9};
+      default:
+        return {minWidth: 100, maxWidth: 100};
+    }
+  };
+
+  // Helper function to format cell content
+  const formatCellContent = (value: any, header: string): string => {
+    if (value === null || value === undefined) return '';
+
+    switch (header) {
+      case 'special_tasks_raw':
+        // Try to parse and format JSON special tasks
+        try {
+          if (typeof value === 'string' && value.startsWith('[')) {
+            const tasks = JSON.parse(value);
+            return tasks
+              .map((t: any) => `${t.title}: ${t.completed ? '✅' : '❌'}`)
+              .join(' | ');
+          }
+          return String(value);
+        } catch {
+          return String(value);
+        }
+      case 'fajr_status':
+      case 'dhuhr_status':
+      case 'asr_status':
+      case 'maghrib_status':
+      case 'isha_status':
+        // Format prayer status with emojis
+        switch (String(value).toLowerCase()) {
+          case 'mosque':
+            return '🕌 Mosque';
+          case 'home':
+            return '🏠 Home';
+          case 'none':
+            return '❌ None';
+          default:
+            return String(value);
+        }
+      default:
+        const strValue = String(value);
+        return strValue.length > 50
+          ? strValue.substring(0, 47) + '...'
+          : strValue;
+    }
   };
 
   const refreshData = () => {
@@ -351,12 +510,13 @@ const DatabaseScreen: React.FC = () => {
               {/* Table Header */}
               <View style={styles.tableHeaderRow}>
                 {headers.map((header, index) => (
-                  <Text key={index} style={styles.tableHeaderCell}>
-                    {header.replace(/_/g, ' ').toUpperCase()}
+                  <Text
+                    key={index}
+                    style={[styles.tableHeaderCell, getColumnStyle(header)]}>
+                    {formatColumnHeader(header)}
                   </Text>
                 ))}
               </View>
-
               {/* Table Body */}
               <FlatList
                 data={tableData}
@@ -368,10 +528,10 @@ const DatabaseScreen: React.FC = () => {
                       index % 2 === 0 ? styles.evenRow : styles.oddRow,
                     ]}>
                     {headers.map((header, cellIndex) => (
-                      <Text key={cellIndex} style={styles.tableCell}>
-                        {String(item[header] || '').length > 30
-                          ? String(item[header] || '').substring(0, 30) + '...'
-                          : String(item[header] || '')}
+                      <Text
+                        key={cellIndex}
+                        style={[styles.tableCell, getColumnStyle(header)]}>
+                        {formatCellContent(item[header], header)}
                       </Text>
                     ))}
                   </View>
@@ -548,13 +708,14 @@ const styles = StyleSheet.create({
   tableHeaderCell: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     minWidth: 100,
     borderRightWidth: 1,
     borderRightColor: 'rgba(255,255,255,0.3)',
+    flexWrap: 'wrap',
   },
   tableBody: {
     maxHeight: 400,
@@ -564,6 +725,7 @@ const styles = StyleSheet.create({
     minHeight: 35,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    alignItems: 'center',
   },
   evenRow: {
     backgroundColor: '#f9f9f9',
@@ -572,14 +734,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   tableCell: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#333',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     minWidth: 100,
     borderRightWidth: 1,
     borderRightColor: '#eee',
     textAlign: 'left',
+    flexWrap: 'wrap',
   },
   noDataContainer: {
     flex: 1,
