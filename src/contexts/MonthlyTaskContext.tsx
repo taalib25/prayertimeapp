@@ -123,24 +123,6 @@ export const MonthlyTaskProvider: React.FC<{
   );
 };
 
-const getMonthNumber = (monthName: string): number => {
-  const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-  return months.indexOf(monthName);
-};
-
 export const useMonthlyTask = () => {
   const context = useContext(MonthlyTaskContext);
   if (!context) {
