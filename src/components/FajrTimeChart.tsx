@@ -308,14 +308,6 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16,
     padding: 16,
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 3.84,
-    // elevation: 5,
   },
   header: {
     flexDirection: 'row',
