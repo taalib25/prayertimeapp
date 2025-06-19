@@ -1,6 +1,7 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import DailyTasksModel, {PrayerStatus} from '../../model/DailyTasks';
+import { getTodayDateString } from '../../utils/helpers';
 
 export interface DailyTaskData {
   date: string; // Primary key
@@ -44,11 +45,21 @@ export const getRecentDailyTasks = async (
   try {
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
 
+    // Use local date approach to avoid timezone issues
+    const todayDate = new Date();
+    const year = todayDate.getFullYear();
+    const month = String(todayDate.getMonth() + 1).padStart(2, '0');
+    const day = String(todayDate.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+
     // Calculate the date range
-    const endDate = new Date().toISOString().split('T')[0]; // Today
+    const endDate = today;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - (daysBack - 1));
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startYear = startDate.getFullYear();
+    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const startDay = String(startDate.getDate()).padStart(2, '0');
+    const startDateStr = `${startYear}-${startMonth}-${startDay}`;
 
     // Query for the date range
     const tasks = await dailyTasksCollection
@@ -74,26 +85,29 @@ export const getRecentDailyTasks = async (
         : [],
     }));
 
-    // Generate all dates in range
+    // Check if today's task exists
+    const todayTask = transformedTasks.find(task => task.date === today);
+
+    if (!todayTask) {
+      // Create today's task if it doesn't exist
+      console.log(`📝 Creating today's task for ${today}`);
+      const newTodayTask = await createDailyTasks(today);
+      transformedTasks.unshift(newTodayTask); // Add to beginning (most recent)
+    } // Generate all dates in range and fill with placeholders for missing dates
     const allDates = [];
     for (let i = 0; i < daysBack; i++) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      allDates.push(date.toISOString().split('T')[0]);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      allDates.push(`${year}-${month}-${day}`);
     }
 
-    const today = new Date().toISOString().split('T')[0];
-
-    // Create placeholders for missing dates and await all promises
-    const tasksPromises = allDates.map(async date => {
+    const completeTasks = allDates.map(date => {
       const existingTask = transformedTasks.find(task => task.date === date);
       if (existingTask) {
         return existingTask;
-      }
-
-      // Create today's tasks if missing
-      if (date === today) {
-        return await createDailyTasks(date);
       }
 
       // For past dates, return empty placeholder
@@ -110,8 +124,6 @@ export const getRecentDailyTasks = async (
       };
     });
 
-    // Await all promises
-    const completeTasks = await Promise.all(tasksPromises);
     return completeTasks;
   } catch (error) {
     console.error(`Error getting recent daily tasks:`, error);
@@ -128,32 +140,8 @@ export const createDailyTasks = async (
   try {
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
 
-    // Check if tasks already exist
-    const existingTasks = await dailyTasksCollection
-      .query(Q.where('date', date))
-      .fetch();
-
-    if (existingTasks.length > 0) {
-      const task = existingTasks[0];
-      return {
-        date: task.date,
-        fajrStatus: task.fajrStatus as PrayerStatus,
-        dhuhrStatus: task.dhuhrStatus as PrayerStatus,
-        asrStatus: task.asrStatus as PrayerStatus,
-        maghribStatus: task.maghribStatus as PrayerStatus,
-        ishaStatus: task.ishaStatus as PrayerStatus,
-        totalZikrCount: task.totalZikrCount,
-        quranMinutes: task.quranMinutes || 0,
-        specialTasks: task.specialTasks
-          ? (JSON.parse(task.specialTasks) as SpecialTask[])
-          : [],
-      };
-    }
-
-    // Create new tasks
-    let createdTask: DailyTasksModel;
-    await database.write(async () => {
-      createdTask = await dailyTasksCollection.create(task => {
+    const newDailyTask = await database.write(async () => {
+      const newTask = await dailyTasksCollection.create(task => {
         task.date = date;
         task.fajrStatus = DEFAULT_DAILY_TASKS.fajrStatus;
         task.dhuhrStatus = DEFAULT_DAILY_TASKS.dhuhrStatus;
@@ -164,27 +152,28 @@ export const createDailyTasks = async (
         task.quranMinutes = DEFAULT_DAILY_TASKS.quranMinutes;
         task.specialTasks = JSON.stringify(DEFAULT_DAILY_TASKS.specialTasks);
       });
+      return newTask;
     });
 
     return {
-      date: createdTask!.date,
-      fajrStatus: createdTask!.fajrStatus as PrayerStatus,
-      dhuhrStatus: createdTask!.dhuhrStatus as PrayerStatus,
-      asrStatus: createdTask!.asrStatus as PrayerStatus,
-      maghribStatus: createdTask!.maghribStatus as PrayerStatus,
-      ishaStatus: createdTask!.ishaStatus as PrayerStatus,
-      totalZikrCount: createdTask!.totalZikrCount,
-      quranMinutes: createdTask!.quranMinutes || 0,
-      specialTasks: JSON.parse(createdTask!.specialTasks),
+      date: newDailyTask.date,
+      fajrStatus: newDailyTask.fajrStatus as PrayerStatus,
+      dhuhrStatus: newDailyTask.dhuhrStatus as PrayerStatus,
+      asrStatus: newDailyTask.asrStatus as PrayerStatus,
+      maghribStatus: newDailyTask.maghribStatus as PrayerStatus,
+      ishaStatus: newDailyTask.ishaStatus as PrayerStatus,
+      totalZikrCount: newDailyTask.totalZikrCount,
+      quranMinutes: newDailyTask.quranMinutes || 0,
+      specialTasks: JSON.parse(newDailyTask.specialTasks),
     };
   } catch (error) {
-    console.error('Error creating daily tasks:', error);
+    console.error(`Error creating daily tasks for date ${date}:`, error);
     throw error;
   }
 };
 
 /**
- * Update prayer status
+ * Update prayer status - simplified and complete
  */
 export const updatePrayerStatus = async (
   date: string,
@@ -194,22 +183,29 @@ export const updatePrayerStatus = async (
   try {
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
     const lcPrayer = prayerName.toLowerCase();
+    const today = getTodayDateString();
 
-    console.log(`🛠️ PRAYER UPDATE START`);
-    console.log(`   Prayer: "${lcPrayer}"`);
-    console.log(`   Status: "${status}"`);
-    console.log(`   Date: "${date}"`);
+    // Only allow updating today's prayers
+    if (date !== today) {
+      throw new Error('Cannot update prayers for previous days');
+    }
 
+    // Validate prayer name
+    if (!['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].includes(lcPrayer)) {
+      throw new Error(`Invalid prayer name: ${prayerName}`);
+    }
+
+    // Find or create today's task
+    let targetTask: DailyTasksModel;
     const existingTasks = await dailyTasksCollection
       .query(Q.where('date', date))
       .fetch();
-    console.log(`📊 Found ${existingTasks.length} existing tasks for ${date}`);
 
-    let targetTask: DailyTasksModel;
-
+    console.log(`🔍 Found ${existingTasks.length} tasks for date ${date}`);
     if (existingTasks.length === 0) {
-      console.log(`🏗️ Creating new task for ${date}...`);
-      const createdTask = await database.write(async () => {
+      // Create new task for today
+      console.log(`📝 Creating new task for ${date}`);
+      targetTask = await database.write(async () => {
         return await dailyTasksCollection.create(task => {
           task.date = date;
           task.fajrStatus = 'none';
@@ -222,63 +218,60 @@ export const updatePrayerStatus = async (
           task.specialTasks = JSON.stringify([]);
         });
       });
-      targetTask = createdTask;
-      console.log(`✅ New task created with ID: ${targetTask.id}`);
+      console.log(`✅ Created new task with ID: ${targetTask.id}`);
     } else {
       targetTask = existingTasks[0];
       console.log(`📋 Using existing task with ID: ${targetTask.id}`);
-    }
+    } // Update the specific prayer status using property assignment (not _setRaw)
+    console.log(
+      `🔧 Before update - ${lcPrayer}Status: ${
+        (targetTask as any)[lcPrayer + 'Status']
+      }`,
+    );
 
-    // Now update the specific prayer status
     await database.write(async () => {
       await targetTask.update(task => {
-        console.log(`✏️ Updating ${lcPrayer}Status to "${status}"`);
         switch (lcPrayer) {
           case 'fajr':
+            console.log(`✏️ Setting fajrStatus to: ${status}`);
             task.fajrStatus = status;
             break;
           case 'dhuhr':
+            console.log(`✏️ Setting dhuhrStatus to: ${status}`);
             task.dhuhrStatus = status;
             break;
           case 'asr':
+            console.log(`✏️ Setting asrStatus to: ${status}`);
             task.asrStatus = status;
             break;
           case 'maghrib':
+            console.log(`✏️ Setting maghribStatus to: ${status}`);
             task.maghribStatus = status;
             break;
           case 'isha':
+            console.log(`✏️ Setting ishaStatus to: ${status}`);
             task.ishaStatus = status;
             break;
-          default:
-            console.error(`❌ Invalid prayer name: ${lcPrayer}`);
-            return;
         }
       });
-    });
-
-    // Wait a bit to ensure the database write is fully committed
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    // Verify the update
-    const verifyTask = await dailyTasksCollection.find(targetTask.id);
-    const verifiedStatus = (verifyTask as any)[`${lcPrayer}Status`];
-
+    }); // Verify the update
     console.log(
-      `🔍 VERIFICATION: ${lcPrayer}Status is now "${verifiedStatus}"`,
+      `🔍 After update - ${lcPrayer}Status: ${
+        (targetTask as any)[lcPrayer + 'Status']
+      }`,
     );
 
-    if (verifiedStatus === status) {
-      console.log(`✅ SUCCESS: Prayer status update confirmed!`);
-    } else {
-      console.error(
-        `❌ FAILED: Expected "${status}", but got "${verifiedStatus}"`,
-      );
-      throw new Error(`Database update failed: status mismatch`);
-    }
+    // Double-check by refetching the task from database
+    const verifyTask = await dailyTasksCollection.find(targetTask.id);
+    console.log(
+      `🔎 Database verification - ${lcPrayer}Status: ${
+        (verifyTask as any)[lcPrayer + 'Status']
+      }`,
+    );
 
-    console.log(`🏁 PRAYER UPDATE COMPLETE`);
+    console.log(`✅ Updated ${lcPrayer} prayer to "${status}" for ${date}`);
   } catch (error) {
-    console.error('❌ ERROR in updatePrayerStatus:', error);
+    console.error('❌ Failed to update prayer status:', error);
     throw error;
   }
 };
@@ -348,27 +341,6 @@ export const updateQuranMinutes = async (
 };
 
 /**
- * Check and create today's tasks if they don't exist
- */
-export const checkAndCreateTodayTasks = async (): Promise<void> => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
-
-    const existingTasks = await dailyTasksCollection
-      .query(Q.where('date', today))
-      .fetch();
-
-    if (existingTasks.length === 0) {
-      await createDailyTasks(today);
-    }
-  } catch (error) {
-    console.error("Error checking today's tasks:", error);
-    throw error;
-  }
-};
-
-/**
  * Get recent months data for statistics
  */
 export const getRecentMonthsData = async (
@@ -388,7 +360,10 @@ export const getRecentMonthsData = async (
       today.getMonth() - monthsBack + 1,
       1,
     );
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startYear = startDate.getFullYear();
+    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const startDay = String(startDate.getDate()).padStart(2, '0');
+    const startDateStr = `${startYear}-${startMonth}-${startDay}`;
 
     // Get all tasks since that date
     const tasks = await dailyTasksCollection

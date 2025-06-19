@@ -6,6 +6,10 @@ import React, {
   useMemo,
 } from 'react';
 import {useRecentDailyTasks, useMonthlyData} from '../hooks/useDailyTasks';
+import {
+  updateZikrCount,
+  updateQuranMinutes,
+} from '../services/db/dailyTaskServices';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -107,21 +111,12 @@ export const MonthlyTaskProvider: React.FC<{
     {},
   );
   const [isUpdating, setIsUpdating] = useState(false);
-
   // Data hooks
-  const {monthlyData: rawMonthlyData, refetch: refetchMonthly} = useMonthlyData(
-    {
-      uid: MOCK_USER_ID,
-      monthsBack: 3,
-    },
-  );
-
-  const {
-    recentTasks,
-    updateZikrForDate,
-    updateQuranForDate,
-    refetch: refetchDaily,
-  } = useRecentDailyTasks({
+  const {monthlyData: rawMonthlyData} = useMonthlyData({
+    uid: MOCK_USER_ID,
+    monthsBack: 3,
+  });
+  const {recentTasks} = useRecentDailyTasks({
     daysBack: 1,
   });
 
@@ -201,7 +196,6 @@ export const MonthlyTaskProvider: React.FC<{
       ? currentMonthIndex
       : Math.max(0, monthlyData.length - 1);
   }, [monthlyData]);
-
   // Update functions with optimistic updates
   const updateZikr = useCallback(
     async (value: number) => {
@@ -214,16 +208,16 @@ export const MonthlyTaskProvider: React.FC<{
         setOptimisticUpdates(prev => ({...prev, zikr: value}));
 
         // Database update
-        await updateZikrForDate(today, value);
+        await updateZikrCount(today, value);
 
-        // Background refresh and cleanup
-        Promise.all([refetchMonthly(), refetchDaily()]).finally(() => {
-          setOptimisticUpdates(prev => {
-            const {zikr, ...rest} = prev;
-            return rest;
-          });
-          setIsUpdating(false);
+        console.log(`✅ Zikr count updated: ${value}`);
+
+        // Clear optimistic update after successful database update
+        setOptimisticUpdates(prev => {
+          const {zikr, ...rest} = prev;
+          return rest;
         });
+        setIsUpdating(false);
       } catch (error) {
         console.error('Failed to update zikr:', error);
         // Revert optimistic update on error
@@ -235,9 +229,8 @@ export const MonthlyTaskProvider: React.FC<{
         throw error;
       }
     },
-    [updateZikrForDate, refetchMonthly, refetchDaily],
+    [], // No dependencies on refetch functions
   );
-
   const updateQuran = useCallback(
     async (value: number) => {
       const today = new Date().toISOString().split('T')[0];
@@ -249,16 +242,16 @@ export const MonthlyTaskProvider: React.FC<{
         setOptimisticUpdates(prev => ({...prev, quran: value}));
 
         // Database update
-        await updateQuranForDate(today, value);
+        await updateQuranMinutes(today, value);
 
-        // Background refresh and cleanup
-        Promise.all([refetchMonthly(), refetchDaily()]).finally(() => {
-          setOptimisticUpdates(prev => {
-            const {quran, ...rest} = prev;
-            return rest;
-          });
-          setIsUpdating(false);
+        console.log(`✅ Quran minutes updated: ${value}`);
+
+        // Clear optimistic update after successful database update
+        setOptimisticUpdates(prev => {
+          const {quran, ...rest} = prev;
+          return rest;
         });
+        setIsUpdating(false);
       } catch (error) {
         console.error('Failed to update quran:', error);
         // Revert optimistic update on error
@@ -270,7 +263,7 @@ export const MonthlyTaskProvider: React.FC<{
         throw error;
       }
     },
-    [updateQuranForDate, refetchMonthly, refetchDaily],
+    [], // No dependencies on refetch functions
   );
 
   const value: MonthlyTaskContextType = {

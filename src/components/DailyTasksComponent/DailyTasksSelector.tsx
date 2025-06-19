@@ -8,9 +8,9 @@ import {
   Dimensions,
 } from 'react-native';
 import PagerView from 'react-native-pager-view';
-import {colors} from '../utils/theme';
-import {typography} from '../utils/typography';
-import {useRecentDailyTasks} from '../hooks/useDailyTasks';
+import {colors, spacing} from '../../utils/theme';
+import {typography} from '../../utils/typography';
+import {useRecentDailyTasks} from '../../hooks/useDailyTasks';
 
 const MOCK_USER_ID = 1001;
 
@@ -267,21 +267,6 @@ const DailyTasksSelector: React.FC = () => {
 };
 
 // Theme constants
-const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-};
-
-const borderRadius = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-};
 
 const styles = StyleSheet.create({
   container: {

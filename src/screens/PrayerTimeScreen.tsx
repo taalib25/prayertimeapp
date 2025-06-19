@@ -15,7 +15,7 @@ import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
-import DailyTasksSelector from '../components/DailyTasksSelector';
+import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSelector';
 import MonthlyChallengeSelector from '../components/PrayerWidgets/MonthlyTaskSelector';
 import ReminderSection from '../components/ReminderSection';
 import MosqueStreakSection from '../components/MosqueStreakSection';
@@ -129,14 +129,12 @@ const PrayerTimeScreen = () => {
               {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeSelector userGoals={goals || undefined} />
 
-               <PersonalMeeting />
-               
+              <PersonalMeeting />
+
               {/* Mosque Attendance Streak Chart */}
               <MosqueStreakSection
                 onSeeAllPress={() => console.log('Mosque streak details')}
               />
-
-             
             </Animated.View>
           )}
         </View>
