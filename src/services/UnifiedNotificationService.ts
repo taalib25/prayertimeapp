@@ -10,17 +10,21 @@ import notifee, {
 import {Platform} from 'react-native';
 import UserPreferencesService from './UserPreferencesService';
 import {getPrayerTimesForDate} from './db/PrayerServices';
-import { getTodayDateString } from '../utils/helpers';
+import {getTodayDateString} from '../utils/helpers';
 
 class UnifiedNotificationService {
   private static instance: UnifiedNotificationService;
   private preferencesService: UserPreferencesService;
   private isInitialized = false;
 
-    /**
+  /**
    * Generate notification ID with encoded prayer time
    */
-  private generatePrayerNotificationId(prayer: string, uid: number, prayerTime: string): string {
+  private generatePrayerNotificationId(
+    prayer: string,
+    uid: number,
+    prayerTime: string,
+  ): string {
     // Encode time in the ID: prayer-fajr-1001-0530 (for 05:30)
     const timeEncoded = prayerTime.replace(':', '');
     return `prayer-${prayer}-${uid}-${timeEncoded}`;
@@ -97,20 +101,25 @@ class UnifiedNotificationService {
     }
   }
 
-
   /**
    * Check if notification with same time already exists
    */
   private async isPrayerNotificationUpToDate(
-    prayer: string, 
-    uid: number, 
-    currentTime: string
+    prayer: string,
+    uid: number,
+    currentTime: string,
   ): Promise<boolean> {
     try {
-      const expectedId = this.generatePrayerNotificationId(prayer, uid, currentTime);
+      const expectedId = this.generatePrayerNotificationId(
+        prayer,
+        uid,
+        currentTime,
+      );
       const scheduled = await notifee.getTriggerNotifications();
-      
-      return scheduled.some(notification => notification.notification.id === expectedId);
+
+      return scheduled.some(
+        notification => notification.notification.id === expectedId,
+      );
     } catch (error) {
       console.error('Error checking notification status:', error);
       return false;
@@ -139,7 +148,11 @@ class UnifiedNotificationService {
         notifications: true,
         notification_types: {standard: true, fullscreen: false},
         prayer_specific: {
-          fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true,
+          fajr: true,
+          dhuhr: true,
+          asr: true,
+          maghrib: true,
+          isha: true,
         },
         reminder_minutes_before: 10,
       };
@@ -148,18 +161,30 @@ class UnifiedNotificationService {
       let updatedCount = 0;
 
       for (const prayer of prayers) {
-        if (!settings.prayer_specific[prayer as keyof typeof settings.prayer_specific]) {
+        if (
+          !settings.prayer_specific[
+            prayer as keyof typeof settings.prayer_specific
+          ]
+        ) {
           continue;
         }
 
-        const prayerTime = newPrayerTimes[prayer as keyof typeof newPrayerTimes] as string;
+        const prayerTime = newPrayerTimes[
+          prayer as keyof typeof newPrayerTimes
+        ] as string;
         if (!prayerTime) continue;
 
         // Check if notification with this exact time already exists
-        const isUpToDate = await this.isPrayerNotificationUpToDate(prayer, uid, prayerTime);
-        
+        const isUpToDate = await this.isPrayerNotificationUpToDate(
+          prayer,
+          uid,
+          prayerTime,
+        );
+
         if (isUpToDate) {
-          console.log(`✅ ${prayer} notification already up-to-date (${prayerTime})`);
+          console.log(
+            `✅ ${prayer} notification already up-to-date (${prayerTime})`,
+          );
           continue;
         }
 
@@ -169,9 +194,18 @@ class UnifiedNotificationService {
         await this.cancelPrayerNotification(prayer, uid);
 
         // Schedule new one with current time
-        const notificationTime = this.getNextNotificationTime(prayerTime, settings.reminder_minutes_before);
-        await this.scheduleRepeatingNotification(uid, prayer, prayerTime, notificationTime, settings);
-        
+        const notificationTime = this.getNextNotificationTime(
+          prayerTime,
+          settings.reminder_minutes_before,
+        );
+        await this.scheduleRepeatingNotification(
+          uid,
+          prayer,
+          prayerTime,
+          notificationTime,
+          settings,
+        );
+
         updatedCount++;
       }
 
@@ -180,32 +214,35 @@ class UnifiedNotificationService {
       } else {
         console.log(`✅ All prayer notifications are up-to-date`);
       }
-
     } catch (error) {
       console.error('❌ Error scheduling prayer notifications:', error);
       throw error;
     }
   }
 
-  
   /**
    * Calculate the next notification time based on prayer time and reminder minutes
    */
-  private getNextNotificationTime(prayerTime: string, minutesBefore: number): Date {
+  private getNextNotificationTime(
+    prayerTime: string,
+    minutesBefore: number,
+  ): Date {
     const today = new Date();
     const [hours, minutes] = prayerTime.split(':').map(Number);
-    
+
     const prayerDateTime = new Date();
     prayerDateTime.setHours(hours, minutes, 0, 0);
-    
+
     // Subtract reminder minutes
-    const notificationTime = new Date(prayerDateTime.getTime() - (minutesBefore * 60 * 1000));
-    
+    const notificationTime = new Date(
+      prayerDateTime.getTime() - minutesBefore * 60 * 1000,
+    );
+
     // If the notification time has passed today, schedule for tomorrow
     if (notificationTime <= today) {
       notificationTime.setDate(notificationTime.getDate() + 1);
     }
-    
+
     return notificationTime;
   }
 
@@ -233,7 +270,9 @@ class UnifiedNotificationService {
         {
           id,
           title: 'Prayer Time 🕌',
-          body: `${this.capitalizePrayer(prayer)} prayer time is approaching (${prayerTime})`,
+          body: `${this.capitalizePrayer(
+            prayer,
+          )} prayer time is approaching (${prayerTime})`,
           data: {
             type: 'prayer-reminder',
             uid: uid.toString(),
@@ -244,13 +283,15 @@ class UnifiedNotificationService {
           android: {
             channelId: this.channels.standard.id,
             importance: AndroidImportance.HIGH,
-            pressAction: { id: 'default' },
+            pressAction: {id: 'default'},
           },
         },
         trigger,
       );
 
-      console.log(`✅ Scheduled ${prayer} daily notification at ${prayerTime} (ID: ${id})`);
+      console.log(
+        `✅ Scheduled ${prayer} daily notification at ${prayerTime} (ID: ${id})`,
+      );
       return id;
     } catch (error) {
       console.error(`❌ Error scheduling ${prayer} notification:`, error);
@@ -258,14 +299,16 @@ class UnifiedNotificationService {
     }
   }
 
-
   /**
    * Cancel specific prayer notification
    */
-  private async cancelPrayerNotification(prayer: string, uid: number): Promise<void> {
+  private async cancelPrayerNotification(
+    prayer: string,
+    uid: number,
+  ): Promise<void> {
     try {
       const scheduled = await notifee.getTriggerNotifications();
-      
+
       // Cancel any existing notification for this prayer (regardless of time)
       for (const notification of scheduled) {
         const id = notification.notification.id;
@@ -278,8 +321,6 @@ class UnifiedNotificationService {
       console.error(`Error cancelling ${prayer} notification:`, error);
     }
   }
-
-
 
   async scheduleCustomNotification(
     uid: number,
@@ -780,6 +821,153 @@ class UnifiedNotificationService {
     } catch (error) {
       console.error('❌ Failed to schedule test fake call:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Schedule fake call with real prayer time calculation
+   */
+  async scheduleFajrFakeCall(
+    uid: number,
+    prayerTime: string,
+    minutesOffset: number,
+    timing: 'before' | 'after',
+  ): Promise<string | null> {
+    try {
+      await this.initialize();
+
+      // Calculate the reminder time
+      const [hours, minutes] = prayerTime.split(':').map(Number);
+      const prayerMinutes = hours * 60 + minutes;
+
+      let reminderMinutes;
+      if (timing === 'before') {
+        reminderMinutes = prayerMinutes - minutesOffset;
+      } else {
+        reminderMinutes = prayerMinutes + minutesOffset;
+      }
+
+      // Handle day overflow/underflow
+      if (reminderMinutes < 0) {
+        reminderMinutes += 24 * 60;
+      } else if (reminderMinutes >= 24 * 60) {
+        reminderMinutes -= 24 * 60;
+      }
+
+      const reminderHours = Math.floor(reminderMinutes / 60);
+      const reminderMins = reminderMinutes % 60;
+
+      // Calculate delay until the reminder time
+      const now = new Date();
+      let reminderDateTime = new Date();
+      reminderDateTime.setHours(reminderHours, reminderMins, 0, 0);
+
+      // If the time has passed today, schedule for tomorrow
+      if (reminderDateTime <= now) {
+        reminderDateTime.setDate(reminderDateTime.getDate() + 1);
+      }
+
+      const delayMs = reminderDateTime.getTime() - now.getTime();
+      const delaySeconds = Math.floor(delayMs / 1000);
+
+      if (delaySeconds <= 0) {
+        throw new Error('Calculated reminder time is in the past');
+      }
+
+      const settings = await this.preferencesService.getNotificationSettings(
+        uid,
+      );
+      if (!settings) {
+        // Use default settings if none found
+        console.log('Using default notification settings');
+      }
+
+      const id = `fajr-fake-call-${Date.now()}`;
+      const reminderTimeString = `${reminderHours
+        .toString()
+        .padStart(2, '0')}:${reminderMins.toString().padStart(2, '0')}`;
+
+      await notifee.createTriggerNotification(
+        {
+          id,
+          title: 'Fajr Wake-Up Call 🌅',
+          body: `Time for Fajr prayer! (${prayerTime})`,
+          data: {
+            type: 'fajr-fake-call',
+            uid: uid.toString(),
+            prayer: 'fajr',
+            prayerTime,
+            reminderTime: reminderTimeString,
+            timing,
+            minutesOffset: minutesOffset.toString(),
+            screen: 'FakeCallScreen',
+            notificationId: id,
+            returnTo: 'MainApp',
+          },
+          android: {
+            channelId: this.channels.fullscreen.id,
+            importance: AndroidImportance.HIGH,
+            category: AndroidCategory.CALL,
+            visibility: AndroidVisibility.PUBLIC,
+            pressAction: {
+              id: 'default',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
+            fullScreenAction: {
+              id: 'full-screen',
+              launchActivity: 'com.prayer_app.FakeCallActivity',
+            },
+            sound: 'ringtone',
+            vibrationPattern: [300, 500, 300, 500],
+            ongoing: false,
+            autoCancel: true,
+            lightUpScreen: true,
+            onlyAlertOnce: false,
+            timeoutAfter: 30000,
+            localOnly: true,
+          },
+          ios: {
+            sound: 'ringtone.caf',
+            critical: true,
+            criticalVolume: 1.0,
+          },
+        },
+        {
+          type: TriggerType.TIMESTAMP,
+          timestamp: reminderDateTime.getTime(),
+        },
+      );
+
+      console.log(
+        `📞 Fajr fake call scheduled for ${reminderTimeString} (${Math.floor(
+          delaySeconds / 60,
+        )} minutes from now)`,
+      );
+      return id;
+    } catch (error) {
+      console.error('❌ Failed to schedule Fajr fake call:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel all Fajr fake calls
+   */
+  async cancelFajrFakeCalls(): Promise<void> {
+    try {
+      const triggerNotifications = await notifee.getTriggerNotifications();
+
+      for (const trigger of triggerNotifications) {
+        const notificationId = trigger.notification.id;
+        if (notificationId && notificationId.includes('fajr-fake-call-')) {
+          await notifee.cancelTriggerNotification(notificationId);
+          console.log(`🗑️ Cancelled Fajr fake call: ${notificationId}`);
+        }
+      }
+
+      console.log('🧹 Cancelled all Fajr fake calls');
+    } catch (error) {
+      console.error('❌ Error cancelling Fajr fake calls:', error);
     }
   }
 }
