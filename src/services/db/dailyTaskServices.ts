@@ -458,7 +458,7 @@ export const getRecentMonthsData = async (
         monthName: monthName,
         year: Number(year),
         totalZikr: totalZikrCount,
-        totalQuranPages: totalQuranMinutes, // Using minutes for now
+        totalQuranPages: Math.floor(totalQuranMinutes / 15),
         fajrCompletedDays,
         ishaCompletedDays,
         totalDays: monthTasks.length,

@@ -20,7 +20,7 @@ export const DAILY_SPECIAL_TASKS: EnhancedSpecialTask[] = [
   // Quran recitation
   {
     id: 'quran_15min',
-    title: 'Quran Recitation - 15 minutes',
+    title: '15 mins of Quran',
     completed: false,
     category: 'quran',
     unit: 'minutes',
@@ -29,7 +29,7 @@ export const DAILY_SPECIAL_TASKS: EnhancedSpecialTask[] = [
   // Zikr tasks
   {
     id: 'zikr_allahuakbar',
-    title: 'Zikr: 100x Allahu Akbar',
+    title: '100x Asthagfirullah',
     completed: false,
     category: 'zikr',
     unit: 'count',

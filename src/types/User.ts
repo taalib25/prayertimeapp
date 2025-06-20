@@ -41,7 +41,7 @@ export const DEFAULT_USER: User = {
   email: 'user@example.com',
   phoneNumber: '',
   zikriGoal: 600,
-  quranGoal: 30,
+  quranGoal: 300,
   location: 'Location not set',
   masjid: 'Local Mosque',
   theme: 'light',

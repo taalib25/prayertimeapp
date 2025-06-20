@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 import {useDailyTasksContext} from '../contexts/DailyTasksContext';
 import {DailyTaskData} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
-import { getTodayDateString } from '../utils/helpers';
+import {getTodayDateString} from '../utils/helpers';
 
 /**
  * Hook to get prayer times data using the centralized context
@@ -106,9 +106,9 @@ export const useMonthlyAggregatedData = () => {
         0,
       );
       const totalQuranPages = monthTasks.reduce(
-        (sum, task) => sum + Math.floor((task.quranMinutes || 0) / 10),
+        (sum, task) => sum + Math.floor((task.quranMinutes || 0) / 15),
         0,
-      ); // Assuming 10 min = 1 page
+      ); // Using 15-minute sessions
       const fajrCompletedDays = monthTasks.filter(
         task => task.fajrStatus === 'mosque',
       ).length;

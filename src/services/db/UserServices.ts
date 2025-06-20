@@ -219,8 +219,8 @@ export const initializeDummyUsersIfNeeded = async (): Promise<void> => {
           monthlyFastingDaysGoal: 15,
         },
         {
-          location: 'Cairo, Egypt',
-          masjid: 'Al-Azhar Mosque',
+          location: 'Colombo, LK',
+          masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
           preferredMadhab: 'Hanafi',
           appLanguage: 'en',
           theme: 'light',

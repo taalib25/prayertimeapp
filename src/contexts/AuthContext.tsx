@@ -55,8 +55,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
         username: email.split('@')[0],
         email,
         phoneNumber,
-        location: 'Cairo, Egypt',
-        masjid: 'Al-Azhar Mosque',
+        location: 'Colombo, LK',
+        masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
       });
 
       // Set auth token
