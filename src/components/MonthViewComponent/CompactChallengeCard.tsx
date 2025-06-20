@@ -56,7 +56,7 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
           <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
           <View style={styles.compactProgressContainer}>
             <AnimatedCircularProgress
-              size={170} // Increased from 140 to 160
+              size={156} // Increased from 140 to 160
               width={15} // Increased stroke
               fill={progressPercentage}
               tintColor={actualProgressColor}

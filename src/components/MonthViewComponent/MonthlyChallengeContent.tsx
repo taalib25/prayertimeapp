@@ -99,7 +99,7 @@ const MonthlyChallengeContent: React.FC<MonthlyChallengeContentProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: 680,
+    height: 600,
     borderRadius: 20,
     paddingVertical: spacing.sm,
   },

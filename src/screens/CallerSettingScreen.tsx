@@ -68,7 +68,6 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   };
   const loadSettings = async () => {
     try {
-      // Load call preference from system data (handle null case properly)
       if (
         systemData?.callPreference !== null &&
         systemData?.callPreference !== undefined

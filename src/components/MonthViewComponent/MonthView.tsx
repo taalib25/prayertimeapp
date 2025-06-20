@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
-    paddingBottom: spacing.md, // Add bottom padding for the grid
+    // paddingBottom: spacing.md, // Add bottom padding for the grid
   },
 });
 
