@@ -7,11 +7,15 @@ import {
   Switch,
   SafeAreaView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useUser} from '../hooks/useUser';
+import UnifiedNotificationService from '../services/UnifiedNotificationService';
+import {getPrayerTimesForDate} from '../services/db/PrayerServices';
+import {getTodayDateString} from '../utils/helpers';
 
 interface CallerSettingScreenProps {
   navigation: any;
@@ -35,7 +39,6 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   navigation,
 }) => {
   const {systemData, updateSystemData} = useUser();
-
   const [fajrCallEnabled, setFajrCallEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState(DURATION_OPTIONS[1]); // Default: 10 minutes
@@ -43,23 +46,43 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   const [showDurationDropdown, setShowDurationDropdown] = useState(false);
   const [showTimingDropdown, setShowTimingDropdown] = useState(false);
   const [showSetAlarmButton, setShowSetAlarmButton] = useState(false);
+  const [isAlarmSet, setIsAlarmSet] = useState(false);
+  const [scheduledReminderTime, setScheduledReminderTime] = useState('');
+  const [currentFajrTime, setCurrentFajrTime] = useState('05:30'); // Default fallback
 
-  // Dummy Fajr time for preview
-  const DUMMY_FAJR_TIME = '05:30';
   useEffect(() => {
     loadSettings();
-  }, []);
+    loadTodayFajrTime();
+  }, [systemData]);
+
+  const loadTodayFajrTime = async () => {
+    try {
+      const todayDate = getTodayDateString();
+      const prayerTimes = await getPrayerTimesForDate(todayDate);
+      if (prayerTimes && prayerTimes.fajr) {
+        setCurrentFajrTime(prayerTimes.fajr);
+      }
+    } catch (error) {
+      console.error('Error loading Fajr time:', error);
+    }
+  };
   const loadSettings = async () => {
     try {
-      // Load call preference from system data
+      // Load call preference from system data (handle null case properly)
       if (
         systemData?.callPreference !== null &&
         systemData?.callPreference !== undefined
       ) {
-        setFajrCallEnabled(systemData.callPreference);
+        const isEnabled = Boolean(systemData.callPreference);
+        setFajrCallEnabled(isEnabled);
+        setShowSetAlarmButton(isEnabled);
+      } else {
+        // First time user or no preference set yet - default to false
+        setFajrCallEnabled(false);
+        setShowSetAlarmButton(false);
       }
 
-      // Load duration and timing settings from system data
+      // Load duration and timing settings from system data with defaults
       if (
         systemData?.fajrReminderDuration !== null &&
         systemData?.fajrReminderDuration !== undefined
@@ -69,6 +92,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             opt => opt.value === systemData.fajrReminderDuration,
           ) || DURATION_OPTIONS[1];
         setSelectedDuration(duration);
+      } else {
+        // Set default duration if not found
+        setSelectedDuration(DURATION_OPTIONS[1]); // Default: 10 minutes
       }
 
       if (
@@ -80,6 +106,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             opt => opt.value === systemData.fajrReminderTiming,
           ) || TIMING_OPTIONS[0];
         setSelectedTiming(timing);
+      } else {
+        // Set default timing if not found
+        setSelectedTiming(TIMING_OPTIONS[0]); // Default: Before
       }
     } catch (error) {
       console.error('Error loading caller settings:', error);
@@ -87,16 +116,24 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
       setIsLoading(false);
     }
   };
+
   const toggleFajrCall = async (value: boolean) => {
     try {
       setFajrCallEnabled(value);
-      await updateSystemData({callPreference: value});
-
-      // Close dropdowns when disabling Fajr call
+      await updateSystemData({callPreference: value}); // Close dropdowns when disabling Fajr call
       if (!value) {
         setShowDurationDropdown(false);
         setShowTimingDropdown(false);
         setShowSetAlarmButton(false); // Hide set alarm button when disabled
+        setIsAlarmSet(false); // Reset alarm status
+        setScheduledReminderTime(''); // Clear scheduled time
+
+        // Cancel any existing Fajr fake calls when disabling
+        const notificationService = UnifiedNotificationService.getInstance();
+        await notificationService.cancelFajrFakeCalls();
+        console.log(
+          'Cancelled existing Fajr fake calls due to preference change',
+        );
       } else {
         setShowSetAlarmButton(true); // Show set alarm button when enabled
       }
@@ -111,11 +148,23 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
       setSelectedDuration(duration);
       await updateSystemData({fajrReminderDuration: duration.value});
       toggleDurationDropdown();
-      setShowSetAlarmButton(true); // Show set alarm button after change
+
+      // Show set alarm button when user makes changes (even if alarm was previously set)
+      setShowSetAlarmButton(true);
+
+      // Reset alarm status since settings changed - user needs to set alarm again
+      if (isAlarmSet) {
+        setIsAlarmSet(false);
+        setScheduledReminderTime('');
+        // Cancel existing alarm since settings changed
+        const notificationService = UnifiedNotificationService.getInstance();
+        await notificationService.cancelFajrFakeCalls();
+      }
     } catch (error) {
       console.error('Error saving duration:', error);
     }
   };
+
   const saveTiming = async (timing: (typeof TIMING_OPTIONS)[0]) => {
     try {
       setSelectedTiming(timing);
@@ -123,11 +172,23 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
         fajrReminderTiming: timing.value as 'before' | 'after',
       });
       toggleTimingDropdown();
-      setShowSetAlarmButton(true); // Show set alarm button after change
+
+      // Show set alarm button when user makes changes (even if alarm was previously set)
+      setShowSetAlarmButton(true);
+
+      // Reset alarm status since settings changed - user needs to set alarm again
+      if (isAlarmSet) {
+        setIsAlarmSet(false);
+        setScheduledReminderTime('');
+        // Cancel existing alarm since settings changed
+        const notificationService = UnifiedNotificationService.getInstance();
+        await notificationService.cancelFajrFakeCalls();
+      }
     } catch (error) {
       console.error('Error saving timing:', error);
     }
   };
+
   const toggleDurationDropdown = () => {
     if (!fajrCallEnabled) return;
     setShowDurationDropdown(!showDurationDropdown);
@@ -144,11 +205,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     if (showDurationDropdown) {
       setShowDurationDropdown(false);
     }
-  };
-
-  // Calculate reminder time for preview
-  const calculateReminderTime = () => {
-    const [hours, minutes] = DUMMY_FAJR_TIME.split(':').map(Number);
+  }; // Calculate reminder time for preview using actual Fajr time
+  const calculatePreviewTime = () => {
+    const [hours, minutes] = currentFajrTime.split(':').map(Number);
     const fajrMinutes = hours * 60 + minutes;
 
     let reminderMinutes;
@@ -171,17 +230,75 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     return `${reminderHours.toString().padStart(2, '0')}:${reminderMins
       .toString()
       .padStart(2, '0')}`;
+  }; // Get button text with preview time
+  const getSetAlarmButtonText = () => {
+    const previewTime = calculatePreviewTime();
+    return `Set Wake-Up Call to ${previewTime} 📞`;
   };
+
   const handleBack = () => {
     navigation.goBack();
   };
+  const handleSetCallAlarm = async () => {
+    try {
+      const notificationService = UnifiedNotificationService.getInstance();
 
-  const handleSetCallAlarm = () => {
-    // Here you can implement the actual alarm setting logic
-    // For now, we'll just hide the button to show it was "set"
-    setShowSetAlarmButton(false);
-    console.log('Call alarm set for:', calculateReminderTime());
-    // You could show a toast notification here
+      // Cancel any existing Fajr fake calls first
+      await notificationService.cancelFajrFakeCalls();
+
+      // Use current Fajr time that's already loaded
+      if (!currentFajrTime) {
+        Alert.alert(
+          'Error ❌',
+          'Unable to get prayer times. Please try again.',
+          [{text: 'OK', style: 'default'}],
+        );
+        return;
+      }
+
+      // Calculate reminder time using current Fajr time
+      const reminderTime = calculatePreviewTime();
+
+      // Schedule the wake-up call
+      const callId = await notificationService.scheduleFajrFakeCall(
+        1001,
+        currentFajrTime,
+        selectedDuration.value,
+        selectedTiming.value as 'before' | 'after',
+      );
+
+      if (callId) {
+        // Mark alarm as set and hide the button
+        setIsAlarmSet(true);
+        setShowSetAlarmButton(false);
+        setScheduledReminderTime(reminderTime);
+
+        Alert.alert(
+          'Wake-Up Call Scheduled ✅',
+          `Your wake-up call is set for ${reminderTime}!\n\nSettings: ${
+            selectedDuration.label
+          } ${selectedTiming.label.toLowerCase()} Fajr (${currentFajrTime})`,
+          [{text: 'OK', style: 'default'}],
+        );
+
+        // Save settings
+        await updateSystemData({
+          fajrReminderDuration: selectedDuration.value,
+          fajrReminderTiming: selectedTiming.value as 'before' | 'after',
+        });
+
+        console.log('Call alarm set for:', reminderTime);
+      } else {
+        throw new Error('Failed to schedule wake-up call');
+      }
+    } catch (error) {
+      console.error('Error setting call alarm:', error);
+      Alert.alert(
+        'Error ❌',
+        'Failed to schedule wake-up call. Please try again.',
+        [{text: 'OK', style: 'default'}],
+      );
+    }
   };
 
   if (isLoading) {
@@ -209,14 +326,14 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Call Time Info - Green Box */}
-        {fajrCallEnabled && (
+        {/* Call Time Info - Green Box - Only show when alarm is actually set */}
+        {fajrCallEnabled && isAlarmSet && scheduledReminderTime && (
           <View style={styles.callInfoSection}>
             <View style={styles.callInfoCard}>
-              <Text style={styles.callInfoTitle}>📞 Call Scheduled</Text>
-              <Text style={styles.callInfoTime}>{calculateReminderTime()}</Text>
+              <Text style={styles.callInfoTitle}>✅ Wake-Up Call Active</Text>
+              <Text style={styles.callInfoTime}>{scheduledReminderTime}</Text>
               <Text style={styles.callInfoDescription}>
-                You'll receive a wake-up call at this time for Fajr prayer
+                Your wake-up call is scheduled for this time
               </Text>
             </View>
           </View>
@@ -367,18 +484,22 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
             <TouchableOpacity
               style={styles.setAlarmButton}
               onPress={handleSetCallAlarm}>
-              <Text style={styles.setAlarmButtonText}>Set Wake Up Call </Text>
+              <Text style={styles.setAlarmButtonText}>
+                {getSetAlarmButtonText()}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
         {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>How it works</Text>
+            <Text style={styles.infoTitle}>💡 How Wake-Up Calls Work</Text>
             <Text style={styles.infoText}>
-              When enabled, the app will simulate an incoming call during Fajr
-              prayer time to help you wake up for the morning prayer. This is a
-              gentle way to ensure you don't miss your prayers.
+              {fajrCallEnabled
+                ? `When enabled, the app will show a fake incoming call to help you wake up for Fajr prayer. The call will bypass silent mode and appear even when your phone is locked. Your current settings: ${
+                    selectedDuration.label
+                  } ${selectedTiming.label.toLowerCase()} Fajr.`
+                : 'Enable Fajr calls to receive a wake-up notification that looks like an incoming call. This helps ensure you wake up for the morning prayer, even in silent mode.'}
             </Text>
           </View>
         </View>
@@ -503,11 +624,6 @@ const styles = StyleSheet.create({
   dropdownArrowUp: {
     transform: [{rotate: '180deg'}],
   },
-  dropdownOptionsContainer: {
-    overflow: 'hidden',
-    // marginLeft: 'auto',
-    // width: 150, // Reduced width for dropdown options
-  },
   dropdownWrapper: {
     position: 'absolute',
     right: 0,
@@ -600,48 +716,6 @@ const styles = StyleSheet.create({
   setAlarmButtonText: {
     ...typography.h3,
     color: '#FFF',
-    // fontSize: 16,
-  },
-  previewSection: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  previewCard: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  previewRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  previewLabel: {
-    ...typography.bodySmall,
-    color: '#666',
-    marginBottom: 4,
-  },
-  previewTime: {
-    ...typography.bodyMedium,
-    color: '#333',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  previewDescription: {
-    ...typography.bodySmall,
-    color: '#666',
-    fontStyle: 'italic',
-    marginTop: 8,
   },
   infoSection: {
     marginTop: 8,
