@@ -23,11 +23,8 @@ import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
 import FajrTimeChart from '../components/FajrTimeChart';
-import { useUser } from '../hooks/useUser';
-
-const handleCallPreferenceSet = (preference: boolean) => {
-  console.log('Call preference set:', preference);
-};
+import {useUser} from '../hooks/useUser';
+import UserService from '../services/UserService';
 
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
@@ -36,6 +33,19 @@ const PrayerTimeScreen = () => {
   const {user, displayName, isLoading: userLoading} = useUser();
   const isLoading = prayerLoading || userLoading;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const userService = UserService.getInstance();
+
+  const handleCallPreferenceSet = async (preference: boolean) => {
+    try {
+      console.log('Call preference set:', preference);
+
+      // The preference is already saved in CallWidget,
+      // but we can add additional logic here if needed
+      // For example, scheduling notifications based on the preference
+    } catch (error) {
+      console.error('Error handling call preference:', error);
+    }
+  };
 
   // Extract mosque info from user
   const mosqueInfo = user

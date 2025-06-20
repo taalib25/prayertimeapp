@@ -1,10 +1,9 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {STORAGE_KEYS} from '../types/User';
+import UserService from '../services/UserService';
 
 interface CallWidgetProps {
   onCallPreferenceSet: (needsCall: boolean) => void;
@@ -14,22 +13,25 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const userService = UserService.getInstance();
 
   useEffect(() => {
     checkIfFirstTimeUser();
   }, []);
+
   const checkIfFirstTimeUser = async () => {
     try {
-      const value = await AsyncStorage.getItem(STORAGE_KEYS.SYSTEM);
-      if (value === null) {
-        // First time user, show the widget
+      const systemData = await userService.getSystemData();
+
+      // Show widget only if callPreference is null (user hasn't made a choice yet)
+      if (systemData.callPreference === null) {
         setIsVisible(true);
       }
-      // Don't show widget for returning users
     } catch (error) {
       console.error('Error checking first time user status:', error);
     }
   };
+
   const handlePreference = async (needsCall: boolean) => {
     try {
       // Start fade-out animation immediately
@@ -40,11 +42,11 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
         duration: 500,
         useNativeDriver: true,
       }).start(async () => {
-        // Save preference and hide widget after animation completes
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.SYSTEM,
-          JSON.stringify({needsCall}),
-        );
+        // Save preference using the proper SystemData structure
+        await userService.updateSystemData({
+          callPreference: needsCall,
+        });
+
         setIsVisible(false);
         onCallPreferenceSet(needsCall);
       });
