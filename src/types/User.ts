@@ -11,6 +11,16 @@ export interface User {
   email: string;
   phoneNumber: string;
 
+  // Profile details
+  mobility?: string;
+  mobilityOther?: string; // For "other" mobility option
+
+  // Additional information flags
+  livingOnRent?: boolean;
+  zakatEligible?: boolean;
+  differentlyAbled?: boolean;
+  muallafathiQuloob?: boolean; // Convert
+
   // Simple targets (only zikr and quran as requested)
   zikriGoal: number; // monthly target
   quranGoal: number; // monthly pages target
@@ -40,6 +50,12 @@ export const DEFAULT_USER: User = {
   username: 'User',
   email: 'user@example.com',
   phoneNumber: '',
+  mobility: undefined,
+  mobilityOther: '',
+  livingOnRent: false,
+  zakatEligible: false,
+  differentlyAbled: false,
+  muallafathiQuloob: false,
   zikriGoal: 600,
   quranGoal: 300,
   location: 'Location not set',

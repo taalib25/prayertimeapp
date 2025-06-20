@@ -8,8 +8,15 @@ interface FormData {
   email: string;
   mobile: string;
   address: string;
+  mobility: string;
+  mobilityOther: string;
   dateOfBirth: string;
   nearestMasjid: string;
+  // Additional information flags
+  livingOnRent: boolean;
+  zakatEligible: boolean;
+  differentlyAbled: boolean;
+  muallafathiQuloob: boolean;
 }
 
 interface FormErrors {
@@ -20,7 +27,7 @@ interface EditProfileContextType {
   formData: FormData;
   errors: FormErrors;
   isLoading: boolean;
-  updateField: (field: keyof FormData, value: string) => void;
+  updateField: (field: keyof FormData, value: string | boolean) => void;
   validateForm: () => boolean;
   handleSave: () => Promise<void>;
   clearErrors: () => void;
@@ -47,19 +54,23 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   children,
 }) => {
   const {user, updateUser} = useUser();
-
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     mobile: '',
     address: '',
+    mobility: '',
+    mobilityOther: '',
     dateOfBirth: '',
     nearestMasjid: '',
+    livingOnRent: false,
+    zakatEligible: false,
+    differentlyAbled: false,
+    muallafathiQuloob: false,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
-  // Load user data from user
+  const [isLoading, setIsLoading] = useState(false); // Load user data from user
   useEffect(() => {
     if (user) {
       setFormData({
@@ -67,13 +78,18 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         email: user.email || '',
         mobile: user.phoneNumber || '',
         address: user.location || '',
+        mobility: user.mobility || '',
+        mobilityOther: user.mobilityOther || '',
         dateOfBirth: '',
         nearestMasjid: user.masjid || '',
+        livingOnRent: user.livingOnRent || false,
+        zakatEligible: user.zakatEligible || false,
+        differentlyAbled: user.differentlyAbled || false,
+        muallafathiQuloob: user.muallafathiQuloob || false,
       });
     }
   }, [user]);
-
-  const updateField = (field: keyof FormData, value: string) => {
+  const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({...prev, [field]: value}));
     // Clear error for this field when user starts typing
     if (errors[field]) {
@@ -99,15 +115,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     const mobileRegex = /^[+]?[0-9]{10,15}$/;
     return mobileRegex.test(mobile.replace(/\s/g, ''));
   };
-
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     // Name validation
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Username is required';
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = 'Username must be at least 2 characters';
     }
 
     // Email validation
@@ -119,16 +134,26 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
     // Mobile validation
     if (!formData.mobile.trim()) {
-      newErrors.mobile = 'Mobile number is required';
+      newErrors.mobile = 'Phone number is required';
     } else if (!validateMobile(formData.mobile)) {
-      newErrors.mobile = 'Please enter a valid mobile number (10-15 digits)';
+      newErrors.mobile = 'Please enter a valid phone number (10-15 digits)';
     }
 
     // Address validation
     if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
-    } else if (formData.address.trim().length < 10) {
-      newErrors.address = 'Address must be at least 10 characters';
+      newErrors.address = 'Location is required';
+    } else if (formData.address.trim().length < 5) {
+      newErrors.address = 'Location must be at least 5 characters';
+    }
+
+    // Mobility validation
+    if (!formData.mobility) {
+      newErrors.mobility = 'Please select mobility option';
+    } else if (
+      formData.mobility === 'other' &&
+      !formData.mobilityOther.trim()
+    ) {
+      newErrors.mobilityOther = 'Please specify your mobility option';
     }
 
     // Masjid validation
@@ -139,12 +164,10 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSave = async () => {
     clearErrors();
 
     if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please fix the errors and try again.');
       return;
     }
 
@@ -155,7 +178,13 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         email: formData.email,
         phoneNumber: formData.mobile,
         location: formData.address,
+        mobility: formData.mobility,
+        mobilityOther: formData.mobilityOther,
         masjid: formData.nearestMasjid,
+        livingOnRent: formData.livingOnRent,
+        zakatEligible: formData.zakatEligible,
+        differentlyAbled: formData.differentlyAbled,
+        muallafathiQuloob: formData.muallafathiQuloob,
       };
 
       // Update user data

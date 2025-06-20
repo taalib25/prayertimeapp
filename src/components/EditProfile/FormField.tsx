@@ -14,6 +14,7 @@ export interface FormFieldProps {
   numberOfLines?: number;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
+  secureTextEntry?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -27,6 +28,7 @@ const FormField: React.FC<FormFieldProps> = ({
   numberOfLines = 1,
   autoCapitalize = 'sentences',
   autoCorrect = true,
+  secureTextEntry = false,
 }) => {
   return (
     <View style={styles.container}>
@@ -46,6 +48,7 @@ const FormField: React.FC<FormFieldProps> = ({
         numberOfLines={multiline ? numberOfLines : 1}
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCorrect}
+        secureTextEntry={secureTextEntry}
       />
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
