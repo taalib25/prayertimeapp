@@ -61,23 +61,13 @@ class ApiTaskServices {
     try {
       console.log(`📡 API: Updating Quran to ${minutes} minutes for ${date}`);
 
-      // PLACEHOLDER: Replace with actual API call when endpoint is available
-      // Example: await this.api.updateQuranProgress({ date, minutes });
+      const response = await this.api.updateDailyActivity(date, 'quran', minutes);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update Quran via API');
+      }
 
-      // TODO: Implement actual API call
-      // const response = await this.api.post('/daily-tasks/quran', {
-      //   date,
-      //   minutes,
-      // });
-
-      // if (!response.success) {
-      //   throw new Error(response.error || 'Failed to update Quran via API');
-      // }
-
-      console.log(`✅ API: Quran minutes updated successfully (placeholder)`);
+      console.log(`✅ API: Quran minutes updated successfully`,response.data);
     } catch (error) {
       console.error(`❌ API: Error updating Quran minutes:`, error);
       throw error;
@@ -86,29 +76,18 @@ class ApiTaskServices {
 
   /**
    * Update Zikr count via API
-   * TODO: Replace this placeholder with actual API endpoint when available
    */
   async updateZikrCount(date: string, count: number): Promise<void> {
     try {
       console.log(`📡 API: Updating Zikr to ${count} count for ${date}`);
 
-      // PLACEHOLDER: Replace with actual API call when endpoint is available
-      // Example: await this.api.updateZikrProgress({ date, count });
+      const response = await this.api.updateDailyActivity(date, 'zikr', count);
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update Zikr via API');
+      }
 
-      // TODO: Implement actual API call
-      // const response = await this.api.post('/daily-tasks/zikr', {
-      //   date,
-      //   count,
-      // });
-
-      // if (!response.success) {
-      //   throw new Error(response.error || 'Failed to update Zikr via API');
-      // }
-
-      console.log(`✅ API: Zikr count updated successfully (placeholder)`);
+      console.log(`✅ API: Zikr count updated successfully`,response.data);
     } catch (error) {
       console.error(`❌ API: Error updating Zikr count:`, error);
       throw error;

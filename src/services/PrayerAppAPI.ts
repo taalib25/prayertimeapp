@@ -250,6 +250,59 @@ class PrayerAppAPI {
       };
     }
   }
+
+  // ========== DAILY ACTIVITIES ENDPOINTS ==========
+
+  /**
+   * Update daily activity (Quran or Zikr)
+   */
+  async updateDailyActivity(
+    date: string, 
+    activityType: 'quran' | 'zikr', 
+    value: number
+  ): Promise<ApiResponse<{message: string}>> {
+    try {
+      // Prepare request body based on activity type
+      const requestBody = {
+        activity_date: date,
+        activity_type: activityType,
+        ...(activityType === 'quran' 
+          ? { minutes_value: value }
+          : { count_value: value }
+        )
+      };
+
+      console.log(`📡 API: Updating ${activityType} to ${value} ${activityType === 'quran' ? 'minutes' : 'count'} for ${date}`);
+
+      const response = await this.apiService.post<{message: string}>('/daily-activities', requestBody);
+      
+      console.log(`✅ API: ${activityType} ${activityType === 'quran' ? 'minutes' : 'count'} updated successfully`);
+      
+      return response;
+    } catch (error: any) {
+      console.error(`❌ API: Error updating ${activityType}:`, error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Update Quran minutes via API
+   */
+  async updateQuranMinutes(date: string, minutes: number): Promise<ApiResponse<{message: string}>> {
+    return this.updateDailyActivity(date, 'quran', minutes);
+  }
+
+  /**
+   * Update Zikr count via API
+   */
+  async updateZikrCount(date: string, count: number): Promise<ApiResponse<{message: string}>> {
+    return this.updateDailyActivity(date, 'zikr', count);
+  }
+
   // ========== HELPER METHODS ==========
   /**
    * Set authentication token
