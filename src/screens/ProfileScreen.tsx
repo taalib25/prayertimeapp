@@ -182,7 +182,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           <View style={styles.statisticsGrid}>
             <CompactChallengeCard
               id="zikr-goal"
-              title="Zikr Goal"
+              title="Zikr"
               current={Math.floor(dummyUser.zikriGoal * 0.6)} // Mock current progress
               total={dummyUser.zikriGoal}
               backgroundColor="#FCE4EC"
@@ -193,7 +193,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
 
             <CompactChallengeCard
               id="quran-goals"
-              title="Quran Goal"
+              title="Quran"
               current={Math.floor(dummyUser.quranGoal * 0.4)} // Mock current progress
               total={dummyUser.quranGoal}
               backgroundColor="#E0F2F1"

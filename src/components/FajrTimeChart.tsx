@@ -1,12 +1,11 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
+import {View, Text, StyleSheet, Pressable, Dimensions} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import {LineChart} from 'react-native-chart-kit';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
@@ -25,50 +24,73 @@ const FajrTimeChart: React.FC = () => {
   const [currentCenterDate, setCurrentCenterDate] = useState(new Date());
   const [fajrData, setFajrData] = useState<FajrCompletionData[]>([]);
 
+  // Reanimated shared value for chart opacity
+  const chartOpacity = useSharedValue(1);
+
   // Use centralized context instead of direct database access
-  const {getFajrDataForDates} = useFajrChartData();
-  // Helper function to format date as YYYY-MM-DD
-  const formatDate = (date: Date): string => {
+  const {getFajrDataForDates} = useFajrChartData(); // Helper functions - memoized for performance
+  const formatDate = useCallback((date: Date): string => {
     return date.toISOString().split('T')[0];
-  };
+  }, []);
 
-  // Helper function to convert prayer status to completion value (mosque only)
-  const statusToValue = (status: string): number => {
+  const statusToValue = useCallback((status: string): number => {
     return status === 'mosque' ? 1 : 0;
-  };
+  }, []);
 
-  // Helper function to get day label
-  const getDayLabel = (date: Date): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const compareDate = new Date(date);
-    compareDate.setHours(0, 0, 0, 0);
-
-    const diffTime = compareDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    if (diffDays === -1) return 'Yesterday';
-
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    };
-    return date.toLocaleDateString('en', options);
-  };
-
-  // Get 5-day range (3 before, current, 2 after)
+  const getDayLabel = useCallback((date: Date): string => {
+    return date.getDate().toString();
+  }, []);
+  // Get 10-day range (5 before, current, 4 after)
   const getDatesRange = useCallback((centerDate: Date): Date[] => {
     const dates: Date[] = [];
-    for (let i = -3; i <= 2; i++) {
+    for (let i = -5; i <= 4; i++) {
       const date = new Date(centerDate);
       date.setDate(centerDate.getDate() + i);
       dates.push(date);
     }
     return dates;
-  }, []);
+  }, []); // Memoized month text for performance
+  const monthText = useMemo(() => {
+    const dates = getDatesRange(currentCenterDate);
+    const startDate = dates[0];
+    const endDate = dates[dates.length - 1];
+
+    const startMonth = startDate.getMonth();
+    const endMonth = endDate.getMonth();
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+
+    if (startMonth === endMonth && startYear === endYear) {
+      return startDate.toLocaleDateString('en', {
+        month: 'long',
+        year: 'numeric',
+      });
+    } else if (startYear === endYear) {
+      const startMonthName = startDate.toLocaleDateString('en', {
+        month: 'long',
+      });
+      const endMonthName = endDate.toLocaleDateString('en', {month: 'long'});
+      return `${startMonthName} - ${endMonthName} ${startYear}`;
+    } else {
+      const startMonthYear = startDate.toLocaleDateString('en', {
+        month: 'long',
+        year: 'numeric',
+      });
+      const endMonthYear = endDate.toLocaleDateString('en', {
+        month: 'long',
+        year: 'numeric',
+      });
+      return `${startMonthYear} - ${endMonthYear}`;
+    }
+  }, [currentCenterDate, getDatesRange]);
+
+  // Memoized days range for performance
+  const daysRangeText = useMemo(() => {
+    const dates = getDatesRange(currentCenterDate);
+    const startDay = dates[0].getDate();
+    const endDay = dates[dates.length - 1].getDate();
+    return `${startDay} - ${endDay}`;
+  }, [currentCenterDate, getDatesRange]);
 
   // Fetch Fajr completion data using centralized context
   const fetchFajrCompletionData = useCallback(async () => {
@@ -95,100 +117,90 @@ const FajrTimeChart: React.FC = () => {
   }, [currentCenterDate, getFajrDataForDates, getDatesRange]);
   useEffect(() => {
     fetchFajrCompletionData();
-  }, [fetchFajrCompletionData]);
-
-  // Navigation handlers
-  const goToPrevious = () => {
-    const newDate = new Date(currentCenterDate);
-    newDate.setDate(currentCenterDate.getDate() - 5);
-    setCurrentCenterDate(newDate);
+  }, [fetchFajrCompletionData]); // Reanimated animation function for chart transitions
+  const animateChartTransition = () => {
+    chartOpacity.value = withSequence(
+      withTiming(0.3, {duration: 150}),
+      withTiming(1, {duration: 300}),
+    );
   };
 
-  const goToNext = () => {
-    const newDate = new Date(currentCenterDate);
-    newDate.setDate(currentCenterDate.getDate() + 5);
-    setCurrentCenterDate(newDate);
-  };
+  // Animated style for chart container
+  const animatedChartStyle = useAnimatedStyle(() => ({
+    opacity: chartOpacity.value,
+  }));
 
-  const goToToday = () => {
+  // Navigation handlers with animation
+  const goToPrevious = useCallback(() => {
+    animateChartTransition();
+    const newDate = new Date(currentCenterDate);
+    newDate.setDate(currentCenterDate.getDate() - 10);
+    setCurrentCenterDate(newDate);
+  }, [currentCenterDate]);
+
+  const goToNext = useCallback(() => {
+    animateChartTransition();
+    const newDate = new Date(currentCenterDate);
+    newDate.setDate(currentCenterDate.getDate() + 10);
+    setCurrentCenterDate(newDate);
+  }, [currentCenterDate]);
+
+  const goToToday = useCallback(() => {
+    animateChartTransition();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     setCurrentCenterDate(today);
-  };
-
-  // Check if current view includes today
-  const isCurrentWeekIncludesToday = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dates = getDatesRange(currentCenterDate);
-    return dates.some(date => {
-      const compareDate = new Date(date);
-      compareDate.setHours(0, 0, 0, 0);
-      return compareDate.getTime() === today.getTime();
-    });
-  }; // Prepare chart data with error handling
-  const getChartData = () => {
+  }, []); // Memoized chart data for performance
+  const chartData = useMemo(() => {
     if (fajrData.length === 0) {
       return {
-        labels: ['Loading...'],
+        labels: Array.from({length: 10}, (_, i) => (i + 1).toString()),
         datasets: [
           {
-            data: [0], // No mosque attendance as default
-            color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
+            data: Array(10).fill(0),
+            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
             strokeWidth: 3,
           },
         ],
       };
-    } // Get completion values (0-1 scale for mosque only)
-    const validData = fajrData.map(item => item.completionValue);
+    }
 
-    // Debug: Log chart data being rendered
-    console.log('📈 Chart data being rendered:', {
-      labels: fajrData.map(item => item.dayLabel),
-      data: validData,
-      rawFajrData: fajrData.map(item => ({
-        date: item.date,
-        status: item.fajrStatus,
-        value: item.completionValue,
-      })),
-    });
+    const validData = fajrData.map(item => item.completionValue);
 
     return {
       labels: fajrData.map(item => item.dayLabel),
       datasets: [
         {
           data: validData,
-          color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`, // Green for mosque attendance
+          color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
           strokeWidth: 3,
         },
       ],
-      // Y-axis will show 0 (Not at Mosque), 1 (Mosque)
       minValue: 0,
       maxValue: 1,
     };
-  };
-
+  }, [fajrData]);
+  // Check if current view includes today for chart highlighting
+  const todayIndex = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dates = getDatesRange(currentCenterDate);
+    return dates.findIndex(date => {
+      const compareDate = new Date(date);
+      compareDate.setHours(0, 0, 0, 0);
+      return compareDate.getTime() === today.getTime();
+    });
+  }, [currentCenterDate, getDatesRange]);
   return (
     <View style={styles.container}>
+      {/* Header with title - left aligned */}
       <View style={styles.header}>
         <Text style={styles.title}>Challenge 40</Text>
-        <View style={styles.navigationContainer}>
-          <Pressable style={styles.navButton} onPress={goToPrevious}>
-            <Text style={styles.navButtonText}>‹</Text>
-          </Pressable>
-          {!isCurrentWeekIncludesToday() && (
-            <Pressable style={styles.todayButton} onPress={goToToday}>
-              <Text style={styles.todayButtonText}>Today</Text>
-            </Pressable>
-          )}
-          <Pressable style={styles.navButton} onPress={goToNext}>
-            <Text style={styles.navButtonText}>›</Text>
-          </Pressable>
-        </View>
       </View>
-      <View style={styles.chartContainer}>
+      {/* Chart */}
+      <Animated.View style={[styles.chartContainer, animatedChartStyle]}>
         <LineChart
-          data={getChartData()}
+          data={chartData}
           width={screenWidth - 32}
           height={220}
           yAxisSuffix=""
@@ -198,7 +210,7 @@ const FajrTimeChart: React.FC = () => {
             backgroundGradientFrom: '#ffffff',
             backgroundGradientTo: '#ffffff',
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
+            color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
             style: {
               borderRadius: 16,
@@ -206,11 +218,12 @@ const FajrTimeChart: React.FC = () => {
             propsForDots: {
               r: '6',
               strokeWidth: '2',
-              stroke: colors.primary,
+              stroke: todayIndex >= 0 ? colors.accent : colors.primary,
+              fill: todayIndex >= 0 ? colors.accent : colors.primary,
             },
             formatYLabel: (yLabel: string) => {
               const value = parseInt(yLabel);
-              return value === 1 ? 'Mosque' : 'Not at Mosque';
+              return value === 1 ? 'Mosque' : 'Attended';
             },
           }}
           bezier
@@ -218,6 +231,21 @@ const FajrTimeChart: React.FC = () => {
           fromZero
           segments={1}
         />
+      </Animated.View>
+      {/* Navigation with month info in the middle */}
+      <View style={styles.bottomNavigation}>
+        <Pressable style={styles.navButton} onPress={goToPrevious}>
+          <Text style={styles.navButtonText}>‹</Text>
+        </Pressable>
+
+        <View style={styles.monthContainer}>
+          <Text style={styles.monthText}>{monthText}</Text>
+          <Text style={styles.dateRange}>Days: {daysRangeText}</Text>
+        </View>
+
+        <Pressable style={styles.navButton} onPress={goToNext}>
+          <Text style={styles.navButtonText}>›</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -232,47 +260,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Left aligned
     marginBottom: 16,
   },
   title: {
     ...typography.h3,
     fontSize: 25,
     color: colors.text.prayerBlue,
-  },
-  navigationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background.surface,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navButtonText: {
-    color: colors.primary,
-    fontSize: 34,
-    fontWeight: 'bold',
-    marginTop: -12, // Adjust vertical alignment
-  },
-  todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: colors.accent,
-  },
-  todayButtonText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '600',
   },
   chartContainer: {
     alignItems: 'center',
@@ -281,62 +275,50 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
-  },
-  dataContainer: {
+  },  bottomNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-  dataItem: {
     alignItems: 'center',
+    paddingTop: 8,
+    gap: 8,
+  },
+  monthContainer: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: colors.primary, // Dark background for contrast
+    borderRadius: 8,
+    minWidth: 120,
     flex: 1,
+    marginHorizontal: 8,
   },
-  dataLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statusIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  mosqueIndicator: {
-    backgroundColor: colors.success,
-  },
-  notMosqueIndicator: {
-    backgroundColor: colors.text.muted,
-  },
-  dataTime: {
-    ...typography.bodySmall,
-    color: colors.text.primary,
+  monthText: {
+    ...typography.body,
+    fontSize: 14,
+    color: '#ffffff', // White text for dark background
     fontWeight: '600',
-    fontSize: 9,
   },
-  todayLabel: {
-    color: colors.primary,
-    fontWeight: 'bold',
+  dateRange: {
+    ...typography.caption,
+    fontSize: 11,
+    color: '#ffffff', // White text for dark background
+    opacity: 0.9,
+    marginTop: 1,
   },
-  todayTime: {
-    color: colors.primary,
-    fontWeight: 'bold',
-  },
-  loadingContainer: {
-    height: 200,
+  navButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background.surface,
+    borderWidth: 2,
+    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  noDataText: {
-    ...typography.body,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  },  navButtonText: {
+    color: colors.primary,
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: -8,
   },
 });
 
