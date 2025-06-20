@@ -29,7 +29,7 @@ export const DAILY_SPECIAL_TASKS: EnhancedSpecialTask[] = [
   // Zikr tasks
   {
     id: 'zikr_allahuakbar',
-    title: '100x Asthagfirullah',
+    title: '100x La hawla wala kuwwatha illa billah',
     completed: false,
     category: 'zikr',
     unit: 'count',
