@@ -33,7 +33,7 @@ export interface UserData {
 
 const DEFAULT_GOALS: UserGoals = {
   monthlyZikrGoal: 600,
-  monthlyQuranPagesGoal: 30,
+  monthlyQuranPagesGoal: 300,
   monthlyCharityGoal: 100,
   monthlyFastingDaysGoal: 15,
 };

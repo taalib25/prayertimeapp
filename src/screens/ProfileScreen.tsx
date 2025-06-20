@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,13 @@ import {
   Alert,
 } from 'react-native';
 import BadgeCard from '../components/BadgeCard';
-import {AnimatedCircularProgress} from 'react-native-circular-progress';
 import MenuButton from '../components/MenuButton';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
-import {useUser} from '../hooks/useUser';
 import {useAuth} from '../contexts/AuthContext';
+import {useUser} from '../hooks/useUser';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -28,17 +27,60 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {user, isLoading, error, displayName, userInitials} = useUser();
+  const {displayName} = useUser();
+
+  // Using dummy data for other fields
+  const dummyUser = {
+    masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
+    location: 'Colombo, LK',
+    theme: 'Light',
+    language: 'English',
+    zikriGoal: 100,
+    quranGoal: 300,
+  };
+
+  const isLoading = false;
+  const error = null;
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
   };
 
+  const badges = [
+    {
+      id: '1',
+      title: 'Challenge 40',
+      description: 'Completed 40 consecutive prayers',
+      icon: 'mosque',
+      isEarned: true,
+      category: 'prayer',
+    },
+    {
+      id: '2',
+      title: 'Zikr Star',
+      description: 'Completed 100 zikr sessions',
+      icon: 'prayer-beads',
+      isEarned: true,
+      category: 'zikr',
+    },
+    {
+      id: '3',
+      title: 'Recite Master',
+      description: 'Read 30 pages of Quran',
+      icon: 'quran',
+      isEarned: false,
+      category: 'quran',
+    },
+  ];
+
+  const earnedBadges = badges.filter(badge => badge.isEarned).length;
+  const totalBadges = badges.length;
+
   const handleNotificationSettings = () => {
     navigation.navigate('NotificationScreen');
   };
   const handleCallerSettings = () => {
-    console.log('user >>>>>>>>>>', user);
+    console.log('user >>>>>>>>>>', dummyUser);
     navigation.navigate('CallerSettings');
   };
 
@@ -69,7 +111,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     );
   }
 
-  if (error || !user) {
+  if (error) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Failed to load profile data</Text>
@@ -92,7 +134,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileImageContainer}>
-            <Text style={styles.profileImageText}>{userInitials}</Text>
+            <Image
+              source={require('../assets/images/profile.png')}
+              style={styles.profileImage}
+            />
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
@@ -100,13 +145,36 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <View style={styles.locationContainer}>
               <SvgIcon name="masjid" size={32} color="#4CAF50" />
               <Text style={styles.locationText}>
-                {user.masjid || 'Local Mosque'}
+                {dummyUser.masjid || 'Local Mosque'}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Goals Section */}
+        {/* Badges Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>
+              /{totalBadges}
+            </Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAll}>View All</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.badgesCard}>
+            <View style={styles.badgesContainer}>
+              {badges.map((badge: any) => (
+                <BadgeCard
+                  key={badge.id}
+                  icon={badge.icon as any}
+                  title={badge.title}
+                  isEarned={badge.isEarned}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Monthly Goals</Text>
@@ -115,38 +183,47 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="zikr-goal"
               title="Zikr Goal"
-              current={Math.floor(user.zikriGoal * 0.6)} // Mock current progress
-              total={user.zikriGoal}
+              current={Math.floor(dummyUser.zikriGoal * 0.6)} // Mock current progress
+              total={dummyUser.zikriGoal}
               backgroundColor="#FCE4EC"
               progressColor="#E91E63"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
+
             <CompactChallengeCard
-              id="quran-goal"
+              id="quran-goals"
               title="Quran Goal"
-              current={Math.floor(user.quranGoal * 0.4)} // Mock current progress
-              total={user.quranGoal}
+              current={Math.floor(dummyUser.quranGoal * 0.4)} // Mock current progress
+              total={dummyUser.quranGoal}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
+            <CompactChallengeCard
+              id="Fajr"
+              title="Fajr"
+              current={Math.floor(dummyUser.quranGoal * 0.4)} // Mock current progress
+              total={30}
+              backgroundColor="#E0F2F1"
+              progressColor="#4CAF50"
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
+            />
+
+            <CompactChallengeCard
+              id="quran-goal"
+              title="Isha"
+              current={Math.floor(23)} // Mock current progress
+              total={30}
+              backgroundColor="#E0F2F1"
+              progressColor="#CAAF50"
+              textColor={colors.text.prayerBlue}
+              isVisible={true}
+            />
           </View>
         </View>
-
-        {/* Settings Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Settings</Text>
-          </View>
-          <View style={styles.settingsInfo}>
-            <Text style={styles.settingItem}>Location: {user.location}</Text>
-            <Text style={styles.settingItem}>Theme: {user.theme}</Text>
-            <Text style={styles.settingItem}>Language: {user.language}</Text>
-          </View>
-        </View>
-
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
@@ -157,7 +234,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           <MenuButton title="Database Explorer" onPress={handleDatabaseView} />
 
-          {/* Logout Button */}
+          {/* Logout fButton */}
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>
           </Pressable>
@@ -351,7 +428,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
