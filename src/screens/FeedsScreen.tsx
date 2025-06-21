@@ -39,9 +39,9 @@ interface FeedItem {
 type FeedCategory = 'All Feeds' | 'Reminders' | 'Events';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_HEIGHT = 160; // Further reduced height
-const CARD_SPACING = 8; // Small spacing between cards
-const TEXT_CARD_WIDTH = SCREEN_WIDTH * 0.6; // More constrained text-only cards
+const CARD_WIDTH = SCREEN_WIDTH - 24; // Full width with padding
+const IMAGE_CARD_HEIGHT = CARD_WIDTH * 0.8; // Instagram-like aspect ratio for image cards
+const CARD_SPACING = 16; // Spacing between posts
 
 // Mock API service - same as ReminderSection
 const feedApi = {
@@ -53,9 +53,9 @@ const feedApi = {
         title: 'Morning Dhikr',
         description:
           'Start your day with remembrance of Allah. Recite the morning adhkar after Fajr prayer to protect yourself throughout the day.',
-        imagePath: require('../assets/images/reminderLarge1.png'),
+        imagePath: require('../assets/images/reminder1.png'),
         priority: 'high',
-        category: 'Reminders',
+        category: 'dhikr',
         type: 'image',
       },
       {
@@ -63,27 +63,27 @@ const feedApi = {
         title: 'Quran Recitation',
         description:
           '10 minutes of Quran after Fajr prayer. Even a few verses daily will bring immense reward and barakah to your day.',
-        imagePath: require('../assets/images/reminderLarge2.png'),
+        imagePath: require('../assets/images/reminder2.png'),
         priority: 'high',
-        category: 'Reminders',
+        category: 'quran',
         type: 'image',
       },
       {
         id: '3',
-        title: 'Remember Allah often',
+        title: 'Ramadan Preparation Workshop',
         description:
-          'Those who believe and whose hearts find peace in the remembrance of Allah - truly it is in the remembrance of Allah that hearts find peace.',
+          'Join us for a special workshop to prepare for the upcoming Ramadan. Topics include spiritual preparation, meal planning, and maintaining health during fasting. The workshop will be held in the main hall after Isha prayer next Tuesday.',
         priority: 'medium',
-        category: 'Reminders',
+        category: 'dhikr',
         type: 'text',
       },
       {
         id: '4',
-        title: 'Seek forgiveness',
+        title: 'Community Iftar Planning',
         description:
-          'Say Astaghfirullah 100 times daily. The Prophet (PBUH) sought forgiveness more than 70 times a day.',
+          'We are organizing community iftars for the coming Ramadan. Please register to volunteer or sponsor meals. We need volunteers for setup, cooking, serving, and cleanup. Please sign up at the reception desk or contact Br. Rizwan.',
         priority: 'high',
-        category: 'Reminders',
+        category: 'dua',
         type: 'text',
       },
       {
@@ -91,25 +91,18 @@ const feedApi = {
         title: 'Evening Duas',
         description:
           'Protection duas before sleep to guard against evil and nightmares.',
-        imagePath: require('../assets/images/reminderLarge2.png'),
+        imagePath: require('../assets/images/reminder2.png'),
         priority: 'medium',
-        category: 'Reminders',
+        category: 'dua',
         type: 'image',
       },
       {
         id: '6',
-        title: 'When you Miss THE FAJR PRAYER',
-        description: 'It is going to be a miserable day with SHAITHAAN',
-        imagePath: require('../assets/images/reminderLarge1.png'),
-        category: 'Events',
-        type: 'image',
-      },
-      {
-        id: '7',
-        title: 'Community Prayer Gathering',
+        title: 'Mosque Cleaning Day',
         description:
-          'Join our weekly community prayer gathering every Friday evening. Strengthen your faith together with fellow believers.',
-        category: 'Events',
+          'Join us this Saturday morning for our monthly mosque cleaning day. Bring cleaning supplies if you can. We will start after Fajr prayer and finish before Dhuhr. Your participation helps keep our place of worship clean and beautiful.',
+        priority: 'medium',
+        category: 'community',
         type: 'text',
       },
     ];
@@ -120,11 +113,38 @@ const FeedCard: React.FC<{
   item: FeedItem;
   onPress?: (feed: FeedItem) => void;
 }> = ({item, onPress}) => {
+  const [imageHeight, setImageHeight] = useState<number>(IMAGE_CARD_HEIGHT);
+
   const handlePress = () => {
     onPress?.(item);
   };
 
-  // Render text-only card with gradient
+  // Get image dimensions and calculate height based on screen width
+  const getImageDimensions = (imagePath: any) => {
+    if (imagePath) {
+      Image.getSize(
+        Image.resolveAssetSource(imagePath).uri,
+        (width, height) => {
+          const aspectRatio = height / width;
+          const calculatedHeight = CARD_WIDTH * aspectRatio;
+          setImageHeight(calculatedHeight);
+        },
+        error => {
+          console.log('Error getting image size:', error);
+          setImageHeight(IMAGE_CARD_HEIGHT); // Fallback to default height
+        },
+      );
+    }
+  };
+
+  // Calculate image height when component mounts
+  React.useEffect(() => {
+    if (item.imagePath && (item.type === 'image' || item.imagePath)) {
+      getImageDimensions(item.imagePath);
+    }
+  }, [item.imagePath, item.type]);
+
+  // Render text-only card with gradient - dynamic height based on content
   if (item.type === 'text' || !item.imagePath) {
     return (
       <TouchableOpacity
@@ -138,9 +158,7 @@ const FeedCard: React.FC<{
               {item.title}
             </Text>
             <View style={styles.textFadeContainer}>
-              <Text style={styles.textCardDescription} numberOfLines={3}>
-                {item.description}
-              </Text>
+              <Text style={styles.textCardDescription}>{item.description}</Text>
               <View style={styles.textFadeOverlay} />
             </View>
           </View>
@@ -148,15 +166,16 @@ const FeedCard: React.FC<{
       </TouchableOpacity>
     );
   }
-  // Render image card
+
+  // Render image card - use natural image aspect ratio with dynamic height
   return (
     <TouchableOpacity
-      style={styles.feedCard}
+      style={[styles.feedCard, {height: imageHeight}]}
       onPress={handlePress}
       activeOpacity={0.8}>
       <Image
         source={item.imagePath}
-        style={styles.feedImage}
+        style={[styles.feedImage, {height: imageHeight}]}
         resizeMode="cover"
       />
     </TouchableOpacity>
@@ -208,32 +227,32 @@ const FeedsScreen: React.FC = () => {
     setSelectedFeed(feed);
     setModalVisible(true);
 
-    // Animate modal appearance with smoother animation
+    // Animate modal appearance with faster animation
     modalScale.value = withSpring(1, {
-      damping: 20,
-      stiffness: 120,
-      mass: 0.8,
+      damping: 25,
+      stiffness: 200,
+      mass: 0.6,
     });
     modalOpacity.value = withTiming(1, {
-      duration: 300,
+      duration: 150,
     });
   };
 
   const closeModal = () => {
-    // Animate modal disappearance with smoother animation
+    // Animate modal disappearance with faster animation
     modalScale.value = withSpring(0, {
-      damping: 20,
-      stiffness: 120,
-      mass: 0.8,
+      damping: 25,
+      stiffness: 200,
+      mass: 0.6,
     });
     modalOpacity.value = withTiming(0, {
-      duration: 200,
+      duration: 100,
     });
 
     setTimeout(() => {
       setModalVisible(false);
       setSelectedFeed(null);
-    }, 250);
+    }, 120);
   };
 
   const modalAnimatedStyle = useAnimatedStyle(() => {
@@ -473,26 +492,25 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   feedCard: {
-    height: CARD_HEIGHT,
+    width: CARD_WIDTH,
     borderRadius: 15,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: CARD_SPACING,
+    alignSelf: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3,
-  },
-  // Text-only card styles
+  }, // Text-only card styles - dynamic height based on content
   textOnlyCard: {
-    width: '100%',
-    marginHorizontal: 6,
+    minHeight: 120, // Minimum height for text cards
   },
   gradientContainer: {
-    flex: 1,
     backgroundColor: colors.primary,
     borderRadius: 15,
     position: 'relative',
+    minHeight: 120, // Minimum height for text content
   },
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -500,9 +518,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   textCardContent: {
-    flex: 1,
     padding: 16,
-    justifyContent: 'center',
+    paddingVertical: 20, // Extra vertical padding for better text layout
   },
   textCardTitle: {
     ...typography.h3,

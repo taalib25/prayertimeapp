@@ -37,9 +37,8 @@ interface ReminderSectionProps {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_HEIGHT = 160; // Further reduced height
-const CARD_SPACING = 8; // Small spacing between cards
-const TEXT_CARD_WIDTH = SCREEN_WIDTH * 0.6; // More constrained text-only cards
+const CARD_SIZE = 160; // Square cards
+const CARD_SPACING = 12; // Consistent spacing
 
 // Mock API service
 const reminderApi = {
@@ -68,18 +67,18 @@ const reminderApi = {
       },
       {
         id: '3',
-        title: 'Remember Allah often',
+        title: 'Ramadan Preparation Workshop',
         description:
-          'Those who believe and whose hearts find peace in the remembrance of Allah - truly it is in the remembrance of Allah that hearts find peace.',
+          'Join us for a special workshop to prepare for the upcoming Ramadan. Topics include spiritual preparation, meal planning, and maintaining health during fasting. The workshop will be held in the main hall after Isha prayer next Tuesday.',
         priority: 'medium',
         category: 'dhikr',
         type: 'text',
       },
       {
         id: '4',
-        title: 'Seek forgiveness',
+        title: 'Community Iftar Planning',
         description:
-          'Say Astaghfirullah 100 times daily. The Prophet (PBUH) sought forgiveness more than 70 times a day.',
+          'We are organizing community iftars for the coming Ramadan. Please register to volunteer or sponsor meals. We need volunteers for setup, cooking, serving, and cleanup. Please sign up at the reception desk or contact Br. Rizwan.',
         priority: 'high',
         category: 'dua',
         type: 'text',
@@ -93,6 +92,15 @@ const reminderApi = {
         priority: 'medium',
         category: 'dua',
         type: 'image',
+      },
+      {
+        id: '6',
+        title: 'Mosque Cleaning Day',
+        description:
+          'Join us this Saturday morning for our monthly mosque cleaning day. Bring cleaning supplies if you can. We will start after Fajr prayer and finish before Dhuhr. Your participation helps keep our place of worship clean and beautiful.',
+        priority: 'medium',
+        category: 'community',
+        type: 'text',
       },
     ];
   },
@@ -189,32 +197,32 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
     setSelectedReminder(reminder);
     setModalVisible(true);
 
-    // Animate modal appearance with smoother animation
+    // Animate modal appearance with faster animation
     modalScale.value = withSpring(1, {
-      damping: 20,
-      stiffness: 120,
-      mass: 0.8,
+      damping: 25,
+      stiffness: 200,
+      mass: 0.6,
     });
     modalOpacity.value = withTiming(1, {
-      duration: 300,
+      duration: 150,
     });
   };
 
   const closeModal = () => {
-    // Animate modal disappearance with smoother animation
+    // Animate modal disappearance with faster animation
     modalScale.value = withSpring(0, {
-      damping: 20,
-      stiffness: 120,
-      mass: 0.8,
+      damping: 25,
+      stiffness: 200,
+      mass: 0.6,
     });
     modalOpacity.value = withTiming(0, {
-      duration: 200,
+      duration: 100,
     });
 
     setTimeout(() => {
       setModalVisible(false);
       setSelectedReminder(null);
-    }, 250);
+    }, 120);
   };
 
   const modalAnimatedStyle = useAnimatedStyle(() => {
@@ -357,7 +365,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   reminderCard: {
-    height: CARD_HEIGHT,
+    width: CARD_SIZE,
+    height: CARD_SIZE,
     borderRadius: 15,
     overflow: 'hidden',
     marginRight: CARD_SPACING,
@@ -366,9 +375,11 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3,
-  }, // Text-only card styles
+  },
+  // Text-only card styles
   textOnlyCard: {
-    width: TEXT_CARD_WIDTH,
+    width: CARD_SIZE,
+    height: CARD_SIZE,
   },
   gradientContainer: {
     flex: 1,
@@ -412,11 +423,10 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: colors.primary,
     opacity: 0.7,
-  },
-  // Image card styles
+  }, // Image card styles
   reminderImage: {
+    width: '100%',
     height: '100%',
-    aspectRatio: 1,
     borderRadius: 15,
   },
   imageCardOverlay: {
