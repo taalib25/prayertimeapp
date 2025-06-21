@@ -15,7 +15,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import {colors} from '../utils/theme';
-import {typography} from '../utils/typography';
+import {fontFamilies, typography} from '../utils/typography';
 
 export type AttendanceType = 'home' | 'mosque' | 'none';
 
@@ -86,7 +86,7 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
       scaleAnim.value = withSpring(1, {duration: 150});
     });
     onSelect(attendance);
-  };  // Render option as a simple button
+  }; // Render option as a simple button
   const renderOption = (option: any) => {
     const isSelected = currentAttendance === option.type;
     const isMasjid = option.type === 'mosque';
@@ -146,7 +146,6 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
             <Text style={styles.prayerTitle}>{prayerName}</Text>
             <View style={styles.questionContainer}>
               <Text style={styles.subtitle}>Prayed at Masjid?</Text>
-              <Text style={styles.helpText}>Select your prayer status</Text>
             </View>
           </View>
           {/* Options List */}
@@ -188,11 +187,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prayerTitle: {
-    ...typography.h3,
+    fontFamily: fontFamilies.regular,
     fontSize: 28,
-    color: 'white',
-    marginBottom: 8,
-    fontWeight: '700',
+    color: colors.text.accent,
+    marginBottom: -5,
+    lineHeight: 32,
   },
   questionContainer: {
     alignItems: 'center',

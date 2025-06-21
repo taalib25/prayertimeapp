@@ -9,7 +9,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  Pressable,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 
@@ -17,9 +25,10 @@ interface Reminder {
   id: string;
   title: string;
   description: string;
-  imagePath: any; // For now using local images, later will be string for HTTP URLs
+  imagePath?: any; // Optional - for text-only reminders
   priority?: 'high' | 'medium' | 'low';
   category?: string;
+  type?: 'text' | 'image'; // Add type to distinguish
 }
 
 interface ReminderSectionProps {
@@ -28,8 +37,9 @@ interface ReminderSectionProps {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_HEIGHT = 200; // Use height instead of width for sizing
-const CARD_SPACING = 0; // No spacing - cards touching each other
+const CARD_HEIGHT = 160; // Further reduced height
+const CARD_SPACING = 8; // Small spacing between cards
+const TEXT_CARD_WIDTH = SCREEN_WIDTH * 0.6; // More constrained text-only cards
 
 // Mock API service
 const reminderApi = {
@@ -39,34 +49,50 @@ const reminderApi = {
       {
         id: '1',
         title: 'Morning Dhikr',
-        description: 'Start your day with remembrance of Allah',
+        description:
+          'Start your day with remembrance of Allah. Recite the morning adhkar after Fajr prayer to protect yourself throughout the day.',
         imagePath: require('../assets/images/reminder1.png'),
         priority: 'high',
         category: 'dhikr',
+        type: 'image',
       },
       {
         id: '2',
         title: 'Quran Recitation',
-        description: '10 minutes of Quran after Fajr prayer',
+        description:
+          '10 minutes of Quran after Fajr prayer. Even a few verses daily will bring immense reward and barakah to your day.',
         imagePath: require('../assets/images/reminder2.png'),
         priority: 'high',
         category: 'quran',
+        type: 'image',
       },
       {
         id: '3',
-        title: 'Masjid Visit',
-        description: 'Remember to attend Jummah prayer today',
-        imagePath: require('../assets/images/reminder1.png'),
+        title: 'Remember Allah often',
+        description:
+          'Those who believe and whose hearts find peace in the remembrance of Allah - truly it is in the remembrance of Allah that hearts find peace.',
         priority: 'medium',
-        category: 'prayer',
+        category: 'dhikr',
+        type: 'text',
       },
       {
         id: '4',
+        title: 'Seek forgiveness',
+        description:
+          'Say Astaghfirullah 100 times daily. The Prophet (PBUH) sought forgiveness more than 70 times a day.',
+        priority: 'high',
+        category: 'dua',
+        type: 'text',
+      },
+      {
+        id: '5',
         title: 'Evening Duas',
-        description: 'Protection duas before sleep',
+        description:
+          'Protection duas before sleep to guard against evil and nightmares.',
         imagePath: require('../assets/images/reminder2.png'),
         priority: 'medium',
         category: 'dua',
+        type: 'image',
       },
     ];
   },
@@ -80,6 +106,32 @@ const ReminderCard: React.FC<{
     onPress?.(item);
   };
 
+  // Render text-only card with gradient
+  if (item.type === 'text' || !item.imagePath) {
+    return (
+      <TouchableOpacity
+        style={[styles.reminderCard, styles.textOnlyCard]}
+        onPress={handlePress}
+        activeOpacity={0.8}>
+        <View style={styles.gradientContainer}>
+          <View style={styles.gradientOverlay} />
+          <View style={styles.textCardContent}>
+            <Text style={styles.textCardTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <View style={styles.textFadeContainer}>
+              <Text style={styles.textCardDescription} numberOfLines={3}>
+                {item.description}
+              </Text>
+              <View style={styles.textFadeOverlay} />
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Render image card
   return (
     <TouchableOpacity
       style={styles.reminderCard}
@@ -88,8 +140,13 @@ const ReminderCard: React.FC<{
       <Image
         source={item.imagePath}
         style={styles.reminderImage}
-        resizeMode="contain"
+        resizeMode="cover"
       />
+      <View style={styles.imageCardOverlay}>
+        <Text style={styles.imageCardTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -101,6 +158,14 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedReminder, setSelectedReminder] = useState<Reminder | null>(
+    null,
+  );
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Animation values
+  const modalScale = useSharedValue(0);
+  const modalOpacity = useSharedValue(0);
 
   useEffect(() => {
     loadReminders();
@@ -126,11 +191,42 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
       setLoading(false);
     }
   };
-
   const handleReminderPress = (reminder: Reminder) => {
-    console.log('Reminder pressed:', reminder.title);
-    // TODO: Navigate to reminder detail or perform action
+    setSelectedReminder(reminder);
+    setModalVisible(true);
+
+    // Animate modal appearance with reduced animation
+    modalScale.value = withSpring(1, {
+      damping: 18,
+      stiffness: 150,
+    });
+    modalOpacity.value = withTiming(1, {
+      duration: 150,
+    });
   };
+
+  const closeModal = () => {
+    // Animate modal disappearance with reduced animation
+    modalScale.value = withSpring(0, {
+      damping: 18,
+      stiffness: 150,
+    });
+    modalOpacity.value = withTiming(0, {
+      duration: 100,
+    });
+
+    setTimeout(() => {
+      setModalVisible(false);
+      setSelectedReminder(null);
+    }, 150);
+  };
+
+  const modalAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{scale: modalScale.value}],
+      opacity: modalOpacity.value,
+    };
+  });
 
   const handleSeeAllPress = () => {
     console.log('See all reminders pressed');
@@ -172,28 +268,71 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
       </View>
     );
   }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.remindersContainer}>
-        <FlatList
-          data={reminders}
-          renderItem={({item}) => (
-            <ReminderCard item={item} onPress={handleReminderPress} />
-          )}
-          keyExtractor={item => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.remindersList}
-          decelerationRate="fast"
-        />
+    <>
+      <View style={styles.container}>
+        <View style={styles.remindersContainer}>
+          <FlatList
+            data={reminders}
+            renderItem={({item}) => (
+              <ReminderCard item={item} onPress={handleReminderPress} />
+            )}
+            keyExtractor={item => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.remindersList}
+            decelerationRate="fast"
+          />
+        </View>
+
+        <Text style={styles.quoteText}>
+          "Remind, indeed reminders benefit the believers"
+        </Text>
+        <Text style={styles.quoteSource}>(Quran 51:55)</Text>
       </View>
 
-      <Text style={styles.quoteText}>
-        "Remind, indeed reminders benefit the believers"
-      </Text>
-      <Text style={styles.quoteSource}>(Quran 51:55)</Text>
-    </View>
+      {/* Reminder Detail Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="none"
+        onRequestClose={closeModal}>
+        <Pressable style={styles.modalOverlay} onPress={closeModal}>
+          <Animated.View style={[styles.modalContainer, modalAnimatedStyle]}>
+            <Pressable onPress={e => e.stopPropagation()}>
+              {/* Close Button */}
+              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              <ScrollView
+                style={styles.modalScrollView}
+                contentContainerStyle={styles.modalContent}
+                showsVerticalScrollIndicator={false}>
+                {/* Image (if available) */}
+                {selectedReminder?.imagePath && (
+                  <View style={styles.modalImageContainer}>
+                    <Image
+                      source={selectedReminder.imagePath}
+                      style={styles.modalImage}
+                      resizeMode="cover"
+                    />
+                  </View>
+                )}
+
+                {/* Title */}
+                <Text style={styles.modalTitle}>{selectedReminder?.title}</Text>
+
+                {/* Description */}
+                <Text style={styles.modalDescription}>
+                  {selectedReminder?.description}
+                </Text>
+              </ScrollView>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </Modal>
+    </>
   );
 };
 
@@ -212,12 +351,151 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     overflow: 'hidden',
     marginRight: CARD_SPACING,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  }, // Text-only card styles
+  textOnlyCard: {
+    width: TEXT_CARD_WIDTH,
   },
-  reminderImage: {
-    height: '100%',
-    aspectRatio: 1, // Keeps square aspect ratio based on height
+  gradientContainer: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 15,
+    position: 'relative',
+  },
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderRadius: 15,
   },
+  textCardContent: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'center',
+  },
+  textCardTitle: {
+    ...typography.h3,
+    fontSize: 16,
+    color: colors.white,
+    fontWeight: '600',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  textFadeContainer: {
+    position: 'relative',
+  },
+  textCardDescription: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.white,
+    opacity: 0.9,
+    lineHeight: 18,
+  },
+  textFadeOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 18,
+    backgroundColor: colors.primary,
+    opacity: 0.7,
+  },
+  // Image card styles
+  reminderImage: {
+    height: '100%',
+    aspectRatio: 1,
+    borderRadius: 15,
+  },
+  imageCardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: 12,
+    borderBottomLeftRadius: 15,
+    borderBottomRightRadius: 15,
+  },
+  imageCardTitle: {
+    ...typography.bodyMedium,
+    fontSize: 14,
+    color: colors.white,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    width: '100%',
+    maxHeight: '80%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: colors.text.secondary,
+    fontWeight: '600',
+  },
+  modalScrollView: {
+    maxHeight: '100%',
+  },
+  modalContent: {
+    padding: 20,
+    paddingTop: 50, // Account for close button
+  },
+  modalImageContainer: {
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+  },
+  modalImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+  },
+  modalTitle: {
+    ...typography.h2,
+    fontSize: 22,
+    color: colors.primary,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    lineHeight: 28,
+  },
+  modalDescription: {
+    ...typography.body,
+    fontSize: 16,
+    color: '#4CAF50', // Light green color
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  // Existing styles
   quoteText: {
     ...typography.h3,
     fontSize: 16,
