@@ -2,13 +2,13 @@ import React, {useState} from 'react';
 import {View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import FormField from './FormField';
 import DateField from './DateField';
-import DropdownField from './DropdownField';
 import CheckboxField from './CheckboxField';
+import LocationMobilitySection from './LocationMobilitySection';
 import {useEditProfile} from '../../contexts/EditProfileContext';
 import {spacing} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
-// Configuration for basic form fields (removed age)
+// Configuration for basic form fields
 const BASIC_FIELDS_CONFIG = [
   {
     key: 'name' as const,
@@ -32,23 +32,10 @@ const BASIC_FIELDS_CONFIG = [
     keyboardType: 'phone-pad',
   },
   {
-    key: 'address' as const,
-    label: 'Location',
-    placeholder: 'Enter location/address',
-    type: 'text',
-    multiline: true,
-    numberOfLines: 3,
+    key: 'dateOfBirth' as const,
+    label: 'Date Of Birth',
+    type: 'date',
   },
-];
-
-// Mobility options with key-value format for SelectList
-const MOBILITY_OPTIONS = [
-  {key: 'walking', value: 'Walking'},
-  {key: 'bicycle', value: 'Bicycle'},
-  {key: 'motorcycle', value: 'Motorcycle'},
-  {key: 'car', value: 'Car'},
-  {key: 'public_transport', value: 'Public Transport'},
-  {key: 'other', value: 'Other'},
 ];
 
 // Additional info configuration
@@ -114,7 +101,6 @@ const FormFields: React.FC = () => {
       />
     );
   };
-
   return (
     <View style={styles.container}>
       {/* Basic Information Section */}
@@ -122,46 +108,8 @@ const FormFields: React.FC = () => {
         {BASIC_FIELDS_CONFIG.map(renderBasicField)}
       </View>
 
-      {/* Mobility Section */}
-      <View style={styles.section}>
-        <DropdownField
-          label="Mobility (How they travel to mosque)"
-          value={formData.mobility}
-          onValueChange={value => updateField('mobility', value)}
-          options={MOBILITY_OPTIONS}
-          placeholder="Select mobility option"
-          error={errors.mobility}
-        />
-
-        {/* Conditional "Other" field for mobility */}
-        {formData.mobility === 'other' && (
-          <FormField
-            label="If Other, please specify"
-            value={formData.mobilityOther}
-            onChangeText={value => updateField('mobilityOther', value)}
-            placeholder="Please specify"
-            error={errors.mobilityOther}
-          />
-        )}
-      </View>
-
-      {/* Date and Masjid Section */}
-      <View style={styles.section}>
-        <DateField
-          label="Date Of Birth"
-          value={formData.dateOfBirth}
-          onDateChange={value => updateField('dateOfBirth', value)}
-          error={errors.dateOfBirth}
-        />
-
-        <FormField
-          label="Nearest Masjid"
-          value={formData.nearestMasjid}
-          onChangeText={value => updateField('nearestMasjid', value)}
-          placeholder="Enter nearest masjid name"
-          error={errors.nearestMasjid}
-        />
-      </View>
+      {/* Location & Mobility Section - Includes pickup widget */}
+      <LocationMobilitySection />
 
       {/* Expandable Additional Information Section */}
       <View style={styles.additionalInfoSection}>

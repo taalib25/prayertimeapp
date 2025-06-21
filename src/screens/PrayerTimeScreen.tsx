@@ -45,11 +45,8 @@ const PrayerTimeScreen = () => {
   const isToday = React.useMemo(() => {
     return selectedDate === getTodayDateString();
   }, [selectedDate]);
-
   const handleCallPreferenceSet = async (preference: boolean) => {
     try {
-      console.log('Call preference set:', preference);
-
       // The preference is already saved in CallWidget,
       // but we can add additional logic here if needed
       // For example, scheduling notifications based on the preference
@@ -77,9 +74,7 @@ const PrayerTimeScreen = () => {
       fadeAnim.setValue(0);
     }
   }, [isLoading, fadeAnim]);
-
   const handleSeeAllReminders = () => {
-    console.log('See All Reminders Pressed');
     navigation.navigate('Feeds' as never);
   };
 
@@ -332,7 +327,6 @@ const styles = StyleSheet.create({
     // marginVertical: 12,
     letterSpacing: 1,
   },
- 
 });
 
 export default PrayerTimeScreen;

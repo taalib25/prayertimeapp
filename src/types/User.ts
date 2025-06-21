@@ -4,6 +4,24 @@
  * No need for multiple sub-types or complex categorization
  */
 
+// Pickup assistance settings interface
+export interface PickupSettings {
+  enabled: boolean;
+  preferredTime: string;
+  emergencyContact: string;
+  specificLocation: string;
+  notes: string;
+  availableDays: {
+    monday: boolean;
+    tuesday: boolean;
+    wednesday: boolean;
+    thursday: boolean;
+    friday: boolean;
+    saturday: boolean;
+    sunday: boolean;
+  };
+}
+
 // Main user interface - contains everything about the user
 export interface User {
   // Basic profile info
@@ -41,6 +59,7 @@ export interface SystemData {
   authToken: string | null;
   hasSeenOnboarding: boolean;
   callPreference: boolean | null;
+  pickupSettings: PickupSettings | null; // Detailed pickup settings for request system
   fajrReminderDuration: number | null; // Duration in minutes
   fajrReminderTiming: 'before' | 'after' | null; // Before or after Fajr
 }
@@ -70,6 +89,7 @@ export const DEFAULT_SYSTEM: SystemData = {
   authToken: null,
   hasSeenOnboarding: false,
   callPreference: null,
+  pickupSettings: null,
   fajrReminderDuration: null,
   fajrReminderTiming: null,
 };

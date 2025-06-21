@@ -17,6 +17,7 @@ import FakeCallScreen from './src/screens/FakeCallScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import CallerSettingScreen from './src/screens/CallerSettingScreen';
+import PickupSettingsScreen from './src/screens/PickupSettingsScreenTemp';
 // import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   NotificationScreen: undefined;
   EditProfileScreen: undefined;
   CallerSettings: undefined;
+  PickupSettings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -181,6 +183,14 @@ function AppNavigator() {
               <Stack.Screen
                 name="CallerSettings"
                 component={CallerSettingScreen}
+                options={{
+                  headerShown: false,
+                  presentation: 'card',
+                }}
+              />
+              <Stack.Screen
+                name="PickupSettings"
+                component={PickupSettingsScreen}
                 options={{
                   headerShown: false,
                   presentation: 'card',

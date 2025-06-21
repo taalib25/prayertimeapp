@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
-import {Text, StyleSheet, Animated} from 'react-native';
+import {Text, StyleSheet} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import {useTimer} from '../hooks/useTimer';
@@ -27,10 +27,8 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     hours: 0,
     minutes: 0,
     seconds: 0,
-  });
-  const [isExpired, setIsExpired] = useState(false);
+  });  const [isExpired, setIsExpired] = useState(false);
   const onCompleteRef = useRef(onComplete);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Update onComplete ref when it changes
   useEffect(() => {
@@ -121,48 +119,23 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     } else {
       return 'Now';
     }
-  }, [isActive, targetTime, timeRemaining, isExpired]);
-  // Determine if we should show seconds (only for very close times)
+  }, [isActive, targetTime, timeRemaining, isExpired]);  // Determine if we should show seconds (only for very close times)
   const showSeconds = useMemo(() => {
     return isActive && timeRemaining.hours === 0 && timeRemaining.minutes <= 5;
   }, [isActive, timeRemaining]);
 
-  // Pulse animation for urgent countdown
-  useEffect(() => {
-    if (showSeconds && isActive && !isExpired) {
-      const pulseAnimation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      pulseAnimation.start();
-      return () => pulseAnimation.stop();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [showSeconds, isActive, isExpired, pulseAnim]);
   return (
-    <Animated.Text
+    <Text
       style={[
         styles.timerText,
         isActive && styles.activeTimerText,
         isExpired && styles.expiredTimerText,
         showSeconds && styles.urgentTimerText,
-        showSeconds && {transform: [{scale: pulseAnim}]},
         style,
       ]}
       numberOfLines={1}>
       {formatTime()}
-    </Animated.Text>
+    </Text>
   );
 };
 
@@ -185,7 +158,7 @@ const styles = StyleSheet.create({
   },
   expiredTimerText: {
     color: '#E74C3C', // More sophisticated red when time is up
-    fontWeight: '800',
+   ...typography.h1,
     fontSize: 28,
     textShadowColor: 'rgba(231, 76, 60, 0.3)',
     textShadowOffset: {width: 0, height: 2},
@@ -193,7 +166,7 @@ const styles = StyleSheet.create({
   },
   urgentTimerText: {
     color: '#D68910', // Warmer orange for urgent countdown (< 5 minutes)
-    fontWeight: '900',
+ ...typography.h1,
     fontSize: 34,
     letterSpacing: -0.8,
     textShadowColor: 'rgba(214, 137, 16, 0.3)',

@@ -27,7 +27,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {displayName} = useUser();
+  const {displayName, user} = useUser();
 
   // Using dummy data for other fields
   const dummyUser = {
@@ -80,8 +80,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
     navigation.navigate('NotificationScreen');
   };
   const handleCallerSettings = () => {
-    console.log('user >>>>>>>>>>', dummyUser);
     navigation.navigate('CallerSettings');
+  };
+
+  const handlePickupSettings = () => {
+    navigation.navigate('PickupSettings');
   };
 
   const handleDatabaseView = () => {
@@ -118,7 +121,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         <TouchableOpacity
           onPress={() => {
             // Refresh by calling the hook again
-            console.log('Retrying to load user data...');
           }}
           style={styles.retryButton}>
           <Text style={styles.retryText}>Retry</Text>
@@ -150,7 +152,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             </View>
           </View>
         </View>
-
         {/* Badges Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -232,8 +233,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             onPress={handleNotificationSettings}
           /> */}
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
+          {/* Pickup Settings - Available for all users */}
+          <MenuButton
+            title="Pickup Assistance"
+            onPress={handlePickupSettings}
+          />
           {/* <MenuButton title="Database Explorer" onPress={handleDatabaseView} /> */}
-
           {/* Logout fButton */}
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>

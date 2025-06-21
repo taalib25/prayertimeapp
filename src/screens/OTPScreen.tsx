@@ -231,7 +231,6 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
             <Text style={styles.title}>OTP Verification</Text>
             <Text style={styles.subtitle}>
               We've sent a verification code to your email{'\n'}
-              <Text style={styles.emailText}>{email}</Text>
             </Text>
 
             <View style={styles.otpContainer}>
