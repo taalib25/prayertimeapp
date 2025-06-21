@@ -28,7 +28,7 @@ const DropdownField: React.FC<DropdownFieldProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>{' '}
+      <Text style={styles.label}>{label}</Text>
       <SelectList
         setSelected={onValueChange}
         data={options}

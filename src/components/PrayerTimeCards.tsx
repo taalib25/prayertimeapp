@@ -81,7 +81,6 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     },
     [selectedPrayerForAttendance, updatePrayerStatus],
   );
-
   const handleModalClose = useCallback(() => {
     setAttendancePopupVisible(false);
     setSelectedPrayerForAttendance(null);
@@ -141,9 +140,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
                           </View>
                         )}
                     </View>
-                    <Text style={styles.prayerTime} numberOfLines={1}>
-                      {prayer.time}
-                    </Text>
+                    <Text style={styles.prayerTime}>{prayer.time}</Text>
                   </View>
                 </TouchableOpacity>
               );

@@ -23,6 +23,7 @@ import {getTodayDateString} from '../utils/helpers';
 import CallWidget from '../components/CallWidget';
 import PersonalMeeting from '../components/PersonalMeeting';
 import FajrTimeChart from '../components/FajrTimeChart';
+import CountdownTimer from '../components/CountdownTimer';
 import {useUser} from '../hooks/useUser';
 import UserService from '../services/UserService';
 
@@ -34,6 +35,16 @@ const PrayerTimeScreen = () => {
   const isLoading = prayerLoading || userLoading;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const userService = UserService.getInstance();
+
+  // Find the active prayer for the countdown display
+  const activePrayer = React.useMemo(() => {
+    return prayerTimes.find(prayer => prayer.isActive);
+  }, [prayerTimes]);
+
+  // Check if selected date is today
+  const isToday = React.useMemo(() => {
+    return selectedDate === getTodayDateString();
+  }, [selectedDate]);
 
   const handleCallPreferenceSet = async (preference: boolean) => {
     try {
@@ -111,6 +122,26 @@ const PrayerTimeScreen = () => {
         <View style={styles.container}>
           {/* Section Header for Reminders - always visible */}
           <View style={{height: 110}} />
+          {/* Countdown Timer Section - Above CallWidget */}
+          {!isLoading && activePrayer && isToday && (
+            <Animated.View style={{opacity: fadeAnim}}>
+              <View style={styles.countdownSection}>
+                <View style={styles.countdownCard}>
+                  <View style={styles.countdownHeader}>
+                    <View style={styles.nextPrayerRow}>
+                      <Text style={styles.clockIcon}>⏰</Text>
+                      <Text style={styles.nextPrayerText}>Next Prayer</Text>
+                    </View>
+                  </View>
+                  <CountdownTimer
+                    targetTime={activePrayer.time}
+                    isActive={true}
+                    style={styles.countdownTimer}
+                  />
+                </View>
+              </View>
+            </Animated.View>
+          )}
           <Animated.View style={{opacity: fadeAnim}}>
             <CallWidget onCallPreferenceSet={handleCallPreferenceSet} />
           </Animated.View>
@@ -122,7 +153,6 @@ const PrayerTimeScreen = () => {
               <Text style={styles.seeAllText}>See All</Text>
             </Pressable>
           </View>
-
           {/* Content sections with loading states */}
           {isLoading ? (
             <View style={styles.contentLoadingContainer}>
@@ -242,6 +272,67 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     paddingHorizontal: 20,
   },
+  countdownSection: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginTop: 2,
+    marginBottom: 3,
+    alignItems: 'center',
+  },
+  countdownCard: {
+    backgroundColor: '#E8F8E8', // Lighter green background for more contrast
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#B8E6B8', // More defined green border
+    shadowColor: '#2D5A2D', // Dark green shadow
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  countdownHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  nextPrayerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clockIcon: {
+    fontSize: 16,
+    marginRight: 8,
+    opacity: 0.8,
+  },
+  nextPrayerText: {
+    ...typography.bodySmall,
+    color: '#1A4D1A', // Darker green for better contrast
+    fontSize: 14,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    opacity: 0.8,
+  },
+  prayerNameText: {
+    ...typography.h2,
+    color: '#0F3B0F', // Very dark green for prayer name
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+  },
+  countdownTimer: {
+    ...typography.h2,
+    fontSize: 36,
+    color: colors.primary, // Slightly darker green for better readability
+    textAlign: 'center',
+    // marginVertical: 12,
+    letterSpacing: 1,
+  },
+ 
 });
 
 export default PrayerTimeScreen;
