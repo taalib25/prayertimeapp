@@ -130,7 +130,6 @@ const ReminderCard: React.FC<{
       </TouchableOpacity>
     );
   }
-
   // Render image card
   return (
     <TouchableOpacity
@@ -142,11 +141,6 @@ const ReminderCard: React.FC<{
         style={styles.reminderImage}
         resizeMode="cover"
       />
-      <View style={styles.imageCardOverlay}>
-        <Text style={styles.imageCardTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-      </View>
     </TouchableOpacity>
   );
 };
@@ -195,30 +189,32 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
     setSelectedReminder(reminder);
     setModalVisible(true);
 
-    // Animate modal appearance with reduced animation
+    // Animate modal appearance with smoother animation
     modalScale.value = withSpring(1, {
-      damping: 18,
-      stiffness: 150,
+      damping: 20,
+      stiffness: 120,
+      mass: 0.8,
     });
     modalOpacity.value = withTiming(1, {
-      duration: 150,
+      duration: 300,
     });
   };
 
   const closeModal = () => {
-    // Animate modal disappearance with reduced animation
+    // Animate modal disappearance with smoother animation
     modalScale.value = withSpring(0, {
-      damping: 18,
-      stiffness: 150,
+      damping: 20,
+      stiffness: 120,
+      mass: 0.8,
     });
     modalOpacity.value = withTiming(0, {
-      duration: 100,
+      duration: 200,
     });
 
     setTimeout(() => {
       setModalVisible(false);
       setSelectedReminder(null);
-    }, 150);
+    }, 250);
   };
 
   const modalAnimatedStyle = useAnimatedStyle(() => {
@@ -298,7 +294,12 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
         animationType="none"
         onRequestClose={closeModal}>
         <Pressable style={styles.modalOverlay} onPress={closeModal}>
-          <Animated.View style={[styles.modalContainer, modalAnimatedStyle]}>
+          <Animated.View
+            style={[
+              styles.modalContainer,
+              modalAnimatedStyle,
+              selectedReminder?.type === 'text' && styles.textModalContainer,
+            ]}>
             <Pressable onPress={e => e.stopPropagation()}>
               {/* Close Button */}
               <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
@@ -315,16 +316,25 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
                     <Image
                       source={selectedReminder.imagePath}
                       style={styles.modalImage}
-                      resizeMode="cover"
+                      resizeMode="contain"
                     />
                   </View>
                 )}
-
                 {/* Title */}
-                <Text style={styles.modalTitle}>{selectedReminder?.title}</Text>
-
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    selectedReminder?.type === 'text' && styles.textModalTitle,
+                  ]}>
+                  {selectedReminder?.title}
+                </Text>
                 {/* Description */}
-                <Text style={styles.modalDescription}>
+                <Text
+                  style={[
+                    styles.modalDescription,
+                    selectedReminder?.type === 'text' &&
+                      styles.textModalDescription,
+                  ]}>
                   {selectedReminder?.description}
                 </Text>
               </ScrollView>
@@ -425,17 +435,16 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '600',
     lineHeight: 18,
-  },
-  // Modal styles
+  }, // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: colors.white,
+    backgroundColor: '#f8f9fa',
     borderRadius: 20,
     width: '100%',
     maxHeight: '80%',
@@ -445,6 +454,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
+  textModalContainer: {
+    backgroundColor: colors.primary,
+  },
   closeButton: {
     position: 'absolute',
     top: 15,
@@ -452,7 +464,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
@@ -460,7 +472,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 18,
     color: colors.text.secondary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   modalScrollView: {
     maxHeight: '100%',
@@ -468,6 +480,11 @@ const styles = StyleSheet.create({
   modalContent: {
     padding: 20,
     paddingTop: 50, // Account for close button
+  },
+  textModalContent: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+    margin: 0,
   },
   modalImageContainer: {
     marginBottom: 20,
@@ -477,16 +494,19 @@ const styles = StyleSheet.create({
   },
   modalImage: {
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 12,
   },
   modalTitle: {
     ...typography.h2,
-    fontSize: 22,
+    fontSize: 24,
     color: colors.primary,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginBottom: 16,
-    lineHeight: 28,
+    lineHeight: 30,
+  },
+  textModalTitle: {
+    color: colors.white,
   },
   modalDescription: {
     ...typography.body,
@@ -494,6 +514,10 @@ const styles = StyleSheet.create({
     color: '#4CAF50', // Light green color
     lineHeight: 24,
     marginBottom: 20,
+  },
+  textModalDescription: {
+    color: colors.white,
+    opacity: 0.95,
   },
   // Existing styles
   quoteText: {
