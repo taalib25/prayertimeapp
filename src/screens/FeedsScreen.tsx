@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 10,
   },
   modalContainer: {
     backgroundColor: '#f8f9fa',
@@ -599,14 +599,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 999,
+    elevation: 10, // For Android
   },
   closeButtonText: {
     fontSize: 18,
-    color: colors.text.secondary,
+    color: colors.white,
     fontWeight: '700',
   },
   modalScrollView: {
@@ -614,13 +615,13 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     padding: 20,
-    paddingTop: 50, // Account for close button
+    paddingTop: 20, // Reduced from 50 to allow image to take more space
   },
   modalImageContainer: {
     marginBottom: 20,
     borderRadius: 12,
     overflow: 'hidden',
-    paddingHorizontal: 4,
+    // paddingHorizontal: 3,
   },
   modalImage: {
     width: '100%',
@@ -631,7 +632,6 @@ const styles = StyleSheet.create({
     ...typography.h2,
     fontSize: 24,
     color: colors.primary,
-    fontWeight: '800',
     marginBottom: 16,
     lineHeight: 30,
   },

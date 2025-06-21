@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContainer: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background.light,
     borderRadius: 20,
     width: '100%',
     maxHeight: '80%',
@@ -473,22 +473,23 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 999,
+    elevation: 10, // For Android
   },
   closeButtonText: {
     fontSize: 18,
-    color: colors.text.secondary,
+    color: colors.white,
     fontWeight: '700',
   },
   modalScrollView: {
     maxHeight: '100%',
   },
   modalContent: {
-    padding: 20,
-    paddingTop: 50, // Account for close button
+    padding: 19,
+    paddingTop: 20, // Reduced from 50 to allow image to take more space
   },
   textModalContent: {
     backgroundColor: colors.primary,
@@ -499,7 +500,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 12,
     overflow: 'hidden',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
   modalImage: {
     width: '100%',
@@ -510,7 +511,6 @@ const styles = StyleSheet.create({
     ...typography.h2,
     fontSize: 24,
     color: colors.primary,
-    fontWeight: '800',
     marginBottom: 16,
     lineHeight: 30,
   },

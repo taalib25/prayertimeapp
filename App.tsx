@@ -17,7 +17,7 @@ import FakeCallScreen from './src/screens/FakeCallScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import CallerSettingScreen from './src/screens/CallerSettingScreen';
-import PickupSettingsScreen from './src/screens/PickupSettingsScreenTemp';
+import PickupSettingsScreen from './src/screens/PickupSettingsScreen';
 // import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 

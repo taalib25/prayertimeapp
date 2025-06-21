@@ -27,7 +27,8 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     hours: 0,
     minutes: 0,
     seconds: 0,
-  });  const [isExpired, setIsExpired] = useState(false);
+  });
+  const [isExpired, setIsExpired] = useState(false);
   const onCompleteRef = useRef(onComplete);
 
   // Update onComplete ref when it changes
@@ -119,7 +120,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     } else {
       return 'Now';
     }
-  }, [isActive, targetTime, timeRemaining, isExpired]);  // Determine if we should show seconds (only for very close times)
+  }, [isActive, targetTime, timeRemaining, isExpired]); // Determine if we should show seconds (only for very close times)
   const showSeconds = useMemo(() => {
     return isActive && timeRemaining.hours === 0 && timeRemaining.minutes <= 5;
   }, [isActive, timeRemaining]);
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
   },
   expiredTimerText: {
     color: '#E74C3C', // More sophisticated red when time is up
-   ...typography.h1,
+    ...typography.h1,
     fontSize: 28,
     textShadowColor: 'rgba(231, 76, 60, 0.3)',
     textShadowOffset: {width: 0, height: 2},
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
   },
   urgentTimerText: {
     color: '#D68910', // Warmer orange for urgent countdown (< 5 minutes)
- ...typography.h1,
+    ...typography.h1,
     fontSize: 34,
     letterSpacing: -0.8,
     textShadowColor: 'rgba(214, 137, 16, 0.3)',

@@ -10,6 +10,7 @@ import {
   Switch,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {colors, spacing} from '../utils/theme';
@@ -273,10 +274,12 @@ const PickupSettingsScreen: React.FC = () => {
       </View>
     </View>
   );
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+      {/* Add status bar height for Android */}
+      {Platform.OS === 'android' && <View style={styles.statusBarSpacer} />}
 
       {/* Header */}
       <View style={styles.header}>
@@ -440,11 +443,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF',
   },
+  statusBarSpacer: {
+    height: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+    paddingTop: spacing.xl, // Add extra top padding for status bar
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
