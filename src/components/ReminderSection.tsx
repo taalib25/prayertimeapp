@@ -37,8 +37,8 @@ interface ReminderSectionProps {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_SIZE = 160; // Square cards
-const CARD_SPACING = 12; // Consistent spacing
+const CARD_SIZE = 200; // Increased from 160 to 200 - bigger square cards
+const CARD_SPACING = 16; // Increased spacing for better visual separation
 
 // Mock API service
 const reminderApi = {
@@ -113,8 +113,7 @@ const ReminderCard: React.FC<{
   const handlePress = () => {
     onPress?.(item);
   };
-
-  // Render text-only card with gradient
+  // Render text-only card with gradient - simplified and bigger
   if (item.type === 'text' || !item.imagePath) {
     return (
       <TouchableOpacity
@@ -394,7 +393,7 @@ const styles = StyleSheet.create({
   },
   textCardContent: {
     flex: 1,
-    padding: 16,
+    padding: 16, // Increased padding for better spacing
     justifyContent: 'center',
   },
   textCardTitle: {
