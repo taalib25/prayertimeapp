@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {useMonthlyAggregatedData} from '../hooks/useContextualData';
+import {dataCache} from '../utils/dataCache';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -39,9 +40,18 @@ export const MonthlyTaskProvider: React.FC<{
 
   // Get monthly data using the centralized context instead of direct database access
   const {getMonthlyStats} = useMonthlyAggregatedData();
-
   // Transform raw data to format needed for UI
   const monthlyData = useMemo(() => {
+    // ⚡ PERFORMANCE: Cache monthly data calculations
+    const cacheKey = `monthly-stats-${JSON.stringify(goals)}`;
+    
+    let cached = dataCache.get<MonthData[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    console.log('🔄 Computing monthly data transform...');
+    
     // Generate all months for the past 3 months
     const today = new Date();
     const allMonths = [];
@@ -81,6 +91,8 @@ export const MonthlyTaskProvider: React.FC<{
       });
     }
 
+    // Cache the result for 2 minutes
+    dataCache.set(cacheKey, allMonths, 120000);
     return allMonths;
   }, [getMonthlyStats, goals]);
 

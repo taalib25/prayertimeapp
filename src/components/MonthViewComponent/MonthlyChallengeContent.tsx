@@ -1,4 +1,4 @@
-import React, {useState, useRef, useCallback, useEffect} from 'react';
+import React, {useState, useRef, useCallback, useEffect, useMemo} from 'react';
 import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {MonthView} from './MonthView';
@@ -7,6 +7,7 @@ import {
   MonthlyTaskProvider,
   useMonthlyTask,
 } from '../../contexts/MonthlyTaskContext';
+import {dataCache} from '../../utils/dataCache';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -31,16 +32,36 @@ const MonthlyChallengeContentInner: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const pagerRef = useRef<PagerView>(null);
 
+  // ⚡ PERFORMANCE: Cache heavy month data computations
+  const cachedMonthlyData = useMemo(() => {
+    const cacheKey = `monthly-data-${JSON.stringify(monthlyData).slice(0, 50)}`;
+    
+    let cached = dataCache.get<any[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    
+    // Cache the monthly data for faster subsequent renders
+    dataCache.set(cacheKey, monthlyData, 300000); // 5 minutes
+    return monthlyData;
+  }, [monthlyData]);
+
+  // ⚡ PERFORMANCE: Cache current month index calculation
+  const currentMonthIndex = useMemo(() => {
+    return getCurrentMonthIndex();
+  }, [getCurrentMonthIndex, cachedMonthlyData]);
+
   // Update current page when monthly data loads
   useEffect(() => {
-    if (monthlyData.length > 0) {
-      const initialPage = getCurrentMonthIndex();
+    if (cachedMonthlyData.length > 0) {
+      const initialPage = currentMonthIndex;
       setCurrentPage(initialPage);
+      // ⚡ PERFORMANCE: Reduced timeout for faster initial render
       setTimeout(() => {
         pagerRef.current?.setPage(initialPage);
-      }, 100);
+      }, 50);
     }
-  }, [monthlyData, getCurrentMonthIndex]);
+  }, [cachedMonthlyData, currentMonthIndex]);
 
   const handlePageSelected = useCallback((e: any) => {
     setCurrentPage(e.nativeEvent.position);
@@ -49,8 +70,7 @@ const MonthlyChallengeContentInner: React.FC = () => {
   const handlePagePress = useCallback((index: number) => {
     pagerRef.current?.setPage(index);
   }, []);
-
-  if (monthlyData.length === 0) {
+  if (cachedMonthlyData.length === 0) {
     return null;
   }
 
@@ -62,7 +82,7 @@ const MonthlyChallengeContentInner: React.FC = () => {
         initialPage={0}
         onPageSelected={handlePageSelected}
         pageMargin={8}>
-        {monthlyData.map((monthData: any, index: number) => (
+        {cachedMonthlyData.map((monthData: any, index: number) => (
           <View
             key={`${monthData.monthLabel}-${monthData.year}`}
             style={styles.pageContainer}>
@@ -70,14 +90,14 @@ const MonthlyChallengeContentInner: React.FC = () => {
               monthData={monthData}
               index={index}
               currentPage={currentPage}
-              isCurrentMonth={index === monthlyData.length - 1}
+              isCurrentMonth={index === cachedMonthlyData.length - 1}
             />
           </View>
         ))}
       </PagerView>
 
       <PaginationIndicator
-        monthlyData={monthlyData}
+        monthlyData={cachedMonthlyData}
         currentPage={currentPage}
         onPagePress={handlePagePress}
         getCurrentMonthIndex={getCurrentMonthIndex}

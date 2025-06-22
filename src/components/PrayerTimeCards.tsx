@@ -33,20 +33,10 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
   // But tick marks should only show for today's date regardless
   const {getPrayerStatus, updatePrayerStatus, isLoading, todayData} =
     usePrayerData(selectedDate);
-
   const isToday = useMemo(() => {
     const today = getTodayDateString();
-    const result = selectedDate === today;
-    console.log(
-      `🗓️ PrayerTimeCards: selectedDate=${selectedDate}, today=${today}, isToday=${result}`,
-    );
-    return result;
+    return selectedDate === today;
   }, [selectedDate]);
-
-  useEffect(() => {
-    // This effect ensures component stays in sync with the daily task context
-    // No action needed here, just dependency tracking
-  }, [todayData]);
 
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
     setSelectedPrayerForAttendance(prayer);

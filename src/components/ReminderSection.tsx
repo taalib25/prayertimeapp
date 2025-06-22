@@ -43,7 +43,7 @@ const CARD_SPACING = 16; // Increased spacing for better visual separation
 // Mock API service
 const reminderApi = {
   async fetchReminders(): Promise<Reminder[]> {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 200)); // Reduced from 800ms
     return [
       {
         id: '1',

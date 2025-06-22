@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback, Suspense} from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   StatusBar,
   Pressable,
-  Animated,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 
@@ -15,26 +14,34 @@ import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import Header from '../components/Header';
 import PrayerTimeCards from '../components/PrayerTimeCards';
-import DailyTasksSelector from '../components/DailyTasksComponent/DailyTasksSelector';
-import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
+import CountdownTimer from '../components/CountdownTimer';
 import ReminderSection from '../components/ReminderSection';
+import CallWidget from '../components/CallWidget';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {getTodayDateString} from '../utils/helpers';
-import CallWidget from '../components/CallWidget';
-import PersonalMeeting from '../components/PersonalMeeting';
-import FajrTimeChart from '../components/FajrTimeChart';
-import CountdownTimer from '../components/CountdownTimer';
 import {useUser} from '../hooks/useUser';
-import UserService from '../services/UserService';
+import {performanceMonitor} from '../utils/performance';
+
+// Lazy loaded components
+const DailyTasksSelector = React.lazy(
+  () => import('../components/DailyTasksComponent/DailyTasksSelector'),
+);
+const MonthlyChallengeContent = React.lazy(
+  () => import('../components/MonthViewComponent/MonthlyChallengeContent'),
+);
+const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user, displayName, isLoading: userLoading} = useUser();
-  const isLoading = prayerLoading || userLoading;
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const userService = UserService.getInstance();
+
+  // Simplified loading states - only two phases needed
+  const [showAllContent, setShowAllContent] = useState(false);
+
+  // Core content shows immediately when prayer times are ready
+  const showPrimaryContent = !prayerLoading;
 
   // Find the active prayer for the countdown display
   const activePrayer = React.useMemo(() => {
@@ -45,7 +52,28 @@ const PrayerTimeScreen = () => {
   const isToday = React.useMemo(() => {
     return selectedDate === getTodayDateString();
   }, [selectedDate]);
-  const handleCallPreferenceSet = async (preference: boolean) => {
+
+  // Performance monitoring
+  useEffect(() => {
+    performanceMonitor.start('prayer_screen_render');
+    return () => {
+      performanceMonitor.end('prayer_screen_render');
+    };
+  }, []);
+
+  // Single delayed load for heavy components only
+  useEffect(() => {
+    if (showPrimaryContent) {
+      // Load heavy components after prayer times are rendered
+      const timer = setTimeout(() => {
+        setShowAllContent(true);
+      }, 150); // Minimal delay, just enough to show prayer times first
+
+      return () => clearTimeout(timer);
+    }
+  }, [showPrimaryContent]);
+
+  const handleCallPreferenceSet = useCallback(async (preference: boolean) => {
     try {
       // The preference is already saved in CallWidget,
       // but we can add additional logic here if needed
@@ -53,7 +81,7 @@ const PrayerTimeScreen = () => {
     } catch (error) {
       console.error('Error handling call preference:', error);
     }
-  };
+  }, []);
 
   // Extract mosque info from user
   const mosqueInfo = user
@@ -63,20 +91,9 @@ const PrayerTimeScreen = () => {
       }
     : null;
 
-  useEffect(() => {
-    if (!isLoading) {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      fadeAnim.setValue(0);
-    }
-  }, [isLoading, fadeAnim]);
-  const handleSeeAllReminders = () => {
+  const handleSeeAllReminders = useCallback(() => {
     navigation.navigate('Feeds' as never);
-  };
+  }, [navigation]);
 
   return (
     <View style={styles.safeArea}>
@@ -94,9 +111,9 @@ const PrayerTimeScreen = () => {
           mosqueLocation={user?.location || 'Location not set'}
           avatarImage={require('../assets/images/profile.png')}
         />
-        {/* Prayer Time Cards - always visible with proper structure */}
+        {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
-          {isLoading ? (
+          {!showPrimaryContent ? (
             <View style={styles.loadingCardsPlaceholder}>
               <ActivityIndicator
                 size="large"
@@ -105,68 +122,64 @@ const PrayerTimeScreen = () => {
               />
             </View>
           ) : (
-            <Animated.View style={{opacity: fadeAnim}}>
-              <PrayerTimeCards
-                prayers={prayerTimes}
-                selectedDate={selectedDate}
-              />
-            </Animated.View>
+            <PrayerTimeCards
+              prayers={prayerTimes}
+              selectedDate={selectedDate}
+            />
           )}
         </View>
         {/* Main content container - always visible */}
         <View style={styles.container}>
           {/* Section Header for Reminders - always visible */}
           <View style={{height: 110}} />
-          {/* Countdown Timer Section - Above CallWidget */}
-          {!isLoading && activePrayer && isToday && (
-            <Animated.View style={{opacity: fadeAnim}}>
-              <View style={styles.countdownSection}>
-                <View style={styles.countdownCard}>
-                  <View style={styles.countdownHeader}>
-                    <View style={styles.nextPrayerRow}>
-                      <Text style={styles.clockIcon}>⏰</Text>
-                      <Text style={styles.nextPrayerText}>Next Prayer</Text>
-                    </View>
+          {/* Countdown Timer Section - Priority 2: Show after prayer times */}
+          {showPrimaryContent && activePrayer && isToday && (
+            <View style={styles.countdownSection}>
+              <View style={styles.countdownCard}>
+                <View style={styles.countdownHeader}>
+                  <View style={styles.nextPrayerRow}>
+                    <Text style={styles.clockIcon}>⏰</Text>
+                    <Text style={styles.nextPrayerText}>Next Prayer</Text>
                   </View>
-                  <CountdownTimer
-                    targetTime={activePrayer.time}
-                    isActive={true}
-                    style={styles.countdownTimer}
-                  />
                 </View>
+                <CountdownTimer
+                  targetTime={activePrayer.time}
+                  isActive={true}
+                  style={styles.countdownTimer}
+                />
               </View>
-            </Animated.View>
-          )}
-          <Animated.View style={{opacity: fadeAnim}}>
-            <CallWidget onCallPreferenceSet={handleCallPreferenceSet} />
-          </Animated.View>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Daily Reminders</Text>
-            <Pressable
-              onPress={handleSeeAllReminders}
-              style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </Pressable>
-          </View>
-          {/* Content sections with loading states */}
-          {isLoading ? (
-            <View style={styles.contentLoadingContainer}>
-              <ActivityIndicator
-                size="large"
-                color={colors.accent}
-                style={styles.loader}
-              />
             </View>
-          ) : (
-            <Animated.View style={{opacity: fadeAnim}}>
-              {/* Reminder Section */}
+          )}
+          {/* CallWidget - Priority 3: Show after countdown */}
+          {showPrimaryContent && (
+            <CallWidget onCallPreferenceSet={handleCallPreferenceSet} />
+          )}
+          {/* Daily Reminders Section - Priority 4 */}
+          {showPrimaryContent && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Daily Reminders</Text>
+                <Pressable
+                  onPress={handleSeeAllReminders}
+                  style={styles.seeAllButton}>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </Pressable>
+              </View>
               <ReminderSection
                 maxItems={4}
                 onSeeAllPress={handleSeeAllReminders}
               />
-              {/* Section Header for Tasks */}
+            </>
+          )}
+          {/* Heavy Content - Load after initial render */}
+          {showAllContent && (
+            <Suspense
+              fallback={
+                <View style={styles.contentLoadingContainer}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              }>
               <DailyTasksSelector />
-              {/* Monthly Challenge Cards with user goals */}
               <MonthlyChallengeContent
                 userGoals={{
                   monthlyZikrGoal: user?.zikriGoal || 600,
@@ -174,7 +187,7 @@ const PrayerTimeScreen = () => {
                 }}
               />
               <FajrTimeChart />
-            </Animated.View>
+            </Suspense>
           )}
         </View>
       </ScrollView>

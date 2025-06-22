@@ -15,6 +15,7 @@ import {
 } from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
 import ApiTaskServices from '../services/apiHandler';
+import {dataCache} from '../utils/dataCache';
 
 interface DailyTasksContextType {
   // Data
@@ -51,16 +52,44 @@ export const DailyTasksProvider: React.FC<{
 
   // Get API service instance
   const apiService = useMemo(() => ApiTaskServices.getInstance(), []);
-
   // Fetch data from database
   const fetchData = useCallback(async () => {
     try {
-      setIsLoading(true);
       setError(null);
+      
+      // ⚡ PERFORMANCE: Check cache first for instant load
+      const cacheKey = `daily-tasks-${daysBack}`;
+      const cachedTasks = dataCache.get<DailyTaskData[]>(cacheKey);
+      
+      if (cachedTasks) {
+        console.log('⚡ DailyTasksContext: Using cached data');
+        setDailyTasks(cachedTasks);
+        setIsLoading(false);
+        
+        // Background refresh for fresh data
+        setTimeout(async () => {
+          try {
+            const freshTasks = await getRecentDailyTasks(daysBack);
+            dataCache.set(cacheKey, freshTasks, 60000); // Cache for 1 minute
+            setDailyTasks(freshTasks);
+            console.log(`✅ DailyTasksContext: Background refresh completed`);
+          } catch (err) {
+            console.error('❌ Background refresh failed:', err);
+          }
+        }, 100);
+        
+        return;
+      }
+      
+      // No cache - show loading and fetch
+      setIsLoading(true);
       console.log('🔄 DailyTasksContext: Fetching data...');
 
       const tasks = await getRecentDailyTasks(daysBack);
       setDailyTasks(tasks);
+      
+      // Cache the result
+      dataCache.set(cacheKey, tasks, 60000); // Cache for 1 minute
 
       console.log(`✅ DailyTasksContext: Loaded ${tasks.length} daily tasks`);
     } catch (err) {
@@ -111,16 +140,22 @@ export const DailyTasksProvider: React.FC<{
           }
           return task;
         });
-        setDailyTasks(optimisticTasks);
-
-        // 1. Update local database
+        setDailyTasks(optimisticTasks);        // 1. Update local database
         await updatePrayerStatus(date, prayer, status);
 
-        // 2. Update via API
-        await apiService.updatePrayerStatus(date, prayer, status);
+        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
+        setTimeout(async () => {
+          try {
+            await apiService.updatePrayerStatus(date, prayer, status);
+            console.log('✅ Background API update completed');
+          } catch (apiError) {
+            console.error('❌ Background API update failed:', apiError);
+          }
+        }, 50);
 
-        // 3. Refresh from database to ensure consistency
-        await fetchData();
+        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
+        const cacheKey = `daily-tasks-${daysBack}`;
+        dataCache.clear(); // Clear cache to force fresh data on next access
 
         console.log(
           '✅ DailyTasksContext: Prayer updated successfully (DB + API)',
@@ -160,16 +195,21 @@ export const DailyTasksProvider: React.FC<{
           }
           return task;
         });
-        setDailyTasks(optimisticTasks);
-
-        // 1. Update local database
+        setDailyTasks(optimisticTasks);        // 1. Update local database
         await updateQuranMinutes(date, minutes);
 
-        // 2. Update via API
-        await apiService.updateQuranMinutes(date, minutes);
+        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
+        setTimeout(async () => {
+          try {
+            await apiService.updateQuranMinutes(date, minutes);
+            console.log('✅ Background Quran API update completed');
+          } catch (apiError) {
+            console.error('❌ Background Quran API update failed:', apiError);
+          }
+        }, 50);
 
-        // 3. Refresh from database to ensure consistency
-        await fetchData();
+        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
+        dataCache.clear(); // Clear cache to force fresh data on next access
 
         console.log(
           '✅ DailyTasksContext: Quran updated successfully (DB + API)',
@@ -209,16 +249,21 @@ export const DailyTasksProvider: React.FC<{
           }
           return task;
         });
-        setDailyTasks(optimisticTasks);
-
-        // 1. Update local database
+        setDailyTasks(optimisticTasks);        // 1. Update local database
         await updateZikrCount(date, count);
 
-        // 2. Update via API
-        await apiService.updateZikrCount(date, count);
+        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
+        setTimeout(async () => {
+          try {
+            await apiService.updateZikrCount(date, count);
+            console.log('✅ Background Zikr API update completed');
+          } catch (apiError) {
+            console.error('❌ Background Zikr API update failed:', apiError);
+          }
+        }, 50);
 
-        // 3. Refresh from database to ensure consistency
-        await fetchData();
+        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
+        dataCache.clear(); // Clear cache to force fresh data on next access
 
         console.log(
           '✅ DailyTasksContext: Zikr updated successfully (DB + API)',

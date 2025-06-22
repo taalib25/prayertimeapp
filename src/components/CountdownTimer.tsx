@@ -87,10 +87,8 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     } else if (totalSeconds > 0 && isExpired) {
       setIsExpired(false);
     }
-  }, [calculateTimeRemaining, isExpired]);
-
-  // Use custom timer hook for efficient updates
-  useTimer(updateCountdown, 1000, isActive, true);
+  }, [calculateTimeRemaining, isExpired]); // Use custom timer hook for efficient updates - reduce frequency for inactive timers
+  useTimer(updateCountdown, isActive ? 1000 : 30000, isActive, true);
 
   // Calculate initial time for all timers
   useEffect(() => {

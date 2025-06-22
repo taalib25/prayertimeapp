@@ -3,6 +3,8 @@ import {
   getPrayerTimesForDate,
   PrayerTimesData,
 } from '../services/db/PrayerServices';
+import {getTodayDateString} from '../utils/helpers';
+import {dataCache} from '../utils/dataCache';
 
 interface PrayerTime {
   name: string;
@@ -98,7 +100,6 @@ export const usePrayerTimes = (date: string) => {
       setPrayerTimes(updatedPrayers);
     }
   }, [findActivePrayer]);
-
   // Fetch prayer times only when date changes
   const fetchPrayerTimes = useCallback(async () => {
     // Skip fetch if date hasn't changed
@@ -109,11 +110,47 @@ export const usePrayerTimes = (date: string) => {
 
     try {
       setIsLoading(true);
-      setError(null);
+      setError(null); // Check cache first for faster loading
+      const cacheKey = `prayer-times-${date}`;
+      const cachedData = dataCache.get<PrayerTimesData>(cacheKey);
+      if (cachedData) {
+        console.log('🚀 Using cached prayer times for', date);
+        const convertedPrayers = convertPrayerTimes(cachedData);
+        cachedPrayerTimesRef.current = convertedPrayers;
+        lastFetchDateRef.current = date;
 
+        const prayersWithActive = findActivePrayer(convertedPrayers);
+        setPrayerTimes(prayersWithActive);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for globally cached data first (from splash screen)
+      const globalCachedData = (global as any).cachedTodayPrayerTimes;
+      if (
+        date === getTodayDateString() &&
+        globalCachedData &&
+        !cachedPrayerTimesRef.current
+      ) {
+        console.log('📦 Using cached prayer times from splash screen');
+        const convertedPrayers = convertPrayerTimes(globalCachedData);
+        cachedPrayerTimesRef.current = convertedPrayers;
+        lastFetchDateRef.current = date;
+
+        // Cache this data for future use
+        dataCache.set(cacheKey, globalCachedData, 24 * 60 * 60 * 1000); // 24 hours
+
+        const prayersWithActive = findActivePrayer(convertedPrayers);
+        setPrayerTimes(prayersWithActive);
+        setIsLoading(false);
+        return;
+      }
       const dbPrayerTimes = await getPrayerTimesForDate(date);
 
       if (dbPrayerTimes) {
+        // Cache the fetched data
+        dataCache.set(cacheKey, dbPrayerTimes, 24 * 60 * 60 * 1000); // 24 hours
+
         const convertedPrayers = convertPrayerTimes(dbPrayerTimes);
         cachedPrayerTimesRef.current = convertedPrayers;
         lastFetchDateRef.current = date;
