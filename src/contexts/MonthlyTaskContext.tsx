@@ -40,26 +40,34 @@ export const MonthlyTaskProvider: React.FC<{
 
   // Get monthly data using the centralized context instead of direct database access
   const {getMonthlyStats} = useMonthlyAggregatedData(); // Get daily tasks data to include in dependency
-  const {dailyTasks} = useMonthlyAggregatedData();
-
-  // Transform raw data to format needed for UI
+  const {dailyTasks} = useMonthlyAggregatedData(); // Transform raw data to format needed for UI
   const monthlyData = useMemo(() => {
-    // ⚡ PERFORMANCE: Cache monthly data calculations - include dailyTasks hash for reactivity
-    const dailyTasksHash =
-      dailyTasks.length +
-      dailyTasks.reduce(
-        (sum, t) => sum + (t.quranMinutes || 0) + (t.totalZikrCount || 0),
-        0,
-      );
+    // ⚡ PERFORMANCE: Cache monthly data calculations - include detailed dailyTasks hash for reactivity
+    const quranTotal = dailyTasks.reduce(
+      (sum, t) => sum + (t.quranMinutes || 0),
+      0,
+    );
+    const zikrTotal = dailyTasks.reduce(
+      (sum, t) => sum + (t.totalZikrCount || 0),
+      0,
+    );
+    const dailyTasksHash = `${dailyTasks.length}-Q${quranTotal}-Z${zikrTotal}`;
     const cacheKey = `monthly-stats-${JSON.stringify(goals)}-${dailyTasksHash}`;
+
+    console.log(
+      `🔍 MonthlyTaskContext: Detailed stats - Length: ${dailyTasks.length}, Quran: ${quranTotal}, Zikr: ${zikrTotal}`,
+    );
+    console.log(
+      `🔍 MonthlyTaskContext: Cache key: ${cacheKey.slice(0, 120)}...`,
+    );
 
     let cached = dataCache.get<MonthData[]>(cacheKey);
     if (cached) {
-      console.log('📊 Using cached monthly data');
+      console.log('📊 Using cached monthly data with hash:', dailyTasksHash);
       return cached;
     }
 
-    console.log('🔄 Computing monthly data transform...');
+    console.log('🔄 Computing fresh monthly data transform...');
 
     // Generate all months for the past 3 months
     const today = new Date();
@@ -98,8 +106,9 @@ export const MonthlyTaskProvider: React.FC<{
             new Date(year, monthDate.getMonth() + 1, 0).getDate(),
         },
       });
-    } // Cache the result for 2 minutes
-    dataCache.set(cacheKey, allMonths, 120000);
+    } // Cache the result for 30 seconds (reduced from 2 minutes for better reactivity)
+    dataCache.set(cacheKey, allMonths, 30000);
+    console.log('💾 Monthly data cached with key:', dailyTasksHash);
     return allMonths;
   }, [getMonthlyStats, goals, dailyTasks]); // Include dailyTasks for reactivity
 

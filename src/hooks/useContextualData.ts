@@ -92,9 +92,14 @@ export const useFajrChartData = () => {
  */
 export const useMonthlyAggregatedData = () => {
   const {dailyTasks} = useDailyTasksContext();
-
   const getMonthlyStats = useMemo(() => {
     return (year: number, monthIndex: number) => {
+      console.log(
+        `📊 useMonthlyAggregatedData: Computing stats for ${year}-${
+          monthIndex + 1
+        } with ${dailyTasks.length} daily tasks`,
+      );
+
       const monthTasks = dailyTasks.filter(task => {
         const taskDate = new Date(task.date);
         return (
@@ -117,6 +122,10 @@ export const useMonthlyAggregatedData = () => {
         task => task.ishaStatus === 'mosque',
       ).length;
       const totalDays = monthTasks.length;
+
+      console.log(
+        `📊 Month stats computed: Quran=${totalQuranPages}, Zikr=${totalZikr}, Fajr=${fajrCompletedDays}, Isha=${ishaCompletedDays}`,
+      );
 
       return {
         totalZikr,

@@ -91,10 +91,29 @@ export const MonthView: React.FC<MonthViewProps> = React.memo(
       </View>
     );
   },
-  (prevProps, nextProps) =>
-    prevProps.monthData === nextProps.monthData &&
-    prevProps.index === nextProps.index &&
-    prevProps.currentPage === nextProps.currentPage,
+  (prevProps, nextProps) => {
+    // More thorough comparison for monthData
+    const prevData = prevProps.monthData;
+    const nextData = nextProps.monthData;
+
+    const isSameMonthData =
+      prevData.monthLabel === nextData.monthLabel &&
+      prevData.year === nextData.year &&
+      prevData.zikr.current === nextData.zikr.current &&
+      prevData.zikr.total === nextData.zikr.total &&
+      prevData.quran.current === nextData.quran.current &&
+      prevData.quran.total === nextData.quran.total &&
+      prevData.fajr.current === nextData.fajr.current &&
+      prevData.fajr.total === nextData.fajr.total &&
+      prevData.isha.current === nextData.isha.current &&
+      prevData.isha.total === nextData.isha.total;
+
+    return (
+      isSameMonthData &&
+      prevProps.index === nextProps.index &&
+      prevProps.currentPage === nextProps.currentPage
+    );
+  },
 );
 
 const styles = StyleSheet.create({

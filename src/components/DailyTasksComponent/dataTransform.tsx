@@ -37,11 +37,13 @@ export const transformDailyData = (
       day: 'numeric',
     };
     return date.toLocaleDateString('en-US', options);
-  };
-
-  // Map all recent tasks and use special tasks system
+  }; // Map all recent tasks and use special tasks system
+  // Sort chronologically: Day before yesterday → Yesterday → Today (oldest to newest)
   const tasksWithData = recentTasks
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sort oldest to newest
+    .sort((a, b) => {
+      // Sort chronologically (oldest to newest): Day before yesterday → Yesterday → Today
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    })
     .map(dayData => {
       // Get special tasks for this date (always the same daily tasks)
       const specialTasksForDate = getSpecialTasksForDate(dayData.date);

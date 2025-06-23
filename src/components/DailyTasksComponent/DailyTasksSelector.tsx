@@ -1,4 +1,4 @@
-import React, {useState, useRef, useCallback, useMemo} from 'react';
+import React, {useState, useRef, useCallback, useMemo, useEffect} from 'react';
 import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {colors, spacing} from '../../utils/theme';
@@ -84,9 +84,20 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     );
     return todayIndex >= 0 ? todayIndex : 0;
   }, [transformedDailyData]);
-
   const [currentPage, setCurrentPage] = useState(initialPage);
   const pagerRef = useRef<PagerView>(null);
+
+  // ✅ SYNC: Update currentPage when initialPage changes (when data loads)
+  useEffect(() => {
+    if (initialPage !== currentPage) {
+      console.log(`📍 Syncing page: ${currentPage} → ${initialPage} (Today)`);
+      setCurrentPage(initialPage);
+      // Also programmatically scroll the PagerView to Today
+      if (pagerRef.current && initialPage > 0) {
+        pagerRef.current.setPage(initialPage);
+      }
+    }
+  }, []);
 
   // ✅ SIMPLE: Page selection handler
   const handlePageSelected = useCallback((e: any) => {

@@ -228,10 +228,9 @@ export const DailyTasksProvider: React.FC<{
           console.log('✅ API update completed');
         } catch (apiError) {
           console.warn('⚠️ API update failed, but local DB updated:', apiError);
-        }
-
-        // 4. Clear cache for next fetch
-        dataCache.clear();
+        } // 4. Clear cache for next fetch and force monthly data refresh
+        dataCache.clear(); // Clear all caches including monthly stats
+        console.log('🧹 All caches cleared after Quran update');
 
         console.log('✅ Quran updated and UI refreshed');
       } catch (error) {
@@ -287,10 +286,9 @@ export const DailyTasksProvider: React.FC<{
           console.log('✅ API update completed');
         } catch (apiError) {
           console.warn('⚠️ API update failed, but local DB updated:', apiError);
-        }
-
-        // 4. Clear cache for next fetch
-        dataCache.clear();
+        } // 4. Clear cache for next fetch and force monthly data refresh
+        dataCache.clear(); // Clear all caches including monthly stats
+        console.log('🧹 All caches cleared after Zikr update');
 
         console.log('✅ Zikr updated and UI refreshed');
       } catch (error) {

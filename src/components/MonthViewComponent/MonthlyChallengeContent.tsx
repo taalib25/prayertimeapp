@@ -31,16 +31,24 @@ const MonthlyChallengeContentInner: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(0);
   const pagerRef = useRef<PagerView>(null);
-
   // ⚡ PERFORMANCE: Cache heavy month data computations
   const cachedMonthlyData = useMemo(() => {
-    const cacheKey = `monthly-data-${JSON.stringify(monthlyData).slice(0, 50)}`;
-    
+    // Create a better cache key that includes all relevant data
+    const dataHash = monthlyData
+      .map(
+        month =>
+          `${month.monthLabel}-${month.year}-${month.zikr.current}-${month.quran.current}-${month.fajr.current}-${month.isha.current}`,
+      )
+      .join('|');
+    const cacheKey = `monthly-data-${dataHash}`;
+
     let cached = dataCache.get<any[]>(cacheKey);
     if (cached) {
+      console.log('📦 Using cached monthly data');
       return cached;
     }
-    
+
+    console.log('🔄 Recomputing monthly data, cache key:', cacheKey);
     // Cache the monthly data for faster subsequent renders
     dataCache.set(cacheKey, monthlyData, 300000); // 5 minutes
     return monthlyData;
