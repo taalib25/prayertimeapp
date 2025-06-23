@@ -4,7 +4,6 @@ import {colors, spacing} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 import SpecialTasksList from './SpecialTasksList';
 
-
 interface Task {
   id: string;
   title: string;
@@ -46,8 +45,9 @@ const DayView: React.FC<DayViewProps> = React.memo(
             !shouldScroll && {minHeight: undefined},
           ]}
           scrollEnabled={shouldScroll}
-          nestedScrollEnabled={shouldScroll}
-          removeClippedSubviews={true}>
+          nestedScrollEnabled={true}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={false}>
           <SpecialTasksList
             dateISO={dayTasks.dateISO}
             onTaskToggle={onTaskToggle}

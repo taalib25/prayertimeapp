@@ -1,4 +1,4 @@
-import {useMemo} from 'react';
+import {useMemo, useEffect, useState} from 'react';
 import {useDailyTasksContext} from '../contexts/DailyTasksContext';
 import {DailyTaskData} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
@@ -13,12 +13,13 @@ export const usePrayerData = (targetDate?: string) => {
     useDailyTasksContext();
 
   // Get data for the specified date or today's data if no date specified
+  // Adding dailyTasks to dependency ensures re-render when data changes
   const targetData = useMemo(() => {
     if (targetDate) {
       return getDataForDate(targetDate);
     }
     return getTodayData();
-  }, [targetDate, getDataForDate, getTodayData]);
+  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
 
   const getPrayerStatus = useMemo(() => {
     return (prayerName: string): PrayerStatus => {
@@ -44,11 +45,11 @@ export const usePrayerData = (targetDate?: string) => {
 
   const updatePrayerStatus = useMemo(() => {
     return async (prayerName: string, status: PrayerStatus) => {
-      // Always update today's data for prayer status changes
-      const today = getTodayDateString();
-      await updatePrayerAndRefresh(today, prayerName, status);
+      // Use the target date (or today if no target date specified)
+      const dateToUpdate = targetDate || getTodayDateString();
+      await updatePrayerAndRefresh(dateToUpdate, prayerName, status);
     };
-  }, [updatePrayerAndRefresh]);
+  }, [updatePrayerAndRefresh, targetDate]);
 
   return {
     todayData: targetData, // Return the target data (could be today or another date)

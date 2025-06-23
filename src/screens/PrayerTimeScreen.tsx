@@ -138,7 +138,7 @@ const PrayerTimeScreen = () => {
               <View style={styles.countdownCard}>
                 <View style={styles.countdownHeader}>
                   <View style={styles.nextPrayerRow}>
-                    <Text style={styles.clockIcon}>⏰</Text>
+                    {/* <Text style={styles.clockIcon}>⏰</Text> */}
                     <Text style={styles.nextPrayerText}>Next Prayer</Text>
                   </View>
                 </View>

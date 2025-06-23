@@ -25,6 +25,7 @@ interface DailyTasksContextType {
 
   // Methods
   refreshData: () => Promise<void>;
+  forceRefresh: () => Promise<void>;
   getTodayData: () => DailyTaskData | null;
   getDataForDate: (date: string) => DailyTaskData | null;
 
@@ -56,16 +57,16 @@ export const DailyTasksProvider: React.FC<{
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      
+
       // ⚡ PERFORMANCE: Check cache first for instant load
       const cacheKey = `daily-tasks-${daysBack}`;
       const cachedTasks = dataCache.get<DailyTaskData[]>(cacheKey);
-      
+
       if (cachedTasks) {
         console.log('⚡ DailyTasksContext: Using cached data');
         setDailyTasks(cachedTasks);
         setIsLoading(false);
-        
+
         // Background refresh for fresh data
         setTimeout(async () => {
           try {
@@ -77,17 +78,17 @@ export const DailyTasksProvider: React.FC<{
             console.error('❌ Background refresh failed:', err);
           }
         }, 100);
-        
+
         return;
       }
-      
+
       // No cache - show loading and fetch
       setIsLoading(true);
       console.log('🔄 DailyTasksContext: Fetching data...');
 
       const tasks = await getRecentDailyTasks(daysBack);
       setDailyTasks(tasks);
-      
+
       // Cache the result
       dataCache.set(cacheKey, tasks, 60000); // Cache for 1 minute
 
@@ -117,179 +118,209 @@ export const DailyTasksProvider: React.FC<{
       return dailyTasks.find(task => task.date === date) || null;
     },
     [dailyTasks],
-  );
-  // Update prayer status with optimistic UI + API call
+  ); // Simple approach: Update state -> Update database -> Update API -> Refresh UI
   const updatePrayerAndRefresh = useCallback(
     async (date: string, prayer: string, status: PrayerStatus) => {
-      const previousTasks = [...dailyTasks];
-
       try {
-        console.log(
-          `🔄 DailyTasksContext: Optimistically updating ${prayer} to ${status} for ${date}`,
-        );
+        console.log(`🔄 Updating ${prayer} to ${status} for ${date}`); // 1. Update state immediately for instant UI response
+        setDailyTasks(prevTasks => {
+          // Check if task for this date exists
+          const taskExists = prevTasks.some(task => task.date === date);
 
-        // OPTIMISTIC UPDATE: Update UI immediately
-        const optimisticTasks = dailyTasks.map(task => {
-          if (task.date === date) {
-            const prayerKey =
-              `${prayer.toLowerCase()}Status` as keyof DailyTaskData;
-            return {
-              ...task,
-              [prayerKey]: status,
+          if (taskExists) {
+            // Update existing task
+            return prevTasks.map(task => {
+              if (task.date === date) {
+                const prayerKey =
+                  `${prayer.toLowerCase()}Status` as keyof DailyTaskData;
+                return {...task, [prayerKey]: status};
+              }
+              return task;
+            });
+          } else {
+            // Create new task for this date with current prayer status
+            const newTask: DailyTaskData = {
+              date,
+              fajrStatus: prayer.toLowerCase() === 'fajr' ? status : 'none',
+              dhuhrStatus: prayer.toLowerCase() === 'dhuhr' ? status : 'none',
+              asrStatus: prayer.toLowerCase() === 'asr' ? status : 'none',
+              maghribStatus:
+                prayer.toLowerCase() === 'maghrib' ? status : 'none',
+              ishaStatus: prayer.toLowerCase() === 'isha' ? status : 'none',
+              totalZikrCount: 0,
+              quranMinutes: 0,
+              specialTasks: [],
             };
+
+            // Add new task and sort by date (newest first)
+            const updatedTasks = [...prevTasks, newTask];
+            return updatedTasks.sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+            );
           }
-          return task;
         });
-        setDailyTasks(optimisticTasks);        // 1. Update local database
+
+        // 2. Update local database
         await updatePrayerStatus(date, prayer, status);
 
-        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
-        setTimeout(async () => {
-          try {
-            await apiService.updatePrayerStatus(date, prayer, status);
-            console.log('✅ Background API update completed');
-          } catch (apiError) {
-            console.error('❌ Background API update failed:', apiError);
-          }
-        }, 50);
+        // 3. Update API
+        try {
+          await apiService.updatePrayerStatus(date, prayer, status);
+          console.log('✅ API update completed');
+        } catch (apiError) {
+          console.warn('⚠️ API update failed, but local DB updated:', apiError);
+        }
 
-        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
-        const cacheKey = `daily-tasks-${daysBack}`;
-        dataCache.clear(); // Clear cache to force fresh data on next access
+        // 4. Clear cache for next fetch
+        dataCache.clear();
 
-        console.log(
-          '✅ DailyTasksContext: Prayer updated successfully (DB + API)',
-        );
+        console.log('✅ Prayer updated and UI refreshed');
       } catch (error) {
-        console.error('❌ DailyTasksContext: Error updating prayer:', error);
-
-        // ROLLBACK: Restore previous state on error
-        setDailyTasks(previousTasks);
+        console.error('❌ Error updating prayer:', error);
         setError('Failed to update prayer. Please try again.');
-
-        // Clear error after 3 seconds
         setTimeout(() => setError(null), 3000);
-
         throw error;
       }
     },
-    [dailyTasks, fetchData, apiService],
-  );
-  // Update Quran minutes with optimistic UI + API call
+    [apiService],
+  ); // Simple approach: Update state -> Update database -> Update API -> Refresh UI
   const updateQuranAndRefresh = useCallback(
     async (date: string, minutes: number) => {
-      const previousTasks = [...dailyTasks];
-
       try {
-        console.log(
-          `🔄 DailyTasksContext: Optimistically updating Quran to ${minutes} minutes for ${date}`,
-        );
+        console.log(`🔄 Updating Quran to ${minutes} minutes for ${date}`); // 1. Update state immediately for instant UI response
+        setDailyTasks(prevTasks => {
+          const taskExists = prevTasks.some(task => task.date === date);
 
-        // OPTIMISTIC UPDATE: Update UI immediately
-        const optimisticTasks = dailyTasks.map(task => {
-          if (task.date === date) {
-            return {
-              ...task,
+          if (taskExists) {
+            return prevTasks.map(task => {
+              if (task.date === date) {
+                return {...task, quranMinutes: minutes};
+              }
+              return task;
+            });
+          } else {
+            // Create new task for this date with Quran minutes
+            const newTask: DailyTaskData = {
+              date,
+              fajrStatus: 'none',
+              dhuhrStatus: 'none',
+              asrStatus: 'none',
+              maghribStatus: 'none',
+              ishaStatus: 'none',
+              totalZikrCount: 0,
               quranMinutes: minutes,
+              specialTasks: [],
             };
+
+            const updatedTasks = [...prevTasks, newTask];
+            return updatedTasks.sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+            );
           }
-          return task;
         });
-        setDailyTasks(optimisticTasks);        // 1. Update local database
+
+        // 2. Update local database
         await updateQuranMinutes(date, minutes);
 
-        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
-        setTimeout(async () => {
-          try {
-            await apiService.updateQuranMinutes(date, minutes);
-            console.log('✅ Background Quran API update completed');
-          } catch (apiError) {
-            console.error('❌ Background Quran API update failed:', apiError);
-          }
-        }, 50);
+        // 3. Update API
+        try {
+          await apiService.updateQuranMinutes(date, minutes);
+          console.log('✅ API update completed');
+        } catch (apiError) {
+          console.warn('⚠️ API update failed, but local DB updated:', apiError);
+        }
 
-        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
-        dataCache.clear(); // Clear cache to force fresh data on next access
+        // 4. Clear cache for next fetch
+        dataCache.clear();
 
-        console.log(
-          '✅ DailyTasksContext: Quran updated successfully (DB + API)',
-        );
+        console.log('✅ Quran updated and UI refreshed');
       } catch (error) {
-        console.error('❌ DailyTasksContext: Error updating Quran:', error);
-
-        // ROLLBACK: Restore previous state on error
-        setDailyTasks(previousTasks);
+        console.error('❌ Error updating Quran:', error);
         setError('Failed to update Quran progress. Please try again.');
-
-        // Clear error after 3 seconds
         setTimeout(() => setError(null), 3000);
-
         throw error;
       }
     },
-    [dailyTasks, fetchData, apiService],
-  );
-  // Update Zikr count with optimistic UI + API call
+    [apiService],
+  ); // Simple approach: Update state -> Update database -> Update API -> Refresh UI
   const updateZikrAndRefresh = useCallback(
     async (date: string, count: number) => {
-      const previousTasks = [...dailyTasks];
-
       try {
-        console.log(
-          `🔄 DailyTasksContext: Optimistically updating Zikr to ${count} count for ${date}`,
-        );
+        console.log(`🔄 Updating Zikr to ${count} count for ${date}`); // 1. Update state immediately for instant UI response
+        setDailyTasks(prevTasks => {
+          const taskExists = prevTasks.some(task => task.date === date);
 
-        // OPTIMISTIC UPDATE: Update UI immediately
-        const optimisticTasks = dailyTasks.map(task => {
-          if (task.date === date) {
-            return {
-              ...task,
+          if (taskExists) {
+            return prevTasks.map(task => {
+              if (task.date === date) {
+                return {...task, totalZikrCount: count};
+              }
+              return task;
+            });
+          } else {
+            // Create new task for this date with Zikr count
+            const newTask: DailyTaskData = {
+              date,
+              fajrStatus: 'none',
+              dhuhrStatus: 'none',
+              asrStatus: 'none',
+              maghribStatus: 'none',
+              ishaStatus: 'none',
               totalZikrCount: count,
+              quranMinutes: 0,
+              specialTasks: [],
             };
+
+            const updatedTasks = [...prevTasks, newTask];
+            return updatedTasks.sort(
+              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+            );
           }
-          return task;
         });
-        setDailyTasks(optimisticTasks);        // 1. Update local database
+
+        // 2. Update local database
         await updateZikrCount(date, count);
 
-        // 2. ⚡ PERFORMANCE: Update API in background to avoid blocking UI
-        setTimeout(async () => {
-          try {
-            await apiService.updateZikrCount(date, count);
-            console.log('✅ Background Zikr API update completed');
-          } catch (apiError) {
-            console.error('❌ Background Zikr API update failed:', apiError);
-          }
-        }, 50);
+        // 3. Update API
+        try {
+          await apiService.updateZikrCount(date, count);
+          console.log('✅ API update completed');
+        } catch (apiError) {
+          console.warn('⚠️ API update failed, but local DB updated:', apiError);
+        }
 
-        // 3. ⚡ PERFORMANCE: Lightweight refresh - just invalidate cache
-        dataCache.clear(); // Clear cache to force fresh data on next access
+        // 4. Clear cache for next fetch
+        dataCache.clear();
 
-        console.log(
-          '✅ DailyTasksContext: Zikr updated successfully (DB + API)',
-        );
+        console.log('✅ Zikr updated and UI refreshed');
       } catch (error) {
-        console.error('❌ DailyTasksContext: Error updating Zikr:', error);
-
-        // ROLLBACK: Restore previous state on error
-        setDailyTasks(previousTasks);
+        console.error('❌ Error updating Zikr:', error);
         setError('Failed to update Zikr progress. Please try again.');
-
-        // Clear error after 3 seconds
         setTimeout(() => setError(null), 3000);
-
         throw error;
       }
     },
-    [dailyTasks, fetchData, apiService],
+    [apiService],
   );
 
+  // Forced refresh method to ensure UI updates
+  const forceRefresh = useCallback(async () => {
+    console.log('🔄 DailyTasksContext: Forcing data refresh...');
+    setIsLoading(true);
+
+    // Clear all caches
+    dataCache.clear();
+
+    // Refetch data
+    await fetchData();
+  }, [fetchData]);
   const value: DailyTasksContextType = useMemo(
     () => ({
       dailyTasks,
       isLoading,
       error,
       refreshData: fetchData,
+      forceRefresh,
       getTodayData,
       getDataForDate,
       updatePrayerAndRefresh,
@@ -301,6 +332,7 @@ export const DailyTasksProvider: React.FC<{
       isLoading,
       error,
       fetchData,
+      forceRefresh,
       getTodayData,
       getDataForDate,
       updatePrayerAndRefresh,
