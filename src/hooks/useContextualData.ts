@@ -134,6 +134,84 @@ export const useMonthlyAggregatedData = () => {
   };
 };
 
+/**
+ * Hook to get Quran data using the centralized context
+ * Enhanced to support any date, not just today
+ */
+export const useQuranData = (targetDate?: string) => {
+  const {dailyTasks, getTodayData, getDataForDate, updateQuranAndRefresh} =
+    useDailyTasksContext();
+
+  // Get data for the specified date or today's data if no date specified
+  // Adding dailyTasks to dependency ensures re-render when data changes
+  const targetData = useMemo(() => {
+    if (targetDate) {
+      return getDataForDate(targetDate);
+    }
+    return getTodayData();
+  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
+
+  const getQuranMinutes = useMemo(() => {
+    return (): number => {
+      return targetData?.quranMinutes || 0;
+    };
+  }, [targetData]);
+
+  const updateQuranMinutes = useMemo(() => {
+    return async (minutes: number) => {
+      // Use the target date (or today if no target date specified)
+      const dateToUpdate = targetDate || getTodayDateString();
+      await updateQuranAndRefresh(dateToUpdate, minutes);
+    };
+  }, [updateQuranAndRefresh, targetDate]);
+
+  return {
+    todayData: targetData, // Return the target data (could be today or another date)
+    getQuranMinutes,
+    updateQuranMinutes,
+    isLoading: !targetData,
+  };
+};
+
+/**
+ * Hook to get Zikr data using the centralized context
+ * Enhanced to support any date, not just today
+ */
+export const useZikrData = (targetDate?: string) => {
+  const {dailyTasks, getTodayData, getDataForDate, updateZikrAndRefresh} =
+    useDailyTasksContext();
+
+  // Get data for the specified date or today's data if no date specified
+  // Adding dailyTasks to dependency ensures re-render when data changes
+  const targetData = useMemo(() => {
+    if (targetDate) {
+      return getDataForDate(targetDate);
+    }
+    return getTodayData();
+  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
+
+  const getZikrCount = useMemo(() => {
+    return (): number => {
+      return targetData?.totalZikrCount || 0;
+    };
+  }, [targetData]);
+
+  const updateZikrCount = useMemo(() => {
+    return async (count: number) => {
+      // Use the target date (or today if no target date specified)
+      const dateToUpdate = targetDate || getTodayDateString();
+      await updateZikrAndRefresh(dateToUpdate, count);
+    };
+  }, [updateZikrAndRefresh, targetDate]);
+
+  return {
+    todayData: targetData, // Return the target data (could be today or another date)
+    getZikrCount,
+    updateZikrCount,
+    isLoading: !targetData,
+  };
+};
+
 // Helper function
 const formatDayLabel = (dateStr: string): string => {
   const date = new Date(dateStr);
