@@ -76,16 +76,16 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       setFormData({
         name: user.username || '',
         email: user.email || '',
-        mobile: user.phoneNumber || '',
-        address: user.location || '',
+        mobile: user.phone || '',
+        address: user.address || '',
         mobility: user.mobility || '',
-        mobilityOther: user.mobilityOther || '',
+        mobilityOther: '', // This field doesn't exist in User type, set to empty
         dateOfBirth: '',
-        nearestMasjid: user.masjid || '',
-        livingOnRent: user.livingOnRent || false,
-        zakatEligible: user.zakatEligible || false,
+        nearestMasjid: user.mosqueName || '',
+        livingOnRent: user.onRent || false,
+        zakatEligible: user.zakathEligible || false,
         differentlyAbled: user.differentlyAbled || false,
-        muallafathiQuloob: user.muallafathiQuloob || false,
+        muallafathiQuloob: user.MuallafathilQuloob || false,
       });
     }
   }, [user]);
@@ -176,15 +176,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       const updateData: UserUpdate = {
         username: formData.name,
         email: formData.email,
-        phoneNumber: formData.mobile,
-        location: formData.address,
+        phone: formData.mobile,
+        address: formData.address,
         mobility: formData.mobility,
-        mobilityOther: formData.mobilityOther,
-        masjid: formData.nearestMasjid,
-        livingOnRent: formData.livingOnRent,
-        zakatEligible: formData.zakatEligible,
+        mosqueName: formData.nearestMasjid,
+        onRent: formData.livingOnRent,
+        zakathEligible: formData.zakatEligible,
         differentlyAbled: formData.differentlyAbled,
-        muallafathiQuloob: formData.muallafathiQuloob,
+        MuallafathilQuloob: formData.muallafathiQuloob,
       };
 
       // Update user data

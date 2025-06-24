@@ -47,20 +47,46 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
       setIsLoading(false);
     }
   };
-
   const login = async (email: string, phoneNumber: string) => {
     try {
-      // Create user data
-      const userData = await userService.createUser({
+      // The login API call should return user data matching the API response structure
+      // For now, create user data structure that matches the API response
+      const userData: User = {
+        id: 21, // This will come from API
+        memberId: 'GE0021', // This will come from API
         username: email.split('@')[0],
         email,
-        phoneNumber,
-        location: 'Colombo, LK',
-        masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
-      });
+        phone: phoneNumber,
+        fullName: undefined,
+        mosqueId: 1, // Remove hardcoded mock values - use real API data when available
+        mosqueName: '', // Will be populated from real API response
+        address: undefined,
+        area: undefined,
+        dateOfBirth: undefined,
+        mobility: undefined,
+        role: 'Member',
+        status: 'active',
+        onRent: false,
+        zakathEligible: false,
+        differentlyAbled: false,
+        MuallafathilQuloob: false,
+        // App-specific defaults
+        zikriGoal: 600,
+        quranGoal: 300,
+        theme: 'light',
+        language: 'en',
+        // Use API data when available, otherwise current timestamp
+        joinedDate: new Date().toISOString(), // Will be populated from real API response
+        lastLogin: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
       // Set auth token
       await userService.setAuthToken('user_authenticated');
+
+      // Store user data using UserService
+      await userService.createUser(userData);
 
       setUser(userData);
     } catch (error) {

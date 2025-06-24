@@ -13,9 +13,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  location = 'Colombo, Sri Lanka',
+  location = '',
   userName = 'User',
-  mosqueName = 'Local Mosque',
+  mosqueName = '', // No fallback - use empty string for real API data only
   avatarImage,
 }) => {
   return (
@@ -53,7 +53,6 @@ const Header: React.FC<HeaderProps> = ({
               .replace(',', '')}
           </Text>
         </View>
-
         {/* User Info */}
         <View style={styles.userContainer}>
           <View style={styles.avatar}>
@@ -82,21 +81,22 @@ const Header: React.FC<HeaderProps> = ({
           </View>
         </View>
         <View style={styles.underline} />
-
-        {/* Mosque Info */}
-        <View style={styles.mosqueContainer}>
-          <SvgIcon
-            name="masjid"
-            size={34}
-            color={colors.accent}
-            style={styles.mosqueIcon}
-          />
-          <View style={styles.mosqueTextContainer}>
-            <Text style={styles.mosqueName} numberOfLines={2}>
-              {mosqueName}
-            </Text>
+        {/* Mosque Info - Only show if mosqueName is provided */}
+        {mosqueName && (
+          <View style={styles.mosqueContainer}>
+            <SvgIcon
+              name="masjid"
+              size={34}
+              color={colors.accent}
+              style={styles.mosqueIcon}
+            />
+            <View style={styles.mosqueTextContainer}>
+              <Text style={styles.mosqueName} numberOfLines={2}>
+                {mosqueName}
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </View>
     </View>
   );
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   mosqueIcon: {
     marginRight: 12,
-    marginTop:-5,
+    marginTop: -5,
   },
   mosqueTextContainer: {
     flex: 1,

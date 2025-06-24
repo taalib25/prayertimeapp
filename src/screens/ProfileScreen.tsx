@@ -29,16 +29,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
   const {displayName, user} = useUser();
 
-  // Using dummy data for other fields
-  const dummyUser = {
-    masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
-    location: 'Colombo, LK',
-    theme: 'Light',
-    language: 'English',
-    zikriGoal: 100,
-    quranGoal: 300,
-  };
-
   const isLoading = false;
   const error = null;
 
@@ -143,13 +133,20 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
-            <Text style={styles.memberSince}>Member Since Sep 2024</Text>
-            <View style={styles.locationContainer}>
-              <SvgIcon name="masjid" size={32} color="#4CAF50" />
-              <Text style={styles.locationText}>
-                {dummyUser.masjid || 'Local Mosque'}
-              </Text>
-            </View>
+            <Text style={styles.memberSince}>
+              {user?.joinedDate
+                ? `Member Since ${new Date(user.joinedDate).toLocaleDateString(
+                    'en',
+                    {month: 'short', year: 'numeric'},
+                  )}`
+                : ''}
+            </Text>
+            {user?.mosqueName && (
+              <View style={styles.locationContainer}>
+                <SvgIcon name="masjid" size={32} color="#4CAF50" />
+                <Text style={styles.locationText}>{user.mosqueName}</Text>
+              </View>
+            )}
           </View>
         </View>
         {/* Badges Section */}
@@ -184,19 +181,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="zikr-goal"
               title="Zikr"
-              current={Math.floor(dummyUser.zikriGoal * 0.6)} // Mock current progress
-              total={dummyUser.zikriGoal}
+              current={Math.floor((user?.zikriGoal || 600) * 0.6)} // Mock current progress
+              total={user?.zikriGoal || 600}
               backgroundColor="#FCE4EC"
               progressColor="#E91E63"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
-
             <CompactChallengeCard
               id="quran-goals"
               title="Quran"
-              current={Math.floor(dummyUser.quranGoal * 0.4)} // Mock current progress
-              total={dummyUser.quranGoal}
+              current={Math.floor((user?.quranGoal || 300) * 0.4)} // Mock current progress
+              total={user?.quranGoal || 300}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
@@ -205,14 +201,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             <CompactChallengeCard
               id="Fajr"
               title="Fajr"
-              current={Math.floor(dummyUser.quranGoal * 0.4)} // Mock current progress
+              current={18} // Mock current progress for this month
               total={30}
               backgroundColor="#E0F2F1"
               progressColor="#4CAF50"
               textColor={colors.text.prayerBlue}
               isVisible={true}
             />
-
             <CompactChallengeCard
               id="quran-goal"
               title="Isha"

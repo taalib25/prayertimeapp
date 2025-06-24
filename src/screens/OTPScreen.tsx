@@ -147,20 +147,35 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
         console.log('✅ OTP verified successfully'); // Store auth token
         if (response.token) {
           await userService.setAuthToken(response.token);
-        }
-
-        // Create simplified user data
+        } // Create simplified user data from real API response only
         const userData: Partial<User> = {
+          id: response.user.id || 21,
+          memberId: response.user.memberId || 'GE0021',
           username:
             response.user.name || response.user.username || email.split('@')[0],
           email: response.user.email || email,
-          phoneNumber: response.user.phoneNumber || response.user.phone || '',
-          location: 'Colombo, LK',
-          masjid: 'Masjid Ul Jabbar Jumma Masjid, Gothatuwa',
-          zikriGoal: 600,
-          quranGoal: 30,
+          phone: response.user.phoneNumber || response.user.phone || '',
+          // Remove hardcoded mock values - use API data only
+          address: response.user.location || response.user.address || undefined,
+          mosqueName:
+            response.user.mosqueName || response.user.masjid || undefined,
+          mosqueId: response.user.mosqueId || 1,
+          role: response.user.role || 'Member',
+          status: response.user.status || 'active',
+          onRent: response.user.onRent || false,
+          zakathEligible: response.user.zakathEligible || false,
+          differentlyAbled: response.user.differentlyAbled || false,
+          MuallafathilQuloob: response.user.MuallafathilQuloob || false,
+          zikriGoal: response.user.zikriGoal || 600,
+          quranGoal: response.user.quranGoal || 30,
           theme: 'light',
           language: 'en',
+          // Use API data for important fields
+          joinedDate:
+            response.user.joinedDate ||
+            response.user.createdAt ||
+            new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
         };
 
         // Create the user
@@ -170,7 +185,7 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
         await checkAuthState();
 
         // Navigate to main app (this should happen automatically after auth state update)
-        console.log('User successfully authenticated');
+        console.log('User successfully authenticated',userData);
       } else {
         console.log('❌ OTP verification failed:', response.error);
         setErrors(prev => ({

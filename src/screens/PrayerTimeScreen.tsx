@@ -81,14 +81,6 @@ const PrayerTimeScreen = () => {
     }
   }, []);
 
-  // Extract mosque info from user
-  const mosqueInfo = user
-    ? {
-        name: user.masjid,
-        location: user.location,
-      }
-    : null;
-
   const handleSeeAllReminders = useCallback(() => {
     navigation.navigate('Feeds' as never);
   }, [navigation]);
@@ -103,10 +95,10 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.location || 'Location not set'}
+          location={user?.address || ''}
           userName={displayName}
-          mosqueName={user?.masjid || 'Local Mosque'}
-          mosqueLocation={user?.location || 'Location not set'}
+          mosqueName={user?.mosqueName || ''}
+          mosqueLocation={user?.address || ''}
           avatarImage={require('../assets/images/profile.png')}
         />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
@@ -184,7 +176,7 @@ const PrayerTimeScreen = () => {
                   monthlyQuranPagesGoal: user?.quranGoal || 30,
                 }}
               />
-              <FajrTimeChart /> 
+              <FajrTimeChart />
             </Suspense>
           )}
         </View>

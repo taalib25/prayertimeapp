@@ -58,7 +58,15 @@ const ProfileHeader: React.FC = () => {
         </Pressable>
       </View>
       <Text style={styles.profileName}>{displayName}</Text>
-      <Text style={styles.memberSince}>Member Since Sep 2024</Text>
+      {user?.joinedDate && (
+        <Text style={styles.memberSince}>
+          Member Since
+          {new Date(user.joinedDate).toLocaleDateString('en', {
+            month: 'short',
+            year: 'numeric',
+          })}
+        </Text>
+      )}
     </View>
   );
 };

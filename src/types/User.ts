@@ -24,34 +24,43 @@ export interface PickupSettings {
 
 // Main user interface - contains everything about the user
 export interface User {
-  // Basic profile info
+  // API response fields
+  id: number;
+  memberId: string;
   username: string;
   email: string;
-  phoneNumber: string;
+  phone: string;
+  fullName?: string;
 
-  // Profile details
+  // Mosque and location info
+  mosqueId: number;
+  mosqueName: string;
+  address?: string;
+  area?: string;
+
+  // User attributes
+  dateOfBirth?: string;
   mobility?: string;
-  mobilityOther?: string; // For "other" mobility option
+  role: string;
+  status: string;
 
-  // Additional information flags
-  livingOnRent?: boolean;
-  zakatEligible?: boolean;
-  differentlyAbled?: boolean;
-  muallafathiQuloob?: boolean; // Convert
+  // Flags
+  onRent: boolean;
+  zakathEligible: boolean;
+  differentlyAbled: boolean;
+  MuallafathilQuloob: boolean;
 
-  // Simple targets (only zikr and quran as requested)
+  // App-specific settings (will be added locally)
   zikriGoal: number; // monthly target
   quranGoal: number; // monthly pages target
-
-  // Simple settings by default
-  location: string;
-  masjid: string;
   theme: 'light' | 'dark';
   language: 'en' | 'ar';
 
   // Timestamps
-  createdAt: string;
-  updatedAt: string;
+  joinedDate: string;
+  lastLogin: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // System data - separate key for system-related data
@@ -64,23 +73,32 @@ export interface SystemData {
   fajrReminderTiming: 'before' | 'after' | null; // Before or after Fajr
 }
 
-// Default values
+// Default values - removed mock fallbacks to ensure only real API data is used
 export const DEFAULT_USER: User = {
-  username: 'User',
-  email: 'user@example.com',
-  phoneNumber: '',
-  mobility: undefined,
-  mobilityOther: '',
-  livingOnRent: false,
-  zakatEligible: false,
+  id: 0,
+  memberId: '',
+  username: '',
+  email: '',
+  phone: '',
+  fullName: '',
+  mosqueId: 0,
+  mosqueName: '', // No fallback - use empty string for real API data only
+  address: '',
+  area: '',
+  dateOfBirth: '',
+  mobility: '',
+  role: 'Member',
+  status: 'active',
+  onRent: false,
+  zakathEligible: false,
   differentlyAbled: false,
-  muallafathiQuloob: false,
+  MuallafathilQuloob: false,
   zikriGoal: 600,
   quranGoal: 300,
-  location: 'Location not set',
-  masjid: 'Local Mosque',
   theme: 'light',
   language: 'en',
+  joinedDate: new Date().toISOString(),
+  lastLogin: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
