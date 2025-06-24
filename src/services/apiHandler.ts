@@ -1,4 +1,4 @@
-import PrayerAppAPI from './PrayerAppAPI';
+import PrayerAppAPI, {FeedItem, FeedsResponse} from './PrayerAppAPI';
 import {PrayerStatus} from '../model/DailyTasks';
 
 /**
@@ -169,8 +169,7 @@ class ApiTaskServices {
 
   /**
    * Convert internal prayer status to API format
-   */
-  private convertPrayerStatusToApi(status: PrayerStatus): string {
+   */ private convertPrayerStatusToApi(status: PrayerStatus): string {
     switch (status) {
       case 'mosque':
         return 'prayed';
@@ -180,6 +179,94 @@ class ApiTaskServices {
         return 'missed';
       default:
         return 'missed';
+    }
+  }
+
+  /**
+   * Fetch feeds from API with fallback to mock data
+   * Returns real API data if available, otherwise returns mock demo items
+   */
+  async fetchFeeds(): Promise<FeedItem[]> {
+    try {
+      console.log('📡 API: Fetching feeds from backend...');
+      const response = await this.api.getFeeds();
+      console.log('🔍 API Response structure:', {
+        success: response.success,
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : 'no data',
+        sampleData: response.data,
+      });
+
+      if (response.success && response.data) {
+        console.log('✅ API: Feeds fetched successfully from backend');
+
+        // Handle the actual API response structure where feeds are at response.data (not response.data.data)
+        const feedsArray = response.data.data || response.data; // Support both structures
+        console.log(
+          '🔍 Feeds array length:',
+          Array.isArray(feedsArray) ? feedsArray.length : 'not an array',
+        );
+
+        const realFeeds = feedsArray.map((item: any) => {
+          const cleanItem: FeedItem = {
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            image_url: item.image_url,
+            priority: item.priority,
+            created_at: item.created_at,
+            expires_at: item.expires_at,
+            author_name: item.author_name,
+            mosque_name: item.mosque_name,
+          };
+          return cleanItem;
+        }); // Prepend 2 demo mock items as requested
+        const mockFeeds: FeedItem[] = [
+          {
+            id: -2,
+            title: 'Prayer Times & Daily Reminders',
+            content:
+              'Never miss a prayer with our automated reminders and accurate prayer time calculations based on your location.',
+            image_url:
+              'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=400&h=300&fit=crop&q=80', // Prayer beads and spiritual reflection
+            priority: 'medium',
+            created_at: new Date(
+              Date.now() - 24 * 60 * 60 * 1000,
+            ).toISOString(), // Yesterday
+            expires_at: null,
+            author_name: 'Prayer Admin',
+            mosque_name: 'Demo Mosque',
+          },
+        ];
+
+        // Combine mock items with real feeds (mock items first)
+        return [...mockFeeds, ...realFeeds];
+      } else {
+        console.log('⚠️ API: No feeds from backend, using mock data only');
+        throw new Error('No real feeds available');
+      }
+    } catch (error) {
+      console.error(
+        '❌ API: Error fetching feeds, falling back to mock data:',
+        error,
+      ); // Return only mock demo items if API fails
+      const mockFeeds: FeedItem[] = [
+        {
+          id: -2,
+          title: 'Prayer Times & Daily Reminders',
+          content:
+            'Never miss a prayer with our automated reminders and accurate prayer time calculations based on your location.',
+          image_url:
+            'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=400&h=300&fit=crop&q=80', // Prayer beads and spiritual reflection
+          priority: 'medium',
+          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
+          expires_at: null,
+          author_name: 'Prayer Admin',
+          mosque_name: 'Demo Mosque',
+        },
+      ];
+
+      return mockFeeds;
     }
   }
 

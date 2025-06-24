@@ -20,16 +20,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
+import ApiTaskServices from '../services/apiHandler';
+import {FeedItem} from '../services/PrayerAppAPI';
 
-interface Reminder {
-  id: string;
-  title: string;
-  description: string;
-  imagePath?: any; // Optional - for text-only reminders
-  priority?: 'high' | 'medium' | 'low';
-  category?: string;
-  type?: 'text' | 'image'; // Add type to distinguish
-}
+// Use FeedItem from the API instead of separate Reminder interface
+type Reminder = FeedItem & {
+  type?: 'text' | 'image'; // Add type to distinguish for UI
+};
 
 interface ReminderSectionProps {
   onSeeAllPress?: () => void;
@@ -40,71 +37,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_SIZE = 200; // Increased from 160 to 200 - bigger square cards
 const CARD_SPACING = 16; // Increased spacing for better visual separation
 
-// Mock API service
-const reminderApi = {
-  async fetchReminders(): Promise<Reminder[]> {
-    await new Promise(resolve => setTimeout(resolve, 200)); // Reduced from 800ms
-    return [
-      {
-        id: '1',
-        title: 'Morning Dhikr',
-        description:
-          'Start your day with remembrance of Allah. Recite the morning adhkar after Fajr prayer to protect yourself throughout the day.',
-        imagePath: require('../assets/images/reminder1.png'),
-        priority: 'high',
-        category: 'dhikr',
-        type: 'image',
-      },
-      {
-        id: '2',
-        title: 'Quran Recitation',
-        description:
-          '10 minutes of Quran after Fajr prayer. Even a few verses daily will bring immense reward and barakah to your day.',
-        imagePath: require('../assets/images/reminder2.png'),
-        priority: 'high',
-        category: 'quran',
-        type: 'image',
-      },
-      {
-        id: '3',
-        title: 'Ramadan Preparation Workshop',
-        description:
-          'Join us for a special workshop to prepare for the upcoming Ramadan. Topics include spiritual preparation, meal planning, and maintaining health during fasting. The workshop will be held in the main hall after Isha prayer next Tuesday.',
-        priority: 'medium',
-        category: 'dhikr',
-        type: 'text',
-      },
-      {
-        id: '4',
-        title: 'Community Iftar Planning',
-        description:
-          'We are organizing community iftars for the coming Ramadan. Please register to volunteer or sponsor meals. We need volunteers for setup, cooking, serving, and cleanup. Please sign up at the reception desk or contact Br. Rizwan.',
-        priority: 'high',
-        category: 'dua',
-        type: 'text',
-      },
-      {
-        id: '5',
-        title: 'Evening Duas',
-        description:
-          'Protection duas before sleep to guard against evil and nightmares.',
-        imagePath: require('../assets/images/reminder2.png'),
-        priority: 'medium',
-        category: 'dua',
-        type: 'image',
-      },
-      {
-        id: '6',
-        title: 'Mosque Cleaning Day',
-        description:
-          'Join us this Saturday morning for our monthly mosque cleaning day. Bring cleaning supplies if you can. We will start after Fajr prayer and finish before Dhuhr. Your participation helps keep our place of worship clean and beautiful.',
-        priority: 'medium',
-        category: 'community',
-        type: 'text',
-      },
-    ];
-  },
-};
+// Use real API service
+const apiService = ApiTaskServices.getInstance();
 
 const ReminderCard: React.FC<{
   item: Reminder;
@@ -114,7 +48,7 @@ const ReminderCard: React.FC<{
     onPress?.(item);
   };
   // Render text-only card with gradient - simplified and bigger
-  if (item.type === 'text' || !item.imagePath) {
+  if (item.type === 'text' || !item.image_url) {
     return (
       <TouchableOpacity
         style={[styles.reminderCard, styles.textOnlyCard]}
@@ -128,7 +62,7 @@ const ReminderCard: React.FC<{
             </Text>
             <View style={styles.textFadeContainer}>
               <Text style={styles.textCardDescription} numberOfLines={3}>
-                {item.description}
+                {item.content}
               </Text>
               <View style={styles.textFadeOverlay} />
             </View>
@@ -144,7 +78,15 @@ const ReminderCard: React.FC<{
       onPress={handlePress}
       activeOpacity={0.8}>
       <Image
-        source={item.imagePath}
+        source={
+          typeof item.image_url === 'string' &&
+          item.image_url.startsWith('http')
+            ? {uri: item.image_url} // HTTP URL
+            : typeof item.image_url === 'string' &&
+              item.image_url.includes('assets')
+            ? {uri: item.image_url} // Local asset path - treat as URI for now
+            : {uri: item.image_url || ''} // Fallback to empty URI for other cases
+        }
         style={styles.reminderImage}
         resizeMode="cover"
       />
@@ -171,18 +113,24 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   useEffect(() => {
     loadReminders();
   }, []);
-
   const loadReminders = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const fetchedReminders = await reminderApi.fetchReminders();
+      // Fetch feeds from the API and convert them to reminders
+      const fetchedFeeds = await apiService.fetchFeeds();
+
+      // Convert FeedItems to Reminders and add type property
+      const remindersFromFeeds: Reminder[] = fetchedFeeds.map(feed => ({
+        ...feed,
+        type: feed.image_url ? 'image' : ('text' as 'text' | 'image'),
+      }));
 
       // Apply maxItems limit if specified
       const limitedReminders = maxItems
-        ? fetchedReminders.slice(0, maxItems)
-        : fetchedReminders;
+        ? remindersFromFeeds.slice(0, maxItems)
+        : remindersFromFeeds;
 
       setReminders(limitedReminders);
     } catch (err) {
@@ -280,7 +228,7 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
             renderItem={({item}) => (
               <ReminderCard item={item} onPress={handleReminderPress} />
             )}
-            keyExtractor={item => item.id}
+            keyExtractor={item => item.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.remindersList}
@@ -318,10 +266,18 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
                 contentContainerStyle={styles.modalContent}
                 showsVerticalScrollIndicator={false}>
                 {/* Image (if available) */}
-                {selectedReminder?.imagePath && (
+                {selectedReminder?.image_url && (
                   <View style={styles.modalImageContainer}>
                     <Image
-                      source={selectedReminder.imagePath}
+                      source={
+                        typeof selectedReminder.image_url === 'string' &&
+                        selectedReminder.image_url.startsWith('http')
+                          ? {uri: selectedReminder.image_url} // HTTP URL
+                          : typeof selectedReminder.image_url === 'string' &&
+                            selectedReminder.image_url.includes('assets')
+                          ? {uri: selectedReminder.image_url} // Local asset path - treat as URI for now
+                          : {uri: selectedReminder.image_url} // Fallback to URI for all cases
+                      }
                       style={styles.modalImage}
                       resizeMode="contain"
                     />
@@ -342,7 +298,7 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
                     selectedReminder?.type === 'text' &&
                       styles.textModalDescription,
                   ]}>
-                  {selectedReminder?.description}
+                  {selectedReminder?.content}
                 </Text>
               </ScrollView>
             </Pressable>

@@ -98,6 +98,22 @@ export interface PrayerRecord {
   updatedAt: string;
 }
 
+export interface FeedItem {
+  id: number;
+  title: string;
+  content: string;
+  image_url?: string | null; // Can be local path or HTTP URL
+  priority: string;
+  created_at: string;
+  expires_at?: string | null;
+  author_name: string;
+  mosque_name: string;
+}
+
+export interface FeedsResponse {
+  data: FeedItem[];
+}
+
 /**
  * Prayer App API Endpoints
  * Uses the ApiService for consistent HTTP requests
@@ -321,7 +337,6 @@ class PrayerAppAPI {
   ): Promise<ApiResponse<{message: string}>> {
     return this.updateDailyActivity(date, 'quran', minutes);
   }
-
   /**
    * Update Zikr count via API
    */
@@ -330,6 +345,89 @@ class PrayerAppAPI {
     count: number,
   ): Promise<ApiResponse<{message: string}>> {
     return this.updateDailyActivity(date, 'zikr', count);
+  }
+  // ========== FEEDS ENDPOINTS ==========
+
+  /**
+   * Fetch feeds with mock items prepended
+   * Returns real data from /feeds endpoint with 2 mock items at the start
+   */
+  async fetchFeeds(): Promise<ApiResponse<FeedsResponse>> {
+    try {
+      // Fetch real feeds from API
+      const response = await this.apiService.get<FeedsResponse>('/feeds');
+      if (response.success && response.data) {
+        // Create mock items to prepend
+        const mockItems: FeedItem[] = [
+          {
+            id: 213123, // Negative ID to avoid conflicts
+            title: 'Welcome to Prayer App',
+            content:
+              'Stay connected with your spiritual journey. Get reminders for prayer times, track your daily activities, and stay updated with community announcements.',            image_url:
+              'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=400&h=300&fit=crop&q=80', // Beautiful mosque architecture
+            priority: 'high',
+            created_at: new Date().toISOString(),
+            expires_at: null,
+            author_name: 'Prayer App Team',
+            mosque_name: 'Community',
+          },
+          {
+            id: 2132131, // Negative ID to avoid conflicts
+            title: 'Daily Reminder',
+            content:
+              'Remember to maintain your daily prayers and spiritual activities. Every small step counts towards your spiritual growth.',
+            image_url: null, // No image for this text-only card
+            priority: 'medium',
+            created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+            expires_at: null,
+            author_name: 'Islamic Center',
+            mosque_name: 'Local Mosque',
+          },
+        ];
+
+        // Handle the actual API response structure where feeds are at response.data (not response.data.data)
+        const feedsArray = response.data.data || response.data; // Support both structures
+        const cleanedFeeds = feedsArray.map((item: any) => {
+          const cleanItem: FeedItem = {
+            id: item.id,
+            title: item.title,
+            content: item.content,
+            image_url: item.image_url,
+            priority: item.priority,
+            created_at: item.created_at,
+            expires_at: item.expires_at,
+            author_name: item.author_name,
+            mosque_name: item.mosque_name,
+          };
+          return cleanItem;
+        });
+
+        // Prepend mock items to real data
+        const combinedData: FeedItem[] = [...mockItems, ...cleanedFeeds];
+
+        return {
+          success: true,
+          data: {data: combinedData},
+          error: undefined,
+        };
+      }
+
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch feeds',
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Get feeds from API (legacy method - use fetchFeeds instead)
+   * @deprecated Use fetchFeeds() instead
+   */
+  async getFeeds(): Promise<ApiResponse<FeedsResponse>> {
+    return this.fetchFeeds();
   }
 
   // ========== HELPER METHODS ==========
