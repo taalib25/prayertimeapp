@@ -21,7 +21,7 @@ import {colors} from '../utils/theme';
 import {loginSchema, LoginFormData} from '../utils/validation';
 import {useAuth} from '../contexts/AuthContext';
 import SvgIcon from '../components/SvgIcon';
-import {loginUser} from '../services/api/ApiExamples';
+import ApiTaskServices from '../services/apiHandler';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,6 +36,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
   const [username, setUsername] = useState('ahmed_test');
   const [password, setPassword] = useState('test123');
   const [isLoading, setIsLoading] = useState(false);
+  const apiService = ApiTaskServices.getInstance();
   const [errors, setErrors] = useState<{username?: string; password?: string}>(
     {},
   );
@@ -66,7 +67,7 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
     try {
       console.log('🔐 Initial login attempt to trigger OTP...');
       // Call the initial login to trigger OTP sending
-      const loginResponse = await loginUser(username, password);
+      const loginResponse = await apiService.loginUser(username, password);
 
       if (!loginResponse.success) {
         setIsLoading(false);

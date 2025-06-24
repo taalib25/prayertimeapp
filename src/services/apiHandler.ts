@@ -20,6 +20,38 @@ class ApiTaskServices {
     return ApiTaskServices.instance;
   }
 
+
+  /**
+   * Login user via API
+   */
+  async loginUser(username: string, password: string): Promise<{
+    success: boolean;
+    requiresOTP?: boolean;
+    user?: any;
+    error?: string;
+  }> {
+    try {
+      console.log('🔐 Attempting login...');
+      
+      const response = await this.api.login({
+        username,
+        password,
+      });
+
+      if (response.success) {
+        console.log('✅ Login successful:', response.data?.user);
+        
+        return {success: true, requiresOTP: false, user: response.data?.user};
+      } else {
+        console.log('❌ Login failed:', response.error);
+        return {success: false, error: response.error};
+      }
+    } catch (error) {
+      console.error('❌ Login error:', error);
+      return {success: false, error: 'Network error occurred'};
+    }
+  }
+
   /**
    * Update prayer status via API
    */
@@ -151,3 +183,5 @@ class ApiTaskServices {
 }
 
 export default ApiTaskServices;
+
+
