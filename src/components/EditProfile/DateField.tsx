@@ -30,23 +30,36 @@ const DateField: React.FC<DateFieldProps> = ({
       }
     }
   }, [value]);
-
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (event: any, pickedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
 
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
-      const formattedDate = selectedDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-      onDateChange(formattedDate);
+    if (pickedDate) {
+      setSelectedDate(pickedDate);
+      // Save date in ISO format for consistency
+      const isoDate = pickedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      onDateChange(isoDate);
     }
   };
-
   const showDatePickerModal = () => {
     setShowDatePicker(true);
+  };
+
+  // Format date for display
+  const getDisplayDate = (dateValue: string): string => {
+    if (!dateValue) {
+      return '';
+    }
+
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   return (
@@ -60,7 +73,7 @@ const DateField: React.FC<DateFieldProps> = ({
         ]}
         onPress={showDatePickerModal}>
         <Text style={[styles.dateText, !value && styles.placeholderText]}>
-          {value || 'Select date'}
+          {value ? getDisplayDate(value) : 'Select date'}
         </Text>
         <SvgIcon name="calendar" size={20} color={colors.text.muted} />
       </Pressable>

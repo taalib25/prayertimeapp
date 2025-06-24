@@ -101,7 +101,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         address: user.address || '',
         mobility: user.mobility || '',
         mobilityOther: '', // This field doesn't exist in User type, set to empty
-        dateOfBirth: '',
+        dateOfBirth: user.dateOfBirth || '',
         nearestMasjid: user.mosqueName || '',
         livingOnRent: user.onRent || false,
         zakatEligible: user.zakathEligible || false,
@@ -200,8 +200,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     });
 
     return changes;
-  };
-  // Map form fields to API field names for profile update
+  }; // Map form fields to API field names for profile update
   const mapToApiFields = (changedData: Record<string, string | boolean>) => {
     const apiData: any = {};
 
@@ -220,6 +219,9 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     }
     if (changedData.mobility !== undefined) {
       apiData.mobility = changedData.mobility;
+    }
+    if (changedData.dateOfBirth !== undefined) {
+      apiData.dateOfBirth = changedData.dateOfBirth;
     }
     if (changedData.nearestMasjid !== undefined) {
       apiData.mosqueName = changedData.nearestMasjid;
@@ -275,15 +277,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         );
       }
 
-      console.log('✅ EditProfile: API update successful');
-
-      // Update local user data with the same changes
+      console.log('✅ EditProfile: API update successful'); // Update local user data with the same changes
       const userUpdateData: UserUpdate = {
         username: formData.name,
         email: formData.email,
         phone: formData.mobile,
         address: formData.address,
         mobility: formData.mobility,
+        dateOfBirth: formData.dateOfBirth,
         mosqueName: formData.nearestMasjid,
         onRent: formData.livingOnRent,
         zakathEligible: formData.zakatEligible,

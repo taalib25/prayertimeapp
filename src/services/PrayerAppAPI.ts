@@ -67,6 +67,7 @@ export interface UpdateProfileRequest {
   phone?: string;
   address?: string;
   mobility?: string;
+  dateOfBirth?: string;
   mosqueName?: string;
   onRent?: boolean;
   zakathEligible?: boolean;
