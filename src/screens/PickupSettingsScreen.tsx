@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import {
   Platform,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {colors, spacing} from '../utils/theme';
+import {spacing} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from '../components/SvgIcon';
 import UserService from '../services/UserService';
+import ApiTaskServices from '../services/apiHandler';
 import {PickupSettings} from '../types/User';
 
 // Request status types
@@ -32,6 +33,7 @@ interface PickupRequest extends PickupSettings {
 const PickupSettingsScreen: React.FC = () => {
   const navigation = useNavigation();
   const userService = UserService.getInstance();
+  const apiService = ApiTaskServices.getInstance();
 
   const [settings, setSettings] = useState<PickupRequest>({
     enabled: false,
@@ -50,62 +52,194 @@ const PickupSettingsScreen: React.FC = () => {
     },
     status: 'none',
   });
-
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setIsLoading(true);
-      const systemData = await userService.getSystemData();
 
-      if (systemData.pickupSettings) {
-        // Convert existing settings to request format
-        setSettings({
-          ...systemData.pickupSettings,
-          status: (systemData.pickupSettings as any).status || 'none',
-          requestDate: (systemData.pickupSettings as any).requestDate,
-          reviewDate: (systemData.pickupSettings as any).reviewDate,
-          reviewNotes: (systemData.pickupSettings as any).reviewNotes,
+      // Try to load from API first
+      const apiResponse = await apiService.getPickupRequests();
+
+      if (
+        apiResponse.success &&
+        apiResponse.data &&
+        apiResponse.data.data &&
+        apiResponse.data.data.length > 0
+      ) {
+        // Convert API response to local format
+        const latestRequest = apiResponse.data.data[0]; // Get the most recent request
+
+        // Convert available days array back to object
+        const availableDaysObject = {
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+          sunday: false,
+        };
+        latestRequest.days.forEach((day: string) => {
+          if (day in availableDaysObject) {
+            (availableDaysObject as any)[day] = true;
+          }
         });
+
+        setSettings({
+          enabled: true,
+          preferredTime: '05:00', // Default as this isn't in the API response
+          emergencyContact: latestRequest.contact_number,
+          specificLocation: latestRequest.pickup_location,
+          notes: latestRequest.special_instructions || '',
+          availableDays: availableDaysObject,
+          status: latestRequest.status,
+          requestDate: latestRequest.created_at,
+          reviewDate: latestRequest.updated_at,
+          reviewNotes: undefined, // Not provided by API
+        });
+      } else {
+        // Fallback to local storage
+        const systemData = await userService.getSystemData();
+
+        if (systemData.pickupSettings) {
+          // Convert existing settings to request format
+          setSettings({
+            ...systemData.pickupSettings,
+            status: (systemData.pickupSettings as any).status || 'none',
+            requestDate: (systemData.pickupSettings as any).requestDate,
+            reviewDate: (systemData.pickupSettings as any).reviewDate,
+            reviewNotes: (systemData.pickupSettings as any).reviewNotes,
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading pickup settings:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
+      // Fallback to local storage on error
+      try {
+        const systemData = await userService.getSystemData();
+        if (systemData.pickupSettings) {
+          setSettings({
+            ...systemData.pickupSettings,
+            status: (systemData.pickupSettings as any).status || 'none',
+            requestDate: (systemData.pickupSettings as any).requestDate,
+            reviewDate: (systemData.pickupSettings as any).reviewDate,
+            reviewNotes: (systemData.pickupSettings as any).reviewNotes,
+          });
+        }
+      } catch (localError) {
+        console.error('Error loading local pickup settings:', localError);      }
+    } finally {
+      setIsLoading(false);    }
+  }, [apiService, userService]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+  
   const submitRequest = async () => {
     try {
       setIsLoading(true);
 
-      const requestToSubmit = {
-        ...settings,
-        status: 'pending' as RequestStatus,
-        requestDate: new Date().toISOString(),
-        reviewDate: undefined,
-        reviewNotes: undefined,
-      };
-      await userService.updateSystemData({
-        pickupSettings: requestToSubmit,
-      });
+      // Validate required fields
+      if (!settings.enabled) {
+        Alert.alert(
+          'Enable Pickup Request',
+          'Please enable pickup assistance to submit a request.',
+          [{text: 'OK', style: 'default'}],
+        );
+        return;
+      }
 
-      setSettings(requestToSubmit);
+      if (!settings.emergencyContact.trim()) {
+        Alert.alert(
+          'Missing Contact Information',
+          'Please provide an emergency contact number.',
+          [{text: 'OK', style: 'default'}],
+        );
+        return;
+      }
 
-      Alert.alert(
-        'Request Submitted ✅',
-        'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
-        [{text: 'OK', style: 'default'}],
+      if (!settings.specificLocation.trim()) {
+        Alert.alert(
+          'Missing Location',
+          'Please provide a specific pickup location.',
+          [{text: 'OK', style: 'default'}],
+        );
+        return;
+      }
+
+      // Convert available days object to array
+      const availableDaysArray = Object.entries(settings.availableDays)
+        .filter(([_, isAvailable]) => isAvailable)
+        .map(([day, _]) => day);
+
+      if (availableDaysArray.length === 0) {
+        Alert.alert(
+          'No Days Selected',
+          'Please select at least one available day for pickup.',
+          [{text: 'OK', style: 'default'}],
+        );
+        return;
+      }
+
+      // Submit to API
+      const response = await apiService.submitPickupRequest(
+        settings.specificLocation,
+        availableDaysArray,
+        settings.emergencyContact,
+        settings.notes,
+        ['fajr'], // Default prayers - you can make this configurable later
       );
+
+      if (response.success) {
+        // Update local settings with API response
+        const updatedSettings = {
+          ...settings,
+          status: 'pending' as RequestStatus,
+          requestDate: new Date().toISOString(),
+          reviewDate: undefined,
+          reviewNotes: undefined,
+        };
+
+        // Also save to local storage as backup
+        await userService.updateSystemData({
+          pickupSettings: updatedSettings,
+        });
+
+        setSettings(updatedSettings);
+
+        Alert.alert(
+          'Request Submitted ✅',
+          'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
+          [{text: 'OK', style: 'default'}],
+        );
+      } else {
+        // Handle specific API errors
+        const errorMessage = response.error || 'Failed to submit request';
+        console.error('API Error:', errorMessage);
+
+        Alert.alert(
+          'Submission Failed ❌',
+          `Unable to submit your pickup request: ${errorMessage}. Please check your internet connection and try again.`,
+          [{text: 'OK', style: 'default'}],
+        );
+      }
     } catch (error) {
       console.error('Error submitting pickup request:', error);
+
+      // Handle network errors and other exceptions
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+
       Alert.alert(
-        'Error ❌',
-        'Failed to submit pickup request. Please try again.',
-        [{text: 'OK', style: 'default'}],
+        'Network Error ❌',
+        `Failed to submit pickup request due to a network error: ${errorMessage}. Please check your internet connection and try again.`,
+        [
+          {text: 'Cancel', style: 'cancel'},
+          {text: 'Retry', style: 'default', onPress: () => submitRequest()},
+        ],
       );
     } finally {
       setIsLoading(false);
@@ -168,12 +302,20 @@ const PickupSettingsScreen: React.FC = () => {
         return '📝';
     }
   };
-
   const canEditRequest = () => {
-    return settings.status === 'none' || settings.status === 'rejected';
+    // For form fields, require both enabled and proper status
+    return (
+      settings.enabled &&
+      (settings.status === 'none' || settings.status === 'rejected')
+    );
   };
-
+  const canEditMainToggle = () => {
+    // Main toggle can always be turned ON
+    // Main toggle can only be turned OFF if status is none or rejected
+    return true; // We handle the logic in the onValueChange callback
+  };
   const getButtonText = () => {
+    if (!settings.enabled) return 'Enable Pickup Request First';
     if (isLoading) return 'Submitting...';
     if (settings.status === 'pending') return 'Request Under Review';
     if (settings.status === 'approved') return 'Request Approved';
@@ -220,13 +362,13 @@ const PickupSettingsScreen: React.FC = () => {
       </Text>
     </View>
   );
-
   const SettingItem: React.FC<{
     title: string;
     description: string;
     value: boolean;
     onValueChange: (value: boolean) => void;
-  }> = ({title, description, value, onValueChange}) => (
+    isMainToggle?: boolean; // Optional prop for the main toggle
+  }> = ({title, description, value, onValueChange, isMainToggle = false}) => (
     <View style={styles.settingItem}>
       <View style={styles.settingInfo}>
         <Text style={styles.settingTitle}>{title}</Text>
@@ -238,7 +380,7 @@ const PickupSettingsScreen: React.FC = () => {
         trackColor={{false: '#E0E0E0', true: '#4CAF50'}}
         thumbColor={value ? '#FFF' : '#FFF'}
         ios_backgroundColor="#E0E0E0"
-        disabled={!canEditRequest()}
+        disabled={isMainToggle ? !canEditMainToggle() : !canEditRequest()}
       />
     </View>
   );
@@ -293,24 +435,35 @@ const PickupSettingsScreen: React.FC = () => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Status Card */}
         <StatusCard />
-
-        {/* Main Settings */}
         <View style={styles.settingSection}>
           <SettingItem
             title="Request Pickup Assistance"
             description="Request help with transportation to and from mosque"
             value={settings.enabled}
-            onValueChange={value =>
-              setSettings(prev => ({...prev, enabled: value}))
-            }
+            onValueChange={value => {
+              // If trying to disable while request is pending/approved, show warning
+              if (
+                !value &&
+                (settings.status === 'pending' ||
+                  settings.status === 'approved')
+              ) {
+                Alert.alert(
+                  'Cannot Disable',
+                  `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
+                  [{text: 'OK', style: 'default'}],
+                );
+                return;
+              }
+              setSettings(prev => ({...prev, enabled: value}));
+            }}
+            isMainToggle={true} // Special flag for the main toggle
           />
         </View>
-
         {/* Detailed Settings - Only show when enabled */}
         {settings.enabled && (
           <>
             {/* Time Settings */}
-            <View style={styles.settingSection}>
+            {/* <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>Preferred Pickup Time</Text>
               <View style={styles.timeContainer}>
                 <Text style={styles.timeLabel}>
@@ -330,7 +483,7 @@ const PickupSettingsScreen: React.FC = () => {
                   editable={canEditRequest()}
                 />
               </View>
-            </View>
+            </View> */}
 
             {/* Days Selector */}
             <View style={styles.settingSection}>
@@ -399,7 +552,6 @@ const PickupSettingsScreen: React.FC = () => {
             </View>
           </>
         )}
-
         {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
@@ -411,27 +563,29 @@ const PickupSettingsScreen: React.FC = () => {
             </Text>
           </View>
         </View>
-
-        {/* Submit Button */}
-        <View style={styles.saveSection}>
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              (isLoading ||
+        {/* Submit Button - Only show when pickup is enabled */}
+        {settings.enabled && (
+          <View style={styles.saveSection}>
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                (isLoading ||
+                  settings.status === 'pending' ||
+                  settings.status === 'approved' ||
+                  !settings.enabled) &&
+                  styles.saveButtonDisabled,
+              ]}
+              onPress={submitRequest}
+              disabled={
+                isLoading ||
                 settings.status === 'pending' ||
-                settings.status === 'approved') &&
-                styles.saveButtonDisabled,
-            ]}
-            onPress={submitRequest}
-            disabled={
-              isLoading ||
-              settings.status === 'pending' ||
-              settings.status === 'approved'
-            }>
-            <Text style={styles.saveButtonText}>{getButtonText()}</Text>
-          </TouchableOpacity>
-        </View>
-
+                settings.status === 'approved' ||
+                !settings.enabled
+              }>
+              <Text style={styles.saveButtonText}>{getButtonText()}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={{height: 40}} />
       </ScrollView>
     </SafeAreaView>

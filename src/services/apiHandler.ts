@@ -1,4 +1,9 @@
-import PrayerAppAPI, {FeedItem, FeedsResponse} from './PrayerAppAPI';
+import PrayerAppAPI, {
+  FeedItem,
+  FeedsResponse,
+  PickupRequest,
+  PickupRequestResponse,
+} from './PrayerAppAPI';
 import {PrayerStatus} from '../model/DailyTasks';
 
 /**
@@ -300,12 +305,81 @@ class ApiTaskServices {
             return Promise.resolve();
         }
       });
-
       await Promise.all(promises);
       console.log('✅ API: Batch update completed successfully');
     } catch (error) {
       console.error('❌ API: Error in batch update:', error);
       throw error;
+    }
+  }
+  /**
+   * Submit pickup request via API
+   */
+  async submitPickupRequest(
+    pickupLocation: string,
+    availableDays: string[],
+    contactNumber: string,
+    specialInstructions?: string,
+    prayers?: string[],
+  ): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
+    try {
+      console.log('📡 API: Submitting pickup request...');
+
+      const requestData = {
+        pickup_location: pickupLocation,
+        days: availableDays, // Changed from available_days to days
+        contact_number: contactNumber,
+        special_instructions: specialInstructions || '',
+        prayers: prayers || ['fajr'], // Default to fajr if not provided
+      };
+
+      const response = await this.api.submitPickupRequest(requestData);
+
+      if (response.success) {
+        console.log(
+          '✅ API: Pickup request submitted successfully:',
+          response.data,
+        );
+        return {success: true, data: response.data};
+      } else {
+        console.log(
+          '❌ API: Pickup request submission failed:',
+          response.error,
+        );
+        return {success: false, error: response.error};
+      }
+    } catch (error) {
+      console.error('❌ API: Error submitting pickup request:', error);
+      return {success: false, error: 'Network error occurred'};
+    }
+  }
+
+  /**
+   * Get user's pickup requests via API
+   */
+  async getPickupRequests(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
+    try {
+      console.log('📡 API: Fetching pickup requests...');
+
+      const response = await this.api.getPickupRequests();
+      if (response.success) {
+        console.log('✅ API: Pickup requests fetched successfully');
+        return {success: true, data: response.data};
+      } else {
+        console.log('❌ API: Failed to fetch pickup requests:', response.error);
+        return {success: false, error: response.error};
+      }
+    } catch (error) {
+      console.error('❌ API: Error fetching pickup requests:', error);
+      return {success: false, error: 'Network error occurred'};
     }
   }
 }

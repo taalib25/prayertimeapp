@@ -114,6 +114,26 @@ export interface FeedsResponse {
   data: FeedItem[];
 }
 
+export interface PickupRequest {
+  pickup_location: string;
+  days: string[]; // ["monday", "tuesday", "wednesday"]
+  contact_number: string;
+  special_instructions?: string;
+  prayers?: string[]; // ["fajr", "dhuhr", "asr", "maghrib", "isha"]
+}
+
+export interface PickupRequestResponse {
+  id: string;
+  pickup_location: string;
+  days: string[];
+  contact_number: string;
+  special_instructions?: string;
+  prayers: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Prayer App API Endpoints
  * Uses the ApiService for consistent HTTP requests
@@ -363,7 +383,8 @@ class PrayerAppAPI {
             id: 213123, // Negative ID to avoid conflicts
             title: 'Welcome to Prayer App',
             content:
-              'Stay connected with your spiritual journey. Get reminders for prayer times, track your daily activities, and stay updated with community announcements.',            image_url:
+              'Stay connected with your spiritual journey. Get reminders for prayer times, track your daily activities, and stay updated with community announcements.',
+            image_url:
               'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=400&h=300&fit=crop&q=80', // Beautiful mosque architecture
             priority: 'high',
             created_at: new Date().toISOString(),
@@ -421,13 +442,142 @@ class PrayerAppAPI {
       };
     }
   }
-
   /**
    * Get feeds from API (legacy method - use fetchFeeds instead)
    * @deprecated Use fetchFeeds() instead
    */
   async getFeeds(): Promise<ApiResponse<FeedsResponse>> {
     return this.fetchFeeds();
+  }
+
+  // ========== PICKUP REQUESTS ENDPOINTS ==========
+
+  /**
+   * Submit a pickup request
+   */
+  async submitPickupRequest(
+    data: PickupRequest,
+  ): Promise<ApiResponse<PickupRequestResponse>> {
+    try {
+      console.log('📡 API: Submitting pickup request with data:', data);
+
+      const response = await this.apiService.post<PickupRequestResponse>(
+        '/pickup-requests',
+        data,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Pickup request submitted successfully');
+      } else {
+        console.log(
+          '❌ API: Pickup request submission failed:',
+          response.error,
+        );
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error submitting pickup request:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Get user's pickup requests
+   */
+  async getPickupRequests(): Promise<
+    ApiResponse<{data: PickupRequestResponse[]}>
+  > {
+    try {
+      console.log('📡 API: Fetching pickup requests...');
+
+      const response = await this.apiService.get<{
+        data: PickupRequestResponse[];
+      }>('/pickup-requests');
+
+      if (response.success) {
+        console.log('✅ API: Pickup requests fetched successfully');
+      } else {
+        console.log('❌ API: Failed to fetch pickup requests:', response.error);
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error fetching pickup requests:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+  /**
+   * Update an existing pickup request
+   */
+  async updatePickupRequest(
+    requestId: string,
+    data: Partial<PickupRequest>,
+  ): Promise<ApiResponse<PickupRequestResponse>> {
+    try {
+      console.log(
+        `📡 API: Updating pickup request ${requestId} with data:`,
+        data,
+      );
+
+      const response = await this.apiService.put<PickupRequestResponse>(
+        `/pickup-requests/${requestId}`,
+        data,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Pickup request updated successfully');
+      } else {
+        console.log('❌ API: Pickup request update failed:', response.error);
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error updating pickup request:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Delete a pickup request
+   */
+  async deletePickupRequest(
+    requestId: string,
+  ): Promise<ApiResponse<{message: string}>> {
+    try {
+      console.log(`📡 API: Deleting pickup request ${requestId}`);
+
+      const response = await this.apiService.delete<{message: string}>(
+        `/pickup-requests/${requestId}`,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Pickup request deleted successfully');
+      } else {
+        console.log('❌ API: Pickup request deletion failed:', response.error);
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error deleting pickup request:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
   }
 
   // ========== HELPER METHODS ==========
