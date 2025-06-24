@@ -21,13 +21,11 @@ import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {getTodayDateString} from '../utils/helpers';
 import {useUser} from '../hooks/useUser';
 import {performanceMonitor} from '../utils/performance';
+import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 
 // Lazy loaded components
 const DailyTasksSelector = React.lazy(
   () => import('../components/DailyTasksComponent/DailyTasksSelector'),
-);
-const MonthlyChallengeContent = React.lazy(
-  () => import('../components/MonthViewComponent/MonthlyChallengeContent'),
 );
 const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
@@ -186,7 +184,7 @@ const PrayerTimeScreen = () => {
                   monthlyQuranPagesGoal: user?.quranGoal || 30,
                 }}
               />
-              <FajrTimeChart />
+              <FajrTimeChart /> 
             </Suspense>
           )}
         </View>
