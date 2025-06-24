@@ -1,7 +1,9 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import {Alert} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import {useUser} from '../hooks/useUser';
 import {UserUpdate} from '../types/User';
+import ApiTaskServices from '../services/apiHandler';
 
 interface FormData {
   name: string;
@@ -54,7 +56,26 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   children,
 }) => {
   const {user, updateUser} = useUser();
+  const navigation = useNavigation();
+  const apiService = ApiTaskServices.getInstance();
+
   const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    mobile: '',
+    address: '',
+    mobility: '',
+    mobilityOther: '',
+    dateOfBirth: '',
+    nearestMasjid: '',
+    livingOnRent: false,
+    zakatEligible: false,
+    differentlyAbled: false,
+    muallafathiQuloob: false,
+  });
+
+  // Store original user data to track changes
+  const [originalData, setOriginalData] = useState<FormData>({
     name: '',
     email: '',
     mobile: '',
@@ -73,7 +94,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false); // Load user data from user
   useEffect(() => {
     if (user) {
-      setFormData({
+      const userData = {
         name: user.username || '',
         email: user.email || '',
         mobile: user.phone || '',
@@ -86,7 +107,10 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         zakatEligible: user.zakathEligible || false,
         differentlyAbled: user.differentlyAbled || false,
         muallafathiQuloob: user.MuallafathilQuloob || false,
-      });
+      };
+
+      setFormData(userData);
+      setOriginalData(userData); // Store original data for comparison
     }
   }, [user]);
   const updateField = (field: keyof FormData, value: string | boolean) => {
@@ -160,9 +184,60 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     if (!formData.nearestMasjid.trim()) {
       newErrors.nearestMasjid = 'Nearest masjid is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+  // Helper function to get only changed fields
+  const getChangedFields = (): Record<string, string | boolean> => {
+    const changes: Record<string, string | boolean> = {};
+
+    // Compare each field with original data
+    Object.keys(formData).forEach(key => {
+      const fieldKey = key as keyof FormData;
+      if (formData[fieldKey] !== originalData[fieldKey]) {
+        changes[fieldKey] = formData[fieldKey];
+      }
+    });
+
+    return changes;
+  };
+  // Map form fields to API field names for profile update
+  const mapToApiFields = (changedData: Record<string, string | boolean>) => {
+    const apiData: any = {};
+
+    // Map form fields to expected API field names
+    if (changedData.name !== undefined) {
+      apiData.username = changedData.name;
+    }
+    if (changedData.email !== undefined) {
+      apiData.email = changedData.email;
+    }
+    if (changedData.mobile !== undefined) {
+      apiData.phone = changedData.mobile;
+    }
+    if (changedData.address !== undefined) {
+      apiData.address = changedData.address;
+    }
+    if (changedData.mobility !== undefined) {
+      apiData.mobility = changedData.mobility;
+    }
+    if (changedData.nearestMasjid !== undefined) {
+      apiData.mosqueName = changedData.nearestMasjid;
+    }
+    if (changedData.livingOnRent !== undefined) {
+      apiData.onRent = changedData.livingOnRent;
+    }
+    if (changedData.zakatEligible !== undefined) {
+      apiData.zakathEligible = changedData.zakatEligible;
+    }
+    if (changedData.differentlyAbled !== undefined) {
+      apiData.differentlyAbled = changedData.differentlyAbled;
+    }
+    if (changedData.muallafathiQuloob !== undefined) {
+      apiData.MuallafathilQuloob = changedData.muallafathiQuloob;
+    }
+
+    return apiData;
   };
   const handleSave = async () => {
     clearErrors();
@@ -173,7 +248,37 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
     try {
       setIsLoading(true);
-      const updateData: UserUpdate = {
+
+      // Get only the fields that have changed
+      const changedFields = getChangedFields();
+
+      // If no fields have changed, show message and return
+      if (Object.keys(changedFields).length === 0) {
+        Alert.alert('Info', 'No changes detected to save.');
+        return;
+      }
+
+      console.log('🔄 EditProfile: Fields to update:', changedFields);
+
+      // Map form fields to API field names
+      const apiUpdateData = mapToApiFields(changedFields);
+
+      console.log(
+        '📡 EditProfile: Sending API update with data:',
+        apiUpdateData,
+      ); // Call API to update profile with only changed fields
+      const apiResponse = await apiService.updateUserProfile(apiUpdateData);
+
+      if (!apiResponse.success) {
+        throw new Error(
+          apiResponse.error || 'Failed to update profile via API',
+        );
+      }
+
+      console.log('✅ EditProfile: API update successful');
+
+      // Update local user data with the same changes
+      const userUpdateData: UserUpdate = {
         username: formData.name,
         email: formData.email,
         phone: formData.mobile,
@@ -186,12 +291,13 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         MuallafathilQuloob: formData.muallafathiQuloob,
       };
 
-      // Update user data
-      await updateUser(updateData);
+      // Update local storage
+      await updateUser(userUpdateData); // Update original data to reflect the saved state
+      setOriginalData({...formData});
 
-      Alert.alert('Success', 'Profile updated successfully!');
+      navigation.goBack();
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('❌ EditProfile: Error saving profile:', error);
       Alert.alert('Error', 'Failed to save changes. Please try again.');
     } finally {
       setIsLoading(false);

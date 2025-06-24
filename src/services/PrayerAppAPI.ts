@@ -62,6 +62,17 @@ export interface UserProfile {
 }
 
 export interface UpdateProfileRequest {
+  username?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  mobility?: string;
+  mosqueName?: string;
+  onRent?: boolean;
+  zakathEligible?: boolean;
+  differentlyAbled?: boolean;
+  MuallafathilQuloob?: boolean;
+  // Legacy fields for backward compatibility
   name?: string;
   phoneNumber?: string;
 }
@@ -204,7 +215,7 @@ class PrayerAppAPI {
   async updateUserProfile(
     data: UpdateProfileRequest,
   ): Promise<ApiResponse<UserProfile>> {
-    return this.apiService.put<UserProfile>('/user/profile', data);
+    return this.apiService.put<UserProfile>('/users/profile', data);
   }
   /**
    * Update prayer record
@@ -222,6 +233,7 @@ class PrayerAppAPI {
 
       // Check if auth token exists using UnifiedUserService
       const token = await this.userService.getAuthToken();
+      console.log('🔐 Auth token exists:', !!token);
 
       console.log('🌐 Making API call to /prayers with data:', data);
       console.log(
@@ -257,27 +269,37 @@ class PrayerAppAPI {
    * Update daily activity (Quran or Zikr)
    */
   async updateDailyActivity(
-    date: string, 
-    activityType: 'quran' | 'zikr', 
-    value: number
+    date: string,
+    activityType: 'quran' | 'zikr',
+    value: number,
   ): Promise<ApiResponse<{message: string}>> {
     try {
       // Prepare request body based on activity type
       const requestBody = {
         activity_date: date,
         activity_type: activityType,
-        ...(activityType === 'quran' 
-          ? { minutes_value: value }
-          : { count_value: value }
-        )
+        ...(activityType === 'quran'
+          ? {minutes_value: value}
+          : {count_value: value}),
       };
 
-      console.log(`📡 API: Updating ${activityType} to ${value} ${activityType === 'quran' ? 'minutes' : 'count'} for ${date}`);
+      console.log(
+        `📡 API: Updating ${activityType} to ${value} ${
+          activityType === 'quran' ? 'minutes' : 'count'
+        } for ${date}`,
+      );
 
-      const response = await this.apiService.post<{message: string}>('/daily-activities', requestBody);
-      
-      console.log(`✅ API: ${activityType} ${activityType === 'quran' ? 'minutes' : 'count'} updated successfully`);
-      
+      const response = await this.apiService.post<{message: string}>(
+        '/daily-activities',
+        requestBody,
+      );
+
+      console.log(
+        `✅ API: ${activityType} ${
+          activityType === 'quran' ? 'minutes' : 'count'
+        } updated successfully`,
+      );
+
       return response;
     } catch (error: any) {
       console.error(`❌ API: Error updating ${activityType}:`, error);
@@ -292,14 +314,20 @@ class PrayerAppAPI {
   /**
    * Update Quran minutes via API
    */
-  async updateQuranMinutes(date: string, minutes: number): Promise<ApiResponse<{message: string}>> {
+  async updateQuranMinutes(
+    date: string,
+    minutes: number,
+  ): Promise<ApiResponse<{message: string}>> {
     return this.updateDailyActivity(date, 'quran', minutes);
   }
 
   /**
    * Update Zikr count via API
    */
-  async updateZikrCount(date: string, count: number): Promise<ApiResponse<{message: string}>> {
+  async updateZikrCount(
+    date: string,
+    count: number,
+  ): Promise<ApiResponse<{message: string}>> {
     return this.updateDailyActivity(date, 'zikr', count);
   }
 
