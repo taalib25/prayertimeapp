@@ -1,5 +1,11 @@
 import React, {useState, useEffect, useCallback} from 'react';
-import {SafeAreaView, StatusBar, View, useColorScheme} from 'react-native';
+import {
+  SafeAreaView,
+  StatusBar,
+  View,
+  useColorScheme,
+  StyleSheet,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {
@@ -127,9 +133,8 @@ function AppNavigator() {
   if (showingSplash) {
     return <SplashScreen onAuthCheck={handleAuthCheck} />;
   }
-
   if (isLoading || isCheckingOnboarding || !isAuthChecked) {
-    return <View style={{flex: 1, backgroundColor: colors.white}} />;
+    return <View style={styles.loadingContainer} />;
   }
 
   // Screen configurations
@@ -234,11 +239,7 @@ function App(): React.JSX.Element {
   return (
     <DatabaseProvider>
       <AuthProvider>
-        <SafeAreaView
-          style={{
-            flex: 1,
-            backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-          }}>
+        <SafeAreaView style={styles.container}>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor="transparent"
@@ -249,5 +250,16 @@ function App(): React.JSX.Element {
     </DatabaseProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.lighter,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+});
 
 export default App;

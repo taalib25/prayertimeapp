@@ -13,7 +13,7 @@ export const colors = {
   sage: '#A7F3D0', // Sage green
   forest: '#064E3B', // Forest green
   lime: '#84CC16', // Lime green
-  lightBlue :"#04BFDA",
+  lightBlue: '#04BFDA',
 
   text: {
     primary: '#FFFFFF',
@@ -25,7 +25,7 @@ export const colors = {
     blue: '#3C4A9B', // Blue for links and highlights
     prayerBlue: '#29476F', // Prayer blue
     lightPrayerBlue: '#A2A2A2', // Prayer blue
-    black :'#242424'
+    black: '#242424',
   },
   background: {
     dark: '#135719E5', // Dark forest green
@@ -91,5 +91,3 @@ export default {
   spacing,
   borderRadius,
 };
-
-
