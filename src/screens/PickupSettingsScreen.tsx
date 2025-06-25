@@ -15,6 +15,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {spacing} from '../utils/theme';
 import {typography} from '../utils/typography';
+import {pickupRequestSchema} from '../utils/validation';
 import SvgIcon from '../components/SvgIcon';
 import UserService from '../services/UserService';
 import ApiTaskServices from '../services/apiHandler';
@@ -53,6 +54,46 @@ const PickupSettingsScreen: React.FC = () => {
     status: 'none',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    [key: string]: string | null;
+  }>({
+    emergencyContact: null,
+    specificLocation: null,
+    notes: null,
+  });
+
+  // Validation helper function for real-time feedback
+  const validateField = useCallback((field: string, value: any) => {
+    try {
+      switch (field) {
+        case 'emergencyContact':
+          pickupRequestSchema.shape.emergencyContact.parse(value);
+          return null;
+        case 'specificLocation':
+          pickupRequestSchema.shape.specificLocation.parse(value);
+          return null;
+        case 'notes':
+          pickupRequestSchema.shape.notes.parse(value);
+          return null;
+        case 'availableDays':
+          pickupRequestSchema.shape.availableDays.parse(value);
+          return null;
+        default:
+          return null;
+      }
+    } catch (error: any) {
+      return error.errors?.[0]?.message || 'Invalid value';
+    }
+  }, []);
+
+  // Clear all field errors
+  const clearFieldErrors = useCallback(() => {
+    setFieldErrors({
+      emergencyContact: null,
+      specificLocation: null,
+      notes: null,
+    });
+  }, []);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -129,15 +170,18 @@ const PickupSettingsScreen: React.FC = () => {
           });
         }
       } catch (localError) {
-        console.error('Error loading local pickup settings:', localError);      }
+        console.error('Error loading local pickup settings:', localError);
+      }
     } finally {
-      setIsLoading(false);    }
-  }, [apiService, userService]);
+      setIsLoading(false);
+      clearFieldErrors(); // Clear any validation errors when loading new settings
+    }
+  }, [apiService, userService, clearFieldErrors]);
 
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
-  
+
   const submitRequest = async () => {
     try {
       setIsLoading(true);
@@ -152,37 +196,34 @@ const PickupSettingsScreen: React.FC = () => {
         return;
       }
 
-      if (!settings.emergencyContact.trim()) {
-        Alert.alert(
-          'Missing Contact Information',
-          'Please provide an emergency contact number.',
-          [{text: 'OK', style: 'default'}],
-        );
+      // Use Zod validation for robust field validation
+      try {
+        pickupRequestSchema.parse({
+          specificLocation: settings.specificLocation,
+          emergencyContact: settings.emergencyContact,
+          notes: settings.notes,
+          availableDays: settings.availableDays,
+        });
+      } catch (validationError: any) {
+        // Handle validation errors with user-friendly messages
+        const errors = validationError.errors || [];
+        let errorMessage = 'Please fix the following issues:\n\n';
+
+        errors.forEach((error: any) => {
+          const message = error.message || 'Invalid value';
+          errorMessage += `• ${message}\n`;
+        });
+
+        Alert.alert('Validation Error', errorMessage.trim(), [
+          {text: 'OK', style: 'default'},
+        ]);
         return;
       }
 
-      if (!settings.specificLocation.trim()) {
-        Alert.alert(
-          'Missing Location',
-          'Please provide a specific pickup location.',
-          [{text: 'OK', style: 'default'}],
-        );
-        return;
-      }
-
-      // Convert available days object to array
+      // Convert available days object to array after validation
       const availableDaysArray = Object.entries(settings.availableDays)
         .filter(([_, isAvailable]) => isAvailable)
         .map(([day, _]) => day);
-
-      if (availableDaysArray.length === 0) {
-        Alert.alert(
-          'No Days Selected',
-          'Please select at least one available day for pickup.',
-          [{text: 'OK', style: 'default'}],
-        );
-        return;
-      }
 
       // Submit to API
       const response = await apiService.submitPickupRequest(
@@ -254,7 +295,9 @@ const PickupSettingsScreen: React.FC = () => {
     day: keyof typeof settings.availableDays,
     value: boolean,
   ) => {
-    if (!canEditRequest()) return;
+    if (!canEditRequest()) {
+      return;
+    }
     setSettings(prev => ({
       ...prev,
       availableDays: {
@@ -315,11 +358,21 @@ const PickupSettingsScreen: React.FC = () => {
     return true; // We handle the logic in the onValueChange callback
   };
   const getButtonText = () => {
-    if (!settings.enabled) return 'Enable Pickup Request First';
-    if (isLoading) return 'Submitting...';
-    if (settings.status === 'pending') return 'Request Under Review';
-    if (settings.status === 'approved') return 'Request Approved';
-    if (settings.status === 'rejected') return 'Resubmit Request';
+    if (!settings.enabled) {
+      return 'Enable Pickup Request First';
+    }
+    if (isLoading) {
+      return 'Submitting...';
+    }
+    if (settings.status === 'pending') {
+      return 'Request Under Review';
+    }
+    if (settings.status === 'approved') {
+      return 'Request Approved';
+    }
+    if (settings.status === 'rejected') {
+      return 'Resubmit Request';
+    }
     return 'Submit Request to Committee';
   };
 
@@ -499,15 +552,27 @@ const PickupSettingsScreen: React.FC = () => {
                   style={[
                     styles.textInput,
                     !canEditRequest() && styles.inputDisabled,
+                    fieldErrors.emergencyContact && styles.textInputError,
                   ]}
                   value={settings.emergencyContact}
-                  onChangeText={value =>
-                    setSettings(prev => ({...prev, emergencyContact: value}))
-                  }
+                  onChangeText={value => {
+                    setSettings(prev => ({...prev, emergencyContact: value}));
+                    // Validate and show error if any
+                    const error = validateField('emergencyContact', value);
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      emergencyContact: error,
+                    }));
+                  }}
                   placeholder="Enter emergency contact number"
                   keyboardType="phone-pad"
                   editable={canEditRequest()}
                 />
+                {fieldErrors.emergencyContact && (
+                  <Text style={styles.errorText}>
+                    {fieldErrors.emergencyContact}
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -520,16 +585,28 @@ const PickupSettingsScreen: React.FC = () => {
                   style={[
                     styles.textInput,
                     !canEditRequest() && styles.inputDisabled,
+                    fieldErrors.specificLocation && styles.textInputError,
                   ]}
                   value={settings.specificLocation}
-                  onChangeText={value =>
-                    setSettings(prev => ({...prev, specificLocation: value}))
-                  }
+                  onChangeText={value => {
+                    setSettings(prev => ({...prev, specificLocation: value}));
+                    // Validate and show error if any
+                    const error = validateField('specificLocation', value);
+                    setFieldErrors(prev => ({
+                      ...prev,
+                      specificLocation: error,
+                    }));
+                  }}
                   placeholder="Enter specific pickup address or landmark"
                   multiline={true}
                   numberOfLines={3}
                   editable={canEditRequest()}
                 />
+                {fieldErrors.specificLocation && (
+                  <Text style={styles.errorText}>
+                    {fieldErrors.specificLocation}
+                  </Text>
+                )}
               </View>
 
               <View style={styles.inputContainer}>
@@ -538,16 +615,23 @@ const PickupSettingsScreen: React.FC = () => {
                   style={[
                     styles.textInput,
                     !canEditRequest() && styles.inputDisabled,
+                    fieldErrors.notes && styles.textInputError,
                   ]}
                   value={settings.notes}
-                  onChangeText={value =>
-                    setSettings(prev => ({...prev, notes: value}))
-                  }
+                  onChangeText={value => {
+                    setSettings(prev => ({...prev, notes: value}));
+                    // Validate and show error if any
+                    const error = validateField('notes', value);
+                    setFieldErrors(prev => ({...prev, notes: error}));
+                  }}
                   placeholder="Any additional information for pickup assistance"
                   multiline={true}
                   numberOfLines={3}
                   editable={canEditRequest()}
                 />
+                {fieldErrors.notes && (
+                  <Text style={styles.errorText}>{fieldErrors.notes}</Text>
+                )}
               </View>
             </View>
           </>
@@ -751,9 +835,20 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlignVertical: 'top',
   },
+  textInputError: {
+    borderColor: '#F44336',
+    borderWidth: 1.5,
+  },
   inputDisabled: {
     backgroundColor: '#F5F5F5',
     color: '#999',
+  },
+  errorText: {
+    ...typography.body,
+    fontSize: 12,
+    color: '#F44336',
+    marginTop: spacing.xs,
+    marginLeft: 2,
   },
   infoSection: {
     margin: spacing.lg,

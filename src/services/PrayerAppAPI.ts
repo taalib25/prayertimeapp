@@ -134,6 +134,24 @@ export interface PickupRequestResponse {
   updated_at: string;
 }
 
+export interface WakeUpCallRequest {
+  username: string;
+  call_response: 'accepted' | 'declined';
+  response_time: string; // ISO timestamp
+  call_date: string; // YYYY-MM-DD format
+  call_time: string; // HH:MM format
+}
+
+export interface WakeUpCallResponse {
+  id: string;
+  username: string;
+  call_response: 'accepted' | 'declined';
+  response_time: string;
+  call_date: string;
+  call_time: string;
+  created_at: string;
+}
+
 /**
  * Prayer App API Endpoints
  * Uses the ApiService for consistent HTTP requests
@@ -572,6 +590,37 @@ class PrayerAppAPI {
       return response;
     } catch (error: any) {
       console.error('❌ API: Error deleting pickup request:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
+  // ========== WAKE-UP CALL ENDPOINTS ==========
+  /**
+   * Record wake-up call response (accepted/rejected)
+   */
+  async recordWakeUpCallResponse(
+    data: WakeUpCallRequest,
+  ): Promise<ApiResponse<WakeUpCallResponse>> {
+    try {
+      console.log('📡 API: Recording wake-up call response...', {
+        username: data.username,
+        response: data.call_response,
+        date: data.call_date,
+        time: data.call_time,
+      });
+
+      const response = await this.apiService.post<WakeUpCallResponse>(
+        '/wake-up-calls',
+        data,
+      );
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error recording wake-up call response:', error);
       return {
         success: false,
         error: error.response?.data?.message || error.message,

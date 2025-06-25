@@ -15,6 +15,8 @@ import SoundPlayer from 'react-native-sound-player';
 import SvgIcon from '../components/SvgIcon';
 import {colors, spacing} from '../utils/theme';
 import {typography} from '../utils/typography';
+import ApiTaskServices from '../services/apiHandler';
+import UserService from '../services/UserService';
 
 const FakeCallScreen = () => {
   // Use a ref to store if we've tried to initialize navigation
@@ -37,6 +39,15 @@ const FakeCallScreen = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const endedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Services and call tracking
+  const apiService = ApiTaskServices.getInstance();
+  const userService = UserService.getInstance();
+  const [callStartTime] = useState(new Date());
+  const [callDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+  const [callTime] = useState(
+    new Date().toTimeString().split(' ')[0].slice(0, 5),
+  ); // HH:MM
 
   useEffect(() => {
     console.log('FakeCallScreen mounted');
@@ -166,6 +177,37 @@ const FakeCallScreen = () => {
     }
   };
 
+  /**
+   * Record wake-up call response via API
+   */
+  const recordWakeUpCallResponse = async (
+    response: 'accepted' | 'declined',
+  ) => {
+    try {
+      console.log('📞 Recording wake-up call response:', response);
+
+      // Get current user data
+      const userData = await userService.getUser();
+      const username = userData?.username || 'unknown_user';
+
+      // Record the response via API
+      const result = await apiService.recordWakeUpCallResponse(
+        username,
+        response,
+        callDate,
+        callTime,
+      );
+
+      if (result.success) {
+        console.log('✅ Wake-up call response recorded successfully');
+      } else {
+        console.log('❌ Failed to record wake-up call response:', result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error recording wake-up call response:', error);
+    }
+  };
+
   const handleAutoTimeout = () => {
     console.log('Call auto-timeout');
     setCallStatus('ended');
@@ -248,6 +290,9 @@ const FakeCallScreen = () => {
 
     setCallStatus('connected');
 
+    // Record the wake-up call response
+    await recordWakeUpCallResponse('accepted');
+
     // Clear the timeout since call was answered
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -281,6 +326,9 @@ const FakeCallScreen = () => {
 
     Vibration.cancel();
     await dismissAllNotifications();
+
+    // Record the wake-up call response
+    await recordWakeUpCallResponse('declined');
 
     setCallStatus('ended');
     // Timeout will be handled by useEffect

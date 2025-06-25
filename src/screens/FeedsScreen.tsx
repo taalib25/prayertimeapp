@@ -300,7 +300,7 @@ const FeedsScreen: React.FC = () => {
                 {/* Image (if available) */}
                 {selectedFeed?.image_url && (
                   <View style={styles.modalImageContainer}>
-               
+
                     <Image
                       source={
                         typeof selectedFeed.image_url === 'string' &&

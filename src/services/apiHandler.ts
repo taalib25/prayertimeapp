@@ -3,6 +3,8 @@ import PrayerAppAPI, {
   FeedsResponse,
   PickupRequest,
   PickupRequestResponse,
+  WakeUpCallRequest,
+  WakeUpCallResponse,
 } from './PrayerAppAPI';
 import {PrayerStatus} from '../model/DailyTasks';
 
@@ -379,6 +381,54 @@ class ApiTaskServices {
       }
     } catch (error) {
       console.error('❌ API: Error fetching pickup requests:', error);
+      return {success: false, error: 'Network error occurred'};
+    }
+  }
+
+  // ========== WAKE-UP CALL METHODS ==========
+  /**
+   * Record wake-up call response via API
+   */
+  async recordWakeUpCallResponse(
+    username: string,
+    callResponse: 'accepted' | 'declined',
+    callDate: string,
+    callTime: string,
+  ): Promise<{
+    success: boolean;
+    data?: WakeUpCallResponse;
+    error?: string;
+  }> {
+    try {
+      console.log('📞 API: Recording wake-up call response...', {
+        username,
+        response: callResponse,
+        date: callDate,
+        time: callTime,
+      });
+
+      const wakeUpCallData: WakeUpCallRequest = {
+        username,
+        call_response: callResponse,
+        response_time: new Date().toISOString(),
+        call_date: callDate,
+        call_time: callTime,
+      };
+
+      const response = await this.api.recordWakeUpCallResponse(wakeUpCallData);
+
+      if (response.success) {
+        console.log('✅ API: Wake-up call response recorded successfully');
+        return {success: true, data: response.data};
+      } else {
+        console.log(
+          '❌ API: Failed to record wake-up call response:',
+          response.error,
+        );
+        return {success: false, error: response.error};
+      }
+    } catch (error) {
+      console.error('❌ API: Error recording wake-up call response:', error);
       return {success: false, error: 'Network error occurred'};
     }
   }
