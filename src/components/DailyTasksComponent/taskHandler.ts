@@ -110,7 +110,7 @@ export const handleTaskCompletion = async (
           await apiService.updateQuranMinutes(dateISO, newQuranMinutes);
         } catch (apiError) {
           console.warn(
-            `⚠️ API update failed for Quran, but local DB updated:`,
+            '⚠️ API update failed for Quran, but local DB updated:',
             apiError,
           );
           // Continue execution - local DB is updated, API will sync later
@@ -142,7 +142,7 @@ export const handleTaskCompletion = async (
           await apiService.updateZikrCount(dateISO, newZikrCount);
         } catch (apiError) {
           console.warn(
-            `⚠️ API update failed for Zikr, but local DB updated:`,
+            '⚠️ API update failed for Zikr, but local DB updated:',
             apiError,
           );
           // Continue execution - local DB is updated, API will sync later

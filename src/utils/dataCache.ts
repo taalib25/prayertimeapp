@@ -22,7 +22,7 @@ class DataCache {
 
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    if (!entry) return null;
+    if (!entry) {return null;}
 
     // Check if expired
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -35,7 +35,7 @@ class DataCache {
 
   has(key: string): boolean {
     const entry = this.cache.get(key);
-    if (!entry) return false;
+    if (!entry) {return false;}
 
     // Check if expired
     if (Date.now() - entry.timestamp > entry.ttl) {

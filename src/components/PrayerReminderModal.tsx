@@ -45,8 +45,8 @@ const PrayerReminderModal: React.FC<PrayerReminderModalProps> = ({
 
     // Convert to 24-hour format for calculations
     let hour24 = parseInt(hours);
-    if (isPM && hour24 !== 12) hour24 += 12;
-    if (!isPM && hour24 === 12) hour24 = 0;
+    if (isPM && hour24 !== 12) {hour24 += 12;}
+    if (!isPM && hour24 === 12) {hour24 = 0;}
 
     const today = new Date();
     const reminderDate = new Date();

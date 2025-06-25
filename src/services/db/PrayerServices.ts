@@ -90,7 +90,7 @@ export const getPrayerTimesForDate = async (
     }
 
     const startPrayerTime = startMatches[0];
-    
+
     // Find the end date of the range (next date after start date)
     const endMatches = await prayerTimesCollection
       .query(
@@ -101,7 +101,7 @@ export const getPrayerTimesForDate = async (
       .fetch();
 
     const endDate = endMatches.length > 0 ? endMatches[0].date : null;
-    
+
     // Check if target date falls within this range
     const isInRange = endDate ? targetDate < endDate : true;
 

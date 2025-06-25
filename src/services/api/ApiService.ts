@@ -317,9 +317,9 @@ class ApiService {
       const data = error.response.data as any;
 
       // Try to extract message from various response formats
-      if (data?.message) return data.message;
-      if (data?.error) return data.error;
-      if (typeof data === 'string') return data;
+      if (data?.message) {return data.message;}
+      if (data?.error) {return data.error;}
+      if (typeof data === 'string') {return data;}
 
       // Default status messages
       switch (status) {

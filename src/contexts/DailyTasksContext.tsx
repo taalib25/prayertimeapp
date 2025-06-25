@@ -73,7 +73,7 @@ export const DailyTasksProvider: React.FC<{
             const freshTasks = await getRecentDailyTasks(daysBack);
             dataCache.set(cacheKey, freshTasks, 60000); // Cache for 1 minute
             setDailyTasks(freshTasks);
-            console.log(`✅ DailyTasksContext: Background refresh completed`);
+            console.log('✅ DailyTasksContext: Background refresh completed');
           } catch (err) {
             console.error('❌ Background refresh failed:', err);
           }

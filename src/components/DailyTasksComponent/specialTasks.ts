@@ -80,7 +80,7 @@ export const DAILY_SPECIAL_TASKS: EnhancedSpecialTask[] = [
     amount: 1,
     prayerName: 'isha',
   },
-  
+
 ];
 
 /**

@@ -189,7 +189,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   };
 
   const toggleDurationDropdown = () => {
-    if (!fajrCallEnabled) return;
+    if (!fajrCallEnabled) {return;}
     setShowDurationDropdown(!showDurationDropdown);
     // Close timing dropdown if it's open
     if (showTimingDropdown) {
@@ -198,7 +198,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
   };
 
   const toggleTimingDropdown = () => {
-    if (!fajrCallEnabled) return;
+    if (!fajrCallEnabled) {return;}
     setShowTimingDropdown(!showTimingDropdown);
     // Close duration dropdown if it's open
     if (showDurationDropdown) {

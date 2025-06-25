@@ -77,7 +77,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
 
   // ✅ SIMPLE: Find today's page
   const initialPage = useMemo(() => {
-    if (transformedDailyData.length === 0) return 0;
+    if (transformedDailyData.length === 0) {return 0;}
 
     const todayIndex = transformedDailyData.findIndex(
       dayTasks => dayTasks.isToday,

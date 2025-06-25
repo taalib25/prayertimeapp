@@ -109,7 +109,7 @@ export const getRecentDailyTasks = async (
 
     return completeTasks;
   } catch (error) {
-    console.error(`Error getting recent daily tasks:`, error);
+    console.error('Error getting recent daily tasks:', error);
     throw error;
   }
 };

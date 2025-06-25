@@ -89,7 +89,7 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
 
   // Determine button text based on permission status
   const getButtonText = () => {
-    if (loading) return 'Checking...';
+    if (loading) {return 'Checking...';}
 
     switch (permissionStatus) {
       case RESULTS.GRANTED:

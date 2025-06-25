@@ -29,8 +29,8 @@ export const transformDailyData = (
     const day = String(yesterday.getDate()).padStart(2, '0');
     const yesterdayStr = `${year}-${month}-${day}`;
 
-    if (dateStr === today) return 'Today';
-    if (dateStr === yesterdayStr) return 'Yesterday';
+    if (dateStr === today) {return 'Today';}
+    if (dateStr === yesterdayStr) {return 'Yesterday';}
 
     const options: Intl.DateTimeFormatOptions = {
       month: 'short',

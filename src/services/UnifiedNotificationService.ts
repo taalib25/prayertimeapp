@@ -172,7 +172,7 @@ class UnifiedNotificationService {
         const prayerTime = newPrayerTimes[
           prayer as keyof typeof newPrayerTimes
         ] as string;
-        if (!prayerTime) continue;
+        if (!prayerTime) {continue;}
 
         // Check if notification with this exact time already exists
         const isUpToDate = await this.isPrayerNotificationUpToDate(
@@ -212,7 +212,7 @@ class UnifiedNotificationService {
       if (updatedCount > 0) {
         console.log(`✅ Updated ${updatedCount} prayer notifications`);
       } else {
-        console.log(`✅ All prayer notifications are up-to-date`);
+        console.log('✅ All prayer notifications are up-to-date');
       }
     } catch (error) {
       console.error('❌ Error scheduling prayer notifications:', error);

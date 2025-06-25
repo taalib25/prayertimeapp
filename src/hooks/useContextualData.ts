@@ -23,7 +23,7 @@ export const usePrayerData = (targetDate?: string) => {
 
   const getPrayerStatus = useMemo(() => {
     return (prayerName: string): PrayerStatus => {
-      if (!targetData) return 'none';
+      if (!targetData) {return 'none';}
 
       const lcPrayerName = prayerName.toLowerCase();
       switch (lcPrayerName) {
@@ -232,9 +232,9 @@ const formatDayLabel = (dateStr: string): string => {
   const diffTime = compareDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Tomorrow';
-  if (diffDays === -1) return 'Yesterday';
+  if (diffDays === 0) {return 'Today';}
+  if (diffDays === 1) {return 'Tomorrow';}
+  if (diffDays === -1) {return 'Yesterday';}
 
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'short',

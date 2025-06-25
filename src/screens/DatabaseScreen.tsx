@@ -289,7 +289,7 @@ const DatabaseScreen: React.FC = () => {
   };
 
   const loadTableData = async () => {
-    if (!selectedTable || !database) return;
+    if (!selectedTable || !database) {return;}
 
     const tableConfig = availableTables.find(t => t.name === selectedTable);
 
@@ -375,7 +375,7 @@ const DatabaseScreen: React.FC = () => {
 
   // Helper function to format cell content
   const formatCellContent = (value: any, header: string): string => {
-    if (value === null || value === undefined) return '';
+    if (value === null || value === undefined) {return '';}
 
     switch (header) {
       case 'special_tasks_raw':

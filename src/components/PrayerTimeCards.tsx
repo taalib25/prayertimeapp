@@ -45,7 +45,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
   const handleAttendanceSelect = useCallback(
     async (attendance: AttendanceType) => {
-      if (!selectedPrayerForAttendance) return;
+      if (!selectedPrayerForAttendance) {return;}
 
       try {
         // Close modal immediately for better UX
