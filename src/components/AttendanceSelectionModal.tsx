@@ -57,7 +57,7 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
 }) => {
   // Animation values
   const slideAnim = useSharedValue(300);
-  const scaleAnim = useSharedValue(0.9);
+  const scaleAnim = useSharedValue(0.97); // Reduced scaling effect
   const opacityAnim = useSharedValue(0);
 
   // Start animation when modal becomes visible
@@ -68,7 +68,7 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
       opacityAnim.value = withTiming(1, {duration: 300});
     } else {
       slideAnim.value = withTiming(300, {duration: 250});
-      scaleAnim.value = withTiming(0.9, {duration: 250});
+      scaleAnim.value = withTiming(0.97, {duration: 250}); // Reduced scaling effect
       opacityAnim.value = withTiming(0, {duration: 250});
     }
   }, [visible]);
@@ -81,8 +81,8 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
 
   // Simple selection handler with animation
   const handleSelect = (attendance: AttendanceType) => {
-    // Add a small bounce animation on selection
-    scaleAnim.value = withSpring(0.95, {duration: 100}, () => {
+    // Add a small bounce animation on selection - reduced scaling
+    scaleAnim.value = withSpring(0.99, {duration: 100}, () => {
       scaleAnim.value = withSpring(1, {duration: 150});
     });
     onSelect(attendance);
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prayerTitle: {
-    fontFamily: fontFamilies.regular,
+    fontFamily: fontFamilies.medium,
     fontSize: 28,
     color: colors.text.accent,
     marginBottom: -5,

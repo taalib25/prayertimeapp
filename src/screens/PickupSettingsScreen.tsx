@@ -54,6 +54,7 @@ const PickupSettingsScreen: React.FC = () => {
     status: 'none',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<{
     [key: string]: string | null;
   }>({
@@ -98,6 +99,9 @@ const PickupSettingsScreen: React.FC = () => {
   const loadSettings = useCallback(async () => {
     try {
       setIsLoading(true);
+
+      // Add subtle delay to allow screen rendering
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       // Try to load from API first
       const apiResponse = await apiService.getPickupRequests();
@@ -174,12 +178,18 @@ const PickupSettingsScreen: React.FC = () => {
       }
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
       clearFieldErrors(); // Clear any validation errors when loading new settings
     }
   }, [apiService, userService, clearFieldErrors]);
 
   useEffect(() => {
-    loadSettings();
+    // Add subtle delay on component mount to ensure smooth screen transition
+    const timer = setTimeout(() => {
+      loadSettings();
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [loadSettings]);
 
   const submitRequest = async () => {
@@ -485,38 +495,48 @@ const PickupSettingsScreen: React.FC = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Status Card */}
-        <StatusCard />
-        <View style={styles.settingSection}>
-          <SettingItem
-            title="Request Pickup Assistance"
-            description="Request help with transportation to and from mosque"
-            value={settings.enabled}
-            onValueChange={value => {
-              // If trying to disable while request is pending/approved, show warning
-              if (
-                !value &&
-                (settings.status === 'pending' ||
-                  settings.status === 'approved')
-              ) {
-                Alert.alert(
-                  'Cannot Disable',
-                  `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
-                  [{text: 'OK', style: 'default'}],
-                );
-                return;
-              }
-              setSettings(prev => ({...prev, enabled: value}));
-            }}
-            isMainToggle={true} // Special flag for the main toggle
-          />
+      {/* Show subtle loading during initial render */}
+      {isInitialLoad ? (
+        <View style={styles.initialLoadingContainer}>
+          <View style={styles.contentSkeleton}>
+            <View style={styles.skeletonCard} />
+            <View style={styles.skeletonSection} />
+            <View style={styles.skeletonSection} />
+          </View>
         </View>
-        {/* Detailed Settings - Only show when enabled */}
-        {settings.enabled && (
-          <>
-            {/* Time Settings */}
-            {/* <View style={styles.settingSection}>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Status Card */}
+          <StatusCard />
+          <View style={styles.settingSection}>
+            <SettingItem
+              title="Request Pickup Assistance"
+              description="Request help with transportation to and from mosque"
+              value={settings.enabled}
+              onValueChange={value => {
+                // If trying to disable while request is pending/approved, show warning
+                if (
+                  !value &&
+                  (settings.status === 'pending' ||
+                    settings.status === 'approved')
+                ) {
+                  Alert.alert(
+                    'Cannot Disable',
+                    `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
+                    [{text: 'OK', style: 'default'}],
+                  );
+                  return;
+                }
+                setSettings(prev => ({...prev, enabled: value}));
+              }}
+              isMainToggle={true} // Special flag for the main toggle
+            />
+          </View>
+          {/* Detailed Settings - Only show when enabled */}
+          {settings.enabled && (
+            <>
+              {/* Time Settings */}
+              {/* <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>Preferred Pickup Time</Text>
               <View style={styles.timeContainer}>
                 <Text style={styles.timeLabel}>
@@ -538,140 +558,145 @@ const PickupSettingsScreen: React.FC = () => {
               </View>
             </View> */}
 
-            {/* Days Selector */}
-            <View style={styles.settingSection}>
-              <DaySelector />
-            </View>
+              {/* Days Selector */}
+              <View style={styles.settingSection}>
+                <DaySelector />
+              </View>
 
-            {/* Contact Information */}
-            <View style={styles.settingSection}>
-              <Text style={styles.sectionTitle}>Contact Information</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Emergency Contact Number</Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    !canEditRequest() && styles.inputDisabled,
-                    fieldErrors.emergencyContact && styles.textInputError,
-                  ]}
-                  value={settings.emergencyContact}
-                  onChangeText={value => {
-                    setSettings(prev => ({...prev, emergencyContact: value}));
-                    // Validate and show error if any
-                    const error = validateField('emergencyContact', value);
-                    setFieldErrors(prev => ({
-                      ...prev,
-                      emergencyContact: error,
-                    }));
-                  }}
-                  placeholder="Enter emergency contact number"
-                  keyboardType="phone-pad"
-                  editable={canEditRequest()}
-                />
-                {fieldErrors.emergencyContact && (
-                  <Text style={styles.errorText}>
-                    {fieldErrors.emergencyContact}
+              {/* Contact Information */}
+              <View style={styles.settingSection}>
+                <Text style={styles.sectionTitle}>Contact Information</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>
+                    Emergency Contact Number
                   </Text>
-                )}
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      !canEditRequest() && styles.inputDisabled,
+                      fieldErrors.emergencyContact && styles.textInputError,
+                    ]}
+                    value={settings.emergencyContact}
+                    onChangeText={value => {
+                      setSettings(prev => ({...prev, emergencyContact: value}));
+                      // Validate and show error if any
+                      const error = validateField('emergencyContact', value);
+                      setFieldErrors(prev => ({
+                        ...prev,
+                        emergencyContact: error,
+                      }));
+                    }}
+                    placeholder="Enter emergency contact number"
+                    keyboardType="phone-pad"
+                    editable={canEditRequest()}
+                  />
+                  {fieldErrors.emergencyContact && (
+                    <Text style={styles.errorText}>
+                      {fieldErrors.emergencyContact}
+                    </Text>
+                  )}
+                </View>
               </View>
-            </View>
 
-            {/* Location Details */}
-            <View style={styles.settingSection}>
-              <Text style={styles.sectionTitle}>Location Details</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Specific Pickup Location</Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    !canEditRequest() && styles.inputDisabled,
-                    fieldErrors.specificLocation && styles.textInputError,
-                  ]}
-                  value={settings.specificLocation}
-                  onChangeText={value => {
-                    setSettings(prev => ({...prev, specificLocation: value}));
-                    // Validate and show error if any
-                    const error = validateField('specificLocation', value);
-                    setFieldErrors(prev => ({
-                      ...prev,
-                      specificLocation: error,
-                    }));
-                  }}
-                  placeholder="Enter specific pickup address or landmark"
-                  multiline={true}
-                  numberOfLines={3}
-                  editable={canEditRequest()}
-                />
-                {fieldErrors.specificLocation && (
-                  <Text style={styles.errorText}>
-                    {fieldErrors.specificLocation}
+              {/* Location Details */}
+              <View style={styles.settingSection}>
+                <Text style={styles.sectionTitle}>Location Details</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>
+                    Specific Pickup Location
                   </Text>
-                )}
-              </View>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      !canEditRequest() && styles.inputDisabled,
+                      fieldErrors.specificLocation && styles.textInputError,
+                    ]}
+                    value={settings.specificLocation}
+                    onChangeText={value => {
+                      setSettings(prev => ({...prev, specificLocation: value}));
+                      // Validate and show error if any
+                      const error = validateField('specificLocation', value);
+                      setFieldErrors(prev => ({
+                        ...prev,
+                        specificLocation: error,
+                      }));
+                    }}
+                    placeholder="Enter specific pickup address or landmark"
+                    multiline={true}
+                    numberOfLines={3}
+                    editable={canEditRequest()}
+                  />
+                  {fieldErrors.specificLocation && (
+                    <Text style={styles.errorText}>
+                      {fieldErrors.specificLocation}
+                    </Text>
+                  )}
+                </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Additional Notes</Text>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    !canEditRequest() && styles.inputDisabled,
-                    fieldErrors.notes && styles.textInputError,
-                  ]}
-                  value={settings.notes}
-                  onChangeText={value => {
-                    setSettings(prev => ({...prev, notes: value}));
-                    // Validate and show error if any
-                    const error = validateField('notes', value);
-                    setFieldErrors(prev => ({...prev, notes: error}));
-                  }}
-                  placeholder="Any additional information for pickup assistance"
-                  multiline={true}
-                  numberOfLines={3}
-                  editable={canEditRequest()}
-                />
-                {fieldErrors.notes && (
-                  <Text style={styles.errorText}>{fieldErrors.notes}</Text>
-                )}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Additional Notes</Text>
+                  <TextInput
+                    style={[
+                      styles.textInput,
+                      !canEditRequest() && styles.inputDisabled,
+                      fieldErrors.notes && styles.textInputError,
+                    ]}
+                    value={settings.notes}
+                    onChangeText={value => {
+                      setSettings(prev => ({...prev, notes: value}));
+                      // Validate and show error if any
+                      const error = validateField('notes', value);
+                      setFieldErrors(prev => ({...prev, notes: error}));
+                    }}
+                    placeholder="Any additional information for pickup assistance"
+                    multiline={true}
+                    numberOfLines={3}
+                    editable={canEditRequest()}
+                  />
+                  {fieldErrors.notes && (
+                    <Text style={styles.errorText}>{fieldErrors.notes}</Text>
+                  )}
+                </View>
               </View>
+            </>
+          )}
+          {/* Info Section */}
+          <View style={styles.infoSection}>
+            <View style={styles.infoCard}>
+              <Text style={styles.infoTitle}>💡 How Pickup Request Works</Text>
+              <Text style={styles.infoText}>
+                {settings.enabled
+                  ? 'Your pickup request will be reviewed by the mosque committee. Once approved, community members who offer transportation assistance will be able to see your request and coordinate pickup times with you.'
+                  : 'Submit a pickup assistance request to coordinate transportation help from community members. This is especially useful if you usually walk to mosque but sometimes need a ride due to weather, health, or other circumstances.'}
+              </Text>
             </View>
-          </>
-        )}
-        {/* Info Section */}
-        <View style={styles.infoSection}>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>💡 How Pickup Request Works</Text>
-            <Text style={styles.infoText}>
-              {settings.enabled
-                ? 'Your pickup request will be reviewed by the mosque committee. Once approved, community members who offer transportation assistance will be able to see your request and coordinate pickup times with you.'
-                : 'Submit a pickup assistance request to coordinate transportation help from community members. This is especially useful if you usually walk to mosque but sometimes need a ride due to weather, health, or other circumstances.'}
-            </Text>
           </View>
-        </View>
-        {/* Submit Button - Only show when pickup is enabled */}
-        {settings.enabled && (
-          <View style={styles.saveSection}>
-            <TouchableOpacity
-              style={[
-                styles.saveButton,
-                (isLoading ||
+          {/* Submit Button - Only show when pickup is enabled */}
+          {settings.enabled && (
+            <View style={styles.saveSection}>
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  (isLoading ||
+                    settings.status === 'pending' ||
+                    settings.status === 'approved' ||
+                    !settings.enabled) &&
+                    styles.saveButtonDisabled,
+                ]}
+                onPress={submitRequest}
+                disabled={
+                  isLoading ||
                   settings.status === 'pending' ||
                   settings.status === 'approved' ||
-                  !settings.enabled) &&
-                  styles.saveButtonDisabled,
-              ]}
-              onPress={submitRequest}
-              disabled={
-                isLoading ||
-                settings.status === 'pending' ||
-                settings.status === 'approved' ||
-                !settings.enabled
-              }>
-              <Text style={styles.saveButtonText}>{getButtonText()}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        <View style={{height: 40}} />
-      </ScrollView>
+                  !settings.enabled
+                }>
+                <Text style={styles.saveButtonText}>{getButtonText()}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={{height: 40}} />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -708,6 +733,26 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  initialLoadingContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  contentSkeleton: {
+    flex: 1,
+  },
+  skeletonCard: {
+    backgroundColor: '#F0F0F0',
+    borderRadius: 12,
+    height: 80,
+    marginBottom: spacing.lg,
+  },
+  skeletonSection: {
+    backgroundColor: '#F0F0F0',
+    borderRadius: 8,
+    height: 560,
+    marginBottom: spacing.md,
   },
   statusCard: {
     backgroundColor: '#F8F9FA',
