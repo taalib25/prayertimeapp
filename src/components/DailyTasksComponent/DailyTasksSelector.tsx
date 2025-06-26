@@ -75,33 +75,63 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     return transformDailyData(dailyTasks);
   }, [dailyTasks]);
 
-  // ✅ SIMPLE: Find today's page
+  // ✅ SIMPLE: Find today's page with better fallback
   const initialPage = useMemo(() => {
-    if (transformedDailyData.length === 0) {return 0;}
+    if (transformedDailyData.length === 0) return 0;
 
+    // Find today's index
     const todayIndex = transformedDailyData.findIndex(
       dayTasks => dayTasks.isToday,
     );
-    return todayIndex >= 0 ? todayIndex : 0;
+
+    // If today is found, use it; otherwise use the last page
+    const targetPage =
+      todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
+
+    console.log(
+      `📅 Daily tasks: ${transformedDailyData.length} days, today at index ${todayIndex}, showing page ${targetPage}`,
+    );
+    return targetPage;
   }, [transformedDailyData]);
-  const [currentPage, setCurrentPage] = useState(initialPage);
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    // Initialize with the calculated initial page
+    return transformedDailyData.length > 0 ? initialPage : 0;
+  });
   const pagerRef = useRef<PagerView>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // ✅ SYNC: Update currentPage when initialPage changes (when data loads)
+  // ✅ ENHANCED: Ensure today's page is visible with robust initialization
   useEffect(() => {
-    if (initialPage !== currentPage) {
-      console.log(`📍 Syncing page: ${currentPage} → ${initialPage} (Today)`);
-      setCurrentPage(initialPage);
-      // Also programmatically scroll the PagerView to Today
-      if (pagerRef.current && initialPage > 0) {
-        pagerRef.current.setPage(initialPage);
-      }
-    }
-  }, []);
+    if (transformedDailyData.length > 0 && !isInitialized) {
+      console.log(
+        `📍 Setting up daily tasks view: ${transformedDailyData.length} days, showing page ${initialPage}`,
+      );
 
-  // ✅ SIMPLE: Page selection handler
+      setCurrentPage(initialPage);
+      setIsInitialized(true);
+
+      // Ensure PagerView shows the correct page with multiple attempts for reliability
+      const setTargetPage = () => {
+        pagerRef.current?.setPage(initialPage);
+
+        // Double-check after a brief delay to ensure it's set
+        setTimeout(() => {
+          pagerRef.current?.setPage(initialPage);
+        }, 100);
+      };
+
+      // Set immediately and also after component is fully mounted
+      setTargetPage();
+      setTimeout(setTargetPage, 200);
+    }
+  }, [transformedDailyData, initialPage, isInitialized]);
+
+  // ✅ SIMPLE: Page selection handler with logging
   const handlePageSelected = useCallback((e: any) => {
-    setCurrentPage(e.nativeEvent.position);
+    const newPage = e.nativeEvent.position;
+    console.log(`📄 Daily tasks page selected: ${newPage}`);
+    setCurrentPage(newPage);
   }, []);
 
   // ✅ SIMPLE: Early returns for loading states
@@ -117,13 +147,27 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     return null;
   }
 
+  // Calculate the safe initial page to ensure proper display
+  const safeInitialPage = Math.min(
+    initialPage,
+    transformedDailyData.length - 1,
+  );
+
   return (
     <View style={styles.container}>
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={initialPage}
-        onPageSelected={handlePageSelected}>
+        initialPage={safeInitialPage}
+        onPageSelected={handlePageSelected}
+        onLayout={() => {
+          // Additional safety check - set to target page after layout
+          if (isInitialized && transformedDailyData.length > 0) {
+            setTimeout(() => {
+              pagerRef.current?.setPage(initialPage);
+            }, 50);
+          }
+        }}>
         {transformedDailyData.map((dayTasks, index) => (
           <View key={dayTasks.dateISO} style={styles.pageContainer}>
             <DayView

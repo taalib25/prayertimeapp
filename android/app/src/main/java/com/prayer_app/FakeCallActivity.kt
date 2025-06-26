@@ -31,12 +31,11 @@ class FakeCallActivity : ReactActivity() {
         handleNotificationIntent(intent)
     }
     
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         Log.d("FakeCallActivity", "onNewIntent called")
-        if (intent != null) {
-            handleNotificationIntent(intent)
-        }
+        handleNotificationIntent(intent)
     }
     
     private fun handleNotificationIntent(intent: Intent) {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
 import {useAuth} from '../contexts/AuthContext';
 import {useUser} from '../hooks/useUser';
+import ImageService from '../services/ImageService';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -27,10 +28,33 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {displayName, user} = useUser();
+  const {displayName, user, userInitials} = useUser();
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const imageService = ImageService.getInstance();
 
   const isLoading = false;
   const error = null;
+
+  // Load profile image on component mount
+  useEffect(() => {
+    loadProfileImage();
+  }, [user?.id, user?.profileImage]);
+
+  const loadProfileImage = async () => {
+    if (user?.id) {
+      // First check if user has profileImage in data
+      if (user.profileImage) {
+        setProfileImageUri(user.profileImage);
+        return;
+      }
+
+      // Otherwise check AsyncStorage
+      const savedUri = await imageService.getImageUri(user.id);
+      if (savedUri) {
+        setProfileImageUri(savedUri);
+      }
+    }
+  };
 
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
@@ -126,10 +150,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.profileImageContainer}>
-            <Image
-              source={require('../assets/images/profile.png')}
-              style={styles.profileImage}
-            />
+            {profileImageUri ? (
+              <Image
+                source={{uri: profileImageUri}}
+                style={styles.profileImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Text style={styles.profileImageText}>{userInitials}</Text>
+              </View>
+            )}
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{displayName}</Text>
@@ -431,6 +462,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+  },
+  profileImagePlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profileImageText: {
     ...typography.h2,

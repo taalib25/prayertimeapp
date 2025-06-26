@@ -35,6 +35,10 @@
 	<string>We need your location to calculate accurate prayer times for your area.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Motion data is used to determine Qibla direction.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to take profile pictures.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to select profile pictures.</string>
 	  <key>LSApplicationQueriesSchemes</key>
     <array>
         <string>tel</string>

@@ -32,6 +32,9 @@ export interface User {
   phone: string;
   fullName?: string;
 
+  // Profile image
+  profileImage?: string; // Local file path or URI
+
   // Mosque and location info
   mosqueId: number;
   mosqueName: string;
