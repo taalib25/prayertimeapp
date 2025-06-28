@@ -467,14 +467,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryMain,
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileImageText: {
     ...typography.h2,
     color: colors.white,
-    fontWeight: 'bold',
   },
   settingsInfo: {
     backgroundColor: colors.white,

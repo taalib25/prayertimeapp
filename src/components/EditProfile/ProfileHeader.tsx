@@ -175,7 +175,6 @@ const styles = StyleSheet.create({
   profileImageText: {
     ...typography.h2,
     color: colors.white,
-    fontWeight: 'bold',
   },
   profileName: {
     ...typography.headerProfile,

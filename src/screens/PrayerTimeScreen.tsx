@@ -97,11 +97,11 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          location={user?.address || ''}
+          location={user?.address || 'Colombo,LK'}
           userName={displayName}
           mosqueName={user?.mosqueName || ''}
-          mosqueLocation={user?.address || ''}
-          avatarImage={require('../assets/images/profile.png')}
+          mosqueLocation={user?.address || 'Colombo,LK'}
+          avatarImage={user?.profileImage}
         />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>

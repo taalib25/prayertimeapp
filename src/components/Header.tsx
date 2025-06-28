@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
+import { useUser } from '../hooks/useUser';
 
 interface HeaderProps {
   location?: string;
@@ -18,6 +19,7 @@ const Header: React.FC<HeaderProps> = ({
   mosqueName = '', // No fallback - use empty string for real API data only
   avatarImage,
 }) => {
+    const { userInitials} = useUser();
   return (
     <View style={styles.container}>
       {/* Background PNG */}
@@ -64,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
               />
             ) : (
               <Text style={styles.avatarText}>
-                {userName?.charAt(0)?.toUpperCase() || 'U'}
+                {userInitials || 'U'}
               </Text>
             )}
           </View>
@@ -104,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   avatar: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+   backgroundColor: colors.background.overlay,
     height: '20%',
     width: '20%',
     aspectRatio: 1,
@@ -119,11 +121,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 1000,
+    
   },
   avatarText: {
     ...typography.h3,
     color: '#fff',
-    fontWeight: '700',
   },
   container: {
     // height: 230,
