@@ -1,48 +1,39 @@
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import MeetingService, {MeetingDetails} from '../services/MeetingService';
+
+interface MeetingDetails {
+  title: string;
+  isUrgent?: boolean;
+  date: string;
+  time: string;
+  // location removed
+  committeeMember: {
+    name: string;
+    phone: string;
+  };
+}
 
 interface MeetingDetailsCardProps {
   onClose?: () => void;
+  meeting?: MeetingDetails | null;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({onClose}) => {
-  const [meeting, setMeeting] = useState<MeetingDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const meetingService = MeetingService.getInstance();
-
-  useEffect(() => {
-    fetchMeetingDetails();
-  }, []);
-
-  const fetchMeetingDetails = async () => {
-    try {
-      setIsLoading(true);
-
-      // Get the active consultation (only one consultation shown at a time)
-      const activeConsultation = await meetingService.getActiveConsultation();
-
-      if (activeConsultation) {
-        setMeeting(activeConsultation);
-      }
-
-      setIsLoading(false);
-    } catch (err) {
-      setError('Failed to load consultation details');
-      setIsLoading(false);
-    }
-  };
-
+const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({
+  onClose,
+  meeting,
+  isLoading = false,
+  error = null,
+}) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -113,18 +104,6 @@ const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({onClose}) => {
             <Text style={styles.detailLabel}>Time:</Text>
             <Text style={styles.detailValue}>{meeting.time}</Text>
           </View>
-
-          <View style={styles.detailItem}>
-            <SvgIcon name="map" size={16} color={colors.text.muted} />
-            <Text style={styles.detailLabel}>Place:</Text>
-            <Text style={styles.detailValue}>{meeting.location.name}</Text>
-          </View>
-
-          {meeting.location.address && (
-            <View style={styles.addressRow}>
-              <Text style={styles.addressText}>{meeting.location.address}</Text>
-            </View>
-          )}
         </View>
       </View>
     </View>

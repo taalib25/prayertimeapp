@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,19 @@ import {
   StatusBar,
   TouchableOpacity,
   Switch,
-  Alert,
   TextInput,
   Platform,
+  Alert,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {spacing} from '../utils/theme';
-import {typography} from '../utils/typography';
-import {pickupRequestSchema} from '../utils/validation';
+import { useNavigation } from '@react-navigation/native';
+import { spacing } from '../utils/theme';
+import { typography } from '../utils/typography';
+import { pickupRequestSchema } from '../utils/validation';
 import SvgIcon from '../components/SvgIcon';
 import UserService from '../services/UserService';
 import ApiTaskServices from '../services/apiHandler';
-import {PickupSettings} from '../types/User';
+import { PickupSettings } from '../types/User';
+import AlertModal from '../components/AlertModel';
 
 // Request status types
 type RequestStatus = 'none' | 'pending' | 'approved' | 'rejected';
@@ -61,6 +62,20 @@ const PickupSettingsScreen: React.FC = () => {
     emergencyContact: null,
     specificLocation: null,
     notes: null,
+  });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    confirmDestructive?: boolean;
+  }>({
+    title: '',
+    message: '',
+    onConfirm: () => {},
   });
 
   // Validation helper function for real-time feedback
@@ -198,11 +213,13 @@ const PickupSettingsScreen: React.FC = () => {
 
       // Validate required fields
       if (!settings.enabled) {
-        Alert.alert(
-          'Enable Pickup Request',
-          'Please enable pickup assistance to submit a request.',
-          [{text: 'OK', style: 'default'}],
-        );
+        setModalConfig({
+          title: 'Enable Pickup Request',
+          message: 'Please enable pickup assistance to submit a request.',
+          onConfirm: () => setModalVisible(false),
+          confirmText: 'OK',
+        });
+        setModalVisible(true);
         return;
       }
 
@@ -261,21 +278,25 @@ const PickupSettingsScreen: React.FC = () => {
 
         setSettings(updatedSettings);
 
-        Alert.alert(
-          'Request Submitted ✅',
-          'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
-          [{text: 'OK', style: 'default'}],
-        );
+        setModalConfig({
+          title: 'Request Submitted ✅',
+          message: 'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
+          onConfirm: () => setModalVisible(false),
+          confirmText: 'OK',
+        });
+        setModalVisible(true);
       } else {
         // Handle specific API errors
         const errorMessage = response.error || 'Failed to submit request';
         console.error('API Error:', errorMessage);
 
-        Alert.alert(
-          'Submission Failed ❌',
-          `Unable to submit your pickup request: ${errorMessage}. Please check your internet connection and try again.`,
-          [{text: 'OK', style: 'default'}],
-        );
+        setModalConfig({
+          title: 'Submission Failed',
+          message: `Unable to submit your pickup request: ${errorMessage}. Please check your internet connection and try again.`,
+          onConfirm: () => setModalVisible(false),
+          confirmText: 'OK',
+        });
+        setModalVisible(true);
       }
     } catch (error) {
       console.error('Error submitting pickup request:', error);
@@ -284,14 +305,15 @@ const PickupSettingsScreen: React.FC = () => {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
 
-      Alert.alert(
-        'Network Error ❌',
-        `Failed to submit pickup request due to a network error: ${errorMessage}. Please check your internet connection and try again.`,
-        [
-          {text: 'Cancel', style: 'cancel'},
-          {text: 'Retry', style: 'default', onPress: () => submitRequest()},
-        ],
-      );
+      setModalConfig({
+        title: 'Network Error ❌',
+        message: `Failed to submit pickup request due to a network error: ${errorMessage}. Please check your internet connection and try again.`,
+        onConfirm: () => submitRequest(),
+        onCancel: () => setModalVisible(false),
+        confirmText: 'Retry',
+        cancelText: 'Cancel',
+      });
+      setModalVisible(true);
     } finally {
       setIsLoading(false);
     }
@@ -390,14 +412,14 @@ const PickupSettingsScreen: React.FC = () => {
     <View
       style={[
         styles.statusCard,
-        {borderLeftColor: getStatusColor(settings.status)},
+        { borderLeftColor: getStatusColor(settings.status) },
       ]}>
       <View style={styles.statusHeader}>
         <Text style={styles.statusIcon}>{getStatusIcon(settings.status)}</Text>
         <Text
           style={[
             styles.statusTitle,
-            {color: getStatusColor(settings.status)},
+            { color: getStatusColor(settings.status) },
           ]}>
           {getStatusText(settings.status)}
         </Text>
@@ -431,7 +453,7 @@ const PickupSettingsScreen: React.FC = () => {
     value: boolean;
     onValueChange: (value: boolean) => void;
     isMainToggle?: boolean; // Optional prop for the main toggle
-  }> = ({title, description, value, onValueChange, isMainToggle = false}) => (
+  }> = ({ title, description, value, onValueChange, isMainToggle = false }) => (
     <View style={styles.settingItem}>
       <View style={styles.settingInfo}>
         <Text style={styles.settingTitle}>{title}</Text>
@@ -439,8 +461,24 @@ const PickupSettingsScreen: React.FC = () => {
       </View>
       <Switch
         value={value}
-        onValueChange={onValueChange}
-        trackColor={{false: '#E0E0E0', true: '#4CAF50'}}
+        onValueChange={value => {
+          // If trying to disable while request is pending/approved, show warning
+          if (
+            !value &&
+            (settings.status === 'pending' || settings.status === 'approved')
+          ) {
+            setModalConfig({
+              title: 'Cannot Disable',
+              message: `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
+              onConfirm: () => setModalVisible(false),
+              confirmText: 'OK',
+            });
+            setModalVisible(true);
+            return;
+          }
+          setSettings(prev => ({ ...prev, enabled: value }));
+        }}
+        trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
         thumbColor={value ? '#FFF' : '#FFF'}
         ios_backgroundColor="#E0E0E0"
         disabled={isMainToggle ? !canEditMainToggle() : !canEditRequest()}
@@ -520,14 +558,16 @@ const PickupSettingsScreen: React.FC = () => {
                   (settings.status === 'pending' ||
                     settings.status === 'approved')
                 ) {
-                  Alert.alert(
-                    'Cannot Disable',
-                    `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
-                    [{text: 'OK', style: 'default'}],
-                  );
+                  setModalConfig({
+                    title: 'Cannot Disable',
+                    message: `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
+                    onConfirm: () => setModalVisible(false),
+                    confirmText: 'OK',
+                  });
+                  setModalVisible(true);
                   return;
                 }
-                setSettings(prev => ({...prev, enabled: value}));
+                setSettings(prev => ({ ...prev, enabled: value }));
               }}
               isMainToggle={true} // Special flag for the main toggle
             />
@@ -549,7 +589,7 @@ const PickupSettingsScreen: React.FC = () => {
                   ]}
                   value={settings.preferredTime}
                   onChangeText={value =>
-                    setSettings(prev => ({...prev, preferredTime: value}))
+                    setSettings(prev => ({ ...prev, preferredTime: value }))
                   }
                   placeholder="05:00"
                   keyboardType="default"
@@ -578,7 +618,7 @@ const PickupSettingsScreen: React.FC = () => {
                     ]}
                     value={settings.emergencyContact}
                     onChangeText={value => {
-                      setSettings(prev => ({...prev, emergencyContact: value}));
+                      setSettings(prev => ({ ...prev, emergencyContact: value }));
                       // Validate and show error if any
                       const error = validateField('emergencyContact', value);
                       setFieldErrors(prev => ({
@@ -613,7 +653,7 @@ const PickupSettingsScreen: React.FC = () => {
                     ]}
                     value={settings.specificLocation}
                     onChangeText={value => {
-                      setSettings(prev => ({...prev, specificLocation: value}));
+                      setSettings(prev => ({ ...prev, specificLocation: value }));
                       // Validate and show error if any
                       const error = validateField('specificLocation', value);
                       setFieldErrors(prev => ({
@@ -643,10 +683,10 @@ const PickupSettingsScreen: React.FC = () => {
                     ]}
                     value={settings.notes}
                     onChangeText={value => {
-                      setSettings(prev => ({...prev, notes: value}));
+                      setSettings(prev => ({ ...prev, notes: value }));
                       // Validate and show error if any
                       const error = validateField('notes', value);
-                      setFieldErrors(prev => ({...prev, notes: error}));
+                      setFieldErrors(prev => ({ ...prev, notes: error }));
                     }}
                     placeholder="Any additional information for pickup assistance"
                     multiline={true}
@@ -694,9 +734,19 @@ const PickupSettingsScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
           )}
-          <View style={{height: 40}} />
+          <View style={{ height: 40 }} />
         </ScrollView>
       )}
+      <AlertModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onCancel={modalConfig.onCancel || (() => setModalVisible(false))}
+        onConfirm={modalConfig.onConfirm}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        confirmDestructive={modalConfig.confirmDestructive}
+      />
     </SafeAreaView>
   );
 };

@@ -23,7 +23,6 @@ import {useUser} from '../hooks/useUser';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import MeetingDetailsCard from '../components/MeetingDetailsCard';
 import PersonalMeeting from '../components/PersonalMeeting';
-import ImageService from '../services/ImageService';
 
 // Lazy loaded components
 const DailyTasksSelector = React.lazy(
@@ -31,14 +30,23 @@ const DailyTasksSelector = React.lazy(
 );
 const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
+// Dummy meeting data for testing
+const dummyMeeting = {
+  title: 'Monthly Committee Meeting',
+  isUrgent: true,
+  date: new Date().toISOString(),
+  time: '7:30 PM',
+  committeeMember: {
+    name: 'Imam Ahmad',
+    phone: '+1234567890',
+  },
+};
+
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {user, displayName} = useUser();
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
-  const imageService = ImageService.getInstance();
-
+  const {user} = useUser();
   // Simplified loading states - only two phases needed
   const [showAllContent, setShowAllContent] = useState(false);
 
@@ -55,30 +63,6 @@ const PrayerTimeScreen = () => {
     return selectedDate === getTodayDateString();
   }, [selectedDate]);
 
-  // Performance monitoring
-
-  // Load profile image on component mount
-  useEffect(() => {
-    loadProfileImage();
-    console.log('Profile image loaded:', profileImageUri);
-  }, [user?.id, user?.profileImage]);
-
-  const loadProfileImage = async () => {
-    if (user?.id) {
-      // First check if user has profileImage in data
-      if (user.profileImage) {
-        setProfileImageUri(user.profileImage);
-        return;
-      }
-
-      // Otherwise check AsyncStorage
-      const savedUri = await imageService.getImageUri(user.id);
-      if (savedUri) {
-        setProfileImageUri(savedUri);
-      }
-    }
-  };
-
   // Single delayed load for heavy components only
   useEffect(() => {
     if (showPrimaryContent) {
@@ -91,7 +75,7 @@ const PrayerTimeScreen = () => {
     }
   }, [showPrimaryContent]);
 
-  const handleCallPreferenceSet = useCallback(async (preference: boolean) => {
+  const handleCallPreferenceSet = useCallback(async () => {
     try {
       // The preference is already saved in CallWidget,
       // but we can add additional logic here if needed
@@ -102,6 +86,7 @@ const PrayerTimeScreen = () => {
   }, []);
 
   const handleSeeAllReminders = useCallback(() => {
+    console.log('user member id ', user?.memberId);
     navigation.navigate('Feeds' as never);
   }, [navigation]);
 
@@ -114,8 +99,7 @@ const PrayerTimeScreen = () => {
       />
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
-        <Header
-        />
+        <Header />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
           {!showPrimaryContent ? (
@@ -195,8 +179,7 @@ const PrayerTimeScreen = () => {
 
               {/* Meeting Details Card - Shows conditionally when meeting is scheduled */}
               {user?.role === 'Member' ? (
-                
-                <MeetingDetailsCard />
+                <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
                 <PersonalMeeting />
               )}
