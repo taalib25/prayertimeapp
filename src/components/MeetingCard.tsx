@@ -1,33 +1,49 @@
-
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from './SvgIcon';
 
-interface Person {
-  name: string;
-  phone: string;
-  completed?: boolean;
+interface MeetingMember {
+  member_name: string;
+  member_phone: string;
+  scheduled_date: string;
+  scheduled_time: string;
+  status: 'scheduled' | 'completed' | 'excused';
+  member_username: string;
+  location?: string;
 }
 
 interface MeetingCardProps {
   title: string;
   subtitle?: string;
-  persons?: Person[];
+  members?: MeetingMember[];
   stats?: {
     label: string;
     value: string | number;
   }[];
-  onPersonPress?: (person: Person, index: number) => void;
+  onMemberPress?: (member: MeetingMember, index: number) => void;
 }
+
+const statusIcon = (status: MeetingMember['status']) => {
+  switch (status) {
+    case 'scheduled':
+      return <SvgIcon name="assigned" size={16} color="#2982D5" />;
+    case 'completed':
+      return <SvgIcon name="attended" size={16} color="#20B83F" />;
+    case 'excused':
+      return <SvgIcon name="absent" size={16} color="#F57C00" />;
+    default:
+      return null;
+  }
+};
 
 const MeetingCard: React.FC<MeetingCardProps> = ({
   title,
   subtitle,
-  persons = [],
+  members = [],
   stats = [],
-  onPersonPress,
+  onMemberPress,
 }) => {
   return (
     <View style={styles.card}>
@@ -35,64 +51,69 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
         <Text style={styles.title}>{title}</Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
-      {persons.map((person, index) => (
+      {members.map((member, index) => (
         <TouchableOpacity
           key={index}
           style={styles.personRow}
-          onPress={() => onPersonPress?.(person, index)}>
+          onPress={() => onMemberPress?.(member, index)}>
           <View style={styles.personInfo}>
-            <Text style={styles.personText}>{person.name}</Text>
-            <Text style={styles.personPhone}>{person.phone}</Text>
+            {/* First row: name & phone */}
+            <View style={styles.personTopRow}>
+              <Text style={styles.personText}>{member.member_name}</Text>
+              <Text style={styles.personPhone}>{member.member_phone}</Text>
+            </View>
+            {/* Second row: location, date/time, status */}
+            <View style={styles.personBottomRow}>
+              {member.location && (
+                <Text style={styles.personLocation}>{member.location}</Text>
+              )}
+              <Text style={styles.personDateTime}>
+                {new Date(member.scheduled_date).toLocaleDateString()}{' | '}
+                {member.scheduled_time}
+              </Text>
+              {/* <View style={styles.statusMark}>
+                {statusIcon(member.status)}
+                <Text style={styles.statusText}>{member.status}</Text>
+              </View> */}
+            </View>
           </View>
-          <View
-            style={[styles.circle, person.completed && styles.circleActive]}
-          />
         </TouchableOpacity>
       ))}
       {stats.length > 0 && (
         <View style={styles.statsContainer}>
           {stats.map((stat, index) => {
-            const isCompleted = stat.label.toLowerCase().includes('completed');
-            const isRemaining = stat.label.toLowerCase().includes('remaining');
-            const isAssigned = stat.label.toLowerCase().includes('assigned');
-            const isAttended = stat.label.toLowerCase().includes('attended');
-            const isAbsent = stat.label.toLowerCase().includes('absent');
-            const isExcused = stat.label.toLowerCase().includes('excused');
-            const isPercent = String(stat.value).includes('%');
-
-            // Get the appropriate icon and color based on the stat type
+            // Use icon name based on stat label
             let iconName: 'assigned' | 'attended' | 'absent' | undefined;
             let iconColor = colors.text.muted;
-
-            if (isAssigned) {
+            const label = stat.label.toLowerCase();
+            if (label.includes('assigned') || label.includes('scheduled')) {
               iconName = 'assigned';
               iconColor = '#2982D5';
-            } else if (isCompleted || isAttended) {
+            } else if (
+              label.includes('completed') ||
+              label.includes('attended')
+            ) {
               iconName = 'attended';
               iconColor = '#20B83F';
-            } else if (isAbsent || isExcused) {
+            } else if (label.includes('absent') || label.includes('excused')) {
               iconName = 'absent';
               iconColor = '#FF2626';
             }
-
             return (
               <View key={index} style={styles.statItem}>
                 <View style={styles.statRowContainer}>
                   {iconName && (
-                    <SvgIcon name={iconName} size={28} color={iconColor} />
+                    <SvgIcon name={iconName} size={20} color={iconColor} />
                   )}
-                  <Text style={styles.dashSeparator}>-</Text>
                   <Text
                     style={[
                       styles.statValue,
-                      isCompleted && styles.statValueCompleted,
-                      isRemaining && styles.statValueRemaining,
-                      isAssigned && styles.statValueAssigned,
-                      (isAttended || isCompleted) && styles.statValueAttended,
-                      (isAbsent || isExcused) && styles.statValueAbsent,
-                      isPercent && styles.statValuePercent,
+                      iconName === 'assigned' && {color: '#2982D5'},
+                      iconName === 'attended' && {color: '#20B83F'},
+                      iconName === 'absent' && {color: '#FF2626'},
                     ]}>
-                    {stat.value}
+                    {' '}
+                    - {stat.value}
                   </Text>
                 </View>
               </View>
@@ -137,34 +158,67 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: colors.white,
     borderRadius: 14,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    padding: spacing.lg,
     marginBottom: spacing.sm,
   },
   personInfo: {
     flex: 1,
   },
+  personTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  personBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    
+    gap: 12,
+  },
   personText: {
     ...typography.bodyMedium,
     color: colors.text.dark,
-    fontWeight: '500',
+    marginRight: 8,
   },
   personPhone: {
     ...typography.caption,
     color: colors.text.muted,
     fontSize: 14,
     opacity: 0.8,
-    marginTop: 1,
   },
-  circle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  personLocation: {
+    ...typography.caption,
+    color: colors.text.lightDark,
+    fontSize: 13,
+    opacity: 0.8,
+    marginRight: 8,
+  },
+  personDateTime: {
+    ...typography.caption,
+    color: colors.primary,
+    fontSize: 13,
+     backgroundColor: '#F2F6FF',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.text.secondary,
+    borderColor: '#D1D9EC',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginRight: 8,
   },
-  circleActive: {
-    backgroundColor: colors.primary,
+  statusMark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    opacity: 0.7,
+    marginLeft: 4,
+  },
+  statusText: {
+    ...typography.caption,
+    marginLeft: 4,
+    color: colors.text.muted,
+    textTransform: 'capitalize',
+    fontSize: 13,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -188,20 +242,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dashSeparator: {
-    ...typography.h2,
-    fontWeight: '700',
-    fontSize: 18,
-    marginHorizontal: spacing.xs,
-    color: colors.text.muted,
-  },
-  statIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  statLabel: {
+    ...typography.bodyMedium,
+    color: colors.text.dark,
+    marginRight: 6,
   },
   statValue: {
     ...typography.h2,
-    fontWeight: '700',
     fontSize: 18,
   },
   statValueAssigned: {

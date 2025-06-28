@@ -4,20 +4,64 @@ import MeetingCard from './MeetingCard';
 import {typography} from '../utils/typography';
 import {borderRadius, colors, spacing} from '../utils/theme';
 
+// Define MeetingMember type to match MeetingCard
+interface MeetingMember {
+  member_name: string;
+  member_phone: string;
+  scheduled_date: string;
+  scheduled_time: string;
+  status: 'scheduled' | 'completed' | 'excused';
+  member_username: string;
+  location?: string;
+}
+
 // Sample data for the meeting cards with enhanced statistic labels
+const personalizedMeetingMembers: MeetingMember[] = [
+  {
+    member_name: 'Ahmed Al-Rashid',
+    member_phone: '+94-77-123-4567',
+    scheduled_date: '2024-12-25T00:00:00.000Z',
+    scheduled_time: '15:00:00',
+    status: 'scheduled',
+    member_username: 'ahmedrashid',
+    location: 'Colombo',
+  },
+  {
+    member_name: 'Hassan Ibrahim',
+    member_phone: '+94-77-123-4568',
+    scheduled_date: '2024-12-25T00:00:00.000Z',
+    scheduled_time: '16:00:00',
+    status: 'completed',
+    member_username: 'hassanibrahim',
+    location: 'Kandy',
+  },
+  {
+    member_name: 'Omar Abdullah',
+    member_phone: '+94-77-123-4569',
+    scheduled_date: '2024-12-25T00:00:00.000Z',
+    scheduled_time: '17:00:00',
+    status: 'excused',
+    member_username: 'omarabdullah',
+    location: 'Galle',
+  },
+];
+
+const getStatsFromMembers = (members: MeetingMember[]) => {
+  const scheduled = members.filter(m => m.status === 'scheduled').length;
+  const completed = members.filter(m => m.status === 'completed').length;
+  const excused = members.filter(m => m.status === 'excused').length;
+  return [
+    {label: 'Scheduled', value: scheduled},
+    {label: 'Completed', value: completed},
+    {label: 'Excused', value: excused},
+  ];
+};
+
 const personalizedMeeting = {
   title: 'Personalized Meeting',
   subtitle: '3 Days Remaining',
-  persons: [
-    {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
-    {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
-    {name: 'Omar Abdullah', phone: '07712345700', completed: false},
-  ],
-  stats: [
-    {label: 'Assigned', value: '3'},
-    {label: 'Completed', value: '1'},
-    {label: 'Absent', value: '2'},
-  ],
+  members: personalizedMeetingMembers,
+  stats: getStatsFromMembers(personalizedMeetingMembers),
 };
 
 const meetingAttendance = {
@@ -30,8 +74,8 @@ const meetingAttendance = {
   ],
 };
 
-const handlePersonPress = (person: any, index: number) => {
-  console.log(`Pressed person ${index + 1}: ${person.phone}`);
+const handlePersonPress = (member: any, index: number) => {
+  console.log(`Pressed member ${index + 1}: ${member.member_phone}`);
 };
 
 export class PersonalMeeting extends Component {
@@ -45,9 +89,9 @@ export class PersonalMeeting extends Component {
         <MeetingCard
           title={personalizedMeeting.title}
           subtitle={personalizedMeeting.subtitle}
-          persons={personalizedMeeting.persons}
+          members={personalizedMeeting.members}
           stats={personalizedMeeting.stats}
-          onPersonPress={handlePersonPress}
+          onMemberPress={handlePersonPress}
         />
 
         <MeetingCard

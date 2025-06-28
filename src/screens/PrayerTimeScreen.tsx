@@ -42,6 +42,40 @@ const dummyMeeting = {
   },
 };
 
+// Dummy data for PersonalMeeting (list)
+const dummyPersonalMeetings = [
+  {
+    member_id: 1,
+    member_name: 'Member One',
+    member_phone: '+94-77-123-4567',
+    scheduled_date: '2024-12-25T00:00:00.000Z',
+    scheduled_time: '15:00:00',
+    priority: 'high',
+    member_username: 'testmember1',
+    counsellor_username: 'amer',
+  },
+  {
+    member_id: 2,
+    member_name: 'Member Two',
+    member_phone: '+94-77-123-4568',
+    scheduled_date: '2024-12-26T00:00:00.000Z',
+    scheduled_time: '16:00:00',
+    priority: 'medium',
+    member_username: 'testmember2',
+    counsellor_username: 'amer',
+  },
+  {
+    member_id: 3,
+    member_name: 'Member Three',
+    member_phone: '+94-77-123-4569',
+    scheduled_date: '2024-12-27T00:00:00.000Z',
+    scheduled_time: '17:00:00',
+    priority: 'low',
+    member_username: 'testmember3',
+    counsellor_username: 'amer',
+  },
+];
+
 const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
@@ -177,12 +211,12 @@ const PrayerTimeScreen = () => {
               />
               <FajrTimeChart />
 
-              {/* Meeting Details Card - Shows conditionally when meeting is scheduled */}
-              {user?.role === 'Member' ? (
+              <PersonalMeeting />
+              {/* {user?.role === 'Member' ? (
                 <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
-                <PersonalMeeting />
-              )}
+                <PersonalMeeting meeting={dummyPersonalMeeting} />
+              } */}
             </Suspense>
           )}
         </View>
