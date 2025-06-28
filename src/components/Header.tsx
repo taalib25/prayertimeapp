@@ -60,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
           <View style={styles.avatar}>
             {avatarImage ? (
               <Image
-                source={avatarImage}
+               source={{uri: avatarImage}}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />

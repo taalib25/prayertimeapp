@@ -55,7 +55,7 @@ interface EditProfileProviderProps {
 export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   children,
 }) => {
-  const {user, updateUser} = useUser();
+  const {user, updateUser, refresh} = useUser();
   const navigation = useNavigation();
   const apiService = ApiTaskServices.getInstance();
 
@@ -295,6 +295,11 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       // Update local storage
       await updateUser(userUpdateData); // Update original data to reflect the saved state
       setOriginalData({...formData});
+
+      // Refresh global user context to propagate changes everywhere
+      if (typeof refresh === 'function') {
+        await refresh();
+      }
 
       navigation.goBack();
     } catch (error) {

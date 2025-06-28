@@ -24,6 +24,7 @@ import {performanceMonitor} from '../utils/performance';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import MeetingDetailsCard from '../components/MeetingDetailsCard';
 import PersonalMeeting from '../components/PersonalMeeting';
+import ImageService from '../services/ImageService';
 
 // Lazy loaded components
 const DailyTasksSelector = React.lazy(
@@ -35,7 +36,9 @@ const PrayerTimeScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {user, displayName, isLoading: userLoading} = useUser();
+  const {user, displayName} = useUser();
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const imageService = ImageService.getInstance();
 
   // Simplified loading states - only two phases needed
   const [showAllContent, setShowAllContent] = useState(false);
@@ -54,12 +57,28 @@ const PrayerTimeScreen = () => {
   }, [selectedDate]);
 
   // Performance monitoring
+
+  // Load profile image on component mount
   useEffect(() => {
-    performanceMonitor.start('prayer_screen_render');
-    return () => {
-      performanceMonitor.end('prayer_screen_render');
-    };
-  }, []);
+    loadProfileImage();
+    console.log('Profile image loaded:', profileImageUri);
+  }, [user?.id, user?.profileImage]);
+
+  const loadProfileImage = async () => {
+    if (user?.id) {
+      // First check if user has profileImage in data
+      if (user.profileImage) {
+        setProfileImageUri(user.profileImage);
+        return;
+      }
+
+      // Otherwise check AsyncStorage
+      const savedUri = await imageService.getImageUri(user.id);
+      if (savedUri) {
+        setProfileImageUri(savedUri);
+      }
+    }
+  };
 
   // Single delayed load for heavy components only
   useEffect(() => {
@@ -101,7 +120,7 @@ const PrayerTimeScreen = () => {
           userName={displayName}
           mosqueName={user?.mosqueName || ''}
           mosqueLocation={user?.address || 'Colombo,LK'}
-          avatarImage={user?.profileImage}
+          avatarImage={profileImageUri}
         />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>

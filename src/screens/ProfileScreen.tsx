@@ -38,6 +38,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   // Load profile image on component mount
   useEffect(() => {
     loadProfileImage();
+    console.log('Profile image loaded:', profileImageUri);
   }, [user?.id, user?.profileImage]);
 
   const loadProfileImage = async () => {
@@ -422,7 +423,6 @@ const styles = StyleSheet.create({
   seeAllText: {
     ...typography.bodyMedium,
     color: colors.primary,
-    fontWeight: '600',
   },
   // CompactChallengeCard styles from MonthlyTaskSelector
   compactCard: {
