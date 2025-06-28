@@ -164,7 +164,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{displayName}</Text>
+            <Text style={styles.userName}>{user?.username}</Text>
             <Text style={styles.memberSince}>
               {user?.joinedDate
                 ? `Member Since ${new Date(user.joinedDate).toLocaleDateString(
@@ -176,7 +176,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             {user?.mosqueName && (
               <View style={styles.locationContainer}>
                 <SvgIcon name="masjid" size={32} color="#4CAF50" />
-                <Text style={styles.locationText}>{user.mosqueName}</Text>
+                <Text style={styles.locationText}>{user.mosqueName || "Masjid Ul Haram"}</Text>
               </View>
             )}
           </View>

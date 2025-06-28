@@ -5,21 +5,12 @@ import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 import { useUser } from '../hooks/useUser';
 
-interface HeaderProps {
-  location?: string;
-  userName?: string;
-  mosqueName?: string;
-  mosqueLocation?: string;
+type HeaderProps = {
   avatarImage?: any;
-}
+};
 
-const Header: React.FC<HeaderProps> = ({
-  location = '',
-  userName = 'User',
-  mosqueName = '', // No fallback - use empty string for real API data only
-  avatarImage,
-}) => {
-    const { userInitials} = useUser();
+const Header: React.FC<HeaderProps> = ({ avatarImage }) => {
+  const { userInitials, user } = useUser();
   return (
     <View style={styles.container}>
       {/* Background PNG */}
@@ -41,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({
               style={styles.locationIcon}
             />
             <Text style={styles.locationText} numberOfLines={1}>
-              {location}
+              {user?.address || 'Colombo,LK'}
             </Text>
             <View style={styles.chevronIcon} />
           </TouchableOpacity>
@@ -75,7 +66,7 @@ const Header: React.FC<HeaderProps> = ({
               Assalamu Alaikum!
             </Text>
             <Text style={styles.userName} numberOfLines={1}>
-              {userName}
+              {user?.username || 'Ahmed Usman'}
             </Text>
             <Text style={styles.welcomeBack} numberOfLines={1}>
               Welcome Back!
@@ -84,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({
         </View>
         <View style={styles.underline} />
         {/* Mosque Info - Only show if mosqueName is provided */}
-        {mosqueName && (
+        {user?.mosqueName && (
           <View style={styles.mosqueContainer}>
             <SvgIcon
               name="masjid"
@@ -94,7 +85,7 @@ const Header: React.FC<HeaderProps> = ({
             />
             <View style={styles.mosqueTextContainer}>
               <Text style={styles.mosqueName} numberOfLines={2}>
-                {mosqueName}
+                {user?.mosqueName || 'Al-Masjid Al-Haram'}
               </Text>
             </View>
           </View>
