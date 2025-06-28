@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ import {useAuth} from '../contexts/AuthContext';
 import {useUser} from '../hooks/useUser';
 import ImageService from '../services/ImageService';
 import AlertModal from '../components/AlertModel';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -28,20 +29,25 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const { user, userInitials} = useUser();
+  const {displayName, user, userInitials,refresh} = useUser();
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const imageService = ImageService.getInstance();
 
   const isLoading = false;
   const error = null;
-
   // AlertModal state
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Load profile image on component mount
+
+    // Refresh user data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      refresh?.();
+    }, [refresh])
+  );
+
   useEffect(() => {
     loadProfileImage();
-    console.log('Profile image loaded:', profileImageUri);
   }, [user?.id, user?.profileImage]);
 
   const loadProfileImage = async () => {
@@ -279,7 +285,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         cancelText="Cancel"
         onConfirm={handleLogoutConfirm}
         onCancel={() => setShowLogoutModal(false)}
-        // confirmButtonStyle={{backgroundColor: colors.error}}
+       confirmDestructive = {true}
       />
     </SafeAreaView>
   );

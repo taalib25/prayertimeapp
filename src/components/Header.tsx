@@ -1,16 +1,50 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 import { useUser } from '../hooks/useUser';
+import { useFocusEffect } from '@react-navigation/native';
+import ImageService from '../services/ImageService';
 
-type HeaderProps = {
-  avatarImage?: any;
-};
 
-const Header: React.FC<HeaderProps> = ({ avatarImage }) => {
-  const { userInitials, user } = useUser();
+const Header: React.FC = () => {
+  const { userInitials, user ,refresh} = useUser();
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+
+ const imageService = ImageService.getInstance();
+
+    // Refresh user data when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      refresh?.();
+    }, [refresh])
+    
+  );
+
+
+   // Load profile image on component mount
+    useEffect(() => {
+      loadProfileImage();
+      console.log('Profile image loaded:', profileImageUri);
+    }, [user?.id, user?.profileImage]);
+  
+    const loadProfileImage = async () => {
+      if (user?.id) {
+        // First check if user has profileImage in data
+        if (user.profileImage) {
+          setProfileImageUri(user.profileImage);
+          return;
+        }
+  
+        // Otherwise check AsyncStorage
+        const savedUri = await imageService.getImageUri(user.id);
+        if (savedUri) {
+          setProfileImageUri(savedUri);
+        }
+      }
+    };
+
   return (
     <View style={styles.container}>
       {/* Background PNG */}
@@ -49,9 +83,9 @@ const Header: React.FC<HeaderProps> = ({ avatarImage }) => {
         {/* User Info */}
         <View style={styles.userContainer}>
           <View style={styles.avatar}>
-            {avatarImage ? (
+            {profileImageUri ? (
               <Image
-               source={{uri: avatarImage}}
+               source={{uri: profileImageUri}}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />

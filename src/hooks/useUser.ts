@@ -77,8 +77,7 @@ export const useUser = (): UseUserReturn => {
   }, [userService]);
 
   // Update user
-  const updateUser = useCallback(
-    async (updates: UserUpdate) => {
+  const updateUser = async (updates: UserUpdate) => {
       try {
         setError(null);
         const updatedUser = await userService.updateUser(updates);
@@ -88,9 +87,7 @@ export const useUser = (): UseUserReturn => {
         setError('Failed to update user');
         throw err;
       }
-    },
-    [userService],
-  );
+    }
 
   // Create user
   const createUser = useCallback(

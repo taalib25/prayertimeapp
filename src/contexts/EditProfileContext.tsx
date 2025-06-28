@@ -253,28 +253,16 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
       // Get only the fields that have changed
       const changedFields = getChangedFields();
+    
+      if (Object.keys(changedFields).length > 0) {
+        // Map form fields to API field names and update
+        const apiUpdateData = mapToApiFields(changedFields);
+        const apiResponse = await apiService.updateUserProfile(apiUpdateData);
 
-      // If no fields have changed, show message and return
-      if (Object.keys(changedFields).length === 0) {
-        Alert.alert('Info', 'No changes detected to save.');
-        return;
-      }
-
-      console.log('🔄 EditProfile: Fields to update:', changedFields);
-
-      // Map form fields to API field names
-      const apiUpdateData = mapToApiFields(changedFields);
-
-      console.log(
-        '📡 EditProfile: Sending API update with data:',
-        apiUpdateData,
-      ); // Call API to update profile with only changed fields
-      const apiResponse = await apiService.updateUserProfile(apiUpdateData);
-
-      if (!apiResponse.success) {
-        throw new Error(
-          apiResponse.error || 'Failed to update profile via API',
-        );
+        if (!apiResponse.success) {
+          throw new Error(apiResponse.error || 'Failed to update profile via API');
+        }
+        console.log('✅ EditProfile: API update successful');
       }
 
       console.log('✅ EditProfile: API update successful'); // Update local user data with the same changes

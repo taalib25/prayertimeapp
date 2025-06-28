@@ -20,7 +20,6 @@ import CallWidget from '../components/CallWidget';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {getTodayDateString} from '../utils/helpers';
 import {useUser} from '../hooks/useUser';
-import {performanceMonitor} from '../utils/performance';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import MeetingDetailsCard from '../components/MeetingDetailsCard';
 import PersonalMeeting from '../components/PersonalMeeting';
@@ -116,7 +115,6 @@ const PrayerTimeScreen = () => {
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}
         <Header
-          avatarImage={profileImageUri}
         />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
