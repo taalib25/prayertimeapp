@@ -22,6 +22,8 @@ import {getTodayDateString} from '../utils/helpers';
 import {useUser} from '../hooks/useUser';
 import {performanceMonitor} from '../utils/performance';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
+import MeetingDetailsCard from '../components/MeetingDetailsCard';
+import PersonalMeeting from '../components/PersonalMeeting';
 
 // Lazy loaded components
 const DailyTasksSelector = React.lazy(
@@ -177,6 +179,14 @@ const PrayerTimeScreen = () => {
                 }}
               />
               <FajrTimeChart />
+
+              {/* Meeting Details Card - Shows conditionally when meeting is scheduled */}
+              {user?.role === 'Member' ? (
+                
+                <MeetingDetailsCard />
+              ) : (
+                <PersonalMeeting />
+              )}
             </Suspense>
           )}
         </View>

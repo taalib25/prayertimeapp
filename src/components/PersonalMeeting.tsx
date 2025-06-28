@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
-    // marginHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
   },
   header: {
     marginBottom: spacing.md,
