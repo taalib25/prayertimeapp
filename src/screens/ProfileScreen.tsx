@@ -10,7 +10,6 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
-  Alert,
 } from 'react-native';
 import BadgeCard from '../components/BadgeCard';
 import MenuButton from '../components/MenuButton';
@@ -21,6 +20,7 @@ import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChal
 import {useAuth} from '../contexts/AuthContext';
 import {useUser} from '../hooks/useUser';
 import ImageService from '../services/ImageService';
+import AlertModal from '../components/AlertModel';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -28,12 +28,15 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {displayName, user, userInitials} = useUser();
+  const { user, userInitials} = useUser();
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const imageService = ImageService.getInstance();
 
   const isLoading = false;
   const error = null;
+
+  // AlertModal state
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Load profile image on component mount
   useEffect(() => {
@@ -107,17 +110,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: logout,
-      },
-    ]);
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutModal(false);
+    logout();
   };
 
   if (isLoading) {
@@ -273,6 +271,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         </View>
         <View style={{height: 120}} />
       </ScrollView>
+      <AlertModal
+        visible={showLogoutModal}
+        title="Logout"
+        message="Are you sure you want to logout?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogoutModal(false)}
+        // confirmButtonStyle={{backgroundColor: colors.error}}
+      />
     </SafeAreaView>
   );
 };

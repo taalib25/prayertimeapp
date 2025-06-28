@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import {User} from '../types/User';
 import UserService from '../services/UserService';
+import { clearDailyTaskTable } from '../services/db/PrayerServices';
 
 interface AuthContextType {
   user: User | null;
@@ -101,6 +102,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({
 
       // Clear all data
       await userService.clearAllData();
+      await clearDailyTaskTable()
 
       setUser(null);
       console.log('Logout completed successfully');

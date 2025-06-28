@@ -1,6 +1,7 @@
 import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import PrayerTimesModel from '../../model/PrayerTimes';
+import DailyTasksModel from '../../model/DailyTasks';
 export interface PrayerTimesData {
   date: string;
   day: string;
@@ -319,6 +320,27 @@ export const import2025PrayerTimes = async () => {
     return result;
   } catch (error) {
     console.error('❌ Error importing 2025 prayer times:', error);
+    throw error;
+  }
+};
+
+/**
+ * Clear all records from the dailytask table
+ */
+export const clearDailyTaskTable = async () => {
+  try {
+    const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
+    const allTasks = await dailyTasksCollection.query().fetch();
+
+    await database.write(async () => {
+      for (const task of allTasks) {
+        await task.destroyPermanently(); // Hard delete
+      }
+    });
+
+    console.log('✅ Cleared all records from dailytask table');
+  } catch (error) {
+    console.error('❌ Error clearing dailytask table:', error);
     throw error;
   }
 };
