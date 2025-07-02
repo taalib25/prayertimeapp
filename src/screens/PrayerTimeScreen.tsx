@@ -32,7 +32,7 @@ const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
 // Dummy meeting data for testing
 const dummyMeeting = {
-  title: 'Monthly Committee Meeting',
+  title: 'Scheduled Meeting',
   isUrgent: true,
   date: new Date().toISOString(),
   time: '7:30 PM',
@@ -211,12 +211,11 @@ const PrayerTimeScreen = () => {
               />
               <FajrTimeChart />
 
-              <PersonalMeeting />
-              {/* {user?.role === 'Member' ? (
+              {user?.role === 'Member' ? (
                 <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
-                <PersonalMeeting meeting={dummyPersonalMeeting} />
-              } */}
+                <PersonalMeeting  />)
+              }
             </Suspense>
           )}
         </View>

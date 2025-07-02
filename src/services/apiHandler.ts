@@ -432,6 +432,37 @@ class ApiTaskServices {
       return {success: false, error: 'Network error occurred'};
     }
   }
+
+  async getCounsellingSessions(requestBody: {
+    memberId: number;
+    scheduledDate: string;
+    scheduledTime: string;
+    sessionType: string;
+    priority: string;
+    preSessionNotes: string;
+  }): Promise<{
+    success: boolean;
+    data?: any[];
+    error?: string;
+  }> {
+    try {
+      console.log('📡 API: Fetching counselling sessions...', requestBody);
+
+      const response = await this.api.getCounsellingSessions(requestBody);
+
+      if (response.success) {
+        console.log('✅ API: Counselling sessions fetched successfully');
+        return { success: true, data: response.data };
+      } else {
+        console.log('❌ API: Failed to fetch counselling sessions:', response.error);
+        return { success: false, error: response.error };
+      }
+    } catch (error) {
+      console.error('❌ API: Error fetching counselling sessions:', error);
+      return { success: false, error: 'Network error occurred' };
+    }
+  }
+
 }
 
 export default ApiTaskServices;

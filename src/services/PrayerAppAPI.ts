@@ -629,6 +629,37 @@ class PrayerAppAPI {
     }
   }
 
+  /**
+   * Get counselling sessions (optimized for GET response)
+   */
+  async getCounsellingSessions(
+    params?: Record<string, any>,
+  ): Promise<ApiResponse<any>> {
+    try {
+      console.log('📡 API: Fetching counselling sessions with params:', params);
+
+      const response = await this.apiService.get<any>(
+        '/counselling-sessions',
+        params,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Counselling sessions fetched successfully');
+      } else {
+        console.log('❌ API: Fetching counselling sessions failed:', response.error);
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error fetching counselling sessions:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
   // ========== HELPER METHODS ==========
   /**
    * Set authentication token
