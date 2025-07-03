@@ -85,6 +85,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -92,7 +93,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            storeFile file("prayerapp.jks")
+            storePassword "prayerapp"
+            keyAlias "prayerapp"
+            keyPassword "prayerapp"
+        }
+
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
@@ -110,7 +119,11 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-
+    // implementation project(':watermelondb') 
+    
+    // For react-native-image-picker backward compatibility with Android API < 30
+    implementation("androidx.activity:activity:1.9.+")
+    
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

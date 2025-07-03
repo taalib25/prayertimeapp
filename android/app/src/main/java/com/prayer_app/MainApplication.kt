@@ -15,12 +15,17 @@ import com.facebook.soloader.SoLoader
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost =
-      object : DefaultReactNativeHost(this) {
+      object : DefaultReactNativeHost(this) {        
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+              // add(WatermelonDBPackage() )
             }
+
+        // override fun getJSIModulePackage(): JSIModulePackage {
+        //   return WatermelonDBJSIPackage()
+        // }
 
         override fun getJSMainModuleName(): String = "index"
 

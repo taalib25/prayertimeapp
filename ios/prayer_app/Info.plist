@@ -26,16 +26,26 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>We need your location to calculate accurate prayer times for your area.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Motion data is used to determine Qibla direction.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to take profile pictures.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to select profile pictures.</string>
+	  <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>tel</string>
+        <string>telprompt</string>
+    </array>
 	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
+	<string/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>
@@ -47,6 +57,21 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Sora-Light.ttf</string>
+		<string>Sora-Regular.ttf</string>
+		<string>Sora-Medium.ttf</string>
+		<string>Sora-SemiBold.ttf</string>
+		<string>Sora-Bold.ttf</string>
+		<string>Sora-ExtraBold.ttf</string>
+		<string>Sora-ExtraLight.ttf</string>
+		<string>Sora-Thin.ttf</string>
+	</array>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIStatusBarHidden</key>
 	<false/>
 </dict>
 </plist>
