@@ -15,10 +15,10 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
     switch (routeName) {
       case 'Home':
         return 'home';
-      case 'Zikr':
-        return 'prayer-beads';
-      case 'Salah':
-        return 'salah';
+      case 'Feeds':
+        return 'quran';
+      case 'Progress':
+        return 'salah'; // Using mosque icon for progress tracking
       case 'Profile':
         return 'profile';
       default:

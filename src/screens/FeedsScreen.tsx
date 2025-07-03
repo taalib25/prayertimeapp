@@ -230,9 +230,9 @@ const FeedsScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.iconButton} onPress={handleBackPress}>
-            <View style={styles.squareIconContainer}>
+            {/* <View style={styles.squareIconContainer}>
               <SvgIcon name="backBtn" size={25} color="#333" />
-            </View>
+            </View> */}
           </TouchableOpacity>
           <Text style={styles.headerTitle}>All Feeds</Text>
           <TouchableOpacity style={styles.iconButton}>

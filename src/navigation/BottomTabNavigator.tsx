@@ -4,16 +4,16 @@ import {colors} from '../utils/theme';
 
 // Import screens
 import PrayerTimeScreen from '../screens/PrayerTimeScreen';
-import ZikrScreen from '../screens/ZikrScreen';
-import PrayerChallengeScreen from '../screens/PrayerChallengeScreen';
+import FeedsScreen from '../screens/FeedsScreen';
+import ProgressScreen from '../screens/ProgressScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import CustomTabBar from './CustomTabBar';
 
 // Define tab param list
 export type BottomTabParamList = {
   Home: undefined;
-  Zikr: undefined;
-  Salah: undefined;
+  Feeds: undefined;
+  Progress: undefined;
   Profile: undefined;
 };
 
@@ -29,8 +29,8 @@ const BottomTabNavigator: React.FC = () => {
         tabBarInactiveTintColor: colors.text.secondary,
       }}>
       <Tab.Screen name="Home" component={PrayerTimeScreen} />
-      <Tab.Screen name="Zikr" component={ZikrScreen} />
-      <Tab.Screen name="Salah" component={PrayerChallengeScreen} />
+      <Tab.Screen name="Feeds" component={FeedsScreen} />
+      <Tab.Screen name="Progress" component={ProgressScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
