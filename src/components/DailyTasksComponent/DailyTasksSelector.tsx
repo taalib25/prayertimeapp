@@ -85,8 +85,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     );
 
     // If today is found, use it; otherwise use the last page
-    const targetPage =
-      todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
+     const targetPage = transformedDailyData.length - 1;
 
     console.log(
       `📅 Daily tasks: ${transformedDailyData.length} days, today at index ${todayIndex}, showing page ${targetPage}`,
@@ -96,7 +95,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
 
   const [currentPage, setCurrentPage] = useState(() => {
     // Initialize with the calculated initial page
-    return transformedDailyData.length > 0 ? initialPage : 0;
+    return transformedDailyData.length - 1;
   });
   const pagerRef = useRef<PagerView>(null);
   const [isInitialized, setIsInitialized] = useState(false);
