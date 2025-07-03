@@ -94,6 +94,7 @@ export interface PrayerRecord {
   location?: string;
   notes?: string;
   userId: string;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -102,7 +103,7 @@ export interface FeedItem {
   id: number;
   title: string;
   content: string;
-  image_url?: string | null; // Can be local path or HTTP URL
+  image_url?: string | null;
   priority: string;
   created_at: string;
   expires_at?: string | null;
@@ -475,11 +476,11 @@ class PrayerAppAPI {
    */
   async submitPickupRequest(
     data: PickupRequest,
-  ): Promise<ApiResponse<PickupRequestResponse>> {
+  ): Promise<ApiResponse<PickupRequest>> {
     try {
       console.log('📡 API: Submitting pickup request with data:', data);
 
-      const response = await this.apiService.post<PickupRequestResponse>(
+      const response = await this.apiService.post<PickupRequest>(
         '/pickup-requests',
         data,
       );

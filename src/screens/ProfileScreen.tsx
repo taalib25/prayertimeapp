@@ -209,7 +209,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             </View>
           </View>
         </View>
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Statistics</Text>
           </View>
@@ -255,7 +255,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               isVisible={true}
             />
           </View>
-        </View>
+        </View> */}
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 30,
     flex: 1,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background.surface,
   },
   loadingContainer: {
     flex: 1,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   header: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.background.surface,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',

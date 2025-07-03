@@ -9,6 +9,8 @@ import {
   Pressable,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
+import {BottomTabParamList} from '../navigation/BottomTabNavigator';
 
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
@@ -77,7 +79,8 @@ const dummyPersonalMeetings = [
 ];
 
 const PrayerTimeScreen = () => {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
   const {user} = useUser();
@@ -121,8 +124,8 @@ const PrayerTimeScreen = () => {
 
   const handleSeeAllReminders = useCallback(() => {
     console.log('user member id ', user?.memberId);
-    navigation.navigate('Feeds' as never);
-  }, [navigation]);
+    navigation.navigate('Feeds');
+  }, [navigation, user?.memberId]);
 
   return (
     <View style={styles.safeArea}>
@@ -211,11 +214,12 @@ const PrayerTimeScreen = () => {
               />
               <FajrTimeChart />
 
-              {user?.role === 'Member' ? (
+              <PersonalMeeting />
+              {/* {user?.role === 'Member' ? (
                 <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
                 <PersonalMeeting  />)
-              }
+              } */}
             </Suspense>
           )}
         </View>
@@ -356,7 +360,7 @@ const styles = StyleSheet.create({
   },
   prayerNameText: {
     ...typography.h2,
-    color: '#0F3B0F', // Very dark green for prayer name
+    color: '#0F3B0F',
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
@@ -364,9 +368,8 @@ const styles = StyleSheet.create({
   countdownTimer: {
     ...typography.h2,
     fontSize: 36,
-    color: colors.primary, // Slightly darker green for better readability
+    color: colors.primary,
     textAlign: 'center',
-    // marginVertical: 12,
     letterSpacing: 1,
   },
 });
