@@ -1,8 +1,9 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from './SvgIcon';
+import MeetingStatusModal from './MeetingStatusModal';
 
 interface MeetingMember {
   member_name: string;
@@ -23,6 +24,11 @@ interface MeetingCardProps {
     value: string | number;
   }[];
   onMemberPress?: (member: MeetingMember, index: number) => void;
+  onStatusUpdate?: (
+    member: MeetingMember,
+    status: 'completed' | 'cancelled',
+    note: string,
+  ) => void;
 }
 
 const statusIcon = (status: MeetingMember['status']) => {
@@ -44,7 +50,28 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
   members = [],
   stats = [],
   onMemberPress,
+  onStatusUpdate,
 }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MeetingMember | null>(
+    null,
+  );
+
+  const handleMarkPress = (member: MeetingMember) => {
+    setSelectedMember(member);
+    setModalVisible(true);
+  };
+
+  const handleStatusUpdate = (
+    status: 'completed' | 'cancelled',
+    note: string,
+  ) => {
+    if (selectedMember && onStatusUpdate) {
+      onStatusUpdate(selectedMember, status, note);
+    }
+    setModalVisible(false);
+    setSelectedMember(null);
+  };
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -60,7 +87,14 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
             {/* First row: name & phone */}
             <View style={styles.personTopRow}>
               <Text style={styles.personText}>{member.member_name}</Text>
-              <Text style={styles.personPhone}>{member.member_phone}</Text>
+              <View style={styles.rightSection}>
+                <Text style={styles.personPhone}>{member.member_phone}</Text>
+                <TouchableOpacity
+                  style={styles.markButton}
+                  onPress={() => handleMarkPress(member)}>
+                  <Text style={styles.markButtonText}>Mark</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             {/* Second row: location, date/time, status */}
             <View style={styles.personBottomRow}>
@@ -68,7 +102,8 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
                 <Text style={styles.personLocation}>{member.location}</Text>
               )}
               <Text style={styles.personDateTime}>
-                {new Date(member.scheduled_date).toLocaleDateString()}{' | '}
+                {new Date(member.scheduled_date).toLocaleDateString()}
+                {' | '}
                 {member.scheduled_time}
               </Text>
               {/* <View style={styles.statusMark}>
@@ -121,6 +156,14 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
           })}
         </View>
       )}
+      {selectedMember && (
+        <MeetingStatusModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onSave={handleStatusUpdate}
+          member={selectedMember}
+        />
+      )}
     </View>
   );
 };
@@ -170,11 +213,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 2,
   },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   personBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    
+
     gap: 12,
   },
   personText: {
@@ -199,7 +247,7 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontSize: 13,
-     backgroundColor: '#F2F6FF',
+    backgroundColor: '#F2F6FF',
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#D1D9EC',
@@ -268,6 +316,19 @@ const styles = StyleSheet.create({
   },
   statValuePercent: {
     color: '#7B1FA2',
+  },
+  markButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  markButtonText: {
+    ...typography.caption,
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 
