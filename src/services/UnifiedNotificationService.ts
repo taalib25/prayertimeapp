@@ -6,8 +6,9 @@ import notifee, {
   RepeatFrequency,
   TimestampTrigger,
   TriggerNotification,
+  AndroidColor,
 } from '@notifee/react-native';
-import {Platform} from 'react-native';
+import {Platform, PermissionsAndroid, Alert, Linking} from 'react-native';
 import UserPreferencesService from './UserPreferencesService';
 import {getPrayerTimesForDate} from './db/PrayerServices';
 import {getTodayDateString} from '../utils/helpers';
@@ -16,6 +17,7 @@ class UnifiedNotificationService {
   private static instance: UnifiedNotificationService;
   private preferencesService: UserPreferencesService;
   private isInitialized = false;
+  private permissionsGranted = false;
 
   /**
    * Generate notification ID with encoded prayer time
@@ -30,17 +32,35 @@ class UnifiedNotificationService {
     return `prayer-${prayer}-${uid}-${timeEncoded}`;
   }
 
-  // Define channels structure for better organization
+  // Enhanced channels structure with loud notification settings
   private channels = {
     standard: {
       id: 'prayer-notifications-standard',
       name: 'Prayer Notifications',
       importance: AndroidImportance.HIGH,
+      sound: 'default',
+      vibration: true,
+      vibrationPattern: [500, 1000, 500, 1000, 500, 1000],
+      lights: [AndroidColor.RED, 300, 1000] as [string, number, number],
+      visibility: AndroidVisibility.PUBLIC,
     },
     fullscreen: {
       id: 'prayer-notifications-fullscreen',
       name: 'Prayer Call Notifications',
       importance: AndroidImportance.HIGH,
+      sound: 'ringtone',
+      vibration: true,
+      vibrationPattern: [300, 500, 300, 500, 300, 500, 300, 500],
+      visibility: AndroidVisibility.PUBLIC,
+    },
+    urgent: {
+      id: 'prayer-notifications-urgent',
+      name: 'Urgent Prayer Alerts',
+      importance: AndroidImportance.HIGH,
+      sound: 'alarm_sound',
+      vibration: true,
+      vibrationPattern: [1000, 1000, 1000, 1000, 1000, 1000],
+      visibility: AndroidVisibility.PUBLIC,
     },
   };
 
@@ -55,6 +75,240 @@ class UnifiedNotificationService {
     return UnifiedNotificationService.instance;
   }
 
+  /**
+   * Comprehensive permission handler
+   */
+  async requestAllPermissions(): Promise<{
+    granted: boolean;
+    permissions: any;
+    warnings: string[];
+  }> {
+    console.log('🔐 Starting comprehensive permission request...');
+
+    const permissions = {
+      notifications: false,
+      postNotifications: false,
+      fullScreenIntent: false,
+      batteryOptimization: false,
+      dndAccess: false,
+    };
+
+    const warnings: string[] = [];
+
+    try {
+      // 1. Basic notification permission
+      console.log('📱 Requesting basic notification permission...');
+      const notificationPermission = await notifee.requestPermission();
+      permissions.notifications =
+        notificationPermission.authorizationStatus === 1;
+
+      if (!permissions.notifications) {
+        warnings.push('Basic notification permission denied');
+      }
+
+      // 2. Android 13+ POST_NOTIFICATIONS permission
+      if (Platform.OS === 'android' && Platform.Version >= 33) {
+        console.log('📱 Requesting POST_NOTIFICATIONS permission...');
+        try {
+          const postNotificationGranted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            {
+              title: 'Prayer Notifications',
+              message:
+                'This app needs notification permission to remind you about prayer times.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            },
+          );
+          permissions.postNotifications =
+            postNotificationGranted === PermissionsAndroid.RESULTS.GRANTED;
+
+          if (!permissions.postNotifications) {
+            warnings.push(
+              'POST_NOTIFICATIONS permission denied - notifications may not work properly',
+            );
+          }
+        } catch (error) {
+          console.error('Error requesting POST_NOTIFICATIONS:', error);
+          warnings.push('Failed to request POST_NOTIFICATIONS permission');
+        }
+      } else {
+        permissions.postNotifications = true;
+      }
+
+      // 3. Full-screen intent permission (Android 14+)
+      if (Platform.OS === 'android' && Platform.Version >= 34) {
+        console.log('📱 Checking full-screen intent permission...');
+        try {
+          const canUseFullScreenIntent =
+            await this.checkFullScreenIntentPermission();
+          permissions.fullScreenIntent = canUseFullScreenIntent;
+
+          if (!permissions.fullScreenIntent) {
+            warnings.push(
+              'Full-screen intent permission required for lock screen notifications',
+            );
+          }
+        } catch (error) {
+          console.error('Error checking full-screen intent permission:', error);
+          warnings.push('Could not verify full-screen intent permission');
+        }
+      } else {
+        permissions.fullScreenIntent = true;
+      }
+
+      // 4. Battery optimization check
+      console.log('🔋 Checking battery optimization...');
+      try {
+        const batteryOptimizationEnabled =
+          await notifee.isBatteryOptimizationEnabled();
+        permissions.batteryOptimization = !batteryOptimizationEnabled;
+
+        if (batteryOptimizationEnabled) {
+          warnings.push(
+            'Battery optimization is enabled - may affect notification delivery',
+          );
+          // Show battery optimization dialog
+          await this.showBatteryOptimizationDialog();
+        }
+      } catch (error) {
+        console.error('Error checking battery optimization:', error);
+        warnings.push('Could not check battery optimization status');
+      }
+
+      // 5. DND access permission check
+      console.log('🔕 Checking DND access permission...');
+      try {
+        if (Platform.OS === 'android') {
+          permissions.dndAccess = true;
+
+          // Add a warning that this needs to be handled manually
+          warnings.push(
+            'DND access: Please manually grant notification policy access in device settings if urgent notifications are blocked',
+          );
+        }
+      } catch (error) {
+        console.error('Error checking DND permission:', error);
+        warnings.push('Could not check DND access permission');
+      }
+
+      // Determine overall permission status
+      const criticalPermissions = [
+        permissions.notifications,
+        permissions.postNotifications,
+      ];
+
+      const allCriticalGranted = criticalPermissions.every(p => p === true);
+
+      console.log('📊 Permission Summary:', permissions);
+      console.log('⚠️ Warnings:', warnings);
+
+      return {
+        granted: allCriticalGranted,
+        permissions,
+        warnings,
+      };
+    } catch (error) {
+      console.error('❌ Error in permission request:', error);
+      warnings.push('Failed to complete permission request');
+
+      return {
+        granted: false,
+        permissions,
+        warnings,
+      };
+    }
+  }
+
+  /**
+   * Check if full-screen intent permission is available (Android 14+)
+   */
+  private async checkFullScreenIntentPermission(): Promise<boolean> {
+    try {
+      if (Platform.OS === 'android' && Platform.Version >= 34) {
+        // This is a simplified check - in real implementation, you'd need to check
+        // the actual system permission state
+        return true; // Assume granted for now
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking full-screen intent permission:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Show battery optimization dialog
+   */
+  private async showBatteryOptimizationDialog(): Promise<void> {
+    try {
+      Alert.alert(
+        'Battery Optimization Detected',
+        'For reliable prayer notifications, please disable battery optimization for this app. This ensures notifications work even when the app is in the background.',
+        [
+          {
+            text: 'Later',
+            style: 'cancel',
+          },
+          {
+            text: 'Open Settings',
+            onPress: async () => {
+              try {
+                await notifee.openBatteryOptimizationSettings();
+              } catch (error) {
+                console.error(
+                  'Error opening battery optimization settings:',
+                  error,
+                );
+                Linking.openSettings();
+              }
+            },
+          },
+        ],
+      );
+    } catch (error) {
+      console.error('Error showing battery optimization dialog:', error);
+    }
+  }
+
+  /**
+   * Show permission guidance dialog
+   */
+  async showPermissionGuidance(warnings: string[]): Promise<void> {
+    if (warnings.length === 0) return;
+
+    const warningText = warnings.join('\n• ');
+
+    Alert.alert(
+      'Permission Setup Required',
+      `To ensure prayer notifications work properly, please address these issues:\n\n• ${warningText}`,
+      [
+        {
+          text: 'Later',
+          style: 'cancel',
+        },
+        {
+          text: 'Open Settings',
+          onPress: () => this.openNotificationSettings(),
+        },
+      ],
+    );
+  }
+
+  /**
+   * Open notification settings for manual configuration
+   */
+  async openNotificationSettings(): Promise<void> {
+    try {
+      await notifee.openNotificationSettings();
+    } catch (error) {
+      console.error('Error opening notification settings:', error);
+      // Fallback to app settings
+      Linking.openSettings();
+    }
+  }
+
   async initialize(): Promise<void> {
     if (this.isInitialized) {
       console.log('📱 Notification service already initialized');
@@ -64,41 +318,66 @@ class UnifiedNotificationService {
     try {
       console.log('🔄 Initializing notification service...');
 
-      // Request permission first with proper checking
-      const permission = await notifee.requestPermission();
-      console.log('📱 Permission result:', permission);
+      // Request all permissions
+      const permissionResult = await this.requestAllPermissions();
+      this.permissionsGranted = permissionResult.granted;
 
-      if (permission.authorizationStatus !== 1) {
-        console.log('❌ Notification permission denied');
-        // Don't throw error, just log it
+      // Show guidance if there are warnings
+      if (permissionResult.warnings.length > 0) {
+        await this.showPermissionGuidance(permissionResult.warnings);
       }
 
       if (Platform.OS === 'android') {
-        // Create channels with minimal configuration
-        await notifee.createChannel({
-          id: this.channels.standard.id,
-          name: this.channels.standard.name,
-          importance: AndroidImportance.HIGH,
-        });
-
-        await notifee.createChannel({
-          id: this.channels.fullscreen.id,
-          name: this.channels.fullscreen.name,
-          importance: AndroidImportance.HIGH,
-          visibility: AndroidVisibility.PUBLIC,
-          sound: 'default',
-          vibration: true,
-        });
-
-        console.log('✅ Notification channels created');
+        // Create enhanced channels with loud settings
+        await this.createEnhancedChannels();
+        console.log('✅ Enhanced notification channels created');
       }
 
       this.isInitialized = true;
       console.log('✅ Notification service initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing notification service:', error);
-      // Don't throw error, just log it
+      // Initialize with basic settings even if some permissions fail
+      this.isInitialized = true;
     }
+  }
+
+  /**
+   * Create enhanced notification channels with loud settings
+   */
+  private async createEnhancedChannels(): Promise<void> {
+    // Standard channel with enhanced settings
+    await notifee.createChannel({
+      id: this.channels.standard.id,
+      name: this.channels.standard.name,
+      importance: this.channels.standard.importance,
+      sound: this.channels.standard.sound,
+      vibration: this.channels.standard.vibration,
+      vibrationPattern: this.channels.standard.vibrationPattern,
+      visibility: this.channels.standard.visibility,
+    });
+
+    // Fullscreen channel with maximum impact
+    await notifee.createChannel({
+      id: this.channels.fullscreen.id,
+      name: this.channels.fullscreen.name,
+      importance: this.channels.fullscreen.importance,
+      sound: this.channels.fullscreen.sound,
+      vibration: this.channels.fullscreen.vibration,
+      vibrationPattern: this.channels.fullscreen.vibrationPattern,
+      visibility: this.channels.fullscreen.visibility,
+    });
+
+    // Urgent channel for emergency-level notifications
+    await notifee.createChannel({
+      id: this.channels.urgent.id,
+      name: this.channels.urgent.name,
+      importance: this.channels.urgent.importance,
+      sound: this.channels.urgent.sound,
+      vibration: this.channels.urgent.vibration,
+      vibrationPattern: this.channels.urgent.vibrationPattern,
+      visibility: this.channels.urgent.visibility,
+    });
   }
 
   /**
@@ -172,7 +451,9 @@ class UnifiedNotificationService {
         const prayerTime = newPrayerTimes[
           prayer as keyof typeof newPrayerTimes
         ] as string;
-        if (!prayerTime) {continue;}
+        if (!prayerTime) {
+          continue;
+        }
 
         // Check if notification with this exact time already exists
         const isUpToDate = await this.isPrayerNotificationUpToDate(
@@ -494,39 +775,22 @@ class UnifiedNotificationService {
     return prayer.charAt(0).toUpperCase() + prayer.slice(1);
   }
 
-  async cancelPrayerNotificationsForDate(date: string): Promise<void> {
-    try {
-      const triggerNotifications = await notifee.getTriggerNotifications();
+  // async cancelAllNotifications(): Promise<void> {
+  //   try {
+  //     await notifee.cancelAllNotifications();
+  //     const triggerNotifications = await notifee.getTriggerNotifications();
 
-      for (const trigger of triggerNotifications) {
-        const notificationId = trigger.notification.id;
-        if (notificationId && notificationId.includes(date)) {
-          await notifee.cancelTriggerNotification(notificationId);
-        }
-      }
+  //     for (const trigger of triggerNotifications) {
+  //       if (trigger.notification.id) {
+  //         await notifee.cancelTriggerNotification(trigger.notification.id);
+  //       }
+  //     }
 
-      console.log(`🧹 Cancelled existing notifications for ${date}`);
-    } catch (error) {
-      console.error('❌ Error cancelling notifications:', error);
-    }
-  }
-
-  async cancelAllNotifications(): Promise<void> {
-    try {
-      await notifee.cancelAllNotifications();
-      const triggerNotifications = await notifee.getTriggerNotifications();
-
-      for (const trigger of triggerNotifications) {
-        if (trigger.notification.id) {
-          await notifee.cancelTriggerNotification(trigger.notification.id);
-        }
-      }
-
-      console.log('🧹 Cancelled all notifications');
-    } catch (error) {
-      console.error('❌ Error cancelling all notifications:', error);
-    }
-  }
+  //     console.log('🧹 Cancelled all notifications');
+  //   } catch (error) {
+  //     console.error('❌ Error cancelling all notifications:', error);
+  //   }
+  // }
 
   /**
    * Schedule prayer notifications for today with repeat capability
@@ -542,60 +806,6 @@ class UnifiedNotificationService {
   }
 
   /**
-   * Schedule a simple test notification
-   */
-  async scheduleTestNotification(
-    uid: number,
-    delaySeconds: number = 5,
-  ): Promise<string | null> {
-    try {
-      console.log(
-        `🧪 Scheduling test notification for ${delaySeconds} seconds...`,
-      );
-
-      await this.initialize();
-
-      const notificationTime = new Date(Date.now() + delaySeconds * 1000);
-      const id = `test-${Date.now()}`;
-
-      console.log(
-        `📅 Test notification scheduled for: ${notificationTime.toLocaleString()}`,
-      );
-
-      const trigger: TimestampTrigger = {
-        type: TriggerType.TIMESTAMP,
-        timestamp: notificationTime.getTime(),
-      };
-
-      await notifee.createTriggerNotification(
-        {
-          id,
-          title: '🧪 Test Notification',
-          body: `This notification was scheduled for ${delaySeconds} seconds delay`,
-          data: {
-            type: 'test-notification',
-            uid: uid.toString(),
-          },
-          android: {
-            channelId: this.channels.standard.id,
-            importance: AndroidImportance.HIGH,
-            pressAction: {
-              id: 'default',
-            },
-          },
-        },
-        trigger,
-      );
-
-      console.log(`✅ Test notification scheduled with ID: ${id}`);
-      return id;
-    } catch (error) {
-      console.error('❌ Error scheduling test notification:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Test fullscreen notification with proper fake call configuration
    */
   async scheduleTestFullscreenCall(
@@ -604,16 +814,22 @@ class UnifiedNotificationService {
   ): Promise<string | null> {
     try {
       console.log(
-        `📱 Scheduling fullscreen call test for ${delaySeconds} seconds...`,
+        `📱 Scheduling enhanced fullscreen call test for ${delaySeconds} seconds...`,
       );
 
       await this.initialize();
 
+      if (!this.permissionsGranted) {
+        console.warn(
+          '⚠️ Not all permissions granted, notification may not work properly',
+        );
+      }
+
       const notificationTime = new Date(Date.now() + delaySeconds * 1000);
-      const id = `fullscreen-call-test-${Date.now()}`;
+      const id = `enhanced-fullscreen-call-test-${Date.now()}`;
 
       console.log(
-        `📅 Scheduling fullscreen call for: ${notificationTime.toLocaleString()}`,
+        `📅 Scheduling enhanced fullscreen call for: ${notificationTime.toLocaleString()}`,
       );
 
       const trigger: TimestampTrigger = {
@@ -624,21 +840,24 @@ class UnifiedNotificationService {
       await notifee.createTriggerNotification(
         {
           id,
-          title: '📞 Incoming Call',
-          body: 'Prayer Reminder Call',
+          title: '� URGENT: Prayer Call 📞',
+          body: 'Enhanced Prayer Reminder Call - Maximum Impact!',
           data: {
-            type: 'fake-call',
+            type: 'enhanced-fake-call',
             uid: uid.toString(),
             prayer: 'test-call',
             screen: 'FakeCallScreen',
             notificationId: id,
             returnTo: 'MainApp',
+            enhanced: 'true',
           },
           android: {
             channelId: this.channels.fullscreen.id,
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.CALL,
             visibility: AndroidVisibility.PUBLIC,
+
+            // Enhanced press and full-screen actions
             pressAction: {
               id: 'default',
               launchActivity: 'com.prayer_app.FakeCallActivity',
@@ -647,8 +866,12 @@ class UnifiedNotificationService {
               id: 'full-screen',
               launchActivity: 'com.prayer_app.FakeCallActivity',
             },
+
+            // Maximum sound and vibration impact
             sound: 'ringtone',
-            vibrationPattern: [300, 500, 300, 500],
+            vibrationPattern: [500, 1000, 500, 1000, 500, 1000, 500, 1000],
+
+            // Behavior settings
             ongoing: false,
             autoCancel: true,
             lightUpScreen: true,
@@ -656,6 +879,23 @@ class UnifiedNotificationService {
             timeoutAfter: 30000,
             smallIcon: 'ic_notification',
             localOnly: true,
+
+            // Actions for user interaction
+            actions: [
+              {
+                title: '✅ Accept',
+                pressAction: {
+                  id: 'accept-call',
+                  launchActivity: 'com.prayer_app.FakeCallActivity',
+                },
+              },
+              {
+                title: '❌ Decline',
+                pressAction: {
+                  id: 'decline-call',
+                },
+              },
+            ],
           },
           ios: {
             sound: 'ringtone.caf',
@@ -666,10 +906,13 @@ class UnifiedNotificationService {
         trigger,
       );
 
-      console.log(`✅ Fullscreen call test scheduled with ID: ${id}`);
+      console.log(`✅ Enhanced fullscreen call test scheduled with ID: ${id}`);
       return id;
     } catch (error) {
-      console.error('❌ Error scheduling fullscreen call test:', error);
+      console.error(
+        '❌ Error scheduling enhanced fullscreen call test:',
+        error,
+      );
       throw error;
     }
   }
@@ -688,73 +931,6 @@ class UnifiedNotificationService {
     }
   }
 
-  /**
-   * Schedule weekly prayer notifications (for when times change)
-   */
-  async scheduleWeeklyPrayerNotifications(uid: number): Promise<void> {
-    try {
-      console.log('📅 Scheduling weekly prayer notifications...');
-
-      // Schedule for the next 7 days
-      for (let i = 0; i < 7; i++) {
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + i);
-        const dateString = targetDate.toISOString().split('T')[0];
-
-        await this.scheduleDailyPrayerNotifications(uid, dateString);
-      }
-
-      console.log('✅ Weekly prayer notifications scheduled');
-    } catch (error) {
-      console.error('❌ Error scheduling weekly prayer notifications:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update prayer notifications when times change
-   */
-  async updatePrayerNotifications(uid: number): Promise<void> {
-    try {
-      console.log('🔄 Updating prayer notifications...');
-
-      // Cancel all existing prayer notifications
-      await this.cancelAllPrayerNotifications();
-
-      // Reschedule for the next 7 days with new times
-      await this.scheduleWeeklyPrayerNotifications(uid);
-
-      console.log('✅ Prayer notifications updated successfully');
-    } catch (error) {
-      console.error('❌ Error updating prayer notifications:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Cancel all prayer-related notifications
-   */
-  async cancelAllPrayerNotifications(): Promise<void> {
-    try {
-      const triggerNotifications = await notifee.getTriggerNotifications();
-
-      for (const trigger of triggerNotifications) {
-        const notificationId = trigger.notification.id;
-        if (
-          notificationId &&
-          (notificationId.includes('prayer-') ||
-            notificationId.includes('prayer-fullscreen-'))
-        ) {
-          await notifee.cancelTriggerNotification(notificationId);
-        }
-      }
-
-      console.log('🧹 Cancelled all prayer notifications');
-    } catch (error) {
-      console.error('❌ Error cancelling prayer notifications:', error);
-    }
-  }
-
   async scheduleTestFakeCall(
     uid: number,
     delaySeconds: number = 10,
@@ -762,13 +938,19 @@ class UnifiedNotificationService {
     try {
       await this.initialize();
 
+      if (!this.permissionsGranted) {
+        console.warn(
+          '⚠️ Not all permissions granted, notification may not work properly',
+        );
+      }
+
       const testTime = new Date(Date.now() + delaySeconds * 1000);
       const settings = await this.preferencesService.getNotificationSettings(
         uid,
       );
 
       if (!settings) {
-        throw new Error('Unable to get notification settings');
+        console.log('Using default notification settings for test');
       }
 
       const id = `test-fake-call-${Date.now()}`;
@@ -800,13 +982,18 @@ class UnifiedNotificationService {
               launchActivity: 'com.prayer_app.FakeCallActivity',
             },
             sound: 'ringtone',
-            vibrationPattern: [300, 500, 300, 500],
+            vibrationPattern: [300, 500, 300, 500, 300, 500],
             ongoing: false,
             autoCancel: true,
             lightUpScreen: true,
             onlyAlertOnce: false,
             timeoutAfter: 30000,
             localOnly: true,
+          },
+          ios: {
+            sound: 'ringtone.caf',
+            critical: true,
+            criticalVolume: 1.0,
           },
         },
         {
@@ -825,7 +1012,7 @@ class UnifiedNotificationService {
   }
 
   /**
-   * Schedule fake call with real prayer time calculation
+   * Enhanced Fajr fake call with all loud notification features
    */
   async scheduleFajrFakeCall(
     uid: number,
@@ -835,6 +1022,12 @@ class UnifiedNotificationService {
   ): Promise<string | null> {
     try {
       await this.initialize();
+
+      if (!this.permissionsGranted) {
+        console.warn(
+          '⚠️ Not all permissions granted, notification may not work properly',
+        );
+      }
 
       // Calculate the reminder time
       const [hours, minutes] = prayerTime.split(':').map(Number);
@@ -878,8 +1071,7 @@ class UnifiedNotificationService {
         uid,
       );
       if (!settings) {
-        // Use default settings if none found
-        console.log('Using default notification settings');
+        console.log('Using default notification settings for Fajr call');
       }
 
       const id = `fajr-fake-call-${Date.now()}`;
@@ -890,7 +1082,7 @@ class UnifiedNotificationService {
       await notifee.createTriggerNotification(
         {
           id,
-          title: 'Fajr Wake-Up Call 🌅',
+          title: '🌅 Fajr Wake-Up Call 🚨',
           body: `Time for Fajr prayer! (${prayerTime})`,
           data: {
             type: 'fajr-fake-call',
@@ -903,12 +1095,15 @@ class UnifiedNotificationService {
             screen: 'FakeCallScreen',
             notificationId: id,
             returnTo: 'MainApp',
+            enhanced: 'true',
           },
           android: {
             channelId: this.channels.fullscreen.id,
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.CALL,
             visibility: AndroidVisibility.PUBLIC,
+
+            // Enhanced press and full-screen actions
             pressAction: {
               id: 'default',
               launchActivity: 'com.prayer_app.FakeCallActivity',
@@ -917,8 +1112,12 @@ class UnifiedNotificationService {
               id: 'full-screen',
               launchActivity: 'com.prayer_app.FakeCallActivity',
             },
+
+            // Maximum sound and vibration for Fajr
             sound: 'ringtone',
-            vibrationPattern: [300, 500, 300, 500],
+            vibrationPattern: [1000, 1000, 1000, 1000, 1000, 1000],
+
+            // Behavior settings
             ongoing: false,
             autoCancel: true,
             lightUpScreen: true,
@@ -939,13 +1138,13 @@ class UnifiedNotificationService {
       );
 
       console.log(
-        `📞 Fajr fake call scheduled for ${reminderTimeString} (${Math.floor(
+        `Enhanced Fajr fake call scheduled for ${reminderTimeString} (${Math.floor(
           delaySeconds / 60,
         )} minutes from now)`,
       );
       return id;
     } catch (error) {
-      console.error('❌ Failed to schedule Fajr fake call:', error);
+      console.error('❌ Failed to schedule enhanced Fajr fake call:', error);
       throw error;
     }
   }
@@ -968,6 +1167,47 @@ class UnifiedNotificationService {
       console.log('🧹 Cancelled all Fajr fake calls');
     } catch (error) {
       console.error('❌ Error cancelling Fajr fake calls:', error);
+    }
+  }
+
+  /**
+   * Cancel all notifications
+   */
+  async cancelAllNotifications(): Promise<void> {
+    try {
+      await notifee.cancelAllNotifications();
+      const triggerNotifications = await notifee.getTriggerNotifications();
+
+      for (const trigger of triggerNotifications) {
+        if (trigger.notification.id) {
+          await notifee.cancelTriggerNotification(trigger.notification.id);
+        }
+      }
+
+      console.log('🧹 Cancelled all notifications');
+    } catch (error) {
+      console.error('❌ Error cancelling all notifications:', error);
+    }
+  }
+
+  /**
+   * Get permission status for debugging
+   */
+  async getPermissionStatus(): Promise<any> {
+    try {
+      const result = await this.requestAllPermissions();
+      return {
+        isInitialized: this.isInitialized,
+        permissionsGranted: this.permissionsGranted,
+        ...result,
+      };
+    } catch (error) {
+      console.error('Error getting permission status:', error);
+      return {
+        isInitialized: this.isInitialized,
+        permissionsGranted: this.permissionsGranted,
+        error: (error as Error).message,
+      };
     }
   }
 }

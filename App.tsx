@@ -36,6 +36,7 @@ import {
   initializeUserBackgroundTasks,
   checkBackgroundTasksHealth,
 } from './src/services/backgroundTasks';
+import PermissionInitializer from './src/services/PermissionInitializer';
 import {colors} from './src/utils/theme';
 import FeedsScreen from './src/screens/FeedsScreen';
 import DatabaseScreen from './src/screens/DatabaseScreen';
@@ -79,9 +80,25 @@ function AppNavigator() {
   const [showingSplash, setShowingSplash] = useState(true);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
-  // Initialize app data on mount
+  // Initialize app data and permissions on mount
   useEffect(() => {
-    Promise.all([checkOnboardingStatus(), initializePrayerTimesDatabase()]);
+    const initializeApp = async () => {
+      try {
+        // Initialize permissions early
+        const permissionInitializer = PermissionInitializer.getInstance();
+        await permissionInitializer.initializeAppPermissions();
+
+        // Initialize other app data
+        await Promise.all([
+          checkOnboardingStatus(),
+          initializePrayerTimesDatabase(),
+        ]);
+      } catch (error) {
+        console.error('Error during app initialization:', error);
+      }
+    };
+
+    initializeApp();
   }, []);
 
   // Check auth state after splash
