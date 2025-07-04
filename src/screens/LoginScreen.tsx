@@ -12,6 +12,9 @@ import {
   ScrollView,
   Image,
   ToastAndroid,
+  TouchableWithoutFeedback,
+  Keyboard,
+  TouchableOpacity,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -33,9 +36,10 @@ interface Props {
 }
 
 const LoginScreen: React.FC<Props> = ({navigation}) => {
-  const [username, setUsername] = useState('ahmed_test');
-  const [password, setPassword] = useState('test123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const apiService = ApiTaskServices.getInstance();
   const [errors, setErrors] = useState<{username?: string; password?: string}>(
     {},
@@ -96,63 +100,85 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled">
-          <View style={styles.container}>
-            <View style={styles.formContainer}>
-              {/* <Image
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          style={styles.keyboardAvoidingView}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+              <View style={styles.container}>
+                <View style={styles.formContainer}>
+                  {/* <Image
                 source={require('../assets/icons/fajrLogo.png')}
                 style={styles.logo}
                 resizeMode="contain"
               /> */}
-              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
-              <Text style={styles.title}>Assalamu Alaikum!</Text>
-              <Text style={styles.subtitle}>
-                Please login to access your account
-              </Text>
-              <Text style={styles.inputLabel}>Username</Text>
-              <TextInput
-                style={[styles.input, errors.username && styles.inputError]}
-                placeholder="Enter your username"
-                placeholderTextColor={colors.text.muted}
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-              />
-              {errors.username && (
-                <Text style={styles.errorText}>{errors.username}</Text>
-              )}
-              <Text style={styles.inputLabel}>Password</Text>
-              <TextInput
-                style={[styles.input, errors.password && styles.inputError]}
-                placeholder="Enter your password"
-                placeholderTextColor={colors.text.muted}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-              {errors.password && (
-                <Text style={styles.errorText}>{errors.password}</Text>
-              )}
-              <Text style={styles.forgotPassword}>Forgot Password?</Text>
-              <CustomButton
-                title={isLoading ? 'Logging in...' : 'Login'}
-                onPress={handleLoginPress}
-                disabled={isLoading}
-                style={styles.loginButton}
-              />
-              <Text style={styles.registerText}>
-                Don't have an account?
-                <Text style={styles.registerLink}>Register Now</Text>
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                  <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
+                  <Text style={styles.title}>Assalamu Alaikum!</Text>
+                  <Text style={styles.subtitle}>
+                    Please login to access your account
+                  </Text>
+                  {/* <Text style={styles.inputLabel}>Username</Text> */}
+                  <TextInput
+                    style={[styles.input, errors.username && styles.inputError]}
+                    placeholder="Username"
+                    placeholderTextColor={colors.text.muted}
+                    value={username}
+                    onChangeText={setUsername}
+                    autoCapitalize="none"
+                  />
+                  {errors.username && (
+                    <Text style={styles.errorText}>{errors.username}</Text>
+                  )}
+                  {/* <Text style={styles.inputLabel}>Password</Text> */}
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={[
+                        styles.passwordInput,
+                        errors.password && styles.inputError,
+                      ]}
+                      placeholder="Password"
+                      placeholderTextColor={colors.text.muted}
+                      secureTextEntry={!showPassword}
+                      value={password}
+                      onChangeText={setPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}>
+                      <SvgIcon
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.text.muted}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && (
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  )}
+                  <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                  <CustomButton
+                    title={isLoading ? 'Logging in...' : 'Login'}
+                    onPress={handleLoginPress}
+                    disabled={isLoading}
+                    style={styles.loginButton}
+                  />
+                  <Text style={styles.registerText}>
+                    Don't have an account?
+                    <Text style={styles.registerLink}> Register Now</Text>
+                  </Text>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };
@@ -219,6 +245,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     ...typography.body,
     color: '#333',
+  },
+  passwordContainer: {
+    position: 'relative',
+    marginBottom: 20,
+  },
+  passwordInput: {
+    height: 56,
+    backgroundColor: colors.background.light,
+    borderColor: colors.text.muted,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingRight: 50,
+    ...typography.body,
+    color: '#333',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 18,
+    padding: 4,
   },
   inputError: {
     borderColor: colors.error,

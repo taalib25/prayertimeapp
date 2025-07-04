@@ -26,6 +26,9 @@ import SearchIcon from '../assets/icons/search.svg';
 import AssignedIcon from '../assets/icons/assigned.svg';
 import AttendedIcon from '../assets/icons/attended.svg';
 import AbsentIcon from '../assets/icons/absent.svg';
+// Eye icons (you'll need to add these SVG files to your assets/icons folder)
+import EyeIcon from '../assets/icons/eye_open.svg';
+import EyeOffIcon from '../assets/icons/eye-off.svg';
 
 export type IconName =
   | 'fajr'
@@ -49,7 +52,9 @@ export type IconName =
   | 'search'
   | 'assigned'
   | 'attended'
-  | 'absent';
+  | 'absent'
+  | 'eye'
+  | 'eye-off';
 
 interface SvgIconProps {
   name: IconName;
@@ -115,6 +120,8 @@ const getIconComponent = (name: IconName) => {
     assigned: AssignedIcon,
     attended: AttendedIcon,
     absent: AbsentIcon,
+    eye: EyeIcon,
+    'eye-off': EyeOffIcon,
   };
 
   return icons[name];
