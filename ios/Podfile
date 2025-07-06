@@ -1,41 +1,26 @@
+# Add CocoaPods CDN source for simdjson
+source 'https://cdn.cocoapods.org/'
+
 # Resolve react_native_pods.rb with node to allow for hoisting
 def node_require(script)
-     # Resolve script with node to allow for hoisting
-     require Pod::Executable.execute_command('node', ['-p',
-       "require.resolve(
-         '#{script}',
-         {paths: [process.argv[1]]},
-       )", __dir__]).strip
- end
-  
-  # Use it to require both react-native's and this package's scripts:
-  + node_require('react-native/scripts/react_native_pods.rb')
-  + node_require('react-native-permissions/scripts/setup.rb')
+  # Resolve script with node to allow for hoisting
+  require Pod::Executable.execute_command('node', ['-p',
+    "require.resolve(
+      '#{script}',
+      {paths: [process.argv[1]]},
+    )", __dir__]).strip
+end
+
+node_require('react-native/scripts/react_native_pods.rb')
+node_require('react-native-permissions/scripts/setup.rb')
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 setup_permissions([
-  # 'AppTrackingTransparency',
-  # 'Bluetooth',
-  # 'Calendars',
-  # 'CalendarsWriteOnly',
-  # 'Camera',
-  # 'Contacts',
-  # 'FaceID',
-  # 'LocationAccuracy',
-  # 'LocationAlways',
-   'LocationWhenInUse',
-  # 'MediaLibrary',
-  # 'Microphone',
+  'LocationWhenInUse',
   'Motion',
   'Notifications',
-  # 'PhotoLibrary',
-  # 'PhotoLibraryAddOnly',
-  # 'Reminders',
-  # 'Siri',
-  # 'SpeechRecognition',
-  # 'StoreKit',
 ])
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -49,17 +34,35 @@ target 'prayer_app' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Explicitly add simdjson for WatermelonDB
+  pod 'simdjson', :path => '../node_modules/@nozbe/simdjson'
+
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
+    
+    # Fix for Xcode version detection
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.4'
+        
+        # Fix for WatermelonDB simdjson dependency
+        if target.name == 'simdjson'
+          config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
+        end
+      end
+    end
+    
+    # Additional fix for Xcode 15 compatibility
+    installer.pods_project.build_configurations.each do |config|
+      config.build_settings['CODE_SIGNING_REQUIRED'] = "NO"
+      config.build_settings['CODE_SIGNING_ALLOWED'] = "NO"
+    end
   end
 end
