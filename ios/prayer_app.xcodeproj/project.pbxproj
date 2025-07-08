@@ -12,7 +12,6 @@
 		2918BE20BD8340209504C5E9 /* Sora-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4F5A504B39FC48E69DEF6E41 /* Sora-ExtraBold.ttf */; };
 		4606B34A6B834D70800CDEE7 /* Sora-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 55BF1762263147FDB4DDC7BB /* Sora-ExtraLight.ttf */; };
 		50C81F8331E948E5BC565C49 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D90936CBF92A4B138E0532EC /* Sora-SemiBold.ttf */; };
-		6C386C5AE96E8CCB7A517E19 /* libPods-prayer_app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ED9314162458E6F4307CDD7 /* libPods-prayer_app.a */; };
 		6D9D4865CF054A498946C771 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1E8C9BE0316146C3A58EEB29 /* Sora-Regular.ttf */; };
 		7404DF19D0168806945F4420 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
@@ -20,6 +19,7 @@
 		915D5FCD4BF5467FA4788CCC /* Sora-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DA2BE8A9286542689C0F9593 /* Sora-Light.ttf */; };
 		A1B4BC109E044C35A41961FC /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D3EB392289DF4D5BACB26AE6 /* Sora-Medium.ttf */; };
 		EF721DD6E49149359D0717F0 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1508179BA9E4B348C9F271E /* Sora-Bold.ttf */; };
+		F4B832CC59EE2B2CF3C47B97 /* libPods-prayer_app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CBFE11247A9118EE65F0FD2 /* libPods-prayer_app.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,17 +27,17 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = prayer_app/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = prayer_app/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = prayer_app/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		165F37FA6EEFD4D9D5887BA8 /* Pods-prayer_app.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.release.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.release.xcconfig"; sourceTree = "<group>"; };
 		1E8C9BE0316146C3A58EEB29 /* Sora-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Regular.ttf"; path = "../src/assets/fonts/Sora-Regular.ttf"; sourceTree = "<group>"; };
+		3A575E66730622FC307F2218 /* Pods-prayer_app.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.release.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.release.xcconfig"; sourceTree = "<group>"; };
 		464BF9C5B4EA4C39BB18F176 /* Sora-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Thin.ttf"; path = "../src/assets/fonts/Sora-Thin.ttf"; sourceTree = "<group>"; };
+		4CBFE11247A9118EE65F0FD2 /* libPods-prayer_app.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayer_app.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F5A504B39FC48E69DEF6E41 /* Sora-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-ExtraBold.ttf"; path = "../src/assets/fonts/Sora-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BF1762263147FDB4DDC7BB /* Sora-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-ExtraLight.ttf"; path = "../src/assets/fonts/Sora-ExtraLight.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = prayer_app/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = prayer_app/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		9ED9314162458E6F4307CDD7 /* libPods-prayer_app.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayer_app.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1508179BA9E4B348C9F271E /* Sora-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Bold.ttf"; path = "../src/assets/fonts/Sora-Bold.ttf"; sourceTree = "<group>"; };
 		D3EB392289DF4D5BACB26AE6 /* Sora-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Medium.ttf"; path = "../src/assets/fonts/Sora-Medium.ttf"; sourceTree = "<group>"; };
-		D74C054C65FEF87E97B2128E /* Pods-prayer_app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.debug.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.debug.xcconfig"; sourceTree = "<group>"; };
+		D6E7CA494E4B9BA406D86D6E /* Pods-prayer_app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.debug.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.debug.xcconfig"; sourceTree = "<group>"; };
 		D90936CBF92A4B138E0532EC /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-SemiBold.ttf"; path = "../src/assets/fonts/Sora-SemiBold.ttf"; sourceTree = "<group>"; };
 		DA2BE8A9286542689C0F9593 /* Sora-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Light.ttf"; path = "../src/assets/fonts/Sora-Light.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -48,7 +48,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6C386C5AE96E8CCB7A517E19 /* libPods-prayer_app.a in Frameworks */,
+				F4B832CC59EE2B2CF3C47B97 /* libPods-prayer_app.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,7 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				9ED9314162458E6F4307CDD7 /* libPods-prayer_app.a */,
+				4CBFE11247A9118EE65F0FD2 /* libPods-prayer_app.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -124,8 +124,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				D74C054C65FEF87E97B2128E /* Pods-prayer_app.debug.xcconfig */,
-				165F37FA6EEFD4D9D5887BA8 /* Pods-prayer_app.release.xcconfig */,
+				D6E7CA494E4B9BA406D86D6E /* Pods-prayer_app.debug.xcconfig */,
+				3A575E66730622FC307F2218 /* Pods-prayer_app.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -137,13 +137,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "prayer_app" */;
 			buildPhases = (
-				6A04C3745542C092B4BA4087 /* [CP] Check Pods Manifest.lock */,
+				16936CC6E6540EA029E2E6B1 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				9FF3EE58BA74A2E454E24BCD /* [CP] Embed Pods Frameworks */,
-				F0D185D4435FE4336DB662B6 /* [CP] Copy Pods Resources */,
+				C4D1FB984B5778641F8E25A5 /* [CP] Embed Pods Frameworks */,
+				B65A62647C618C4A4EA60797 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -223,7 +223,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		6A04C3745542C092B4BA4087 /* [CP] Check Pods Manifest.lock */ = {
+		16936CC6E6540EA029E2E6B1 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -245,28 +245,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		9FF3EE58BA74A2E454E24BCD /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		F0D185D4435FE4336DB662B6 /* [CP] Copy Pods Resources */ = {
+		B65A62647C618C4A4EA60797 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -287,6 +266,27 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		C4D1FB984B5778641F8E25A5 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -303,7 +303,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D74C054C65FEF87E97B2128E /* Pods-prayer_app.debug.xcconfig */;
+			baseConfigurationReference = D6E7CA494E4B9BA406D86D6E /* Pods-prayer_app.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -311,7 +311,7 @@
 				DEVELOPMENT_TEAM = P75CNUJ586;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = prayer_app/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Fajr App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fajr Council";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -324,7 +324,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "Fajr-App---com.ambitiousdevelopers.fajr-app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.ambitiousdevelopers.fajrcouncil;
 				PRODUCT_NAME = prayer_app;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -334,14 +334,14 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 165F37FA6EEFD4D9D5887BA8 /* Pods-prayer_app.release.xcconfig */;
+			baseConfigurationReference = 3A575E66730622FC307F2218 /* Pods-prayer_app.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = P75CNUJ586;
 				INFOPLIST_FILE = prayer_app/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Fajr App";
+				INFOPLIST_KEY_CFBundleDisplayName = "Fajr Council";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -354,7 +354,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "Fajr-App---com.ambitiousdevelopers.fajr-app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.ambitiousdevelopers.fajrcouncil;
 				PRODUCT_NAME = prayer_app;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -392,6 +392,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
@@ -468,9 +469,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				COPY_PHASE_STRIP = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -491,6 +494,7 @@
 					"\"$(inherited)\"",
 				);
 				MTL_ENABLE_DEBUG_INFO = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-DFOLLY_NO_CONFIG",
