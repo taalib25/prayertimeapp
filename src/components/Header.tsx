@@ -1,49 +1,47 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Image} from 'react-native';
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import SvgIcon from './SvgIcon';
-import { useUser } from '../hooks/useUser';
-import { useFocusEffect } from '@react-navigation/native';
+import {useUser} from '../hooks/useUser';
+import {useFocusEffect} from '@react-navigation/native';
 import ImageService from '../services/ImageService';
-
+import moment from 'moment-hijri';
 
 const Header: React.FC = () => {
-  const { userInitials, user ,refresh} = useUser();
+  const {userInitials, user, refresh} = useUser();
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
 
- const imageService = ImageService.getInstance();
+  const imageService = ImageService.getInstance();
 
-    // Refresh user data when screen is focused
+  // Refresh user data when screen is focused
   useFocusEffect(
     useCallback(() => {
       refresh?.();
-    }, [refresh])
-    
+    }, [refresh]),
   );
 
+  // Load profile image on component mount
+  useEffect(() => {
+    loadProfileImage();
+    console.log('Profile image loaded:', moment());
+  }, [user?.id, user?.profileImage]);
 
-   // Load profile image on component mount
-    useEffect(() => {
-      loadProfileImage();
-      console.log('Profile image loaded:', profileImageUri);
-    }, [user?.id, user?.profileImage]);
-  
-    const loadProfileImage = async () => {
-      if (user?.id) {
-        // First check if user has profileImage in data
-        if (user.profileImage) {
-          setProfileImageUri(user.profileImage);
-          return;
-        }
-  
-        // Otherwise check AsyncStorage
-        const savedUri = await imageService.getImageUri(user.id);
-        if (savedUri) {
-          setProfileImageUri(savedUri);
-        }
+  const loadProfileImage = async () => {
+    if (user?.id) {
+      // First check if user has profileImage in data
+      if (user.profileImage) {
+        setProfileImageUri(user.profileImage);
+        return;
       }
-    };
+
+      // Otherwise check AsyncStorage
+      const savedUri = await imageService.getImageUri(user.id);
+      if (savedUri) {
+        setProfileImageUri(savedUri);
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -71,13 +69,7 @@ const Header: React.FC = () => {
             <View style={styles.chevronIcon} />
           </TouchableOpacity>
           <Text style={styles.dateText} numberOfLines={1}>
-            {new Date()
-              .toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })
-              .replace(',', '')}
+            {moment().locale('en').format('iDD iMMMM iYYYY')}
           </Text>
         </View>
         {/* User Info */}
@@ -85,14 +77,12 @@ const Header: React.FC = () => {
           <View style={styles.avatar}>
             {profileImageUri ? (
               <Image
-               source={{uri: profileImageUri}}
+                source={{uri: profileImageUri}}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />
             ) : (
-              <Text style={styles.avatarText}>
-                {userInitials || 'U'}
-              </Text>
+              <Text style={styles.avatarText}>{userInitials || 'U'}</Text>
             )}
           </View>
           <View style={styles.userInfo}>
@@ -100,10 +90,13 @@ const Header: React.FC = () => {
               Assalamu Alaikum!
             </Text>
             <Text style={styles.userName} numberOfLines={1}>
-              {user?.username || 'Ahmed Usman'}
+              {user?.firstName ||
+                user?.fullName?.split(' ')[0] ||
+                user?.username?.split(' ')[0] ||
+                'Ahmed'}
             </Text>
             <Text style={styles.welcomeBack} numberOfLines={1}>
-              Welcome Back!
+              ID: {user?.memberId || '1001'} • Welcome Back!
             </Text>
           </View>
         </View>
@@ -131,7 +124,7 @@ const Header: React.FC = () => {
 
 const styles = StyleSheet.create({
   avatar: {
-   backgroundColor: colors.background.overlay,
+    backgroundColor: colors.background.overlay,
     height: '20%',
     width: '20%',
     aspectRatio: 1,
@@ -146,7 +139,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 1000,
-    
   },
   avatarText: {
     ...typography.h3,

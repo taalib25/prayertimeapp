@@ -104,6 +104,7 @@ export interface FeedItem {
   title: string;
   content: string;
   image_url?: string | null;
+  youtube_url?: string | null; // Added YouTube URL support
   priority: string;
   created_at: string;
   expires_at?: string | null;
@@ -647,7 +648,10 @@ class PrayerAppAPI {
       if (response.success) {
         console.log('✅ API: Counselling sessions fetched successfully');
       } else {
-        console.log('❌ API: Fetching counselling sessions failed:', response.error);
+        console.log(
+          '❌ API: Fetching counselling sessions failed:',
+          response.error,
+        );
       }
 
       return response;
