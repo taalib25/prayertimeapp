@@ -1,8 +1,46 @@
-import {useMemo, useEffect, useState} from 'react';
+import {useMemo, useEffect, useState, useCallback} from 'react';
 import {useDailyTasksContext} from '../contexts/DailyTasksContext';
 import {DailyTaskData} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
 import {getTodayDateString} from '../utils/helpers';
+
+/**
+ * Helper to check if a prayer is in the future
+ * @param prayerName Name of the prayer
+ * @param prayerTimeStr Prayer time string in HH:MM format
+ * @returns boolean indicating if prayer is in the future
+ */
+const isPrayerInFuture = (prayerName: string): boolean => {
+  const now = new Date();
+  const currentHours = now.getHours();
+  const currentMinutes = now.getMinutes();
+
+  // Approximate prayer times for comparison
+  // In a real app, these would come from the prayer times data
+  const prayerHours = {
+    fajr: 5, // 5 AM
+    dhuhr: 12, // 12 PM
+    asr: 15, // 3 PM
+    maghrib: 18, // 6 PM
+    isha: 20, // 8 PM
+  };
+
+  const prayerName_lower = prayerName.toLowerCase();
+  if (!(prayerName_lower in prayerHours)) {
+    return false;
+  }
+
+  const hours = prayerHours[prayerName_lower as keyof typeof prayerHours];
+
+  // Compare times
+  if (hours > currentHours) {
+    return true;
+  } else if (hours === currentHours && 0 > currentMinutes) {
+    return true;
+  }
+
+  return false;
+};
 
 /**
  * Hook to get prayer times data using the centralized context
@@ -21,41 +59,72 @@ export const usePrayerData = (targetDate?: string) => {
     return getTodayData();
   }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
 
+  const isToday = useMemo(() => {
+    const today = getTodayDateString();
+    return !targetDate || targetDate === today;
+  }, [targetDate]);
+
   const getPrayerStatus = useMemo(() => {
     return (prayerName: string): PrayerStatus => {
-      if (!targetData) {return 'none';}
+      if (!targetData) {
+        return null;
+      }
 
       const lcPrayerName = prayerName.toLowerCase();
       switch (lcPrayerName) {
         case 'fajr':
-          return targetData.fajrStatus;
+          return targetData.fajrStatus || null;
         case 'dhuhr':
-          return targetData.dhuhrStatus;
+          return targetData.dhuhrStatus || null;
         case 'asr':
-          return targetData.asrStatus;
+          return targetData.asrStatus || null;
         case 'maghrib':
-          return targetData.maghribStatus;
+          return targetData.maghribStatus || null;
         case 'isha':
-          return targetData.ishaStatus;
+          return targetData.ishaStatus || null;
         default:
-          return 'none';
+          return null;
       }
     };
   }, [targetData]);
 
+  // Check if a prayer can be marked based on date and time
+  const canMarkPrayer = useCallback(
+    (prayerName: string): boolean => {
+      // Can only mark prayers for today
+      if (!isToday) return false;
+
+      // Can't mark future prayers
+      if (isPrayerInFuture(prayerName)) return false;
+
+      return true;
+    },
+    [isToday],
+  );
+
   const updatePrayerStatus = useMemo(() => {
     return async (prayerName: string, status: PrayerStatus) => {
+      // If can't mark this prayer, don't update
+      if (!canMarkPrayer(prayerName)) {
+        console.log(
+          `Cannot mark ${prayerName} prayer - either not today or future prayer`,
+        );
+        return;
+      }
+
       // Use the target date (or today if no target date specified)
       const dateToUpdate = targetDate || getTodayDateString();
       await updatePrayerAndRefresh(dateToUpdate, prayerName, status);
     };
-  }, [updatePrayerAndRefresh, targetDate]);
+  }, [updatePrayerAndRefresh, targetDate, canMarkPrayer]);
 
   return {
     todayData: targetData, // Return the target data (could be today or another date)
     getPrayerStatus,
     updatePrayerStatus,
+    canMarkPrayer,
     isLoading: !targetData,
+    isToday,
   };
 };
 
@@ -232,9 +301,15 @@ const formatDayLabel = (dateStr: string): string => {
   const diffTime = compareDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) {return 'Today';}
-  if (diffDays === 1) {return 'Tomorrow';}
-  if (diffDays === -1) {return 'Yesterday';}
+  if (diffDays === 0) {
+    return 'Today';
+  }
+  if (diffDays === 1) {
+    return 'Tomorrow';
+  }
+  if (diffDays === -1) {
+    return 'Yesterday';
+  }
 
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'short',

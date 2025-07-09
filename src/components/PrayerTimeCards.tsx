@@ -38,6 +38,52 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     return selectedDate === today;
   }, [selectedDate]);
 
+  // Convert prayer time string to hours and minutes for comparison
+  const isPrayerInFuture = useCallback((prayerTimeStr: string) => {
+    const now = new Date();
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+
+    // Convert time string to 24-hour format
+    let [hours, minutes] = prayerTimeStr.split(':').map(Number);
+
+    // Add AM/PM conversion if needed
+    if (prayerTimeStr.toLowerCase().includes('pm') && hours < 12) {
+      hours += 12;
+    } else if (prayerTimeStr.toLowerCase().includes('am') && hours === 12) {
+      hours = 0;
+    }
+
+    // Compare times
+    if (hours > currentHours) {
+      return true;
+    } else if (hours === currentHours && minutes > currentMinutes) {
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  // Format prayer time to AM/PM format without AM/PM text
+  const formatPrayerTime = useCallback((timeString: string) => {
+    // Check if already in the right format
+    if (!timeString.includes(':')) return timeString;
+
+    const [hoursStr, minutesStr] = timeString.split(':');
+    let hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+
+    // Convert to 12-hour format
+    if (hours > 12) {
+      hours -= 12;
+    } else if (hours === 0) {
+      hours = 12;
+    }
+
+    // Format with padding for minutes, no AM/PM suffix
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  }, []);
+
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
     setSelectedPrayerForAttendance(prayer);
     setAttendancePopupVisible(true);
@@ -45,7 +91,9 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
   const handleAttendanceSelect = useCallback(
     async (attendance: AttendanceType) => {
-      if (!selectedPrayerForAttendance) {return;}
+      if (!selectedPrayerForAttendance) {
+        return;
+      }
 
       try {
         // Close modal immediately for better UX
@@ -88,17 +136,35 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
           <View style={styles.prayerCardsRow}>
             {prayers.map((prayer, index) => {
               const prayerStatus = getPrayerStatus(prayer.name);
+              const isFuture = isToday && isPrayerInFuture(prayer.time);
+              const formattedTime = formatPrayerTime(prayer.time);
 
               return (
                 <TouchableOpacity
                   key={index}
                   style={styles.prayerColumn}
-                  onPress={() => handleAttendancePress(prayer)}
-                  activeOpacity={0.7}>
+                  onPress={() => {
+                    // Only allow updating prayers for today and not future prayers
+                    if (isToday && !isFuture) {
+                      handleAttendancePress(prayer);
+                    } else if (isToday && isFuture) {
+                      Alert.alert(
+                        'Future Prayer',
+                        'You cannot mark future prayers',
+                      );
+                    } else {
+                      Alert.alert(
+                        'Past Date',
+                        'You can only mark prayers for today',
+                      );
+                    }
+                  }}
+                  activeOpacity={isToday && !isFuture ? 0.7 : 0.9}>
                   <View
                     style={[
                       styles.prayerCard,
                       prayer.isActive && styles.activeCard,
+                      isToday && isFuture && styles.futurePrayerCard,
                     ]}>
                     <Text
                       style={
@@ -115,22 +181,41 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
                         name={prayer.name.toLowerCase() as IconName}
                         size={26}
                       />
-                      {isToday &&
-                        selectedDate === getTodayDateString() &&
-                        (prayerStatus === 'home' ||
-                          prayerStatus === 'mosque') && (
-                          <View
-                            style={[
-                              styles.attendanceIndicator,
-                              prayerStatus === 'home'
-                                ? styles.homeIndicator
-                                : styles.mosqueIndicator,
-                            ]}>
-                            <Text style={styles.checkmark}>✓</Text>
-                          </View>
-                        )}
+                      {isToday && selectedDate === getTodayDateString() && (
+                        <>
+                          {prayerStatus === 'mosque' && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.mosqueIndicator,
+                              ]}>
+                              <Text style={styles.checkmark}>✓</Text>
+                            </View>
+                          )}
+                          {prayerStatus === 'home' && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.homeIndicator,
+                              ]}>
+                              <Text style={styles.checkmark}>✓</Text>
+                            </View>
+                          )}
+                          {/* Only show cross when explicitly marked as 'none' (missed), not when null */}
+                          {prayerStatus === 'none' && !isFuture && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.missedIndicator,
+                              ]}>
+                              <Text style={styles.crossmark}>✕</Text>
+                            </View>
+                          )}
+                          {/* We don't show any indicator when prayerStatus is null */}
+                        </>
+                      )}
                     </View>
-                    <Text style={styles.prayerTime}>{prayer.time}</Text>
+                    <Text style={styles.prayerTime}>{formattedTime}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -144,11 +229,15 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         currentAttendance={
           selectedPrayerForAttendance
             ? getPrayerStatus(selectedPrayerForAttendance.name)
-            : 'none'
+            : null
         }
         onSelect={handleAttendanceSelect}
         onClose={handleModalClose}
         prayerName={selectedPrayerForAttendance?.displayName || ''}
+        isFuturePrayer={
+          selectedPrayerForAttendance &&
+          isPrayerInFuture(selectedPrayerForAttendance.time)
+        }
       />
     </>
   );
@@ -202,6 +291,9 @@ const styles = StyleSheet.create({
   },
   activeCard: {
     borderColor: '#4CE047',
+  },
+  futurePrayerCard: {
+    opacity: 0.8,
   },
   prayerName: {
     ...typography.prayerCard,
@@ -257,11 +349,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     lineHeight: 12,
   },
+  crossmark: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+    lineHeight: 12,
+  },
   homeIndicator: {
     backgroundColor: '#4DABF7',
   },
   mosqueIndicator: {
     backgroundColor: colors.success,
+  },
+  missedIndicator: {
+    backgroundColor: '#FF5252',
   },
 });
 

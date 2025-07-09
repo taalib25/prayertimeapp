@@ -1,11 +1,12 @@
 import {Model} from '@nozbe/watermelondb';
 import {field, date, readonly, text} from '@nozbe/watermelondb/decorators';
-import { getTodayDateString } from '../utils/helpers';
+import {getTodayDateString} from '../utils/helpers';
 
 export type PrayerStatus =
-  | 'none'
-  | 'home'
-  | 'mosque';
+  | 'none' // Explicitly marked as missed
+  | 'home' // Prayed at home
+  | 'mosque' // Prayed at mosque
+  | null; // Not set yet (default state)
 
 export default class DailyTasksModel extends Model {
   static table = 'daily_tasks';

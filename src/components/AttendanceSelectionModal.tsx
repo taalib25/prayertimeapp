@@ -17,7 +17,7 @@ import Animated, {
 import {colors} from '../utils/theme';
 import {fontFamilies, typography} from '../utils/typography';
 
-export type AttendanceType = 'home' | 'mosque' | 'none';
+export type AttendanceType = 'home' | 'mosque' | 'none' | null;
 
 // Option configuration for cleaner rendering - Focus on Masjid and None
 const ATTENDANCE_OPTIONS = [
@@ -46,6 +46,7 @@ interface AttendanceSelectionModalProps {
   onSelect: (attendance: AttendanceType) => void;
   onClose: () => void;
   prayerName: string;
+  isFuturePrayer?: boolean; // Added prop to identify future prayers
 }
 
 const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
@@ -54,6 +55,7 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   onSelect,
   onClose,
   prayerName,
+  isFuturePrayer = false, // Default to false
 }) => {
   // Animation values
   const slideAnim = useSharedValue(300);
@@ -81,6 +83,9 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
 
   // Simple selection handler with animation
   const handleSelect = (attendance: AttendanceType) => {
+    // Don't allow selection for future prayers
+    if (isFuturePrayer) return;
+
     // Add a small bounce animation on selection - reduced scaling
     scaleAnim.value = withSpring(0.99, {duration: 100}, () => {
       scaleAnim.value = withSpring(1, {duration: 150});
@@ -90,9 +95,10 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   const renderOption = (option: any) => {
     const isSelected = currentAttendance === option.type;
     const isMasjid = option.type === 'mosque';
+    const isNone = option.type === 'none';
 
-    // Only show selection if there's a valid attendance value (not null, undefined, or 'home')
-    const hasValidSelection = currentAttendance && currentAttendance !== 'home';
+    // Only show selection if there's a valid attendance value (not null or 'home')
+    const hasValidSelection = currentAttendance !== null && currentAttendance !== 'home';
     const shouldShowAsSelected = hasValidSelection && isSelected;
 
     const getButtonStyle = () => {
@@ -118,9 +124,9 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     return (
       <TouchableOpacity
         key={option.type}
-        style={getButtonStyle()}
+        style={[getButtonStyle(), isFuturePrayer && styles.disabledButton]}
         onPress={() => handleSelect(option.type)}
-        activeOpacity={0.8}>
+        activeOpacity={isFuturePrayer ? 1 : 0.8}>
         <Text style={getTextStyle()}>{option.label}</Text>
         <Text
           style={[
@@ -129,6 +135,8 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
           ]}>
           {option.description}
         </Text>
+        {/* Show a cross symbol when "No" is selected */}
+        {isNone && isSelected && <Text style={styles.crossSymbol}>✖</Text>}
       </TouchableOpacity>
     );
   };
@@ -146,6 +154,11 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
             <Text style={styles.prayerTitle}>{prayerName}</Text>
             <View style={styles.questionContainer}>
               <Text style={styles.subtitle}>Prayed at Masjid?</Text>
+              {isFuturePrayer && (
+                <Text style={styles.futureWarning}>
+                  Cannot mark future prayers
+                </Text>
+              )}
             </View>
           </View>
           {/* Options List */}
@@ -210,6 +223,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     fontStyle: 'italic',
   },
+  futureWarning: {
+    ...typography.caption,
+    fontSize: 14,
+    color: '#FFD700',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
   optionsContainer: {
     paddingVertical: 20,
     paddingHorizontal: 24,
@@ -247,6 +267,9 @@ const styles = StyleSheet.create({
   unselectedButton: {
     backgroundColor: '#FFFFFF',
     borderColor: '#E0E0E0',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   optionLabel: {
     fontSize: 20,
@@ -294,6 +317,11 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: '#666',
     fontStyle: 'italic',
+  },
+  crossSymbol: {
+    fontSize: 24,
+    color: '#FF5252',
+    marginTop: 4,
   },
 });
 

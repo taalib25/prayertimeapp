@@ -20,6 +20,13 @@ interface PrayerWithMinutes {
   totalMinutes: number;
 }
 
+// Helper function to format time to 12-hour format without AM/PM suffix
+const formatTo12HourTime = (timeStr: string): string => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const hrs = hours % 12 || 12; // Convert 0 to 12
+  return `${hrs}:${minutes.toString().padStart(2, '0')}`;
+};
+
 export const usePrayerTimes = (date: string) => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,23 +39,50 @@ export const usePrayerTimes = (date: string) => {
   const convertPrayerTimes = useCallback(
     (dbData: PrayerTimesData): PrayerWithMinutes[] => {
       return [
-        {name: 'fajr', displayName: 'Fajr', time: dbData.fajr, totalMinutes: 0},
+        {
+          name: 'fajr',
+          displayName: 'Fajr',
+          time: formatTo12HourTime(dbData.fajr),
+          totalMinutes: 0,
+        },
         {
           name: 'dhuhr',
           displayName: 'Dhuhr',
-          time: dbData.dhuhr,
+          time: formatTo12HourTime(dbData.dhuhr),
           totalMinutes: 0,
         },
-        {name: 'asr', displayName: 'Asr', time: dbData.asr, totalMinutes: 0},
+        {
+          name: 'asr',
+          displayName: 'Asr',
+          time: formatTo12HourTime(dbData.asr),
+          totalMinutes: 0,
+        },
         {
           name: 'maghrib',
           displayName: 'Maghrib',
-          time: dbData.maghrib,
+          time: formatTo12HourTime(dbData.maghrib),
           totalMinutes: 0,
         },
-        {name: 'isha', displayName: 'Isha', time: dbData.isha, totalMinutes: 0},
+        {
+          name: 'isha',
+          displayName: 'Isha',
+          time: formatTo12HourTime(dbData.isha),
+          totalMinutes: 0,
+        },
       ].map(prayer => {
-        const [hours, minutes] = prayer.time.split(':').map(Number);
+        // Store original 24-hour format for calculations
+        const originalTime =
+          prayer.name === 'fajr'
+            ? dbData.fajr
+            : prayer.name === 'dhuhr'
+            ? dbData.dhuhr
+            : prayer.name === 'asr'
+            ? dbData.asr
+            : prayer.name === 'maghrib'
+            ? dbData.maghrib
+            : dbData.isha;
+
+        const [hours, minutes] = originalTime.split(':').map(Number);
         return {
           ...prayer,
           totalMinutes: hours * 60 + minutes,
