@@ -11,9 +11,15 @@ import {typography} from '../../utils/typography';
 // Configuration for basic form fields
 const BASIC_FIELDS_CONFIG = [
   {
-    key: 'name' as const,
-    label: 'Username *',
-    placeholder: 'Enter username',
+    key: 'firstName' as const,
+    label: 'First Name *',
+    placeholder: 'Enter first name',
+    type: 'text',
+  },
+  {
+    key: 'lastName' as const,
+    label: 'Last Name *',
+    placeholder: 'Enter last name',
     type: 'text',
   },
   {

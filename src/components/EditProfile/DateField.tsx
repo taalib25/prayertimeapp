@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, Pressable, StyleSheet, Platform} from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
+import DatePicker from 'react-native-date-picker';
 import SvgIcon from '../SvgIcon';
 import {colors, spacing, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
@@ -30,16 +30,19 @@ const DateField: React.FC<DateFieldProps> = ({
       }
     }
   }, [value]);
-  const handleDateChange = (event: any, pickedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
 
-    if (pickedDate) {
-      setSelectedDate(pickedDate);
-      // Save date in ISO format for consistency
-      const isoDate = pickedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
-      onDateChange(isoDate);
-    }
+  const handleDateConfirm = (pickedDate: Date) => {
+    setShowDatePicker(false);
+    setSelectedDate(pickedDate);
+    // Save date in ISO format for consistency
+    const isoDate = pickedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    onDateChange(isoDate);
   };
+
+  const handleDateCancel = () => {
+    setShowDatePicker(false);
+  };
+
   const showDatePickerModal = () => {
     setShowDatePicker(true);
   };
@@ -80,15 +83,15 @@ const DateField: React.FC<DateFieldProps> = ({
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
+      <DatePicker
+        modal
+        open={showDatePicker}
+        date={selectedDate}
+        mode="date"
+        maximumDate={new Date()}
+        onConfirm={handleDateConfirm}
+        onCancel={handleDateCancel}
+      />
     </View>
   );
 };

@@ -6,14 +6,14 @@ import {UserUpdate} from '../types/User';
 import ApiTaskServices from '../services/apiHandler';
 
 interface FormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   mobile: string;
   address: string;
   mobility: string;
   mobilityOther: string;
   dateOfBirth: string;
-  nearestMasjid: string;
   // Additional information flags
   livingOnRent: boolean;
   zakatEligible: boolean;
@@ -60,14 +60,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   const apiService = ApiTaskServices.getInstance();
 
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     mobile: '',
     address: '',
     mobility: '',
     mobilityOther: '',
     dateOfBirth: '',
-    nearestMasjid: '',
     livingOnRent: false,
     zakatEligible: false,
     differentlyAbled: false,
@@ -76,14 +76,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
   // Store original user data to track changes
   const [originalData, setOriginalData] = useState<FormData>({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     mobile: '',
     address: '',
     mobility: '',
     mobilityOther: '',
     dateOfBirth: '',
-    nearestMasjid: '',
     livingOnRent: false,
     zakatEligible: false,
     differentlyAbled: false,
@@ -95,14 +95,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   useEffect(() => {
     if (user) {
       const userData = {
-        name: user.username || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
         mobile: user.phone || '',
         address: user.address || '',
         mobility: user.mobility || '',
         mobilityOther: '', // This field doesn't exist in User type, set to empty
         dateOfBirth: user.dateOfBirth || '',
-        nearestMasjid: user.mosqueName || '',
         livingOnRent: user.onRent || false,
         zakatEligible: user.zakathEligible || false,
         differentlyAbled: user.differentlyAbled || false,
@@ -142,11 +142,18 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Username is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Username must be at least 2 characters';
+    // First Name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+
+    // Last Name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
     // Email validation
@@ -163,27 +170,16 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       newErrors.mobile = 'Please enter a valid phone number (10-15 digits)';
     }
 
-    // Address validation
-    if (!formData.address.trim()) {
-      newErrors.address = 'Location is required';
-    } else if (formData.address.trim().length < 5) {
+    // Address validation - make optional for better UX
+    if (formData.address.trim() && formData.address.trim().length < 5) {
       newErrors.address = 'Location must be at least 5 characters';
     }
 
-    // Mobility validation
-    if (!formData.mobility) {
-      newErrors.mobility = 'Please select mobility option';
-    } else if (
-      formData.mobility === 'other' &&
-      !formData.mobilityOther.trim()
-    ) {
+    // Mobility validation - make optional
+    if (formData.mobility === 'other' && !formData.mobilityOther.trim()) {
       newErrors.mobilityOther = 'Please specify your mobility option';
     }
 
-    // Masjid validation
-    if (!formData.nearestMasjid.trim()) {
-      newErrors.nearestMasjid = 'Nearest masjid is required';
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -205,8 +201,11 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     const apiData: any = {};
 
     // Map form fields to expected API field names
-    if (changedData.name !== undefined) {
-      apiData.username = changedData.name;
+    if (changedData.firstName !== undefined) {
+      apiData.firstName = changedData.firstName;
+    }
+    if (changedData.lastName !== undefined) {
+      apiData.lastName = changedData.lastName;
     }
     if (changedData.email !== undefined) {
       apiData.email = changedData.email;
@@ -222,9 +221,6 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     }
     if (changedData.dateOfBirth !== undefined) {
       apiData.dateOfBirth = changedData.dateOfBirth;
-    }
-    if (changedData.nearestMasjid !== undefined) {
-      apiData.mosqueName = changedData.nearestMasjid;
     }
     if (changedData.livingOnRent !== undefined) {
       apiData.onRent = changedData.livingOnRent;
@@ -253,27 +249,29 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
       // Get only the fields that have changed
       const changedFields = getChangedFields();
-    
+
       if (Object.keys(changedFields).length > 0) {
         // Map form fields to API field names and update
         const apiUpdateData = mapToApiFields(changedFields);
         const apiResponse = await apiService.updateUserProfile(apiUpdateData);
 
         if (!apiResponse.success) {
-          throw new Error(apiResponse.error || 'Failed to update profile via API');
+          throw new Error(
+            apiResponse.error || 'Failed to update profile via API',
+          );
         }
         console.log('✅ EditProfile: API update successful');
       }
 
       console.log('✅ EditProfile: API update successful'); // Update local user data with the same changes
       const userUpdateData: UserUpdate = {
-        username: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
         phone: formData.mobile,
         address: formData.address,
         mobility: formData.mobility,
         dateOfBirth: formData.dateOfBirth,
-        mosqueName: formData.nearestMasjid,
         onRent: formData.livingOnRent,
         zakathEligible: formData.zakatEligible,
         differentlyAbled: formData.differentlyAbled,

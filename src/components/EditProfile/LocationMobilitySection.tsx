@@ -54,14 +54,6 @@ const LocationMobilitySection: React.FC = () => {
               numberOfLines={3}
               error={errors.address}
             />
-            {/* Nearest Masjid Field */}
-            <FormField
-              label="Nearest Masjid"
-              value={formData.nearestMasjid}
-              onChangeText={value => updateField('nearestMasjid', value)}
-              placeholder="Enter nearest masjid name"
-              error={errors.nearestMasjid}
-            />
             {/* Mobility Dropdown */}
             <DropdownField
               label="How do you travel to mosque?"
@@ -89,8 +81,7 @@ const LocationMobilitySection: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-  },
+  container: {},
   sectionContainer: {
     marginTop: spacing.sm,
     paddingTop: spacing.lg,

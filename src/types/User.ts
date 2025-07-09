@@ -31,6 +31,8 @@ export interface User {
   email: string;
   phone: string;
   fullName?: string;
+  firstName?: string; // New field
+  lastName?: string; // New field
 
   // Profile image
   profileImage?: string; // Local file path or URI
