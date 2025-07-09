@@ -184,8 +184,10 @@ class ApiTaskServices {
         return 'none';
       case 'none':
         return 'missed';
+      case null:
+        return 'unset'; // Null represents unset status
       default:
-        return 'missed';
+        return 'unset';
     }
   }
 
@@ -503,6 +505,52 @@ class ApiTaskServices {
     } catch (error) {
       console.error('❌ API: Error fetching counselling sessions:', error);
       return {success: false, error: 'Network error occurred'};
+    }
+  }
+
+  /**
+   * Register new user via API
+   */
+  async registerUser(userData: {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    area: string;
+    email: string;
+    password: string;
+  }): Promise<{
+    success: boolean;
+    user?: any;
+    error?: string;
+  }> {
+    try {
+      console.log('📝 API: Registering new user:', {
+        email: userData.email,
+        name: `${userData.firstName} ${userData.lastName}`,
+      });
+
+      // This is a mock implementation since the real API endpoint isn't available
+      // Replace with actual API call when available
+      // const response = await this.api.register(userData);
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock successful response
+      return {
+        success: true,
+        user: {
+          id: Math.floor(Math.random() * 1000),
+          email: userData.email,
+          name: `${userData.firstName} ${userData.lastName}`,
+        },
+      };
+    } catch (error) {
+      console.error('❌ API: Error registering user:', error);
+      return {
+        success: false,
+        error: 'Network error occurred while registering',
+      };
     }
   }
 }

@@ -29,6 +29,8 @@ import AbsentIcon from '../assets/icons/absent.svg';
 // Eye icons (you'll need to add these SVG files to your assets/icons folder)
 import EyeIcon from '../assets/icons/eye_open.svg';
 import EyeOffIcon from '../assets/icons/eye-off.svg';
+// Fire icon for streak counter
+import FireIcon from '../assets/icons/fire.svg';
 
 export type IconName =
   | 'fajr'
@@ -54,7 +56,8 @@ export type IconName =
   | 'attended'
   | 'absent'
   | 'eye'
-  | 'eye-off';
+  | 'eye-off'
+  | 'fire';
 
 interface SvgIconProps {
   name: IconName;
@@ -122,6 +125,7 @@ const getIconComponent = (name: IconName) => {
     absent: AbsentIcon,
     eye: EyeIcon,
     'eye-off': EyeOffIcon,
+    fire: FireIcon,
   };
 
   return icons[name];
