@@ -244,6 +244,20 @@ class ApiTaskServices {
             author_name: 'Prayer Admin',
             mosque_name: 'Demo Mosque',
           },
+          {
+            id: -3,
+            title: 'Learn Five Daily Prayers',
+            content:
+              'Watch this tutorial on how to perform the five daily prayers correctly.',
+            youtube_url: 'https://www.youtube.com/watch?v=rofORqYGFE4',
+            priority: 'high',
+            created_at: new Date(
+              Date.now() - 12 * 60 * 60 * 1000,
+            ).toISOString(), // 12 hours ago
+            expires_at: null,
+            author_name: 'Islamic Education',
+            mosque_name: 'Community Center',
+          },
         ];
 
         // Combine mock items with real feeds (mock items first)
@@ -258,6 +272,32 @@ class ApiTaskServices {
         error,
       ); // Return only mock demo items if API fails
       const mockFeeds: FeedItem[] = [
+        {
+          id: -4,
+          title: 'Daily Duas for Muslims',
+          content:
+            'Collection of essential daily duas every Muslim should know.',
+          youtube_url: 'https://www.youtube.com/watch?v=n5SJc4ROWZY',
+          image_url: null,
+          priority: 'medium',
+          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+          expires_at: null,
+          author_name: 'Dua Collection',
+          mosque_name: 'Islamic Center',
+        },
+        {
+          id: -3,
+          title: 'Understanding the Importance of Prayer',
+          content:
+            'Learn about the significance of prayer in Islam from this educational video. https://www.youtube.com/watch?v=RK1K2bCg4J8',
+          youtube_url: 'https://www.youtube.com/watch?v=RK1K2bCg4J8',
+          image_url: null,
+          priority: 'high',
+          created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+          expires_at: null,
+          author_name: 'Islamic Learning Channel',
+          mosque_name: 'Global Islamic Center',
+        },
         {
           id: -2,
           title: 'Prayer Times & Daily Reminders',
@@ -452,17 +492,19 @@ class ApiTaskServices {
 
       if (response.success) {
         console.log('✅ API: Counselling sessions fetched successfully');
-        return { success: true, data: response.data };
+        return {success: true, data: response.data};
       } else {
-        console.log('❌ API: Failed to fetch counselling sessions:', response.error);
-        return { success: false, error: response.error };
+        console.log(
+          '❌ API: Failed to fetch counselling sessions:',
+          response.error,
+        );
+        return {success: false, error: response.error};
       }
     } catch (error) {
       console.error('❌ API: Error fetching counselling sessions:', error);
-      return { success: false, error: 'Network error occurred' };
+      return {success: false, error: 'Network error occurred'};
     }
   }
-
 }
 
 export default ApiTaskServices;

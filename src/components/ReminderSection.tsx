@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ScrollView,
   Modal,
   Pressable,
+  Linking,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -18,14 +19,24 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
+// Import YouTube player with error handling
+let YoutubeIframe: any;
+try {
+  YoutubeIframe = require('react-native-youtube-iframe').default;
+} catch (error) {
+  console.warn('YouTube iframe not available:', error);
+}
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import ApiTaskServices from '../services/apiHandler';
 import {FeedItem} from '../services/PrayerAppAPI';
+import {useWebViewInstallationCheck} from '../hooks/useWebViewInstallationCheck';
 
 // Use FeedItem from the API instead of separate Reminder interface
 type Reminder = FeedItem & {
-  type?: 'text' | 'image'; // Add type to distinguish for UI
+  type?: 'text' | 'image' | 'youtube'; // Add youtube type for video reminders
+  // YouTube URL is already defined in FeedItem interface
 };
 
 interface ReminderSectionProps {
@@ -48,7 +59,7 @@ const ReminderCard: React.FC<{
     onPress?.(item);
   };
   // Render text-only card with gradient - simplified and bigger
-  if (item.type === 'text' || !item.image_url) {
+  if (item.type === 'text' || (!item.image_url && !item.youtube_url)) {
     return (
       <TouchableOpacity
         style={[styles.reminderCard, styles.textOnlyCard]}
@@ -71,6 +82,48 @@ const ReminderCard: React.FC<{
       </TouchableOpacity>
     );
   }
+
+  // Render YouTube video card
+  if (item.type === 'youtube' || item.youtube_url) {
+    // Extract YouTube video ID if full URL is provided
+    const getYoutubeId = (url: string) => {
+      if (!url) return '';
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return match && match[2].length === 11 ? match[2] : url;
+    };
+
+    return (
+      <TouchableOpacity
+        style={styles.reminderCard}
+        onPress={handlePress}
+        activeOpacity={0.8}>
+        <View style={styles.youtubeCardPreview}>
+          {/* YouTube thumbnail with play icon overlay */}
+          <Image
+            source={{
+              uri: `https://img.youtube.com/vi/${getYoutubeId(
+                item.youtube_url || '',
+              )}/0.jpg`,
+            }}
+            style={styles.youtubeThumbnail}
+            resizeMode="cover"
+          />
+          <View style={styles.playIconOverlay}>
+            <View style={styles.playIcon} />
+          </View>
+          {/* Title overlay at bottom */}
+          <View style={styles.youtubeCardTitleContainer}>
+            <Text style={styles.youtubeCardTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   // Render image card
   return (
     <TouchableOpacity
@@ -98,6 +151,9 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   maxItems,
   onSeeAllPress,
 }) => {
+  // Check for WebView installation and provide guidance if missing
+  useWebViewInstallationCheck();
+
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,11 +177,36 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
       // Fetch feeds from the API and convert them to reminders
       const fetchedFeeds = await apiService.fetchFeeds();
 
-      // Convert FeedItems to Reminders and add type property
-      const remindersFromFeeds: Reminder[] = fetchedFeeds.map(feed => ({
-        ...feed,
-        type: feed.image_url ? 'image' : ('text' as 'text' | 'image'),
-      }));
+      // Helper function to detect YouTube URLs in content
+      const detectYoutubeUrl = (content: string) => {
+        if (!content) return null;
+
+        // Match YouTube URLs in content
+        const youtubeRegex =
+          /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = content.match(youtubeRegex);
+        return match ? match[0] : null;
+      };
+
+      // Convert FeedItems to Reminders and add type property and youtube_url if present
+      const remindersFromFeeds: Reminder[] = fetchedFeeds.map(feed => {
+        // First check if the feed already has a youtube_url property
+        const youtubeUrl = feed.youtube_url || detectYoutubeUrl(feed.content);
+
+        // Determine the type based on available data
+        let type: 'text' | 'image' | 'youtube' = 'text';
+        if (youtubeUrl) {
+          type = 'youtube';
+        } else if (feed.image_url) {
+          type = 'image';
+        }
+
+        return {
+          ...feed,
+          type,
+          youtube_url: youtubeUrl,
+        };
+      });
 
       // Apply maxItems limit if specified
       const limitedReminders = maxItems
@@ -265,24 +346,91 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
                 style={styles.modalScrollView}
                 contentContainerStyle={styles.modalContent}
                 showsVerticalScrollIndicator={false}>
-                {/* Image (if available) */}
-                {selectedReminder?.image_url && (
-                  <View style={styles.modalImageContainer}>
-                    <Image
-                      source={
-                        typeof selectedReminder.image_url === 'string' &&
-                        selectedReminder.image_url.startsWith('http')
-                          ? {uri: selectedReminder.image_url} // HTTP URL
-                          : typeof selectedReminder.image_url === 'string' &&
-                            selectedReminder.image_url.includes('assets')
-                          ? {uri: selectedReminder.image_url} // Local asset path - treat as URI for now
-                          : {uri: selectedReminder.image_url} // Fallback to URI for all cases
-                      }
-                      style={styles.modalImage}
-                      resizeMode="contain"
-                    />
+                {/* YouTube Video (if available) */}
+                {(selectedReminder?.type === 'youtube' ||
+                  selectedReminder?.youtube_url) && (
+                  <View style={styles.youtubeContainer}>
+                    {YoutubeIframe ? (
+                      <YoutubeIframe
+                        height={220}
+                        play={true} // Auto-play when modal opens
+                        videoId={(() => {
+                          const url = selectedReminder?.youtube_url || '';
+                          const regExp =
+                            /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                          const match = url.match(regExp);
+                          return match && match[2].length === 11
+                            ? match[2]
+                            : url;
+                        })()}
+                        onChangeState={(event: string) => console.log(event)}
+                        onReady={() => console.log('YouTube player ready')}
+                        onError={(e: string) =>
+                          console.log('YouTube error:', e)
+                        }
+                        webViewProps={{
+                          javaScriptEnabled: true,
+                          allowsFullscreenVideo: true,
+                        }}
+                      />
+                    ) : (
+                      // Fallback when YouTube iframe is not available
+                      <TouchableOpacity
+                        style={styles.youtubeErrorFallback}
+                        onPress={() => {
+                          const url = selectedReminder?.youtube_url || '';
+                          if (url) {
+                            Linking.openURL(url).catch(err =>
+                              console.error('Could not open YouTube URL:', err),
+                            );
+                          }
+                        }}>
+                        <Image
+                          source={{
+                            uri: `https://img.youtube.com/vi/${(() => {
+                              const url = selectedReminder?.youtube_url || '';
+                              const regExp =
+                                /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                              const match = url.match(regExp);
+                              return match && match[2].length === 11
+                                ? match[2]
+                                : '';
+                            })()}/0.jpg`,
+                          }}
+                          style={styles.youtubeThumbnail}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.playIconOverlay}>
+                          <View style={styles.playIcon} />
+                          <Text style={styles.youtubeOpenText}>
+                            Tap to open in YouTube
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
+
+                {/* Image (if available and not a YouTube video) */}
+                {selectedReminder?.image_url &&
+                  !selectedReminder.youtube_url &&
+                  selectedReminder.type !== 'youtube' && (
+                    <View style={styles.modalImageContainer}>
+                      <Image
+                        source={
+                          typeof selectedReminder.image_url === 'string' &&
+                          selectedReminder.image_url.startsWith('http')
+                            ? {uri: selectedReminder.image_url} // HTTP URL
+                            : typeof selectedReminder.image_url === 'string' &&
+                              selectedReminder.image_url.includes('assets')
+                            ? {uri: selectedReminder.image_url} // Local asset path - treat as URI for now
+                            : {uri: selectedReminder.image_url} // Fallback to URI for all cases
+                        }
+                        style={styles.modalImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+                  )}
                 {/* Title */}
                 <Text
                   style={[
@@ -384,23 +532,86 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 15,
   },
-  imageCardOverlay: {
+  // YouTube card styles
+  youtubeCardPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  youtubeThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  playIcon: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 20,
+    borderRightWidth: 0,
+    borderBottomWidth: 15,
+    borderTopWidth: 15,
+    borderLeftColor: '#fff',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderTopColor: 'transparent',
+    marginLeft: 5,
+  },
+  youtubeCardTitleContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     padding: 12,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  imageCardTitle: {
+  youtubeCardTitle: {
     ...typography.bodyMedium,
+    color: '#fff',
     fontSize: 14,
-    color: colors.white,
     fontWeight: '600',
-    lineHeight: 18,
-  }, // Modal styles
+  },
+  // YouTube modal styles
+  youtubeContainer: {
+    marginBottom: 20,
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  youtubeErrorFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  youtubeOpenText: {
+    ...typography.bodyMedium,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 15,
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
+  },
+  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',

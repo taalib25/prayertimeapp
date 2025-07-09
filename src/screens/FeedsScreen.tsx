@@ -14,7 +14,16 @@ import {
   Dimensions,
   Modal,
   Pressable,
+  Linking,
 } from 'react-native';
+
+// Import YouTube player with error handling
+let YoutubeIframe: any;
+try {
+  YoutubeIframe = require('react-native-youtube-iframe').default;
+} catch (error) {
+  console.warn('YouTube iframe not available:', error);
+}
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,6 +36,7 @@ import {typography} from '../utils/typography';
 import SvgIcon from '../components/SvgIcon';
 import ApiTaskServices from '../services/apiHandler';
 import {FeedItem} from '../services/PrayerAppAPI';
+import {useWebViewInstallationCheck} from '../hooks/useWebViewInstallationCheck';
 
 type FeedCategory = 'All Feeds' | 'Reminders' | 'Events';
 
@@ -55,6 +65,47 @@ const FeedCard: React.FC<{
     }
   }, [item.image_url]);
 
+  // Render YouTube video card
+  if (item.youtube_url) {
+    // Extract YouTube video ID if full URL is provided
+    const getYoutubeId = (url: string) => {
+      if (!url) return '';
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      return match && match[2].length === 11 ? match[2] : url;
+    };
+
+    return (
+      <TouchableOpacity
+        style={[styles.feedCard, {height: IMAGE_CARD_HEIGHT}]}
+        onPress={handlePress}
+        activeOpacity={0.8}>
+        <View style={styles.youtubeCardPreview}>
+          {/* YouTube thumbnail with play icon overlay */}
+          <Image
+            source={{
+              uri: `https://img.youtube.com/vi/${getYoutubeId(
+                item.youtube_url,
+              )}/0.jpg`,
+            }}
+            style={styles.youtubeThumbnail}
+            resizeMode="cover"
+          />
+          <View style={styles.playIconOverlay}>
+            <View style={styles.playIcon} />
+          </View>
+          {/* Title overlay at bottom */}
+          <View style={styles.youtubeCardTitleContainer}>
+            <Text style={styles.youtubeCardTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   // Render text-only card with gradient - dynamic height based on content
   if (!item.image_url) {
     return (
@@ -77,7 +128,9 @@ const FeedCard: React.FC<{
         </View>
       </TouchableOpacity>
     );
-  } // Render image card - use natural image aspect ratio with dynamic height
+  }
+
+  // Render image card - use natural image aspect ratio with dynamic height
   return (
     <TouchableOpacity
       style={[styles.feedCard, {height: imageHeight}]}
@@ -101,6 +154,9 @@ const FeedCard: React.FC<{
 };
 
 const FeedsScreen: React.FC = () => {
+  // Check for WebView installation and provide guidance if missing
+  useWebViewInstallationCheck();
+
   const navigation = useNavigation();
   const [feeds, setFeeds] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,7 +187,29 @@ const FeedsScreen: React.FC = () => {
     try {
       setLoading(true);
       const fetchedFeeds = await apiService.fetchFeeds();
-      setFeeds(fetchedFeeds);
+
+      // Helper function to detect YouTube URLs in content
+      const detectYoutubeUrl = (content: string) => {
+        if (!content) return null;
+
+        // Match YouTube URLs in content
+        const youtubeRegex =
+          /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = content.match(youtubeRegex);
+        return match ? match[0] : null;
+      };
+
+      // Process feeds to detect YouTube URLs in content
+      const processedFeeds = fetchedFeeds.map(feed => {
+        // First check if feed already has a youtube_url property
+        const youtubeUrl = feed.youtube_url || detectYoutubeUrl(feed.content);
+        if (youtubeUrl) {
+          return {...feed, youtube_url: youtubeUrl};
+        }
+        return feed;
+      });
+
+      setFeeds(processedFeeds);
     } catch (err) {
       console.error('Error loading feeds:', err);
     } finally {
@@ -297,10 +375,75 @@ const FeedsScreen: React.FC = () => {
                 style={styles.modalScrollView}
                 contentContainerStyle={styles.modalContent}
                 showsVerticalScrollIndicator={false}>
-                {/* Image (if available) */}
-                {selectedFeed?.image_url && (
-                  <View style={styles.modalImageContainer}>
+                {/* YouTube Video (if available) */}
+                {selectedFeed?.youtube_url && (
+                  <View style={styles.youtubeContainer}>
+                    {YoutubeIframe ? (
+                      <YoutubeIframe
+                        height={220}
+                        width="100%"
+                        videoId={(() => {
+                          // Extract YouTube video ID if full URL is provided
+                          const url = selectedFeed.youtube_url || '';
+                          const regExp =
+                            /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                          const match = url.match(regExp);
+                          return match && match[2].length === 11
+                            ? match[2]
+                            : url;
+                        })()}
+                        play={true} // Auto-play when modal opens
+                        onChangeState={(event: string) => console.log(event)}
+                        onReady={() => console.log('YouTube player ready')}
+                        onError={(e: string) =>
+                          console.log('YouTube error:', e)
+                        }
+                        webViewProps={{
+                          javaScriptEnabled: true,
+                          allowsFullscreenVideo: true,
+                        }}
+                      />
+                    ) : (
+                      // Fallback when YouTube iframe is not available
+                      <TouchableOpacity
+                        style={styles.youtubeErrorFallback}
+                        onPress={() => {
+                          const url = selectedFeed.youtube_url || '';
+                          if (url) {
+                            Linking.openURL(url).catch(err =>
+                              console.error('Could not open YouTube URL:', err),
+                            );
+                          }
+                        }}>
+                        <Image
+                          source={{
+                            uri: `https://img.youtube.com/vi/${(() => {
+                              const url = selectedFeed.youtube_url || '';
+                              const regExp =
+                                /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                              const match = url.match(regExp);
+                              return match && match[2].length === 11
+                                ? match[2]
+                                : '';
+                            })()}/0.jpg`,
+                          }}
+                          style={styles.youtubeThumbnail}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.playIconOverlay}>
+                          <View style={styles.playIcon} />
+                          <Text style={styles.youtubeOpenText}>
+                            Tap to open in YouTube
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
 
+                {/* Image (if available and no YouTube URL) */}
+                {selectedFeed?.image_url && !selectedFeed?.youtube_url && (
+                  <View style={styles.modalImageContainer}>
                     <Image
                       source={
                         typeof selectedFeed.image_url === 'string' &&
@@ -585,6 +728,84 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.text.secondary,
+  },
+  // YouTube styles
+  youtubeCardPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 15,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  youtubeThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  playIcon: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: 20,
+    borderRightWidth: 0,
+    borderBottomWidth: 15,
+    borderTopWidth: 15,
+    borderLeftColor: '#fff',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderTopColor: 'transparent',
+    marginLeft: 5,
+  },
+  youtubeCardTitleContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  youtubeCardTitle: {
+    ...typography.bodyMedium,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  youtubeContainer: {
+    marginBottom: 20,
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  youtubeErrorFallback: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  youtubeOpenText: {
+    ...typography.bodyMedium,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 15,
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 5,
   },
 });
 
