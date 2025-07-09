@@ -15,6 +15,7 @@ export interface FormFieldProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
   secureTextEntry?: boolean;
+  required?: boolean;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
@@ -29,15 +30,20 @@ const FormField: React.FC<FormFieldProps> = ({
   autoCapitalize = 'sentences',
   autoCorrect = true,
   secureTextEntry = false,
+  required = false,
 }) => {
+  // Only show error if there's an explicit error message
+  const hasError = error !== undefined && error !== '';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text>
+
       <TextInput
         style={[
           styles.input,
           multiline && styles.multilineInput,
-          error && styles.inputError,
+          hasError && styles.inputError,
         ]}
         value={value}
         onChangeText={onChangeText}
@@ -50,6 +56,7 @@ const FormField: React.FC<FormFieldProps> = ({
         autoCorrect={autoCorrect}
         secureTextEntry={secureTextEntry}
       />
+
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -64,8 +71,11 @@ const styles = StyleSheet.create({
     color: colors.text.dark,
     marginBottom: spacing.sm,
   },
+  labelError: {
+    color: colors.error || '#FF6B6B',
+  },
   input: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
@@ -83,9 +93,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   errorText: {
-    ...typography.bodyTiny,
+    ...typography.bodySmall,
     color: colors.error || '#FF6B6B',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
 });
 

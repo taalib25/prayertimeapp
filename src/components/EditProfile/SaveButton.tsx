@@ -43,19 +43,28 @@ const SaveButton: React.FC<SaveButtonProps> = ({onPress, isLoading}) => {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.text.muted,
+    backgroundColor: colors.primary,
     marginHorizontal: spacing.lg,
     marginVertical: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.sm,
+    paddingVertical: spacing.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
     ...typography.button,
+    fontSize: 16,
+    fontWeight: 'bold',
     color: colors.white,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   pressedState: {
     opacity: 0.8,

@@ -168,7 +168,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.username}</Text>
+            <Text style={styles.userName}>{user?.firstName}</Text>
             <Text style={styles.memberSince}>
               {user?.joinedDate
                 ? `Member Since ${new Date(user.joinedDate).toLocaleDateString(
@@ -357,13 +357,13 @@ const styles = StyleSheet.create({
   userName: {
     ...typography.headerProfile,
     color: '#333',
-    marginBottom: 4,
+    marginBottom: 3,
     textAlign: 'left',
   },
   memberSince: {
     ...typography.bodySmall,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 1,
     textAlign: 'left',
   },
   locationContainer: {
@@ -374,7 +374,8 @@ const styles = StyleSheet.create({
   locationText: {
     ...typography.caption,
     color: '#666',
-    marginLeft: 6,
+    paddingTop: 3,  
+    marginLeft: 8,
     textAlign: 'left',
     width: '70%',
   },

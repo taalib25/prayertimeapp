@@ -1,30 +1,30 @@
-import React, {useState} from 'react';
-import {View, StyleSheet, Text, TouchableOpacity} from 'react-native';
+import React from 'react';
+import {View, StyleSheet, Text} from 'react-native';
 import FormField from './FormField';
 import DateField from './DateField';
 import CheckboxField from './CheckboxField';
 import LocationMobilitySection from './LocationMobilitySection';
 import {useEditProfile} from '../../contexts/EditProfileContext';
-import {spacing} from '../../utils/theme';
+import {spacing, colors, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
 // Configuration for basic form fields
 const BASIC_FIELDS_CONFIG = [
   {
     key: 'firstName' as const,
-    label: 'First Name *',
+    label: 'First Name',
     placeholder: 'Enter first name',
     type: 'text',
   },
   {
     key: 'lastName' as const,
-    label: 'Last Name *',
+    label: 'Last Name',
     placeholder: 'Enter last name',
     type: 'text',
   },
   {
     key: 'email' as const,
-    label: 'Email Address *',
+    label: 'Email Address',
     placeholder: 'Enter email address',
     type: 'text',
     keyboardType: 'email-address',
@@ -66,10 +66,11 @@ const ADDITIONAL_INFO_CONFIG = [
 
 const FormFields: React.FC = () => {
   const {formData, errors, updateField} = useEditProfile();
-  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
 
+  // Set required field status for basic fields
   const renderBasicField = (fieldConfig: (typeof BASIC_FIELDS_CONFIG)[0]) => {
     const {key, type, ...props} = fieldConfig;
+    const isRequired = props.label.includes('*');
 
     if (type === 'date') {
       return (
@@ -90,6 +91,7 @@ const FormFields: React.FC = () => {
         value={formData[key] as string}
         onChangeText={value => updateField(key, value)}
         error={errors[key]}
+        required={isRequired}
       />
     );
   };
@@ -107,37 +109,36 @@ const FormFields: React.FC = () => {
       />
     );
   };
+
+  // Helper to determine if there are any errors in the form
+  const hasErrors = Object.keys(errors).length > 0;
+
   return (
     <View style={styles.container}>
+      {/* Display validation errors summary only when save button is pressed */}
+      {hasErrors && (
+        <View style={styles.errorsContainer}>
+          <Text style={styles.errorsSummary}>
+            Please fix the highlighted fields to continue
+          </Text>
+        </View>
+      )}
+
       {/* Basic Information Section */}
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Basic Information</Text>
         {BASIC_FIELDS_CONFIG.map(renderBasicField)}
       </View>
 
       {/* Location & Mobility Section - Includes pickup widget */}
       <LocationMobilitySection />
 
-      {/* Expandable Additional Information Section */}
+      {/* Additional Information Section (always visible) */}
       <View style={styles.additionalInfoSection}>
-        <TouchableOpacity
-          style={styles.sectionHeader}
-          onPress={() => setShowAdditionalInfo(!showAdditionalInfo)}
-          activeOpacity={0.7}>
-          <Text style={styles.sectionTitle}>Additional Information</Text>
-          <Text
-            style={[
-              styles.expandIcon,
-              showAdditionalInfo && styles.expandIconRotated,
-            ]}>
-            ▼
-          </Text>
-        </TouchableOpacity>
-
-        {showAdditionalInfo && (
-          <View style={styles.checkboxContainer}>
-            {ADDITIONAL_INFO_CONFIG.map(renderCheckboxField)}
-          </View>
-        )}
+        <Text style={styles.sectionTitle}>Additional Information</Text>
+        <View style={styles.checkboxContainer}>
+          {ADDITIONAL_INFO_CONFIG.map(renderCheckboxField)}
+        </View>
       </View>
     </View>
   );
@@ -148,33 +149,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },
-  section: {
+  errorsContainer: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.error || '#FF6B6B',
+  },
+  errorsSummary: {
+    ...typography.bodyMedium,
+    color: colors.error || '#FF6B6B',
+    fontWeight: '600',
+  },
+  section: {
+    marginBottom: spacing.xl,
   },
   additionalInfoSection: {
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     paddingTop: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
     ...typography.h3,
     fontSize: 18,
-    color: '#333',
-  },
-  expandIcon: {
-    fontSize: 16,
-    color: '#666',
-    transform: [{rotate: '0deg'}],
-  },
-  expandIconRotated: {
-    transform: [{rotate: '180deg'}],
+    color: colors.primary,
+    marginBottom: spacing.md,
+    fontWeight: '600',
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
+    alignSelf: 'flex-start',
   },
   checkboxContainer: {
     paddingHorizontal: spacing.sm,

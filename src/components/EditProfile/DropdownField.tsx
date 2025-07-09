@@ -16,6 +16,7 @@ export interface DropdownFieldProps {
   options: DropdownOption[];
   placeholder?: string;
   error?: string;
+  required?: boolean;
 }
 
 const DropdownField: React.FC<DropdownFieldProps> = ({
@@ -25,20 +26,24 @@ const DropdownField: React.FC<DropdownFieldProps> = ({
   options,
   placeholder = 'Select an option',
   error,
+  required = false,
 }) => {
   const handleSelect = (selectedKey: string) => {
     onValueChange(selectedKey);
   };
 
+  // Check if value is empty string or undefined
+  const hasError = error !== undefined && error !== '';
+
   const getBoxStyles = () => {
-    return error
+    return hasError
       ? {...styles.selectBox, ...styles.selectBoxError}
       : styles.selectBox;
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text>
       <SelectList
         setSelected={handleSelect}
         data={options}
@@ -56,7 +61,7 @@ const DropdownField: React.FC<DropdownFieldProps> = ({
         notFoundText="No options found"
         maxHeight={200}
       />
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {hasError && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -70,8 +75,11 @@ const styles = StyleSheet.create({
     color: colors.text.dark,
     marginBottom: spacing.sm,
   },
+  labelError: {
+    color: colors.error || '#FF6B6B',
+  },
   selectBox: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.primary,
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
@@ -81,6 +89,7 @@ const styles = StyleSheet.create({
   },
   selectBoxError: {
     borderColor: colors.error || '#FF6B6B',
+    borderWidth: 2,
   },
   dropdown: {
     borderWidth: 1,
@@ -103,9 +112,10 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
   },
   errorText: {
-    ...typography.bodyTiny,
+    ...typography.bodySmall,
     color: colors.error || '#FF6B6B',
-    marginTop: 4,
+    marginTop: spacing.xs,
+    fontWeight: '500',
   },
 });
 
