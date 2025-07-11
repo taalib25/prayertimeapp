@@ -71,7 +71,9 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
     try {
       console.log('🔐 Initial login attempt to trigger OTP...');
       // Call the initial login to trigger OTP sending
-      const loginResponse = await apiService.loginUser(username, password);
+      const trimmedUsername = username.trim();
+      const trimmedPassword = password.trim();
+      const loginResponse = await apiService.loginUser(trimmedUsername, trimmedPassword);
 
       if (!loginResponse.success) {
         setIsLoading(false);
@@ -171,7 +173,12 @@ const LoginScreen: React.FC<Props> = ({navigation}) => {
                   />
                   <Text style={styles.registerText}>
                     Don't have an account?
-                    <Text style={styles.registerLink}> Register Now</Text>
+                    <Text
+                      style={styles.registerLink}
+                      onPress={() => navigation.navigate('Register')}>
+                      {' '}
+                      Register Now
+                    </Text>
                   </Text>
                 </View>
               </View>

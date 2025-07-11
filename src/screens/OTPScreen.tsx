@@ -7,6 +7,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ToastAndroid,
+  Alert,
 } from 'react-native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
@@ -41,13 +43,15 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{otp?: string}>({});
+  const [resendTimer, setResendTimer] = useState(0);
+  const [canResend, setCanResend] = useState(true);
   const inputRefs = useRef<Array<TextInput | null>>([null, null, null, null]);
 
   // Get route params
   const {checkAuthState} = useAuth();
   const email = route.params?.email || '';
-  const username = route.params?.username || '';
-  const password = route.params?.password || '';
+  const username = route.params?.username?.trim() || '';
+  const password = route.params?.password?.trim() || '';
   // Services
   const api = PrayerAppAPI.getInstance();
   const userService = UserService.getInstance();
@@ -56,6 +60,32 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
   useEffect(() => {
     setTimeout(() => inputRefs.current[0]?.focus(), 300);
   }, []);
+
+  // Timer effect for resend cooldown
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
+  // Toast notification helper
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      Alert.alert('', message);
+    }
+  };
 
   const validateOTP = (): boolean => {
     const otpString = otp.join('');
@@ -185,7 +215,7 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
         await checkAuthState();
 
         // Navigate to main app (this should happen automatically after auth state update)
-        console.log('User successfully authenticated',userData);
+        console.log('User successfully authenticated', userData);
       } else {
         console.log('❌ OTP verification failed:', response.error);
         setErrors(prev => ({
@@ -206,6 +236,10 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
     }
   };
   const handleResendOTP = async () => {
+    if (!canResend) return;
+
+    setCanResend(false);
+    setResendTimer(60);
     setOtp(['', '', '', '']);
     setErrors(prev => ({...prev, otp: undefined}));
 
@@ -220,11 +254,15 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
 
       if (apiResponse.success) {
         console.log('✅ New OTP sent');
+        showToast('New OTP sent successfully!');
       } else {
         setErrors(prev => ({
           ...prev,
           otp: apiResponse.message || 'Failed to resend OTP. Please try again.',
         }));
+        showToast('Failed to resend OTP. Please try again.');
+        setCanResend(true);
+        setResendTimer(0);
       }
     } catch (error) {
       console.error('❌ Error resending OTP:', error);
@@ -232,6 +270,9 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
         ...prev,
         otp: 'Failed to resend OTP. Please try again.',
       }));
+      showToast('Failed to resend OTP. Please try again.');
+      setCanResend(true);
+      setResendTimer(0);
     }
   };
 
@@ -273,8 +314,13 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
             <View style={styles.resendContainer}>
               <Text style={styles.resendText}>
                 Didn't receive the code?{' '}
-                <Text onPress={handleResendOTP} style={styles.resendLink}>
-                  Resend
+                <Text
+                  onPress={handleResendOTP}
+                  style={[
+                    styles.resendLink,
+                    !canResend && styles.resendDisabled,
+                  ]}>
+                  {canResend ? 'Resend' : `Resend (${resendTimer}s)`}
                 </Text>
               </Text>
             </View>
@@ -356,6 +402,9 @@ const styles = StyleSheet.create({
   resendLink: {
     ...typography.bodyMedium,
     color: colors.primary,
+  },
+  resendDisabled: {
+    color: colors.text.muted,
   },
   inputError: {
     borderColor: colors.error,
