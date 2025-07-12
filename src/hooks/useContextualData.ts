@@ -1,5 +1,5 @@
 import {useMemo, useEffect, useState, useCallback} from 'react';
-import {useDailyTasksContext} from '../contexts/DailyTasksContext';
+import {useDailyTasks} from './useDailyTasks';
 import {DailyTaskData} from '../services/db/dailyTaskServices';
 import {PrayerStatus} from '../model/DailyTasks';
 import {getTodayDateString} from '../utils/helpers';
@@ -43,21 +43,20 @@ const isPrayerInFuture = (prayerName: string): boolean => {
 };
 
 /**
- * Hook to get prayer times data using the centralized context
+ * Hook to get prayer times data using the enhanced WatermelonDB observables
  * Enhanced to support any date, not just today
  */
 export const usePrayerData = (targetDate?: string) => {
-  const {dailyTasks, getTodayData, getDataForDate, updatePrayerAndRefresh} =
-    useDailyTasksContext();
+  const {dailyTasks, getTaskForDate, updatePrayerStatus} = useDailyTasks(30);
 
   // Get data for the specified date or today's data if no date specified
   // Adding dailyTasks to dependency ensures re-render when data changes
   const targetData = useMemo(() => {
     if (targetDate) {
-      return getDataForDate(targetDate);
+      return getTaskForDate(targetDate);
     }
-    return getTodayData();
-  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
+    return getTaskForDate(getTodayDateString());
+  }, [targetDate, getTaskForDate, dailyTasks]);
 
   const isToday = useMemo(() => {
     const today = getTodayDateString();
@@ -73,15 +72,15 @@ export const usePrayerData = (targetDate?: string) => {
       const lcPrayerName = prayerName.toLowerCase();
       switch (lcPrayerName) {
         case 'fajr':
-          return targetData.fajrStatus || null;
+          return (targetData.fajrStatus as PrayerStatus) || null;
         case 'dhuhr':
-          return targetData.dhuhrStatus || null;
+          return (targetData.dhuhrStatus as PrayerStatus) || null;
         case 'asr':
-          return targetData.asrStatus || null;
+          return (targetData.asrStatus as PrayerStatus) || null;
         case 'maghrib':
-          return targetData.maghribStatus || null;
+          return (targetData.maghribStatus as PrayerStatus) || null;
         case 'isha':
-          return targetData.ishaStatus || null;
+          return (targetData.ishaStatus as PrayerStatus) || null;
         default:
           return null;
       }
@@ -102,7 +101,7 @@ export const usePrayerData = (targetDate?: string) => {
     [isToday],
   );
 
-  const updatePrayerStatus = useMemo(() => {
+  const updatePrayerStatusForDate = useMemo(() => {
     return async (prayerName: string, status: PrayerStatus) => {
       // If can't mark this prayer, don't update
       if (!canMarkPrayer(prayerName)) {
@@ -114,14 +113,14 @@ export const usePrayerData = (targetDate?: string) => {
 
       // Use the target date (or today if no target date specified)
       const dateToUpdate = targetDate || getTodayDateString();
-      await updatePrayerAndRefresh(dateToUpdate, prayerName, status);
+      await updatePrayerStatus(dateToUpdate, prayerName, status);
     };
-  }, [updatePrayerAndRefresh, targetDate, canMarkPrayer]);
+  }, [updatePrayerStatus, targetDate, canMarkPrayer]);
 
   return {
     todayData: targetData, // Return the target data (could be today or another date)
     getPrayerStatus,
-    updatePrayerStatus,
+    updatePrayerStatus: updatePrayerStatusForDate,
     canMarkPrayer,
     isLoading: !targetData,
     isToday,
@@ -129,38 +128,40 @@ export const usePrayerData = (targetDate?: string) => {
 };
 
 /**
- * Hook to get Fajr chart data using the centralized context
+ * Hook to get Fajr chart data using the enhanced WatermelonDB observables
  * Replaces direct database calls in FajrTimeChart
  */
 export const useFajrChartData = () => {
-  const {dailyTasks, getDataForDate} = useDailyTasksContext();
+  const {dailyTasks, getTaskForDate, updateTrigger} = useDailyTasks(30);
 
   const getFajrDataForDates = useMemo(() => {
     return (dates: string[]) => {
       return dates.map(date => {
-        const dayData = getDataForDate(date);
+        const dayData = getTaskForDate(date);
+        const fajrStatus = dayData?.fajrStatus || 'none'; // Default to 'none' if no data
         return {
           date,
-          fajrStatus: dayData?.fajrStatus || 'none',
-          completionValue: dayData?.fajrStatus === 'mosque' ? 1 : 0,
+          fajrStatus,
+          completionValue: fajrStatus === 'mosque' ? 1 : 0,
           dayLabel: formatDayLabel(date),
         };
       });
     };
-  }, [getDataForDate, dailyTasks]);
+  }, [getTaskForDate, dailyTasks, updateTrigger]);
 
   return {
     getFajrDataForDates,
     dailyTasks,
+    updateTrigger, // Expose updateTrigger for other components
   };
 };
 
 /**
- * Hook to get monthly aggregated data using the centralized context
+ * Hook to get monthly aggregated data using the enhanced WatermelonDB observables
  * Can be used to replace some monthly calculations
  */
 export const useMonthlyAggregatedData = () => {
-  const {dailyTasks} = useDailyTasksContext();
+  const {dailyTasks, updateTrigger} = useDailyTasks(90); // Get 90 days for monthly calculations + reactive trigger
   const getMonthlyStats = useMemo(() => {
     return (year: number, monthIndex: number) => {
       console.log(
@@ -204,30 +205,30 @@ export const useMonthlyAggregatedData = () => {
         totalDays,
       };
     };
-  }, [dailyTasks]);
+  }, [dailyTasks, updateTrigger]);
 
   return {
     getMonthlyStats,
     dailyTasks,
+    updateTrigger, 
   };
 };
 
 /**
- * Hook to get Quran data using the centralized context
+ * Hook to get Quran data using the enhanced WatermelonDB observables
  * Enhanced to support any date, not just today
  */
 export const useQuranData = (targetDate?: string) => {
-  const {dailyTasks, getTodayData, getDataForDate, updateQuranAndRefresh} =
-    useDailyTasksContext();
+  const {dailyTasks, getTaskForDate, updateQuranMinutes} = useDailyTasks(30);
 
   // Get data for the specified date or today's data if no date specified
   // Adding dailyTasks to dependency ensures re-render when data changes
   const targetData = useMemo(() => {
     if (targetDate) {
-      return getDataForDate(targetDate);
+      return getTaskForDate(targetDate);
     }
-    return getTodayData();
-  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
+    return getTaskForDate(getTodayDateString());
+  }, [targetDate, getTaskForDate, dailyTasks]);
 
   const getQuranMinutes = useMemo(() => {
     return (): number => {
@@ -235,38 +236,37 @@ export const useQuranData = (targetDate?: string) => {
     };
   }, [targetData]);
 
-  const updateQuranMinutes = useMemo(() => {
+  const updateQuranMinutesForDate = useMemo(() => {
     return async (minutes: number) => {
       // Use the target date (or today if no target date specified)
       const dateToUpdate = targetDate || getTodayDateString();
-      await updateQuranAndRefresh(dateToUpdate, minutes);
+      await updateQuranMinutes(dateToUpdate, minutes);
     };
-  }, [updateQuranAndRefresh, targetDate]);
+  }, [updateQuranMinutes, targetDate]);
 
   return {
     todayData: targetData, // Return the target data (could be today or another date)
     getQuranMinutes,
-    updateQuranMinutes,
+    updateQuranMinutes: updateQuranMinutesForDate,
     isLoading: !targetData,
   };
 };
 
 /**
- * Hook to get Zikr data using the centralized context
+ * Hook to get Zikr data using the enhanced WatermelonDB observables
  * Enhanced to support any date, not just today
  */
 export const useZikrData = (targetDate?: string) => {
-  const {dailyTasks, getTodayData, getDataForDate, updateZikrAndRefresh} =
-    useDailyTasksContext();
+  const {dailyTasks, getTaskForDate, updateZikrCount} = useDailyTasks(30);
 
   // Get data for the specified date or today's data if no date specified
   // Adding dailyTasks to dependency ensures re-render when data changes
   const targetData = useMemo(() => {
     if (targetDate) {
-      return getDataForDate(targetDate);
+      return getTaskForDate(targetDate);
     }
-    return getTodayData();
-  }, [targetDate, getDataForDate, getTodayData, dailyTasks]);
+    return getTaskForDate(getTodayDateString());
+  }, [targetDate, getTaskForDate, dailyTasks]);
 
   const getZikrCount = useMemo(() => {
     return (): number => {
@@ -274,18 +274,18 @@ export const useZikrData = (targetDate?: string) => {
     };
   }, [targetData]);
 
-  const updateZikrCount = useMemo(() => {
+  const updateZikrCountForDate = useMemo(() => {
     return async (count: number) => {
       // Use the target date (or today if no target date specified)
       const dateToUpdate = targetDate || getTodayDateString();
-      await updateZikrAndRefresh(dateToUpdate, count);
+      await updateZikrCount(dateToUpdate, count);
     };
-  }, [updateZikrAndRefresh, targetDate]);
+  }, [updateZikrCount, targetDate]);
 
   return {
     todayData: targetData, // Return the target data (could be today or another date)
     getZikrCount,
-    updateZikrCount,
+    updateZikrCount: updateZikrCountForDate,
     isLoading: !targetData,
   };
 };
