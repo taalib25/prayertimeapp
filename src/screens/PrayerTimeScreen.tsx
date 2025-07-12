@@ -45,12 +45,9 @@ const dummyMeeting = {
   location: 'Main Prayer Hall',
   committeeMember: {
     name: 'Imam Abdullah',
-    phone: '+1234567890'
+    phone: '+1234567890',
   },
 };
-
-
-
 
 const PrayerTimeScreen = () => {
   const navigation =
@@ -61,9 +58,8 @@ const PrayerTimeScreen = () => {
   // Simplified loading states - only two phases needed
   const [showAllContent, setShowAllContent] = useState(false);
 
-  // Profile validation state
+  // Simplified profile validation state
   const [showProfileAlert, setShowProfileAlert] = useState(false);
-  const [profileAlertMessage, setProfileAlertMessage] = useState('');
 
   // Core content shows immediately when prayer times are ready
   const showPrimaryContent = !prayerLoading;
@@ -90,17 +86,15 @@ const PrayerTimeScreen = () => {
     }
   }, [showPrimaryContent]);
 
-  // Profile validation when screen is focused
+  // Simple profile validation - only on app start if not seen
   useEffect(() => {
-    // Only check profile validation if user data is loaded and user hasn't seen the alert
-    if (user && !showProfileAlert && !hasSeenProfileAlert) {
+    if (user && !hasSeenProfileAlert) {
       const validation = validateUserProfile(user);
       if (!validation.isComplete) {
-        setProfileAlertMessage(validation.message);
         setShowProfileAlert(true);
       }
     }
-  }, [user, showProfileAlert, hasSeenProfileAlert]);
+  }, [user, hasSeenProfileAlert]);
 
   const handleCallPreferenceSet = useCallback(async () => {
     try {
@@ -112,18 +106,15 @@ const PrayerTimeScreen = () => {
     }
   }, []);
 
-  // Profile alert handlers
+  // Simplified profile alert handlers
   const handleProfileAlertConfirm = useCallback(async () => {
     setShowProfileAlert(false);
-    // Mark alert as seen so it doesn't show again
     await markProfileAlertAsSeen();
-    // Navigate to EditProfileScreen using the global navigation helper
     navigate('EditProfileScreen');
   }, [markProfileAlertAsSeen]);
 
   const handleProfileAlertCancel = useCallback(async () => {
     setShowProfileAlert(false);
-    // Mark alert as seen so it doesn't show again when user dismisses it
     await markProfileAlertAsSeen();
   }, [markProfileAlertAsSeen]);
 
@@ -231,12 +222,12 @@ const PrayerTimeScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Profile Validation Alert Modal */}
+      {/* Profile Completion Alert */}
       <AlertModal
         visible={showProfileAlert}
         title="Complete Your Profile"
-        message={profileAlertMessage}
-        confirmText="Complete Profile"
+        message="Please complete your profile to get the best experience."
+        confirmText="Complete"
         cancelText="Later"
         onConfirm={handleProfileAlertConfirm}
         onCancel={handleProfileAlertCancel}

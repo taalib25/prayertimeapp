@@ -50,6 +50,8 @@ export const useUser = (): UseUserReturn => {
   const [systemData, setSystemData] = useState<SystemData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasShownProfileAlertThisSession, setHasShownProfileAlertThisSession] =
+    useState(false);
 
   const userService = UserService.getInstance();
 
@@ -143,6 +145,7 @@ export const useUser = (): UseUserReturn => {
 
   // Mark profile alert as seen
   const markProfileAlertAsSeen = useCallback(async () => {
+    setHasShownProfileAlertThisSession(true);
     await updateSystemData({hasSeenProfileAlert: true});
   }, [updateSystemData]);
 
@@ -187,7 +190,8 @@ export const useUser = (): UseUserReturn => {
   // Computed values
   const isAuthenticated = systemData?.authToken ? true : false;
   const hasSeenOnboarding = systemData?.hasSeenOnboarding || false;
-  const hasSeenProfileAlert = systemData?.hasSeenProfileAlert || false;
+  const hasSeenProfileAlert =
+    systemData?.hasSeenProfileAlert || false || hasShownProfileAlertThisSession;
   const displayName = user ? userService.getDisplayName(user) : 'User';
   const userInitials = user ? userService.getUserInitials(user) : 'U';
 

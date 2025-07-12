@@ -316,11 +316,12 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
             decelerationRate="fast"
           />
         </View>
-
-        <Text style={styles.quoteText}>
-          "Remind, indeed reminders benefit the believers"
-        </Text>
-        <Text style={styles.quoteSource}>(Quran 51:55)</Text>
+        <View style={styles.quote}>
+          <Text style={styles.quoteText}>
+            "Remind, indeed reminders benefit the believers"
+          </Text>
+          <Text style={styles.quoteSource}>(Quran 51:55)</Text>
+        </View>
       </View>
 
       {/* Reminder Detail Modal */}
@@ -696,6 +697,11 @@ const styles = StyleSheet.create({
     opacity: 0.95,
   },
   // Existing styles
+  quote: {
+    marginTop: 5,
+    paddingRight: 16,
+    paddingBottom: 10,
+  },
   quoteText: {
     ...typography.h3,
     fontSize: 16,
