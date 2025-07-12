@@ -10,7 +10,7 @@ interface MeetingMember {
   member_phone: string;
   scheduled_date: string;
   scheduled_time: string;
-  status: 'scheduled' | 'completed' | 'excused';
+  status: 'scheduled' | 'completed' | 'excused' | 'absent';
   member_username: string;
   location?: string;
 }
@@ -26,7 +26,7 @@ interface MeetingCardProps {
   onMemberPress?: (member: MeetingMember, index: number) => void;
   onStatusUpdate?: (
     member: MeetingMember,
-    status: 'completed' | 'cancelled',
+    status: 'completed' | 'excused' | 'absent',
     note: string,
   ) => void;
 }
@@ -39,6 +39,8 @@ const statusIcon = (status: MeetingMember['status']) => {
       return <SvgIcon name="attended" size={16} color="#20B83F" />;
     case 'excused':
       return <SvgIcon name="absent" size={16} color="#F57C00" />;
+    case 'absent':
+      return <SvgIcon name="absent" size={16} color="#FF2626" />;
     default:
       return null;
   }
@@ -63,7 +65,7 @@ const MeetingCard: React.FC<MeetingCardProps> = ({
   };
 
   const handleStatusUpdate = (
-    status: 'completed' | 'cancelled',
+    status: 'completed' | 'excused' | 'absent',
     note: string,
   ) => {
     if (selectedMember && onStatusUpdate) {
