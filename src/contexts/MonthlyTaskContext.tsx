@@ -39,8 +39,9 @@ export const MonthlyTaskProvider: React.FC<{
   const goals = userGoals || defaultGoals;
 
   // Get monthly data using the centralized context instead of direct database access
-  const {getMonthlyStats} = useMonthlyAggregatedData(); // Get daily tasks data to include in dependency
-  const {dailyTasks} = useMonthlyAggregatedData(); // Transform raw data to format needed for UI
+  const {getMonthlyStats} = useMonthlyAggregatedData();
+  // Get daily tasks data to include in dependency + reactive trigger
+  const {dailyTasks, updateTrigger} = useMonthlyAggregatedData();  // Transform raw data to format needed for UI - now reactive to prayer updates
   const monthlyData = useMemo(() => {
     // ⚡ PERFORMANCE: Cache monthly data calculations - include detailed dailyTasks hash for reactivity
     const quranTotal = dailyTasks.reduce(
@@ -51,11 +52,11 @@ export const MonthlyTaskProvider: React.FC<{
       (sum, t) => sum + (t.totalZikrCount || 0),
       0,
     );
-    const dailyTasksHash = `${dailyTasks.length}-Q${quranTotal}-Z${zikrTotal}`;
+    const dailyTasksHash = `${dailyTasks.length}-Q${quranTotal}-Z${zikrTotal}-T${updateTrigger || 0}`;
     const cacheKey = `monthly-stats-${JSON.stringify(goals)}-${dailyTasksHash}`;
 
     console.log(
-      `🔍 MonthlyTaskContext: Detailed stats - Length: ${dailyTasks.length}, Quran: ${quranTotal}, Zikr: ${zikrTotal}`,
+      `🔍 MonthlyTaskContext: Detailed stats - Length: ${dailyTasks.length}, Quran: ${quranTotal}, Zikr: ${zikrTotal}, Trigger: ${updateTrigger || 0}`,
     );
     console.log(
       `🔍 MonthlyTaskContext: Cache key: ${cacheKey.slice(0, 120)}...`,
@@ -106,11 +107,11 @@ export const MonthlyTaskProvider: React.FC<{
             new Date(year, monthDate.getMonth() + 1, 0).getDate(),
         },
       });
-    } // Cache the result for 30 seconds (reduced from 2 minutes for better reactivity)
+    }    // Cache the result for 30 seconds (reduced from 2 minutes for better reactivity)
     dataCache.set(cacheKey, allMonths, 30000);
     console.log('💾 Monthly data cached with key:', dailyTasksHash);
     return allMonths;
-  }, [getMonthlyStats, goals, dailyTasks]); // Include dailyTasks for reactivity
+  }, [getMonthlyStats, goals, dailyTasks, updateTrigger]); // Include updateTrigger for reactivity
 
   // Get current month index
   const getCurrentMonthIndex = useMemo(() => {

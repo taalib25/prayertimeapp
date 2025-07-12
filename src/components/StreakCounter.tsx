@@ -4,6 +4,8 @@ import {useFajrChartData} from '../hooks/useContextualData';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from './SvgIcon';
+import {useDailyTasks} from '../hooks/useDailyTasks';
+import {getTodayDateString, formatDateString} from '../utils/helpers';
 
 interface DayStatus {
   date: string;
@@ -32,10 +34,11 @@ const StreakCounter: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState(getCurrentWeekStart);
 
   const {getFajrDataForDates} = useFajrChartData();
+  const {updateTrigger} = useDailyTasks(30); // Get update trigger for reactivity
 
-  // Format date to string (YYYY-MM-DD)
+  // Format date to string (YYYY-MM-DD) - using helper function
   const formatDate = useCallback((date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return formatDateString(date);
   }, []);
 
   // Get the week dates (Monday to Sunday)
@@ -56,7 +59,7 @@ const StreakCounter: React.FC = () => {
   const [weeklyData, setWeeklyData] = useState<DayStatus[]>([]);
   const [currentStreak, setCurrentStreak] = useState(0);
 
-  // Calculate the streak and week data
+  // Calculate the streak and week data - now reactive to prayer status updates
   const calculateStreakData = useCallback(async () => {
     try {
       // Get last 30 days to calculate streak
@@ -71,16 +74,47 @@ const StreakCounter: React.FC = () => {
       const pastDateStrings = pastDates.map(formatDate);
       const fajrData = getFajrDataForDates(pastDateStrings);
 
-      // Calculate streak
+      // Calculate most recent consecutive streak including today
       let streak = 0;
-      for (let i = fajrData.length - 1; i >= 0; i--) {
-        if (fajrData[i].fajrStatus === 'mosque') {
-          streak++;
-        } else {
-          break;
+      const todayStr = getTodayDateString();
+
+      // Sort data by date (oldest to newest)
+      const sortedData = fajrData.sort((a, b) => a.date.localeCompare(b.date));
+
+      // Find today's index in the sorted data
+      const todayIndex = sortedData.findIndex(d => d.date === todayStr);
+
+      console.log('Streak Calculation Debug:', {
+        todayStr,
+        todayIndex,
+        totalDataPoints: sortedData.length,
+        todayData: sortedData[todayIndex],
+        lastFewDays: sortedData
+          .slice(-7)
+          .map(d => ({date: d.date, status: d.fajrStatus})),
+      });
+
+      if (todayIndex === -1) {
+        // Today's data not found, streak is 0
+        console.log('Today not found in data, streak = 0');
+        streak = 0;
+      } else {
+        // Start from today and count backwards for consecutive 'mosque' status
+        for (let i = todayIndex; i >= 0; i--) {
+          const dayData = sortedData[i];
+
+          if (dayData.fajrStatus === 'mosque') {
+            streak++;
+            console.log(`Day ${dayData.date}: mosque, streak now ${streak}`);
+          } else {
+            // Break on first non-mosque status
+            console.log(
+              `Day ${dayData.date}: ${dayData.fajrStatus}, breaking streak at ${streak}`,
+            );
+            break;
+          }
         }
       }
-
       setCurrentStreak(streak);
 
       // Get current week data
@@ -93,7 +127,7 @@ const StreakCounter: React.FC = () => {
         const dateStr = formatDate(date);
         const fajrInfo = weekFajrData.find(d => d.date === dateStr);
 
-        const todayStr = formatDate(today);
+        const todayStr = getTodayDateString();
         const isPast = date < today;
         const isToday = dateStr === todayStr;
 
@@ -114,7 +148,14 @@ const StreakCounter: React.FC = () => {
     } catch (error) {
       console.error('Error calculating streak:', error);
     }
-  }, [currentWeekStart, formatDate, getWeekDates, getFajrDataForDates, today]);
+  }, [
+    currentWeekStart,
+    formatDate,
+    getWeekDates,
+    getFajrDataForDates,
+    today,
+    updateTrigger,
+  ]); // Add updateTrigger
 
   useEffect(() => {
     calculateStreakData();
@@ -192,7 +233,7 @@ const StreakCounter: React.FC = () => {
             <SvgIcon name="fire" size={98} color={colors.accent} />
           </View>
         </View>
-        <Text style={styles.streakText}>Fajr Streak!</Text>
+        <Text style={styles.streakText}>Fajr Streak</Text>
       </View>
 
       {/* Weekly Progress with integrated navigation */}
@@ -291,13 +332,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   streakText: {
-    ...typography.bodyMedium,
-    fontSize: 18,
+    ...typography.h2,
+    fontSize: 22,
     color: colors.text.dark,
-    fontWeight: '600',
+    fontWeight: '700',
     marginLeft: 4,
-    marginTop: 8, // Added spacing to prevent text cut-off
-    lineHeight: 24, // Added to ensure proper text height
+    marginTop: 8,
+    lineHeight: 28,
   },
   weeklyProgressContainer: {
     marginBottom: 4,
@@ -307,12 +348,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start', // Left-align the week range text
   },
   weeklyTitle: {
-    ...typography.h3,
-    fontSize: 17,
-    color: colors.text.dark,
-    fontWeight: '600',
+    ...typography.bodySmall,
+    fontSize: 14,
+    color: colors.text.muted,
+    fontWeight: '500',
     textAlign: 'left',
-    lineHeight: 24, // Added to prevent text cut-off
+    lineHeight: 20,
   },
   weeklyNavigationContainer: {
     flexDirection: 'row',
