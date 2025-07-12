@@ -11,7 +11,6 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {BottomTabParamList} from '../navigation/BottomTabNavigator';
-import {useFocusEffect} from '@react-navigation/native';
 import {navigate} from '../../App'; // Import navigation helper
 
 import {typography} from '../utils/typography';
@@ -36,6 +35,22 @@ const DailyTasksSelector = React.lazy(
   () => import('../components/DailyTasksComponent/DailyTasksSelector'),
 );
 // const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
+
+const dummyMeeting = {
+  id: 'meeting-001',
+  title: 'Personal Meeting',
+  description: 'Discussion about upcoming events and community initiatives',
+  date: new Date(Date.now()).toISOString(), // 2 days from now
+  time: '18:00',
+  location: 'Main Prayer Hall',
+  committeeMember: {
+    name: 'Imam Abdullah',
+    phone: '+1234567890'
+  },
+};
+
+
+
 
 const PrayerTimeScreen = () => {
   const navigation =
@@ -205,12 +220,12 @@ const PrayerTimeScreen = () => {
               />
               {/* <FajrTimeChart /> */}
 
-              <PersonalMeeting />
-              {/* {user?.role === 'Member' ? (
+              {/* <PersonalMeeting /> */}
+              {user?.role === 'Member' ? (
                 <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
-                <PersonalMeeting  />)
-              } */}
+                <PersonalMeeting />
+              )}
             </Suspense>
           )}
         </View>

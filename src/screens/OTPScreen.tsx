@@ -174,7 +174,7 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
       const response = await loginUser(username, password, otpCode);
 
       if (response.success && response.user) {
-        console.log('✅ OTP verified successfully'); // Store auth token
+        console.log('User Details >>>>>>>> ',response?.user); // Store auth token
         if (response.token) {
           await userService.setAuthToken(response.token);
         } // Create simplified user data from real API response only
