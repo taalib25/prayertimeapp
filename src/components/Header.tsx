@@ -192,7 +192,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flexShrink: 1,
     maxWidth: 120,
-    fontWeight: '500',
   },
   dateText: {
     ...typography.bodyMedium,
@@ -200,7 +199,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 14,
     justifyContent: 'flex-start',
-    fontWeight: '600',
   },
   chevronIcon: {
     width: 0,

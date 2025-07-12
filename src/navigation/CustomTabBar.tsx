@@ -18,7 +18,7 @@ const CustomTabBar: React.FC<BottomTabBarProps> = ({
       case 'Feeds':
         return 'quran';
       case 'Progress':
-        return 'salah'; // Using mosque icon for progress tracking
+        return 'salah';
       case 'Profile':
         return 'profile';
       default:
