@@ -31,7 +31,6 @@ import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 // Services & Context
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import {DailyTasksProvider} from './src/contexts/DailyTasksContext';
 import {initializePrayerTimesDatabase} from './src/services/db/dbInitalizer';
 import {
   initializeUserBackgroundTasks,
@@ -163,92 +162,90 @@ function AppNavigator() {
     gestureEnabled: true,
   };
   return (
-    <DailyTasksProvider daysBack={3}>
-      <NavigationContainer ref={navigationRef}>
-        <Stack.Navigator screenOptions={screenOptions}>
-          {!hasSeenOnboarding ? (
-            // Onboarding Flow
-            <Stack.Screen name="Onboarding" options={{gestureEnabled: false}}>
-              {props => (
-                <OnboardingScreen
-                  {...props}
-                  onOnboardingComplete={handleOnboardingFinish}
-                />
-              )}
-            </Stack.Screen>
-          ) : isAuthenticated ? (
-            // Authenticated User Screens
-            <Stack.Group>
-              <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-              <Stack.Screen
-                name="Feeds"
-                component={FeedsScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator screenOptions={screenOptions}>
+        {!hasSeenOnboarding ? (
+          // Onboarding Flow
+          <Stack.Screen name="Onboarding" options={{gestureEnabled: false}}>
+            {props => (
+              <OnboardingScreen
+                {...props}
+                onOnboardingComplete={handleOnboardingFinish}
               />
-              <Stack.Screen
-                name="NotificationScreen"
-                component={NotificationScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
-              />
-              <Stack.Screen
-                name="EditProfileScreen"
-                component={EditProfileScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
-              />
-              <Stack.Screen
-                name="CallerSettings"
-                component={CallerSettingScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
-              />
-              <Stack.Screen
-                name="PickupSettings"
-                component={PickupSettingsScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
-              />
-              <Stack.Screen
-                name="DatabaseScreen"
-                component={DatabaseScreen}
-                options={{
-                  headerShown: false,
-                  presentation: 'card',
-                }}
-              />
-              <Stack.Screen
-                name="FakeCallScreen"
-                component={FakeCallScreen}
-                options={{
-                  presentation: 'fullScreenModal',
-                  gestureEnabled: false,
-                  animationTypeForReplace: 'push',
-                }}
-              />
-            </Stack.Group>
-          ) : (
-            // Authentication Screens
-            <Stack.Group>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
-              <Stack.Screen name="OTP" component={OTPScreen} />
-            </Stack.Group>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </DailyTasksProvider>
+            )}
+          </Stack.Screen>
+        ) : isAuthenticated ? (
+          // Authenticated User Screens
+          <Stack.Group>
+            <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+            <Stack.Screen
+              name="Feeds"
+              component={FeedsScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="NotificationScreen"
+              component={NotificationScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="EditProfileScreen"
+              component={EditProfileScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="CallerSettings"
+              component={CallerSettingScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="PickupSettings"
+              component={PickupSettingsScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="DatabaseScreen"
+              component={DatabaseScreen}
+              options={{
+                headerShown: false,
+                presentation: 'card',
+              }}
+            />
+            <Stack.Screen
+              name="FakeCallScreen"
+              component={FakeCallScreen}
+              options={{
+                presentation: 'fullScreenModal',
+                gestureEnabled: false,
+                animationTypeForReplace: 'push',
+              }}
+            />
+          </Stack.Group>
+        ) : (
+          // Authentication Screens
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="OTP" component={OTPScreen} />
+          </Stack.Group>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
