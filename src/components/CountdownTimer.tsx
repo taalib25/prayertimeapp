@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     color: colors.text.prayerBlue,
     textAlign: 'center',
     letterSpacing: -0.5,
+    padding : 6
   },
   activeTimerText: {
     ...typography.h1,
