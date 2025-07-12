@@ -5,11 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
+  Pressable,
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  SafeAreaView,
 } from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
@@ -20,7 +19,7 @@ interface MeetingMember {
   member_phone: string;
   scheduled_date: string;
   scheduled_time: string;
-  status: 'scheduled' | 'completed' | 'excused';
+  status: 'scheduled' | 'completed' | 'excused' | 'absent';
   member_username: string;
   location?: string;
 }
@@ -28,9 +27,33 @@ interface MeetingMember {
 interface MeetingStatusModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (status: 'completed' | 'cancelled', note: string) => void;
+  onSave: (status: 'completed' | 'excused' | 'absent', note: string) => void;
   member: MeetingMember;
 }
+
+const STATUS_OPTIONS = [
+  {
+    type: 'completed' as const,
+    label: 'Completed',
+    description: 'Meeting was completed successfully',
+    icon: 'attended',
+    color: '#20B83F',
+  },
+  {
+    type: 'excused' as const,
+    label: 'Excused',
+    description: 'Member was excused from meeting',
+    icon: 'assigned',
+    color: '#F57C00',
+  },
+  {
+    type: 'absent' as const,
+    label: 'Absent',
+    description: 'Member did not attend',
+    icon: 'absent',
+    color: '#FF2626',
+  },
+];
 
 const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
   visible,
@@ -39,7 +62,7 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
   member,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<
-    'completed' | 'cancelled' | null
+    'completed' | 'excused' | 'absent' | null
   >(null);
   const [note, setNote] = useState('');
 
@@ -56,8 +79,40 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
     onClose();
   };
 
-  const handleStatusSelect = (status: 'completed' | 'cancelled') => {
+  const handleStatusSelect = (status: 'completed' | 'excused' | 'absent') => {
     setSelectedStatus(status);
+  };
+
+  const renderStatusOption = (option: (typeof STATUS_OPTIONS)[0]) => {
+    const isSelected = selectedStatus === option.type;
+
+    return (
+      <TouchableOpacity
+        key={option.type}
+        style={[
+          styles.statusOption,
+          isSelected && {
+            backgroundColor: option.color + '20', // 20% opacity for lighter color
+            borderColor: option.color,
+            borderWidth: 2,
+          },
+        ]}
+        onPress={() => handleStatusSelect(option.type)}
+        activeOpacity={0.8}>
+        <SvgIcon
+          name={option.icon as any}
+          size={24}
+          color={isSelected ? option.color : colors.text.muted}
+        />
+        <Text
+          style={[
+            styles.statusLabel,
+            {color: isSelected ? option.color : colors.text.muted},
+          ]}>
+          {option.label}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -66,253 +121,150 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={handleClose}>
-      <SafeAreaView style={styles.overlay}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardAvoidingView}>
-          <TouchableOpacity
-            style={styles.backdrop}
-            activeOpacity={1}
-            onPress={handleClose}>
-            <View style={styles.modalContainer}>
-              <TouchableOpacity activeOpacity={1} style={styles.contentContainer}>
-              <View style={styles.header}>
-                <View style={styles.headerContent}>
-                  <Text style={styles.title}>Mark Meeting Status</Text>
-                  <TouchableOpacity
-                    onPress={handleClose}
-                    style={styles.closeButton}>
-                    <Text style={styles.closeButtonText}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}>
+        <Pressable style={styles.overlay} onPress={handleClose}>
+          <Pressable
+            style={styles.container}
+            onPress={e => e.stopPropagation()}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Meeting Status</Text>
+              <Text style={styles.memberName}>{member.member_name}</Text>
+            </View>
 
-              <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}>
-                <View style={styles.statusSection}>
-                  <Text style={styles.sectionTitle}>Meeting Status</Text>
-                  <View style={styles.statusOptions}>
-                    <TouchableOpacity
-                      style={[
-                        styles.statusOption,
-                        selectedStatus === 'completed' &&
-                          styles.selectedCompletedOption,
-                      ]}
-                      onPress={() => handleStatusSelect('completed')}>
-                      <SvgIcon
-                        name="attended"
-                        size={20}
-                        color={
-                          selectedStatus === 'completed' ? '#fff' : '#20B83F'
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.statusOptionText,
-                          selectedStatus === 'completed' &&
-                            styles.selectedStatusText,
-                        ]}>
-                        Completed
-                      </Text>
-                    </TouchableOpacity>
+            {/* Status Options in Row */}
+            <View style={styles.statusRow}>
+              {STATUS_OPTIONS.map(renderStatusOption)}
+            </View>
 
-                    <TouchableOpacity
-                      style={[
-                        styles.statusOption,
-                        selectedStatus === 'cancelled' &&
-                          styles.selectedCancelledOption,
-                      ]}
-                      onPress={() => handleStatusSelect('cancelled')}>
-                      <SvgIcon
-                        name="absent"
-                        size={20}
-                        color={
-                          selectedStatus === 'cancelled' ? '#fff' : '#FF2626'
-                        }
-                      />
-                      <Text
-                        style={[
-                          styles.statusOptionText,
-                          selectedStatus === 'cancelled' &&
-                            styles.selectedStatusText,
-                        ]}>
-                        Cancelled
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+            {/* Meeting Notes */}
+            <View style={styles.notesSection}>
+              <Text style={styles.notesLabel}>Meeting Notes (Optional)</Text>
+              <TextInput
+                style={styles.notesInput}
+                placeholder="Add any notes about the meeting..."
+                placeholderTextColor={colors.text.muted}
+                value={note}
+                onChangeText={setNote}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+            </View>
 
-                <View style={styles.noteSection}>
-                  <Text style={styles.sectionTitle}>Meeting Notes</Text>
-                  <TextInput
-                    style={styles.noteInput}
-                    placeholder="Add any additional notes about the meeting..."
-                    placeholderTextColor={colors.text.muted}
-                    value={note}
-                    onChangeText={setNote}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    returnKeyType="done"
-                    blurOnSubmit={true}
-                  />
-                </View>
-              </ScrollView>
+            {/* Action Buttons */}
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleClose}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
 
-              <View style={styles.footer}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleClose}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.saveButton,
-                    !selectedStatus && styles.disabledButton,
-                  ]}
-                  onPress={handleSave}
-                  disabled={!selectedStatus}>
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  !selectedStatus && styles.disabledButton,
+                ]}
+                onPress={handleSave}
+                disabled={!selectedStatus}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
       </KeyboardAvoidingView>
-    </SafeAreaView>
-  </Modal>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  backdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  modalContainer: {
-    backgroundColor: colors.background.surface,
-    borderRadius: borderRadius.xl,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-  contentContainer: {
-    flex: 1,
+  container: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
   header: {
-    padding: spacing.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.background.light,
   },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
   title: {
     ...typography.h2,
-    color: colors.text.prayerBlue,
-  },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.background.light,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 20,
-    color: colors.text.muted,
-    fontWeight: 'bold',
-  },
-  content: {
-    flex: 1,
-    padding: spacing.lg,
-  },
-  statusSection: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    ...typography.bodyLarge,
     color: colors.text.dark,
-    marginBottom: spacing.md,
-    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  statusOptions: {
+  memberName: {
+    ...typography.bodyLarge,
+    color: colors.text.muted,
+    textAlign: 'center',
+  },
+  statusRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    justifyContent: 'space-around',
   },
   statusOption: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: borderRadius.md,
+    minWidth: 80,
+    gap: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.background.light,
-    backgroundColor: colors.white,
+    borderColor: colors.background.dark,
+    backgroundColor: colors.background.light,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
   },
-  selectedCompletedOption: {
-    backgroundColor: '#20B83F',
-    borderColor: '#20B83F',
+  statusLabel: {
+    ...typography.caption,
+    fontSize: 12,
   },
-  selectedCancelledOption: {
-    backgroundColor: '#FF2626',
-    borderColor: '#FF2626',
+  notesSection: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
   },
-  statusOptionText: {
+  notesLabel: {
     ...typography.bodyMedium,
     color: colors.text.dark,
-    marginLeft: spacing.sm,
-    fontWeight: '500',
+    marginBottom: spacing.sm,
   },
-  selectedStatusText: {
-    color: colors.white,
-  },
-  noteSection: {
-    marginBottom: spacing.lg,
-  },
-  noteInput: {
-    backgroundColor: colors.white,
+  notesInput: {
+    backgroundColor: colors.background.light,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.background.light,
     ...typography.bodyMedium,
     color: colors.text.dark,
-    minHeight: 100,
+    minHeight: 80,
   },
-  footer: {
+  buttonRow: {
     flexDirection: 'row',
-    padding: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.background.light,
+    paddingHorizontal: spacing.lg,
     gap: spacing.md,
   },
   cancelButton: {
     flex: 1,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.light,
     alignItems: 'center',
@@ -320,11 +272,10 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     ...typography.bodyMedium,
     color: colors.text.muted,
-    fontWeight: '500',
   },
   saveButton: {
     flex: 1,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
     backgroundColor: colors.primary,
     alignItems: 'center',
@@ -335,7 +286,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     ...typography.bodyMedium,
     color: colors.white,
-    fontWeight: '600',
   },
 });
 
