@@ -2,25 +2,23 @@ import React, {useState, useRef, useCallback, useMemo, useEffect} from 'react';
 import {View, StyleSheet} from 'react-native';
 import PagerView from 'react-native-pager-view';
 import {colors, spacing} from '../../utils/theme';
-import {useDailyTasksContext} from '../../contexts/DailyTasksContext';
+import {useDailyTasks} from '../../hooks/useDailyTasks';
 import {PrayerStatus} from '../../model/DailyTasks';
 import DayView from './DayView';
 import PaginationDots from './PaginationDots';
-import {LoadingState, ErrorState} from './LoadingState';
 import {transformDailyData} from './dataTransform';
 
-// ✅ SIMPLIFIED: Basic selector without complex caching
+// ✅ SIMPLIFIED: Basic selector with native WatermelonDB reactivity
 const DailyTasksSelector: React.FC = React.memo(() => {
-  // Use the centralized context
+  // Use reactive WatermelonDB hooks instead of context
   const {
     dailyTasks,
-    isLoading,
-    error,
-    updatePrayerAndRefresh,
-    updateQuranAndRefresh,
-    updateZikrAndRefresh,
-  } = useDailyTasksContext();
-  // ✅ SIMPLE: Direct task toggle using context methods
+    updatePrayerStatus,
+    updateQuranMinutes,
+    updateZikrCount,
+    getTaskForDate,
+  } = useDailyTasks(3); // Get exactly 3 days: day before yesterday, yesterday, today
+  // ✅ ENHANCED: Direct task toggle using WatermelonDB observables with automatic sync
   const handleTaskToggle = useCallback(
     async (dateISO: string, taskId: string) => {
       try {
@@ -30,26 +28,38 @@ const DailyTasksSelector: React.FC = React.memo(() => {
         if (taskId.startsWith('prayer_')) {
           // Handle prayer tasks
           const prayerName = taskId.replace('prayer_', '');
-          const currentData = dailyTasks.find(task => task.date === dateISO);
+          const currentData = getTaskForDate(dateISO);
           const currentStatus = currentData?.[
             `${prayerName}Status` as keyof typeof currentData
           ] as string;
+
           // Toggle prayer status: none -> mosque -> none
           const newStatus: PrayerStatus =
             currentStatus === 'mosque' ? 'none' : 'mosque';
-          await updatePrayerAndRefresh(dateISO, prayerName, newStatus);
+
+          // Update with WatermelonDB - this will automatically trigger reactive updates and sync
+          await updatePrayerStatus(dateISO, prayerName, newStatus);
         } else if (taskId.startsWith('quran_')) {
-          // Handle Quran tasks - toggle 15 minutes
-          const currentData = dailyTasks.find(task => task.date === dateISO);
+          // Handle Quran tasks
+          const currentData = getTaskForDate(dateISO);
           const currentMinutes = currentData?.quranMinutes || 0;
-          const newMinutes = currentMinutes >= 15 ? 0 : 15; // Toggle 15 minutes
-          await updateQuranAndRefresh(dateISO, newMinutes);
+          const newMinutes = currentMinutes >= 15 ? 0 : 15;
+
+          // Update with WatermelonDB - this will automatically trigger reactive updates and sync
+          await updateQuranMinutes(dateISO, newMinutes);
         } else if (taskId.startsWith('zikr_')) {
-          // Handle Zikr tasks - toggle 100 count
-          const currentData = dailyTasks.find(task => task.date === dateISO);
+          // Handle Zikr tasks
+          const currentData = getTaskForDate(dateISO);
           const currentCount = currentData?.totalZikrCount || 0;
-          const newCount = currentCount >= 100 ? 0 : 100; // Toggle 100 count
-          await updateZikrAndRefresh(dateISO, newCount);
+          // Toggle based on task requirements: 500 for "allahuakbar", 100 for "istighfar"
+          let targetCount = 100; // Default for istighfar
+          if (taskId.includes('allahuakbar')) {
+            targetCount = 500;
+          }
+          const newCount = currentCount >= targetCount ? 0 : targetCount;
+
+          // Update with WatermelonDB - this will automatically trigger reactive updates and sync
+          await updateZikrCount(dateISO, newCount);
         }
 
         console.log(`✅ Task ${taskId} toggle completed`);
@@ -57,12 +67,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
         console.error('❌ Error in task toggle:', error);
       }
     },
-    [
-      dailyTasks,
-      updatePrayerAndRefresh,
-      updateQuranAndRefresh,
-      updateZikrAndRefresh,
-    ],
+    [updatePrayerStatus, updateQuranMinutes, updateZikrCount, getTaskForDate],
   );
 
   // ✅ SIMPLE: Basic data transformation without complex caching
@@ -79,13 +84,13 @@ const DailyTasksSelector: React.FC = React.memo(() => {
   const initialPage = useMemo(() => {
     if (transformedDailyData.length === 0) return 0;
 
-    // Find today's index
+    // Find today's index (should be the last page in chronological order)
     const todayIndex = transformedDailyData.findIndex(
       dayTasks => dayTasks.isToday,
     );
 
-    // If today is found, use it; otherwise use the last page
-     const targetPage = transformedDailyData.length - 1;
+    // If today is found, use it; otherwise use the last page (which should be today)
+    const targetPage = todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
 
     console.log(
       `📅 Daily tasks: ${transformedDailyData.length} days, today at index ${todayIndex}, showing page ${targetPage}`,
@@ -94,8 +99,8 @@ const DailyTasksSelector: React.FC = React.memo(() => {
   }, [transformedDailyData]);
 
   const [currentPage, setCurrentPage] = useState(() => {
-    // Initialize with the calculated initial page
-    return transformedDailyData.length - 1;
+    // Initialize with 0, will be updated when data loads
+    return 0;
   });
   const pagerRef = useRef<PagerView>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -133,15 +138,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     setCurrentPage(newPage);
   }, []);
 
-  // ✅ SIMPLE: Early returns for loading states
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  if (error) {
-    return <ErrorState error={error} />;
-  }
-
+  // ✅ SIMPLE: Early return for empty data
   if (transformedDailyData.length === 0) {
     return null;
   }

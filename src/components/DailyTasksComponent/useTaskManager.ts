@@ -1,16 +1,17 @@
 import {useCallback} from 'react';
 import {handleTaskCompletion} from './taskHandler';
 import {getSpecialTasksForDate, EnhancedSpecialTask} from './specialTasks';
-import {useDailyTasksContext} from '../../contexts/DailyTasksContext';
+import {useDailyTasks} from '../../hooks/useDailyTasks';
 
 /**
- * Hook to manage task operations with database integration
+ * Hook to manage task operations with WatermelonDB integration
+ * Updated to use enhanced useDailyTasks hook instead of React Context
  */
 export const useTaskManager = () => {
-  const {refreshData} = useDailyTasksContext();
+  const {refresh} = useDailyTasks();
 
   /**
-   * Handle task toggle with database update
+   * Handle task toggle with WatermelonDB reactive updates
    */
   const handleTaskToggle = useCallback(
     async (dateISO: string, taskId: string): Promise<void> => {
@@ -24,16 +25,18 @@ export const useTaskManager = () => {
         if (!taskTemplate) {
           console.error(`❌ Task ${taskId} not found in special tasks`);
           return;
-        } // Call the toggle handler - it will determine current state and toggle it
-        await handleTaskCompletion(taskTemplate, dateISO, refreshData);
+        }
+
+        // Call the toggle handler - it will determine current state and toggle it
+        // Using the enhanced hook's refresh method for reactive updates
+        await handleTaskCompletion(taskTemplate, dateISO, refresh);
 
         console.log(`✅ Task ${taskId} toggle operation completed`);
       } catch (error) {
         console.error(`❌ Error toggling task ${taskId}:`, error);
-        throw error;
       }
     },
-    [],
+    [refresh],
   );
 
   /**

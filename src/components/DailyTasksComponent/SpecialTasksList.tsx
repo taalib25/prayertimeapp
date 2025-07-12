@@ -86,23 +86,19 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     }, [actualTaskData]);
 
     // ✅ SIMPLE: Task press handler
-    const handleTaskPress = useCallback(
-      async (taskId: string) => {
-        console.log(`🔘 Task pressed: ${taskId}, isToday: ${isToday}`);
+  const handleTaskPress = useCallback(
+    async (taskId: string) => {
+      console.log(`🔘 Task pressed: ${taskId}, date: ${dateISO}`);
 
-        if (!isToday) {
-          console.log('❌ Cannot edit past tasks');
-          return;
-        }
-
-        try {
-          console.log(`🔄 Calling onTaskToggle for ${taskId}`);
-          await onTaskToggle(dateISO, taskId);
-          console.log(`✅ Task toggle completed for ${taskId}`);
-        } catch (error) {
-          console.error('❌ Error toggling task:', error);
-        }
-      },
+      // Allow editing all three days (day before yesterday, yesterday, today)
+      try {
+        console.log(`🔄 Calling onTaskToggle for ${taskId}`);
+        await onTaskToggle(dateISO, taskId);
+        console.log(`✅ Task toggle completed for ${taskId}`);
+      } catch (error) {
+        console.error('❌ Error toggling task:', error);
+      }
+    },
       [isToday, onTaskToggle, dateISO],
     );
 
