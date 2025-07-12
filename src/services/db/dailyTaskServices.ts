@@ -46,22 +46,47 @@ export const getRecentDailyTasks = async (
     const dailyTasksCollection = database.get<DailyTasksModel>('daily_tasks');
     const today = getTodayDateString();
 
-    // Generate all dates in range (today and previous days)
+    // Generate all dates in range (past days, today, and future days)
     const allDates = [];
-    for (let i = 0; i < daysBack; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      allDates.push(formatDateString(date));
+
+    // For 3 days: Get day before yesterday, yesterday, today in chronological order
+    if (daysBack === 3) {
+      // Day before yesterday
+      const dayBeforeYesterday = new Date();
+      dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+      allDates.push(formatDateString(dayBeforeYesterday));
+
+      // Yesterday
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      allDates.push(formatDateString(yesterday));
+
+      // Today
+      allDates.push(today);
+    } else {
+      // Original logic for other cases
+      for (let i = 0; i < daysBack; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        allDates.push(formatDateString(date));
+      }
     }
 
-    // Calculate start date for query
-    const startDate = allDates[allDates.length - 1];
+    // Calculate start and end dates for query
+    const startDate =
+      allDates[0] < allDates[allDates.length - 1]
+        ? allDates[0]
+        : allDates[allDates.length - 1];
+    const endDate =
+      allDates[0] > allDates[allDates.length - 1]
+        ? allDates[0]
+        : allDates[allDates.length - 1];
 
     // Query for the date range
     const tasks = await dailyTasksCollection
       .query(
         Q.where('date', Q.gte(startDate)),
-        Q.where('date', Q.lte(today)),
+        Q.where('date', Q.lte(endDate)),
         Q.sortBy('date', Q.desc),
       )
       .fetch();
@@ -126,11 +151,11 @@ export const createDailyTasks = async (
     const newDailyTask = await database.write(async () => {
       const newTask = await dailyTasksCollection.create(task => {
         task.date = date;
-        task.fajrStatus = DEFAULT_DAILY_TASKS.fajrStatus;
-        task.dhuhrStatus = DEFAULT_DAILY_TASKS.dhuhrStatus;
-        task.asrStatus = DEFAULT_DAILY_TASKS.asrStatus;
-        task.maghribStatus = DEFAULT_DAILY_TASKS.maghribStatus;
-        task.ishaStatus = DEFAULT_DAILY_TASKS.ishaStatus;
+        task.fajrStatus = DEFAULT_DAILY_TASKS.fajrStatus || 'none';
+        task.dhuhrStatus = DEFAULT_DAILY_TASKS.dhuhrStatus || 'none';
+        task.asrStatus = DEFAULT_DAILY_TASKS.asrStatus || 'none';
+        task.maghribStatus = DEFAULT_DAILY_TASKS.maghribStatus || 'none';
+        task.ishaStatus = DEFAULT_DAILY_TASKS.ishaStatus || 'none';
         task.totalZikrCount = DEFAULT_DAILY_TASKS.totalZikrCount;
         task.quranMinutes = DEFAULT_DAILY_TASKS.quranMinutes;
         task.specialTasks = JSON.stringify(DEFAULT_DAILY_TASKS.specialTasks);
@@ -217,23 +242,23 @@ export const updatePrayerStatus = async (
         switch (lcPrayer) {
           case 'fajr':
             console.log(`✏️ Setting fajrStatus to: ${status}`);
-            task.fajrStatus = status;
+            task.fajrStatus = status || 'none';
             break;
           case 'dhuhr':
             console.log(`✏️ Setting dhuhrStatus to: ${status}`);
-            task.dhuhrStatus = status;
+            task.dhuhrStatus = status || 'none';
             break;
           case 'asr':
             console.log(`✏️ Setting asrStatus to: ${status}`);
-            task.asrStatus = status;
+            task.asrStatus = status || 'none';
             break;
           case 'maghrib':
             console.log(`✏️ Setting maghribStatus to: ${status}`);
-            task.maghribStatus = status;
+            task.maghribStatus = status || 'none';
             break;
           case 'isha':
             console.log(`✏️ Setting ishaStatus to: ${status}`);
-            task.ishaStatus = status;
+            task.ishaStatus = status || 'none';
             break;
         }
       });
@@ -384,10 +409,7 @@ export const getRecentMonthsData = async (
       today.getMonth() - monthsBack + 1,
       1,
     );
-    const startYear = startDate.getFullYear();
-    const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
-    const startDay = String(startDate.getDate()).padStart(2, '0');
-    const startDateStr = `${startYear}-${startMonth}-${startDay}`;
+    const startDateStr = formatDateString(startDate);
 
     // Get all tasks since that date
     const tasks = await dailyTasksCollection

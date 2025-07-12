@@ -51,7 +51,7 @@ const DayView: React.FC<DayViewProps> = React.memo(
           <SpecialTasksList
             dateISO={dayTasks.dateISO}
             onTaskToggle={onTaskToggle}
-            isToday={isToday}
+            isToday={true}
             actualTaskData={dayTasks.tasks}
           />
         </ScrollView>

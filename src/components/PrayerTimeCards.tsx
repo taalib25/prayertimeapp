@@ -8,7 +8,7 @@ import AttendanceSelectionModal, {
   AttendanceType,
 } from './AttendanceSelectionModal';
 import {PrayerStatus} from '../model/DailyTasks';
-import {usePrayerData} from '../hooks/useContextualData';
+import {useDailyTasks} from '../hooks/useDailyTasks';
 import {getTodayDateString} from '../utils/helpers';
 
 interface PrayerTime {
@@ -29,14 +29,42 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 }) => {
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
-    useState<PrayerTime | null>(null); // Use centralized prayer data - pass selectedDate to get data for that specific date
-  // But tick marks should only show for today's date regardless
-  const {getPrayerStatus, updatePrayerStatus, isLoading, todayData} =
-    usePrayerData(selectedDate);
+    useState<PrayerTime | null>(null);
+
+  // Use the enhanced useDailyTasks hook for reactive data updates
+  const {updatePrayerStatus, getTaskForDate, isLoading} = useDailyTasks();
+
   const isToday = useMemo(() => {
     const today = getTodayDateString();
     return selectedDate === today;
   }, [selectedDate]);
+
+  // Get prayer status for a specific prayer
+  const getPrayerStatus = useCallback(
+    (prayerName: string): PrayerStatus => {
+      const dateToCheck = selectedDate || getTodayDateString();
+      const taskData = getTaskForDate(dateToCheck);
+
+      if (!taskData) return null;
+
+      const lcPrayerName = prayerName.toLowerCase();
+      switch (lcPrayerName) {
+        case 'fajr':
+          return (taskData.fajrStatus as PrayerStatus) || null;
+        case 'dhuhr':
+          return (taskData.dhuhrStatus as PrayerStatus) || null;
+        case 'asr':
+          return (taskData.asrStatus as PrayerStatus) || null;
+        case 'maghrib':
+          return (taskData.maghribStatus as PrayerStatus) || null;
+        case 'isha':
+          return (taskData.ishaStatus as PrayerStatus) || null;
+        default:
+          return null;
+      }
+    },
+    [selectedDate, getTaskForDate],
+  );
 
   // Convert prayer time string to hours and minutes for comparison
   const isPrayerInFuture = useCallback((prayerTimeStr: string) => {
@@ -100,14 +128,16 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         setAttendancePopupVisible(false);
         setSelectedPrayerForAttendance(null);
 
-        // Update via context - this will refresh all UIs automatically
+        // Update prayer status using the enhanced hook with automatic sync
+        const dateToUpdate = selectedDate || getTodayDateString();
         await updatePrayerStatus(
+          dateToUpdate,
           selectedPrayerForAttendance.name.toLowerCase(),
           attendance,
         );
 
         console.log(
-          `✅ Prayer ${selectedPrayerForAttendance.name} updated to ${attendance}`,
+          `✅ Prayer ${selectedPrayerForAttendance.name} updated to ${attendance} for date ${dateToUpdate}`,
         );
       } catch (error) {
         console.error('❌ Prayer status update failed:', error);
@@ -117,7 +147,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         );
       }
     },
-    [selectedPrayerForAttendance, updatePrayerStatus],
+    [selectedPrayerForAttendance, updatePrayerStatus, selectedDate],
   );
   const handleModalClose = useCallback(() => {
     setAttendancePopupVisible(false);
@@ -234,9 +264,11 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         onSelect={handleAttendanceSelect}
         onClose={handleModalClose}
         prayerName={selectedPrayerForAttendance?.displayName || ''}
+        selectedDate={selectedDate} // Pass the selectedDate prop
         isFuturePrayer={
-          selectedPrayerForAttendance &&
-          isPrayerInFuture(selectedPrayerForAttendance.time)
+          selectedPrayerForAttendance
+            ? isPrayerInFuture(selectedPrayerForAttendance.time)
+            : false
         }
       />
     </>

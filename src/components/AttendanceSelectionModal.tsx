@@ -16,6 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import {colors} from '../utils/theme';
 import {fontFamilies, typography} from '../utils/typography';
+import {useDailyTasks} from '../hooks/useDailyTasks';
+import {getTodayDateString} from '../utils/helpers';
 
 export type AttendanceType = 'home' | 'mosque' | 'none' | null;
 
@@ -47,6 +49,7 @@ interface AttendanceSelectionModalProps {
   onClose: () => void;
   prayerName: string;
   isFuturePrayer?: boolean; // Added prop to identify future prayers
+  selectedDate?: string; // Add selectedDate prop
 }
 
 const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
@@ -56,7 +59,11 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   onClose,
   prayerName,
   isFuturePrayer = false, // Default to false
+  selectedDate, // Add selectedDate prop
 }) => {
+  // Use the enhanced useDailyTasks hook for reactive data updates
+  const {updatePrayerStatus} = useDailyTasks();
+
   // Animation values
   const slideAnim = useSharedValue(300);
   const scaleAnim = useSharedValue(0.97); // Reduced scaling effect
@@ -81,16 +88,36 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     opacity: opacityAnim.value,
   }));
 
-  // Simple selection handler with animation
-  const handleSelect = (attendance: AttendanceType) => {
+  // Enhanced selection handler with WatermelonDB reactive updates
+  const handleSelect = async (attendance: AttendanceType) => {
     // Don't allow selection for future prayers
     if (isFuturePrayer) return;
 
-    // Add a small bounce animation on selection - reduced scaling
-    scaleAnim.value = withSpring(0.99, {duration: 100}, () => {
-      scaleAnim.value = withSpring(1, {duration: 150});
-    });
-    onSelect(attendance);
+    try {
+      // // Add a small bounce animation on selection - reduced scaling
+      // scaleAnim.value = withSpring(0.99, {duration: 100}, () => {
+      //   scaleAnim.value = withSpring(1, {duration: 150});
+      // });
+
+      // Update prayer status using the enhanced hook with automatic sync
+      const dateToUpdate = selectedDate || getTodayDateString(); // Use selectedDate if provided
+      await updatePrayerStatus(
+        dateToUpdate,
+        prayerName.toLowerCase(),
+        attendance,
+      );
+
+      // Call the parent onSelect callback for any additional UI updates
+      onSelect(attendance);
+
+      console.log(
+        `✅ Prayer ${prayerName} attendance updated to: ${attendance}`,
+      );
+    } catch (error) {
+      console.error('❌ Error updating prayer attendance:', error);
+      // Still call parent callback in case of error
+      onSelect(attendance);
+    }
   }; // Render option as a simple button
   const renderOption = (option: any) => {
     const isSelected = currentAttendance === option.type;
@@ -98,7 +125,8 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     const isNone = option.type === 'none';
 
     // Only show selection if there's a valid attendance value (not null or 'home')
-    const hasValidSelection = currentAttendance !== null && currentAttendance !== 'home';
+    const hasValidSelection =
+      currentAttendance !== null && currentAttendance !== 'home';
     const shouldShowAsSelected = hasValidSelection && isSelected;
 
     const getButtonStyle = () => {

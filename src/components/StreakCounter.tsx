@@ -4,11 +4,15 @@ import {useFajrChartData} from '../hooks/useContextualData';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from './SvgIcon';
+import {useDailyTasks} from '../hooks/useDailyTasks';
+import {getTodayDateString, formatDateString} from '../utils/helpers';
 
 interface DayStatus {
   date: string;
   status: 'attended' | 'missed' | 'upcoming';
   dayName: string;
+  isToday?: boolean;
+  isFuture?: boolean;
 }
 
 const StreakCounter: React.FC = () => {
@@ -32,10 +36,11 @@ const StreakCounter: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState(getCurrentWeekStart);
 
   const {getFajrDataForDates} = useFajrChartData();
+  const {updateTrigger} = useDailyTasks(30); // Get update trigger for reactivity
 
-  // Format date to string (YYYY-MM-DD)
+  // Format date to string (YYYY-MM-DD) - using helper function
   const formatDate = useCallback((date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return formatDateString(date);
   }, []);
 
   // Get the week dates (Monday to Sunday)
@@ -56,7 +61,7 @@ const StreakCounter: React.FC = () => {
   const [weeklyData, setWeeklyData] = useState<DayStatus[]>([]);
   const [currentStreak, setCurrentStreak] = useState(0);
 
-  // Calculate the streak and week data
+  // Calculate the streak and week data - now reactive to prayer status updates
   const calculateStreakData = useCallback(async () => {
     try {
       // Get last 30 days to calculate streak
@@ -71,16 +76,47 @@ const StreakCounter: React.FC = () => {
       const pastDateStrings = pastDates.map(formatDate);
       const fajrData = getFajrDataForDates(pastDateStrings);
 
-      // Calculate streak
+      // Calculate most recent consecutive streak including today
       let streak = 0;
-      for (let i = fajrData.length - 1; i >= 0; i--) {
-        if (fajrData[i].fajrStatus === 'mosque') {
-          streak++;
-        } else {
-          break;
+      const todayStr = getTodayDateString();
+
+      // Sort data by date (oldest to newest)
+      const sortedData = fajrData.sort((a, b) => a.date.localeCompare(b.date));
+
+      // Find today's index in the sorted data
+      const todayIndex = sortedData.findIndex(d => d.date === todayStr);
+
+      console.log('Streak Calculation Debug:', {
+        todayStr,
+        todayIndex,
+        totalDataPoints: sortedData.length,
+        todayData: sortedData[todayIndex],
+        lastFewDays: sortedData
+          .slice(-7)
+          .map(d => ({date: d.date, status: d.fajrStatus})),
+      });
+
+      if (todayIndex === -1) {
+        // Today's data not found, streak is 0
+        console.log('Today not found in data, streak = 0');
+        streak = 0;
+      } else {
+        // Start from today and count backwards for consecutive 'mosque' status
+        for (let i = todayIndex; i >= 0; i--) {
+          const dayData = sortedData[i];
+
+          if (dayData.fajrStatus === 'mosque') {
+            streak++;
+            console.log(`Day ${dayData.date}: mosque, streak now ${streak}`);
+          } else {
+            // Break on first non-mosque status
+            console.log(
+              `Day ${dayData.date}: ${dayData.fajrStatus}, breaking streak at ${streak}`,
+            );
+            break;
+          }
         }
       }
-
       setCurrentStreak(streak);
 
       // Get current week data
@@ -93,20 +129,27 @@ const StreakCounter: React.FC = () => {
         const dateStr = formatDate(date);
         const fajrInfo = weekFajrData.find(d => d.date === dateStr);
 
-        const todayStr = formatDate(today);
+        const todayStr = getTodayDateString();
         const isPast = date < today;
         const isToday = dateStr === todayStr;
+        const isFuture = date > today;
 
         let status: 'attended' | 'missed' | 'upcoming' = 'upcoming';
 
-        if (isPast || isToday) {
+        if (isPast) {
           status = fajrInfo?.fajrStatus === 'mosque' ? 'attended' : 'missed';
+        } else if (isToday) {
+          status = fajrInfo?.fajrStatus === 'mosque' ? 'attended' : 'missed';
+        } else {
+          status = 'upcoming';
         }
 
         return {
           date: dateStr,
           status,
           dayName: dayNames[index],
+          isToday,
+          isFuture,
         };
       });
 
@@ -114,7 +157,14 @@ const StreakCounter: React.FC = () => {
     } catch (error) {
       console.error('Error calculating streak:', error);
     }
-  }, [currentWeekStart, formatDate, getWeekDates, getFajrDataForDates, today]);
+  }, [
+    currentWeekStart,
+    formatDate,
+    getWeekDates,
+    getFajrDataForDates,
+    today,
+    updateTrigger,
+  ]); // Add updateTrigger
 
   useEffect(() => {
     calculateStreakData();
@@ -192,7 +242,7 @@ const StreakCounter: React.FC = () => {
             <SvgIcon name="fire" size={98} color={colors.accent} />
           </View>
         </View>
-        <Text style={styles.streakText}>Fajr Streak!</Text>
+        <Text style={styles.streakText}>Fajr Streak</Text>
       </View>
 
       {/* Weekly Progress with integrated navigation */}
@@ -216,14 +266,17 @@ const StreakCounter: React.FC = () => {
                 <Text
                   style={[
                     styles.dayLabel,
-                    day.status === 'attended' && styles.dayLabelActive,
+                    day.status === 'attended' && !day.isToday && styles.dayLabelActive,
+                    day.isToday && styles.dayLabelToday,
                   ]}>
                   {day.dayName}
                 </Text>
                 <View
                   style={[
                     styles.dayIndicator,
-                    day.status === 'attended' && styles.dayAttended,
+                    day.status === 'attended' && !day.isToday && styles.dayAttended,
+                    day.status === 'attended' && day.isToday && styles.dayAttendedToday,
+                    day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
                   ]}>
                   {day.status === 'attended' && (
@@ -268,36 +321,31 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   streakContainer: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.background.light,
+
   },
   streakCounterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
   streakNumber: {
     ...typography.h1,
     fontSize: 72, // Increased for better visibility
     lineHeight: 84, // Prevent text cutoff
     color: colors.primary,
-    fontWeight: 'bold',
   },
   streakIconContainer: {
     marginTop: 0, // Fixed alignment issue
     alignItems: 'flex-end',
   },
   streakText: {
-    ...typography.bodyMedium,
-    fontSize: 18,
+    ...typography.h2,
+    fontSize: 22,
     color: colors.text.dark,
-    fontWeight: '600',
+    fontWeight: '700',
     marginLeft: 4,
-    marginTop: 8, // Added spacing to prevent text cut-off
-    lineHeight: 24, // Added to ensure proper text height
+    marginTop: 12,
+    lineHeight: 28,
   },
   weeklyProgressContainer: {
     marginBottom: 4,
@@ -307,12 +355,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start', // Left-align the week range text
   },
   weeklyTitle: {
-    ...typography.h3,
-    fontSize: 17,
-    color: colors.text.dark,
-    fontWeight: '600',
+    ...typography.bodySmall,
+    fontSize: 14,
+    color: colors.text.muted,
+    fontWeight: '500',
     textAlign: 'left',
-    lineHeight: 24, // Added to prevent text cut-off
+    lineHeight: 20,
   },
   weeklyNavigationContainer: {
     flexDirection: 'row',
@@ -323,68 +371,97 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flex: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
   dayColumn: {
     alignItems: 'center',
+    flex: 1,
   },
   dayLabel: {
     ...typography.bodySmall,
-    fontSize: 14,
-    color: colors.text.dark,
-    fontWeight: '600',
-    marginBottom: 8,
-    lineHeight: 18, // Ensure proper line height
+    fontSize: 13,
+    color: colors.text.muted,
+    fontWeight: '500',
+    marginBottom: 12,
+    lineHeight: 16,
   },
   dayLabelActive: {
     color: colors.success,
+    fontWeight: '600',
+  },
+  dayLabelToday: {
+    color: colors.primary,
     fontWeight: '700',
   },
   dayIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   dayAttended: {
     backgroundColor: colors.success,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    borderColor: colors.success,
+    shadowColor: colors.success,
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dayAttendedToday: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+    transform: [{scale: 1.1}],
+  },
+  dayMissed: {
+    backgroundColor: '#FFE6E6',
+    borderColor: '#FFB3B3',
+    borderWidth: 1,
   },
   dayUpcoming: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.text.muted,
     borderStyle: 'dashed',
+    opacity: 0.6,
   },
   navButtonLeft: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 4,
+    marginRight: 8,
+    borderRadius: 18,
+    backgroundColor: '#F8F9FA',
   },
   navButtonRight: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 4,
+    marginLeft: 8,
+    borderRadius: 18,
+    backgroundColor: '#F8F9FA',
   },
   navButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.3,
   },
   navButtonText: {
     ...typography.h2,
-    fontSize: 28,
+    fontSize: 24,
     color: colors.primary,
-    marginTop: -4,
+    marginTop: -2,
     textAlign: 'center',
+    fontWeight: '600',
   },
   navButtonTextDisabled: {
     color: colors.text.muted,

@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useDailyTasksContext } from '../contexts/DailyTasksContext';
+import {useMemo} from 'react';
+import {useDailyTasks} from './useDailyTasks';
 
 interface Badge {
   id: string;
@@ -12,14 +12,14 @@ interface Badge {
 
 /**
  * Custom hook to calculate badges based on daily tasks data
- * Uses WatermelonDB data through DailyTasksContext
+ * Uses WatermelonDB data through enhanced useDailyTasks hook
  */
 export const useBadgeCalculation = (): {
   badges: Badge[];
   earnedBadges: number;
   totalBadges: number;
 } => {
-  const { dailyTasks } = useDailyTasksContext();
+  const {dailyTasks, updateTrigger} = useDailyTasks(90); // Get 90 days for badge calculations + reactive trigger
 
   const badges = useMemo(() => {
     // Calculate Challenge 40 badge (40+ consecutive Fajr at mosque)
@@ -49,6 +49,7 @@ export const useBadgeCalculation = (): {
       totalQuranPages,
       reciteMasterEarned,
       totalDailyTasks: dailyTasks.length,
+      updateTrigger, // Log trigger for debugging
     });
 
     return [
@@ -77,7 +78,7 @@ export const useBadgeCalculation = (): {
         category: 'quran',
       },
     ];
-  }, [dailyTasks]);
+  }, [dailyTasks, updateTrigger]); // Add updateTrigger to dependencies
 
   const earnedBadges = badges.filter(badge => badge.isEarned).length;
   const totalBadges = badges.length;
@@ -102,7 +103,7 @@ const calculateFajrStreak = (dailyTasks: any[]): number => {
   );
 
   let streak = 0;
-  
+
   // Count consecutive Fajr mosque prayers from today backwards
   for (const task of sortedTasks) {
     if (task.fajrStatus === 'mosque') {

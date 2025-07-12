@@ -4,6 +4,7 @@ import DatePicker from 'react-native-date-picker';
 import SvgIcon from '../SvgIcon';
 import {colors, spacing, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
+import {formatDateString} from '../../utils/helpers';
 
 interface DateFieldProps {
   label: string;
@@ -35,7 +36,7 @@ const DateField: React.FC<DateFieldProps> = ({
     setShowDatePicker(false);
     setSelectedDate(pickedDate);
     // Save date in ISO format for consistency
-    const isoDate = pickedDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const isoDate = formatDateString(pickedDate); // YYYY-MM-DD format
     onDateChange(isoDate);
   };
 

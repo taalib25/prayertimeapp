@@ -10,6 +10,8 @@ import {LineChart} from 'react-native-chart-kit';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useFajrChartData} from '../hooks/useContextualData';
+import useDailyTasks from '../hooks/useDailyTasks';
+import {formatDateString} from '../utils/helpers';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -28,9 +30,10 @@ const FajrTimeChart: React.FC = () => {
   const chartOpacity = useSharedValue(1);
 
   // Use centralized context instead of direct database access
-  const {getFajrDataForDates} = useFajrChartData(); // Helper functions - memoized for performance
+  const {getFajrDataForDates} = useFajrChartData();
+  const {updateTrigger} = useDailyTasks(30); // Get update trigger for reactivity  // Helper functions - memoized for performance
   const formatDate = useCallback((date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return formatDateString(date);
   }, []);
 
   const statusToValue = useCallback((status: string): number => {
@@ -92,7 +95,7 @@ const FajrTimeChart: React.FC = () => {
     return `${startDay} - ${endDay}`;
   }, [currentCenterDate, getDatesRange]);
 
-  // Fetch Fajr completion data using centralized context
+  // Fetch Fajr completion data using centralized context - now reactive
   const fetchFajrCompletionData = useCallback(async () => {
     try {
       const dates = getDatesRange(currentCenterDate);
@@ -114,7 +117,7 @@ const FajrTimeChart: React.FC = () => {
     } catch (error) {
       console.error('Error fetching Fajr completion data:', error);
     }
-  }, [currentCenterDate, getFajrDataForDates, getDatesRange]);
+  }, [currentCenterDate, getFajrDataForDates, getDatesRange, updateTrigger]); // Add updateTrigger
   useEffect(() => {
     fetchFajrCompletionData();
   }, [fetchFajrCompletionData]); // Reanimated animation function for chart transitions
@@ -275,7 +278,8 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
-  },  bottomNavigation: {
+  },
+  bottomNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -314,7 +318,8 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-  },  navButtonText: {
+  },
+  navButtonText: {
     color: colors.primary,
     fontSize: 28,
     fontWeight: 'bold',

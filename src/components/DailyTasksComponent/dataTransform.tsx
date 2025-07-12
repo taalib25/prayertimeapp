@@ -1,6 +1,6 @@
 import {DailyTaskData} from '../../services/db/dailyTaskServices';
 import {getSpecialTasksForDate, convertToRegularTasks} from './specialTasks';
-import {getTodayDateString} from '../../utils/helpers';
+import {getTodayDateString, formatDateString} from '../../utils/helpers';
 
 interface Task {
   id: string;
@@ -24,13 +24,21 @@ export const transformDailyData = (
     const date = new Date(dateStr);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const year = yesterday.getFullYear();
-    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
-    const day = String(yesterday.getDate()).padStart(2, '0');
-    const yesterdayStr = `${year}-${month}-${day}`;
+    const dayBeforeYesterday = new Date();
+    dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
 
-    if (dateStr === today) {return 'Today';}
-    if (dateStr === yesterdayStr) {return 'Yesterday';}
+    const yesterdayStr = formatDateString(yesterday);
+    const dayBeforeYesterdayStr = formatDateString(dayBeforeYesterday);
+
+    if (dateStr === today) {
+      return 'Today';
+    }
+    if (dateStr === yesterdayStr) {
+      return 'Yesterday';
+    }
+    if (dateStr === dayBeforeYesterdayStr) {
+      return 'Day Before Yesterday';
+    }
 
     const options: Intl.DateTimeFormatOptions = {
       month: 'short',

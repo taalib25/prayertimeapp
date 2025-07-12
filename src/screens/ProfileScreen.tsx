@@ -275,7 +275,6 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 30,
     flex: 1,
-    backgroundColor: colors.background.surface,
   },
   loadingContainer: {
     flex: 1,
@@ -312,7 +311,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   header: {
-    backgroundColor: colors.background.surface,
+    // backgroundColor: colors.background.surface,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',

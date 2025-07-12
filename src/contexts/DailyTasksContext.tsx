@@ -16,6 +16,7 @@ import {
 import {PrayerStatus} from '../model/DailyTasks';
 import ApiTaskServices from '../services/apiHandler';
 import {dataCache} from '../utils/dataCache';
+import {getTodayDateString} from '../utils/helpers';
 
 interface DailyTasksContextType {
   // Data
@@ -108,7 +109,7 @@ export const DailyTasksProvider: React.FC<{
 
   // Get today's data
   const getTodayData = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     return dailyTasks.find(task => task.date === today) || null;
   }, [dailyTasks]);
 
