@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flex: 1,
-    paddingHorizontal: 12,
+    // paddingHorizontal: 12,
   },
   dayColumn: {
     alignItems: 'center',
@@ -401,6 +401,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
     borderColor: 'transparent',
+
   },
   dayAttended: {
     backgroundColor: colors.success,
