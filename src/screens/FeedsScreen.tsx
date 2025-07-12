@@ -313,11 +313,11 @@ const FeedsScreen: React.FC = () => {
             </View> */}
           </TouchableOpacity>
           <Text style={styles.headerTitle}>All Feeds</Text>
-          <TouchableOpacity style={styles.iconButton}>
+          {/* <TouchableOpacity style={styles.iconButton}>
             <View style={styles.squareIconContainer}>
               <SvgIcon name="search" size={25} color="#333" />
             </View>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Category Selector */}
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
