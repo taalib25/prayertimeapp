@@ -375,7 +375,6 @@ const styles = StyleSheet.create({
   },
   dayColumn: {
     alignItems: 'center',
-    flex: 1,
   },
   dayLabel: {
     ...typography.bodySmall,
