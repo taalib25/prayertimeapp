@@ -15,7 +15,7 @@ import {
   getRecentDailyTasks,
   DailyTaskData,
 } from '../services/db/dailyTaskServices';
-import {getTodayDateString} from '../utils/helpers';
+import {getTodayDateString, formatDateString} from '../utils/helpers';
 
 interface ProgressSummary {
   date: string;
@@ -44,7 +44,7 @@ const ProgressScreen: React.FC = () => {
 
     if (dateString === getTodayDateString()) {
       return 'Today';
-    } else if (dateString === yesterday.toISOString().split('T')[0]) {
+    } else if (dateString === formatDateString(yesterday)) {
       return 'Yesterday';
     } else {
       return date.toLocaleDateString('en-US', {
@@ -299,7 +299,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text.prayerBlue,
     fontSize: 16,
-
   },
 
   // Table Styles

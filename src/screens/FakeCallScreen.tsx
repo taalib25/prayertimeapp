@@ -17,6 +17,7 @@ import {colors, spacing} from '../utils/theme';
 import {typography} from '../utils/typography';
 import ApiTaskServices from '../services/apiHandler';
 import UserService from '../services/UserService';
+import {formatDateString} from '../utils/helpers';
 
 const FakeCallScreen = () => {
   // Use a ref to store if we've tried to initialize navigation
@@ -44,7 +45,7 @@ const FakeCallScreen = () => {
   const apiService = ApiTaskServices.getInstance();
   const userService = UserService.getInstance();
   const [callStartTime] = useState(new Date());
-  const [callDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+  const [callDate] = useState(formatDateString(new Date())); // YYYY-MM-DD
   const [callTime] = useState(
     new Date().toTimeString().split(' ')[0].slice(0, 5),
   ); // HH:MM
