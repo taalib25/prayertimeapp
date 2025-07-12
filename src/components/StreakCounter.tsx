@@ -11,6 +11,8 @@ interface DayStatus {
   date: string;
   status: 'attended' | 'missed' | 'upcoming';
   dayName: string;
+  isToday?: boolean;
+  isFuture?: boolean;
 }
 
 const StreakCounter: React.FC = () => {
@@ -130,17 +132,24 @@ const StreakCounter: React.FC = () => {
         const todayStr = getTodayDateString();
         const isPast = date < today;
         const isToday = dateStr === todayStr;
+        const isFuture = date > today;
 
         let status: 'attended' | 'missed' | 'upcoming' = 'upcoming';
 
-        if (isPast || isToday) {
+        if (isPast) {
           status = fajrInfo?.fajrStatus === 'mosque' ? 'attended' : 'missed';
+        } else if (isToday) {
+          status = fajrInfo?.fajrStatus === 'mosque' ? 'attended' : 'missed';
+        } else {
+          status = 'upcoming';
         }
 
         return {
           date: dateStr,
           status,
           dayName: dayNames[index],
+          isToday,
+          isFuture,
         };
       });
 
@@ -257,14 +266,17 @@ const StreakCounter: React.FC = () => {
                 <Text
                   style={[
                     styles.dayLabel,
-                    day.status === 'attended' && styles.dayLabelActive,
+                    day.status === 'attended' && !day.isToday && styles.dayLabelActive,
+                    day.isToday && styles.dayLabelToday,
                   ]}>
                   {day.dayName}
                 </Text>
                 <View
                   style={[
                     styles.dayIndicator,
-                    day.status === 'attended' && styles.dayAttended,
+                    day.status === 'attended' && !day.isToday && styles.dayAttended,
+                    day.status === 'attended' && day.isToday && styles.dayAttendedToday,
+                    day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
                   ]}>
                   {day.status === 'attended' && (
@@ -309,23 +321,18 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   streakContainer: {
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.background.light,
+
   },
   streakCounterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
   },
   streakNumber: {
     ...typography.h1,
     fontSize: 72, // Increased for better visibility
     lineHeight: 84, // Prevent text cutoff
     color: colors.primary,
-    fontWeight: 'bold',
   },
   streakIconContainer: {
     marginTop: 0, // Fixed alignment issue
@@ -337,7 +344,7 @@ const styles = StyleSheet.create({
     color: colors.text.dark,
     fontWeight: '700',
     marginLeft: 4,
-    marginTop: 8,
+    marginTop: 12,
     lineHeight: 28,
   },
   weeklyProgressContainer: {
@@ -364,68 +371,97 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flex: 1,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
   dayColumn: {
     alignItems: 'center',
+    flex: 1,
   },
   dayLabel: {
     ...typography.bodySmall,
-    fontSize: 14,
-    color: colors.text.dark,
-    fontWeight: '600',
-    marginBottom: 8,
-    lineHeight: 18, // Ensure proper line height
+    fontSize: 13,
+    color: colors.text.muted,
+    fontWeight: '500',
+    marginBottom: 12,
+    lineHeight: 16,
   },
   dayLabelActive: {
     color: colors.success,
+    fontWeight: '600',
+  },
+  dayLabelToday: {
+    color: colors.primary,
     fontWeight: '700',
   },
   dayIndicator: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   dayAttended: {
     backgroundColor: colors.success,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    borderColor: colors.success,
+    shadowColor: colors.success,
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  dayAttendedToday: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+    transform: [{scale: 1.1}],
+  },
+  dayMissed: {
+    backgroundColor: '#FFE6E6',
+    borderColor: '#FFB3B3',
+    borderWidth: 1,
   },
   dayUpcoming: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.text.muted,
     borderStyle: 'dashed',
+    opacity: 0.6,
   },
   navButtonLeft: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 4,
+    marginRight: 8,
+    borderRadius: 18,
+    backgroundColor: '#F8F9FA',
   },
   navButtonRight: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 4,
+    marginLeft: 8,
+    borderRadius: 18,
+    backgroundColor: '#F8F9FA',
   },
   navButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.3,
   },
   navButtonText: {
     ...typography.h2,
-    fontSize: 28,
+    fontSize: 24,
     color: colors.primary,
-    marginTop: -4,
+    marginTop: -2,
     textAlign: 'center',
+    fontWeight: '600',
   },
   navButtonTextDisabled: {
     color: colors.text.muted,
