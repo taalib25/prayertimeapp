@@ -38,10 +38,9 @@ class UnifiedNotificationService {
       id: 'prayer-notifications-standard',
       name: 'Prayer Notifications',
       importance: AndroidImportance.HIGH,
-      sound: 'default',
+      sound: 'ringtone',
       vibration: true,
       vibrationPattern: [500, 1000, 500, 1000, 500, 1000],
-      lights: [AndroidColor.RED, 300, 1000] as [string, number, number],
       visibility: AndroidVisibility.PUBLIC,
     },
     fullscreen: {
@@ -159,38 +158,22 @@ class UnifiedNotificationService {
       }
 
       // 4. Battery optimization check
-      console.log('🔋 Checking battery optimization...');
+  
       try {
         const batteryOptimizationEnabled =
           await notifee.isBatteryOptimizationEnabled();
         permissions.batteryOptimization = !batteryOptimizationEnabled;
-
-        if (batteryOptimizationEnabled) {
-          warnings.push(
-            'Battery optimization is enabled - may affect notification delivery',
-          );
-          // Show battery optimization dialog
-          await this.showBatteryOptimizationDialog();
-        }
+        console.log('🔋 Checking battery optimization... ',batteryOptimizationEnabled);
+        // if (batteryOptimizationEnabled) {
+        //   // warnings.push(
+        //   //   'Battery optimization is enabled - may affect notification delivery',
+        //   // );
+        //   // Show battery optimization dialog
+        //   await this.showBatteryOptimizationDialog();
+        // }
       } catch (error) {
         console.error('Error checking battery optimization:', error);
         warnings.push('Could not check battery optimization status');
-      }
-
-      // 5. DND access permission check
-      console.log('🔕 Checking DND access permission...');
-      try {
-        if (Platform.OS === 'android') {
-          permissions.dndAccess = true;
-
-          // Add a warning that this needs to be handled manually
-          warnings.push(
-            'DND access: Please manually grant notification policy access in device settings if urgent notifications are blocked',
-          );
-        }
-      } catch (error) {
-        console.error('Error checking DND permission:', error);
-        warnings.push('Could not check DND access permission');
       }
 
       // Determine overall permission status

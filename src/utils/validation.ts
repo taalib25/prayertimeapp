@@ -83,8 +83,34 @@ export const pickupRequestSchema = z.object({
   availableDays: pickupDaysSchema,
 });
 
+// Email validation schema
+export const emailSchema = z
+  .string()
+  .min(1, 'Email is required')
+  .email('Please enter a valid email address');
+
+// Name validation schema
+export const nameSchema = z
+  .string()
+  .min(1, 'Name is required')
+  .min(2, 'Name must be at least 2 characters');
+
+// Area validation schema
+export const areaSchema = z.string().min(1, 'Area is required');
+
+// Registration form validation schema
+export const registrationSchema = z.object({
+  firstName: nameSchema,
+  lastName: nameSchema,
+  contactNumber: phoneSchema,
+  area: areaSchema,
+  email: emailSchema,
+  password: passwordSchema,
+});
+
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type PhoneVerificationData = z.infer<typeof phoneVerificationSchema>;
 export type OTPVerificationData = z.infer<typeof otpVerificationSchema>;
 export type UserRegistrationData = z.infer<typeof userRegistrationSchema>;
 export type PickupRequestData = z.infer<typeof pickupRequestSchema>;
+export type RegistrationFormData = z.infer<typeof registrationSchema>;

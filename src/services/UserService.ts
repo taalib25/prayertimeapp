@@ -227,6 +227,21 @@ class UserService {
     await this.updateSystemData({hasSeenOnboarding: true});
   }
 
+  /**
+   * Check if user has seen profile alert
+   */
+  async hasSeenProfileAlert(): Promise<boolean> {
+    const systemData = await this.getSystemData();
+    return systemData.hasSeenProfileAlert;
+  }
+
+  /**
+   * Mark profile alert as seen
+   */
+  async markProfileAlertAsSeen(): Promise<void> {
+    await this.updateSystemData({hasSeenProfileAlert: true});
+  }
+
   // ========== CALL PREFERENCE METHODS ==========
 
   /**

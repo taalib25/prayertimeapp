@@ -39,7 +39,7 @@ const PERMISSION_MESSAGES = {
   [PermissionType.LOCATION]: {
     title: 'Location Permission Required',
     message:
-      'Prayer times and Qibla direction require your location to be accurate.',
+      'Prayer times require your location to be accurate.',
     settingsMessage:
       'Location permission is required for accurate prayer times and Qibla direction. Please enable it in your device settings.',
   },

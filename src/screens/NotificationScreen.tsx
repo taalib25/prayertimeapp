@@ -83,17 +83,11 @@ const NotificationScreen: React.FC = () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
 
-      const result = await notificationService.scheduleTestNotification(
+      const result = await notificationService.scheduleCustomNotification(
         1001,
         5,
       );
 
-      if (result) {
-        Alert.alert(
-          'Test Notification Scheduled ✅',
-          'A test notification will appear in 5 seconds!',
-        );
-      }
     } catch (error: any) {
       console.error('Test notification error:', error);
       Alert.alert(

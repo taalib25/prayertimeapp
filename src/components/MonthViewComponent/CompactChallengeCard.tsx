@@ -51,6 +51,13 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
         return Math.round(percentage);
       }, [current, total, goalReachedOrExceeded]);
 
+       const formatNumber = (num: number): string => {
+            if (num >= 1000) {
+              return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+            }
+            return num.toString();
+          };
+
       return (
         <View style={[styles.compactCard, {backgroundColor}]}>
           <Text style={[styles.compactTitle, {color: textColor}]}>{title}</Text>
@@ -81,7 +88,7 @@ export const CompactChallengeCard: React.FC<CompactChallengeCardProps> =
                         styles.compactProgressTotal,
                         {color: actualTextColor},
                       ]}>
-                      /{total}
+                      /{formatNumber(total)}
                     </Text>
                   </Text>
                 </View>

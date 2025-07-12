@@ -18,6 +18,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import SplashScreen from './src/screens/SplashScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 import OTPScreen from './src/screens/OTPScreen';
 import FakeCallScreen from './src/screens/FakeCallScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
@@ -44,6 +45,7 @@ import DatabaseScreen from './src/screens/DatabaseScreen';
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
+  Register: undefined;
   OTP: {email: string; username?: string; password?: string};
   MainApp: undefined;
   DatabaseScreen: undefined;
@@ -240,6 +242,7 @@ function AppNavigator() {
             // Authentication Screens
             <Stack.Group>
               <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
               <Stack.Screen name="OTP" component={OTPScreen} />
             </Stack.Group>
           )}

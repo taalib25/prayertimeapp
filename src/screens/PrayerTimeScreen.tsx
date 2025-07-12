@@ -11,6 +11,8 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {BottomTabNavigationProp} from '@react-navigation/bottom-tabs';
 import {BottomTabParamList} from '../navigation/BottomTabNavigator';
+import {useFocusEffect} from '@react-navigation/native';
+import {navigate} from '../../App'; // Import navigation helper
 
 import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
@@ -19,73 +21,34 @@ import PrayerTimeCards from '../components/PrayerTimeCards';
 import CountdownTimer from '../components/CountdownTimer';
 import ReminderSection from '../components/ReminderSection';
 import CallWidget from '../components/CallWidget';
+import AlertModal from '../components/AlertModel';
 import {usePrayerTimes} from '../hooks/usePrayerTimes';
 import {getTodayDateString} from '../utils/helpers';
 import {useUser} from '../hooks/useUser';
+import {validateUserProfile} from '../utils/profileValidation';
 import MonthlyChallengeContent from '../components/MonthViewComponent/MonthlyChallengeContent';
 import MeetingDetailsCard from '../components/MeetingDetailsCard';
 import PersonalMeeting from '../components/PersonalMeeting';
+import StreakCounter from '../components/StreakCounter';
 
 // Lazy loaded components
 const DailyTasksSelector = React.lazy(
   () => import('../components/DailyTasksComponent/DailyTasksSelector'),
 );
-const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
-
-// Dummy meeting data for testing
-const dummyMeeting = {
-  title: 'Scheduled Meeting',
-  isUrgent: true,
-  date: new Date().toISOString(),
-  time: '7:30 PM',
-  committeeMember: {
-    name: 'Imam Ahmad',
-    phone: '+1234567890',
-  },
-};
-
-// Dummy data for PersonalMeeting (list)
-const dummyPersonalMeetings = [
-  {
-    member_id: 1,
-    member_name: 'Member One',
-    member_phone: '+94-77-123-4567',
-    scheduled_date: '2024-12-25T00:00:00.000Z',
-    scheduled_time: '15:00:00',
-    priority: 'high',
-    member_username: 'testmember1',
-    counsellor_username: 'amer',
-  },
-  {
-    member_id: 2,
-    member_name: 'Member Two',
-    member_phone: '+94-77-123-4568',
-    scheduled_date: '2024-12-26T00:00:00.000Z',
-    scheduled_time: '16:00:00',
-    priority: 'medium',
-    member_username: 'testmember2',
-    counsellor_username: 'amer',
-  },
-  {
-    member_id: 3,
-    member_name: 'Member Three',
-    member_phone: '+94-77-123-4569',
-    scheduled_date: '2024-12-27T00:00:00.000Z',
-    scheduled_time: '17:00:00',
-    priority: 'low',
-    member_username: 'testmember3',
-    counsellor_username: 'amer',
-  },
-];
+// const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
 const PrayerTimeScreen = () => {
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const {prayerTimes, isLoading: prayerLoading} = usePrayerTimes(selectedDate);
-  const {user} = useUser();
+  const {user, hasSeenProfileAlert, markProfileAlertAsSeen} = useUser();
   // Simplified loading states - only two phases needed
   const [showAllContent, setShowAllContent] = useState(false);
+
+  // Profile validation state
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
+  const [profileAlertMessage, setProfileAlertMessage] = useState('');
 
   // Core content shows immediately when prayer times are ready
   const showPrimaryContent = !prayerLoading;
@@ -112,6 +75,18 @@ const PrayerTimeScreen = () => {
     }
   }, [showPrimaryContent]);
 
+  // Profile validation when screen is focused
+  useEffect(() => {
+    // Only check profile validation if user data is loaded and user hasn't seen the alert
+    if (user && !showProfileAlert && !hasSeenProfileAlert) {
+      const validation = validateUserProfile(user);
+      if (!validation.isComplete) {
+        setProfileAlertMessage(validation.message);
+        setShowProfileAlert(true);
+      }
+    }
+  }, [user, showProfileAlert, hasSeenProfileAlert]);
+
   const handleCallPreferenceSet = useCallback(async () => {
     try {
       // The preference is already saved in CallWidget,
@@ -121,6 +96,21 @@ const PrayerTimeScreen = () => {
       console.error('Error handling call preference:', error);
     }
   }, []);
+
+  // Profile alert handlers
+  const handleProfileAlertConfirm = useCallback(async () => {
+    setShowProfileAlert(false);
+    // Mark alert as seen so it doesn't show again
+    await markProfileAlertAsSeen();
+    // Navigate to EditProfileScreen using the global navigation helper
+    navigate('EditProfileScreen');
+  }, [markProfileAlertAsSeen]);
+
+  const handleProfileAlertCancel = useCallback(async () => {
+    setShowProfileAlert(false);
+    // Mark alert as seen so it doesn't show again when user dismisses it
+    await markProfileAlertAsSeen();
+  }, [markProfileAlertAsSeen]);
 
   const handleSeeAllReminders = useCallback(() => {
     console.log('user member id ', user?.memberId);
@@ -206,13 +196,14 @@ const PrayerTimeScreen = () => {
                 </View>
               }>
               <DailyTasksSelector />
+              <StreakCounter />
               <MonthlyChallengeContent
                 userGoals={{
                   monthlyZikrGoal: user?.zikriGoal || 600,
                   monthlyQuranPagesGoal: user?.quranGoal || 30,
                 }}
               />
-              <FajrTimeChart />
+              {/* <FajrTimeChart /> */}
 
               <PersonalMeeting />
               {/* {user?.role === 'Member' ? (
@@ -224,6 +215,17 @@ const PrayerTimeScreen = () => {
           )}
         </View>
       </ScrollView>
+
+      {/* Profile Validation Alert Modal */}
+      <AlertModal
+        visible={showProfileAlert}
+        title="Complete Your Profile"
+        message={profileAlertMessage}
+        confirmText="Complete Profile"
+        cancelText="Later"
+        onConfirm={handleProfileAlertConfirm}
+        onCancel={handleProfileAlertCancel}
+      />
     </View>
   );
 };

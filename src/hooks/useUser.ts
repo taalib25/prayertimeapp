@@ -27,11 +27,13 @@ interface UseUserReturn {
   setAuthToken: (token: string) => Promise<void>;
   clearAuthToken: () => Promise<void>;
   markOnboardingAsSeen: () => Promise<void>;
+  markProfileAlertAsSeen: () => Promise<void>;
   setCallPreference: (preference: boolean) => Promise<void>;
 
   // Auth checks
   isAuthenticated: boolean;
   hasSeenOnboarding: boolean;
+  hasSeenProfileAlert: boolean;
 
   // Utility
   displayName: string;
@@ -78,16 +80,16 @@ export const useUser = (): UseUserReturn => {
 
   // Update user
   const updateUser = async (updates: UserUpdate) => {
-      try {
-        setError(null);
-        const updatedUser = await userService.updateUser(updates);
-        setUser(updatedUser);
-      } catch (err) {
-        console.error('Error updating user:', err);
-        setError('Failed to update user');
-        throw err;
-      }
+    try {
+      setError(null);
+      const updatedUser = await userService.updateUser(updates);
+      setUser(updatedUser);
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError('Failed to update user');
+      throw err;
     }
+  };
 
   // Create user
   const createUser = useCallback(
@@ -139,6 +141,11 @@ export const useUser = (): UseUserReturn => {
     await updateSystemData({hasSeenOnboarding: true});
   }, [updateSystemData]);
 
+  // Mark profile alert as seen
+  const markProfileAlertAsSeen = useCallback(async () => {
+    await updateSystemData({hasSeenProfileAlert: true});
+  }, [updateSystemData]);
+
   // Set call preference
   const setCallPreference = useCallback(
     async (preference: boolean) => {
@@ -180,6 +187,7 @@ export const useUser = (): UseUserReturn => {
   // Computed values
   const isAuthenticated = systemData?.authToken ? true : false;
   const hasSeenOnboarding = systemData?.hasSeenOnboarding || false;
+  const hasSeenProfileAlert = systemData?.hasSeenProfileAlert || false;
   const displayName = user ? userService.getDisplayName(user) : 'User';
   const userInitials = user ? userService.getUserInitials(user) : 'U';
 
@@ -201,11 +209,13 @@ export const useUser = (): UseUserReturn => {
     setAuthToken,
     clearAuthToken,
     markOnboardingAsSeen,
+    markProfileAlertAsSeen,
     setCallPreference,
 
     // Computed
     isAuthenticated,
     hasSeenOnboarding,
+    hasSeenProfileAlert,
     displayName,
     userInitials,
 

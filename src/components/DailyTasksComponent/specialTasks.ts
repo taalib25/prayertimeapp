@@ -33,6 +33,14 @@ export const DAILY_SPECIAL_TASKS: EnhancedSpecialTask[] = [
     completed: false,
     category: 'zikr',
     unit: 'count',
+    amount: 500,
+  },
+  {
+    id: 'zikr_istighfar',
+    title: '100x Istighfar',
+    completed: false,
+    category: 'zikr',
+    unit: 'count',
     amount: 100,
   },
   {

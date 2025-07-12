@@ -76,6 +76,7 @@ export interface SystemData {
   pickupSettings: PickupSettings | null; // Detailed pickup settings for request system
   fajrReminderDuration: number | null; // Duration in minutes
   fajrReminderTiming: 'before' | 'after' | null; // Before or after Fajr
+  hasSeenProfileAlert: boolean; // Track if user has dismissed profile completion alert
 }
 
 // Default values - removed mock fallbacks to ensure only real API data is used
@@ -115,6 +116,7 @@ export const DEFAULT_SYSTEM: SystemData = {
   pickupSettings: null,
   fajrReminderDuration: null,
   fajrReminderTiming: null,
+  hasSeenProfileAlert: false,
 };
 
 // Storage keys - only two keys needed

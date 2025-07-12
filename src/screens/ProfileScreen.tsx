@@ -19,9 +19,10 @@ import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
 import {useAuth} from '../contexts/AuthContext';
 import {useUser} from '../hooks/useUser';
+import {useBadgeCalculation} from '../hooks/useBadgeCalculation';
 import ImageService from '../services/ImageService';
 import AlertModal from '../components/AlertModel';
-import { useFocusEffect } from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -29,7 +30,8 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const {logout} = useAuth();
-  const {displayName, user, userInitials,refresh} = useUser();
+  const {displayName, user, userInitials, refresh} = useUser();
+  const badgeData = useBadgeCalculation();
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const imageService = ImageService.getInstance();
 
@@ -38,12 +40,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   // AlertModal state
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-
-    // Refresh user data when screen is focused
+  // Refresh user data when screen is focused
   useFocusEffect(
     useCallback(() => {
       refresh?.();
-    }, [refresh])
+    }, [refresh]),
   );
 
   useEffect(() => {
@@ -69,36 +70,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
   const handleEditProfile = () => {
     navigation.navigate('EditProfileScreen');
   };
-
-  const badges = [
-    {
-      id: '1',
-      title: 'Challenge 40',
-      description: 'Completed 40 consecutive prayers',
-      icon: 'mosque',
-      isEarned: true,
-      category: 'prayer',
-    },
-    {
-      id: '2',
-      title: 'Zikr Star',
-      description: 'Completed 100 zikr sessions',
-      icon: 'prayer-beads',
-      isEarned: true,
-      category: 'zikr',
-    },
-    {
-      id: '3',
-      title: 'Recite Master',
-      description: 'Read 30 pages of Quran',
-      icon: 'quran',
-      isEarned: false,
-      category: 'quran',
-    },
-  ];
-
-  const earnedBadges = badges.filter(badge => badge.isEarned).length;
-  const totalBadges = badges.length;
 
   const handleNotificationSettings = () => {
     navigation.navigate('NotificationScreen');
@@ -180,7 +151,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             {user?.mosqueName && (
               <View style={styles.locationContainer}>
                 <SvgIcon name="masjid" size={32} color="#4CAF50" />
-                <Text style={styles.locationText}>{user.mosqueName || "Masjid Ul Haram"}</Text>
+                <Text style={styles.locationText}>
+                  {user.mosqueName || 'Masjid Ul Haram'}
+                </Text>
               </View>
             )}
           </View>
@@ -189,8 +162,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              Badges <Text style={{color: colors.primary}}>{earnedBadges}</Text>
-              /{totalBadges}
+              Badges{' '}
+              <Text style={{color: colors.primary}}>
+                {badgeData.earnedBadges}
+              </Text>
+              /{badgeData.totalBadges}
             </Text>
             <TouchableOpacity>
               <Text style={styles.viewAll}>View All</Text>
@@ -198,7 +174,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
           </View>
           <View style={styles.badgesCard}>
             <View style={styles.badgesContainer}>
-              {badges.map((badge: any) => (
+              {badgeData.badges.map((badge: any) => (
                 <BadgeCard
                   key={badge.id}
                   icon={badge.icon as any}
@@ -285,7 +261,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         cancelText="Cancel"
         onConfirm={handleLogoutConfirm}
         onCancel={() => setShowLogoutModal(false)}
-       confirmDestructive = {true}
+        confirmDestructive={true}
       />
     </SafeAreaView>
   );
@@ -374,7 +350,7 @@ const styles = StyleSheet.create({
   locationText: {
     ...typography.caption,
     color: '#666',
-    paddingTop: 3,  
+    paddingTop: 3,
     marginLeft: 8,
     textAlign: 'left',
     width: '70%',
@@ -386,7 +362,7 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginBottom: 20,
-    marginTop: 101,
+    marginTop: 20,
     paddingHorizontal: 16,
   },
 
