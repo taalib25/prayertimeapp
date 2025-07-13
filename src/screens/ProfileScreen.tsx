@@ -26,6 +26,7 @@ import withObservables from '@nozbe/with-observables';
 import database from '../services/db';
 import DailyTasksModel from '../model/DailyTasks';
 import {Q} from '@nozbe/watermelondb';
+import {getTodayDateString} from '../utils/helpers';
 
 interface Badge {
   id: string;
@@ -46,65 +47,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
   dailyTasks,
 }) => {
   const {logout} = useAuth();
-  const {displayName, user, userInitials, refresh} = useUser();
-
-  // Replace useBadgeCalculation with direct badge calculation
-  const badgeData = useMemo(() => {
-    // Calculate Challenge 40 badge (40+ consecutive Fajr at mosque)
-    const fajrMosqueStreak = calculateFajrStreak(dailyTasks);
-    const challenge40Earned = fajrMosqueStreak >= 40;
-
-    // Calculate Zikr Star badge (200+ zikr count in a single day)
-    const maxDailyZikrCount = Math.max(
-      ...dailyTasks.map(task => task.totalZikrCount || 0),
-      0,
-    );
-    const zikrStarEarned = maxDailyZikrCount >= 200;
-
-    // Calculate Recite Master badge (30+ pages of Quran cumulative)
-    // Assuming 15 minutes = 1 page
-    const totalQuranPages = dailyTasks.reduce(
-      (sum, task) => sum + Math.floor((task.quranMinutes || 0) / 15),
-      0,
-    );
-    const reciteMasterEarned = totalQuranPages >= 30;
-
-    const badges: Badge[] = [
-      {
-        id: '1',
-        title: 'Challenge 40',
-        description: 'Completed 40+ consecutive Fajr prayers at mosque',
-        icon: 'mosque',
-        isEarned: challenge40Earned,
-        category: 'prayer',
-      },
-      {
-        id: '2',
-        title: 'Zikr Star',
-        description: 'Completed 200+ zikr count in a single day',
-        icon: 'prayer-beads',
-        isEarned: zikrStarEarned,
-        category: 'zikr',
-      },
-      {
-        id: '3',
-        title: 'Recite Master',
-        description: 'Read 30+ pages of Quran (cumulative)',
-        icon: 'quran',
-        isEarned: reciteMasterEarned,
-        category: 'quran',
-      },
-    ];
-
-    const earnedBadges = badges.filter(badge => badge.isEarned).length;
-    const totalBadges = badges.length;
-
-    return {
-      badges,
-      earnedBadges,
-      totalBadges,
-    };
-  }, [dailyTasks]);
+  const { user, userInitials, refresh} = useUser();
 
   // Helper function to calculate consecutive Fajr streak at mosque
   const calculateFajrStreak = useCallback(
@@ -132,6 +75,60 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
     },
     [],
   );
+  // Replace useBadgeCalculation with direct badge calculation
+  const badgeData = useMemo(() => {
+    // Calculate Challenge 40 badge (40+ consecutive Fajr at mosque)
+    const fajrMosqueStreak = calculateFajrStreak(dailyTasks);
+    const challenge40Earned = fajrMosqueStreak >= 40;
+
+    // Calculate Zikr Star badge (200+ zikr count in a single day)
+    const maxDailyZikrCount = Math.max(
+      ...dailyTasks.map(task => task.totalZikrCount || 0),
+      0,
+    );
+    const zikrStarEarned = maxDailyZikrCount >= 200;
+
+    // Highlight Recite Master badge if Quran recited today
+    const today = getTodayDateString();
+    const todayTask = dailyTasks.find(task => task.date === today);
+    const reciteMasterEarned = (todayTask?.quranMinutes || 0) > 0;
+
+    const badges: Badge[] = [
+      {
+        id: '1',
+        title: 'Challenge 40',
+        description: 'Completed 40+ consecutive Fajr prayers at mosque',
+        icon: 'mosque',
+        isEarned: challenge40Earned,
+        category: 'prayer',
+      },
+      {
+        id: '2',
+        title: 'Zikr Star',
+        description: 'Completed 200+ zikr count in a single day',
+        icon: 'prayer-beads',
+        isEarned: zikrStarEarned,
+        category: 'zikr',
+      },
+      {
+        id: '3',
+        title: 'Recite Master',
+        description: 'Recited Quran today',
+        icon: 'quran',
+        isEarned: reciteMasterEarned,
+        category: 'quran',
+      },
+    ];
+
+    const earnedBadges = badges.filter(badge => badge.isEarned).length;
+    const totalBadges = badges.length;
+
+    return {
+      badges,
+      earnedBadges,
+      totalBadges,
+    };
+  }, [dailyTasks]);
 
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const imageService = ImageService.getInstance();
@@ -338,10 +335,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
-          <MenuButton
+          {/* <MenuButton
             title="Notification Settings"
             onPress={handleNotificationSettings}
-          />
+          /> */}
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           {/* Pickup Settings - Available for all users */}
           <MenuButton
