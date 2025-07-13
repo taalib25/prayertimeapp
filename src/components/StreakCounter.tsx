@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
   },
   navButtonRight: {
-    width: 36,
-    height: 36,
+    width: 30,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
