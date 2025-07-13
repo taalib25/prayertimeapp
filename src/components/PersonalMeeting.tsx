@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.background.light,
   },
   headerTitle: {
-    ...typography.h1,
+    ...typography.h2,
     color: colors.text.prayerBlue,
     marginBottom: spacing.xs,
   },

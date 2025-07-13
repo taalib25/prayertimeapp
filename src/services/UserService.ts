@@ -311,7 +311,12 @@ class UserService {
     try {
       // This will create default data if none exists
       await this.getUser();
-      await this.getSystemData();
+      const systemData = await this.getSystemData();
+
+      // Reset profile alert flag on app start for session-based tracking
+      if (systemData.hasSeenProfileAlert) {
+        await this.updateSystemData({hasSeenProfileAlert: false});
+      }
     } catch (error) {
       console.error('Error initializing data:', error);
       throw error;
