@@ -99,6 +99,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
   // Convert prayer time string to hours and minutes for comparison
   const isPrayerInFuture = useCallback((prayerTimeStr: string) => {
+    console.log('time >>>>>>>>>>>>>', prayerTimeStr);
     const now = new Date();
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
@@ -123,24 +124,19 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     return false;
   }, []);
 
-  // Format prayer time to AM/PM format without AM/PM text
+  // Format prayer time to 12-hour format with AM/PM suffix
   const formatPrayerTime = useCallback((timeString: string) => {
-    // Check if already in the right format
     if (!timeString.includes(':')) return timeString;
 
     const [hoursStr, minutesStr] = timeString.split(':');
     let hours = parseInt(hoursStr, 10);
     const minutes = parseInt(minutesStr, 10);
+    const suffix = hours >= 12 ? 'PM' : 'AM';
 
-    // Convert to 12-hour format
-    if (hours > 12) {
-      hours -= 12;
-    } else if (hours === 0) {
-      hours = 12;
-    }
+    // Convert hour to 12-hour clock
+    hours = hours % 12 || 12;
 
-    // Format with padding for minutes, no AM/PM suffix
-    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
   }, []);
 
   const handleAttendancePress = useCallback((prayer: PrayerTime) => {
@@ -290,7 +286,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         onClose={handleModalClose}
         prayerName={selectedPrayerForAttendance?.displayName || ''}
         selectedDate={selectedDate} // Pass the selectedDate prop
-        dailyTasks={dailyTasks} // ✅ FIXED: Pass reactive dailyTasks to maintain reactive chain
+        dailyTasks={dailyTasks}
         isFuturePrayer={
           selectedPrayerForAttendance
             ? isPrayerInFuture(selectedPrayerForAttendance.time)
