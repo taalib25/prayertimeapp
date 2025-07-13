@@ -56,19 +56,11 @@ export const transformDailyData = (
       // Get special tasks for this date (always the same daily tasks)
       const specialTasksForDate = getSpecialTasksForDate(dayData.date);
 
-      // Merge completion status from stored data and calculate completion for Quran/Zikr
+      // Merge completion status based on actual data values
       const tasksToShow = specialTasksForDate.map(templateTask => {
         let completed = false;
 
-        // Check stored special task completion
-        if (dayData.specialTasks && dayData.specialTasks.length > 0) {
-          const storedTask = dayData.specialTasks.find(
-            stored => stored.id === templateTask.id,
-          );
-          completed = storedTask ? storedTask.completed : false;
-        }
-
-        // For Quran and Zikr, override completion based on current values
+        // For Quran and Zikr, check completion based on current values
         if (templateTask.category === 'quran') {
           // Completed if current Quran minutes >= task amount
           completed = (dayData.quranMinutes || 0) >= templateTask.amount;

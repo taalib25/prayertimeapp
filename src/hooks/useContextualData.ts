@@ -162,12 +162,13 @@ export const useFajrChartData = () => {
  */
 export const useMonthlyAggregatedData = () => {
   const {dailyTasks, updateTrigger} = useDailyTasks(90); // Get 90 days for monthly calculations + reactive trigger
+
   const getMonthlyStats = useMemo(() => {
     return (year: number, monthIndex: number) => {
       console.log(
         `📊 useMonthlyAggregatedData: Computing stats for ${year}-${
           monthIndex + 1
-        } with ${dailyTasks.length} daily tasks`,
+        } with ${dailyTasks.length} daily tasks (trigger: ${updateTrigger})`,
       );
 
       const monthTasks = dailyTasks.filter(task => {
@@ -205,12 +206,12 @@ export const useMonthlyAggregatedData = () => {
         totalDays,
       };
     };
-  }, [dailyTasks, updateTrigger]);
+  }, [dailyTasks, updateTrigger]); // Include updateTrigger for reactivity
 
   return {
     getMonthlyStats,
     dailyTasks,
-    updateTrigger, 
+    updateTrigger,
   };
 };
 

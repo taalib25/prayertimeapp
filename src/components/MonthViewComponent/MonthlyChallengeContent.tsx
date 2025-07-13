@@ -7,7 +7,6 @@ import {
   MonthlyTaskProvider,
   useMonthlyTask,
 } from '../../contexts/MonthlyTaskContext';
-import {dataCache} from '../../utils/dataCache';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -30,44 +29,28 @@ const MonthlyChallengeContentInner: React.FC = () => {
   const {monthlyData, getCurrentMonthIndex} = useMonthlyTask();
   const [currentPage, setCurrentPage] = useState(0); // Will be updated to last page when data loads
   const pagerRef = useRef<PagerView>(null);
-  // ⚡ PERFORMANCE: Cache heavy month data computations
-  const cachedMonthlyData = useMemo(() => {
-    // Create a better cache key that includes all relevant data
-    const dataHash = monthlyData
-      .map(
-        month =>
-          `${month.monthLabel}-${month.year}-${month.zikr.current}-${month.quran.current}-${month.fajr.current}-${month.isha.current}`,
-      )
-      .join('|');
-    const cacheKey = `monthly-data-${dataHash}`;
 
-    let cached = dataCache.get<any[]>(cacheKey);
-    if (cached) {
-      console.log('📦 Using cached monthly data');
-      return cached;
-    }
-
-    console.log('🔄 Recomputing monthly data, cache key:', cacheKey);
-    // Cache the monthly data for faster subsequent renders
-    dataCache.set(cacheKey, monthlyData, 300000); // 5 minutes
+  // Remove unnecessary caching since we now have reactive updates from WatermelonDB
+  const monthlyDataWithReactivity = useMemo(() => {
+    console.log('📦 Monthly data updated reactively:', monthlyData.length);
     return monthlyData;
   }, [monthlyData]);
 
-  // ⚡ PERFORMANCE: Cache current month index calculation
+  // Get current month index
   const currentMonthIndex = useMemo(() => {
     return getCurrentMonthIndex();
-  }, [getCurrentMonthIndex, cachedMonthlyData]);
+  }, [getCurrentMonthIndex, monthlyDataWithReactivity]);
   // Update current page when monthly data loads - start at last page (current month)
   useEffect(() => {
-    if (cachedMonthlyData.length > 0) {
-      const initialPage = cachedMonthlyData.length - 1; // Always start at the last page (current month)
+    if (monthlyDataWithReactivity.length > 0) {
+      const initialPage = monthlyDataWithReactivity.length - 1; // Always start at the last page (current month)
       setCurrentPage(initialPage);
-      // ⚡ PERFORMANCE: Reduced timeout for faster initial render
+      // Quick update for immediate responsiveness
       setTimeout(() => {
         pagerRef.current?.setPage(initialPage);
       }, 50);
     }
-  }, [cachedMonthlyData]);
+  }, [monthlyDataWithReactivity]);
 
   const handlePageSelected = useCallback((e: any) => {
     setCurrentPage(e.nativeEvent.position);
@@ -76,7 +59,8 @@ const MonthlyChallengeContentInner: React.FC = () => {
   const handlePagePress = useCallback((index: number) => {
     pagerRef.current?.setPage(index);
   }, []);
-  if (cachedMonthlyData.length === 0) {
+
+  if (monthlyDataWithReactivity.length === 0) {
     return null;
   }
 
@@ -85,10 +69,10 @@ const MonthlyChallengeContentInner: React.FC = () => {
       <PagerView
         ref={pagerRef}
         style={styles.pagerView}
-        initialPage={cachedMonthlyData.length - 1} // Start at last page (current month)
+        initialPage={monthlyDataWithReactivity.length - 1} // Start at last page (current month)
         onPageSelected={handlePageSelected}
         pageMargin={8}>
-        {cachedMonthlyData.map((monthData: any, index: number) => (
+        {monthlyDataWithReactivity.map((monthData: any, index: number) => (
           <View
             key={`${monthData.monthLabel}-${monthData.year}`}
             style={styles.pageContainer}>
@@ -96,13 +80,13 @@ const MonthlyChallengeContentInner: React.FC = () => {
               monthData={monthData}
               index={index}
               currentPage={currentPage}
-              isCurrentMonth={index === cachedMonthlyData.length - 1}
+              isCurrentMonth={index === monthlyDataWithReactivity.length - 1}
             />
           </View>
         ))}
       </PagerView>
       <PaginationIndicator
-        monthlyData={cachedMonthlyData}
+        monthlyData={monthlyDataWithReactivity}
         currentPage={currentPage}
         onPagePress={handlePagePress}
         getCurrentMonthIndex={getCurrentMonthIndex}

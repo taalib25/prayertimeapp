@@ -139,7 +139,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.firstName}</Text>
+            <Text style={styles.userName}>{user?.firstName || user?.username}</Text>
             <Text style={styles.memberSince}>
               {user?.joinedDate
                 ? `Member Since ${new Date(user.joinedDate).toLocaleDateString(

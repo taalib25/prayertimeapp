@@ -43,7 +43,7 @@ export const MonthView: React.FC<MonthViewProps> = React.memo(
           <CompactChallengeCard
             id={`${monthData.monthLabel}-${monthData.year}-zikr`}
             title="Zikr"
-            subtitle="Monthly"
+            subtitle="Counts"
             current={monthData.zikr.current}
             total={600 * 30}
             backgroundColor="#E8F5E8"

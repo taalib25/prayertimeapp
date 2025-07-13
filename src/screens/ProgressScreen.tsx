@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useMemo, useCallback, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,10 @@ import {
 } from 'react-native';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {
-  getRecentDailyTasks,
-  DailyTaskData,
-} from '../services/db/dailyTaskServices';
+import {useDailyTasks} from '../hooks/useDailyTasks'; // Use reactive hook
+import {getRecentDailyTasks} from '../services/db/dailyTaskServices'; // Direct service for historical data
 import {getTodayDateString, formatDateString} from '../utils/helpers';
+import {DailyTaskData} from '../services/db/dailyTaskServices'; // Correct import location
 
 interface ProgressSummary {
   date: string;
@@ -29,6 +28,8 @@ interface ProgressSummary {
 }
 
 const ProgressScreen: React.FC = () => {
+  // Use reactive hook for updates and direct service for historical data
+  const {updateTrigger} = useDailyTasks(7); // Just for reactive updates
   const [progressData, setProgressData] = useState<ProgressSummary[]>([]);
   const [taskDataMap, setTaskDataMap] = useState<Map<string, DailyTaskData>>(
     new Map(),
@@ -69,9 +70,8 @@ const ProgressScreen: React.FC = () => {
 
   const loadProgressData = useCallback(async () => {
     try {
-      // Get at least 30 records, but try to get more to ensure we have enough data
-      const tasks = await getRecentDailyTasks(50);
-
+      // Get at least 50 records, but try to get more to ensure we have enough data
+      const tasks = await getRecentDailyTasks(40);
       // Create a map for quick task lookup
       const taskMap = new Map<string, DailyTaskData>();
       tasks.forEach(task => {
@@ -104,21 +104,26 @@ const ProgressScreen: React.FC = () => {
       // Ensure we display at least 30 records
       const recordsToShow = Math.max(30, progressSummary.length);
       setProgressData(progressSummary.slice(0, recordsToShow));
+
+      console.log(
+        `✅ ProgressScreen: Updated with ${progressSummary.length} progress records`,
+      );
     } catch (error) {
-      console.error('Error loading progress data:', error);
+      console.error('❌ ProgressScreen: Error loading progress data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [formatDate, countCompletedPrayers]);
+  }, [formatDate, countCompletedPrayers, updateTrigger]);
 
+  // Load data on mount and when reactive updates occur
   useEffect(() => {
     loadProgressData();
   }, [loadProgressData]);
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    loadProgressData();
+    await loadProgressData();
   }, [loadProgressData]);
 
   const getPrayerStatus = (
