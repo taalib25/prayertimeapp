@@ -25,6 +25,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import withObservables from '@nozbe/with-observables';
 import database from '../services/db';
 import DailyTasksModel from '../model/DailyTasks';
+import {Q} from '@nozbe/watermelondb';
 
 interface Badge {
   id: string;
@@ -608,7 +609,20 @@ const styles = StyleSheet.create({
 
 // Add withObservables enhancement for reactive daily tasks
 const enhance = withObservables([], () => ({
-  dailyTasks: database.get<DailyTasksModel>('daily_tasks').query().observe(),
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
 }));
 
 export default enhance(ProfileScreen);

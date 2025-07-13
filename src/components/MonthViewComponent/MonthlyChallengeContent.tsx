@@ -30,16 +30,22 @@ const MonthlyChallengeContentInner: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0); // Will be updated to last page when data loads
   const pagerRef = useRef<PagerView>(null);
 
-  // Remove unnecessary caching since we now have reactive updates from WatermelonDB
+  // Enhanced reactivity handling with better logging
   const monthlyDataWithReactivity = useMemo(() => {
-    console.log('📦 Monthly data updated reactively:', monthlyData.length);
+    console.log(
+      '📦 Monthly data updated reactively:',
+      monthlyData.length,
+      monthlyData.map(m => `${m.monthLabel}-${m.year}`).join(', '),
+    );
     return monthlyData;
   }, [monthlyData]);
 
-  // Get current month index
+  // Get current month index with improved debugging
   const currentMonthIndex = useMemo(() => {
-    return getCurrentMonthIndex();
-  }, [getCurrentMonthIndex, monthlyDataWithReactivity]);
+    const index = getCurrentMonthIndex();
+    console.log(`🗓️ Current month index calculated: ${index}`);
+    return index;
+  }, [getCurrentMonthIndex, monthlyData]);
   // Update current page when monthly data loads - start at last page (current month)
   useEffect(() => {
     if (monthlyDataWithReactivity.length > 0) {

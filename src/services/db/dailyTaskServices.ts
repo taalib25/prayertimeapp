@@ -81,8 +81,8 @@ export const getRecentDailyTasks = async (
     // Query for the date range
     const tasks = await dailyTasksCollection
       .query(
-        Q.where('date', Q.gte(startDate)),
-        Q.where('date', Q.lte(endDate)),
+        // Q.where('date', Q.gte(startDate)),
+        // Q.where('date', Q.lte(endDate)),
         Q.sortBy('date', Q.desc),
       )
       .fetch();

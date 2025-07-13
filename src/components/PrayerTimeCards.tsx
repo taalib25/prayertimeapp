@@ -36,6 +36,16 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
     useState<PrayerTime | null>(null);
 
+  // ✅ REACTIVE: Debug effect to track dailyTasks changes
+  useEffect(() => {
+    console.log(
+      `🔄 PrayerTimeCards: dailyTasks updated, count: ${dailyTasks.length}`,
+    );
+    console.log(
+      `📅 Available dates: ${dailyTasks.map(t => t.date).join(', ')}`,
+    );
+  }, [dailyTasks]);
+
   // Use reactive dailyTasks prop instead of hook
 
   const isToday = useMemo(() => {
@@ -43,30 +53,46 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     return selectedDate === today;
   }, [selectedDate]);
 
-  // Get prayer status for a specific prayer
+  // Get prayer status for a specific prayer with enhanced debugging
   const getPrayerStatus = useCallback(
     (prayerName: string): PrayerStatus => {
       const dateToCheck = selectedDate || getTodayDateString();
 
       // Find task for the date from reactive dailyTasks prop
       const task = dailyTasks.find(t => t.date === dateToCheck);
+
+      console.log(
+        `🔍 getPrayerStatus: ${prayerName} for ${dateToCheck}, found task:`,
+        task ? `ID: ${task.id}, date: ${task.date}` : 'none',
+      );
+
       if (!task) return null;
 
       const lcPrayerName = prayerName.toLowerCase();
+      let status: PrayerStatus = null;
+
       switch (lcPrayerName) {
         case 'fajr':
-          return (task.fajrStatus as PrayerStatus) || null;
+          status = (task.fajrStatus as PrayerStatus) || null;
+          break;
         case 'dhuhr':
-          return (task.dhuhrStatus as PrayerStatus) || null;
+          status = (task.dhuhrStatus as PrayerStatus) || null;
+          break;
         case 'asr':
-          return (task.asrStatus as PrayerStatus) || null;
+          status = (task.asrStatus as PrayerStatus) || null;
+          break;
         case 'maghrib':
-          return (task.maghribStatus as PrayerStatus) || null;
+          status = (task.maghribStatus as PrayerStatus) || null;
+          break;
         case 'isha':
-          return (task.ishaStatus as PrayerStatus) || null;
+          status = (task.ishaStatus as PrayerStatus) || null;
+          break;
         default:
-          return null;
+          status = null;
       }
+
+      console.log(`📊 Prayer status for ${prayerName}: ${status}`);
+      return status;
     },
     [selectedDate, dailyTasks], // Now depends on reactive dailyTasks prop
   );
@@ -264,6 +290,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         onClose={handleModalClose}
         prayerName={selectedPrayerForAttendance?.displayName || ''}
         selectedDate={selectedDate} // Pass the selectedDate prop
+        dailyTasks={dailyTasks} // ✅ FIXED: Pass reactive dailyTasks to maintain reactive chain
         isFuturePrayer={
           selectedPrayerForAttendance
             ? isPrayerInFuture(selectedPrayerForAttendance.time)
@@ -397,20 +424,21 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ FIXED: Simple reactive configuration - observe ALL database changes
-const enhance = withObservables([], () => {
-  console.log('📡 PrayerTimeCards: Observing all daily tasks for reactive updates');
-
-  return {
-    // Observe ALL daily tasks - no filters, no date dependencies
-    // This ensures reactive updates whenever ANY prayer/task data changes
-    dailyTasks: database
-      .get<DailyTasksModel>('daily_tasks')
-      .query(Q.sortBy('date', Q.desc))
-      .observe(),
-  };
-});
-
-const EnhancedPrayerTimeCards = enhance(PrayerTimeCards);
-
-export default EnhancedPrayerTimeCards;
+// ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
+export default enhance(PrayerTimeCards);

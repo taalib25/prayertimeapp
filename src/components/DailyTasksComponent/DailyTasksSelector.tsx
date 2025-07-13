@@ -24,6 +24,26 @@ interface DailyTasksSelectorProps {
 
 const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
   ({dailyTasks}) => {
+    // ✅ REACTIVE: Debug effect to track ALL reactive changes
+    useEffect(() => {
+      console.log(
+        `🔥 DailyTasksSelector: REACTIVE UPDATE! dailyTasks count: ${dailyTasks.length}`,
+      );
+      console.log(
+        `📊 DailyTasksSelector: All dates: ${dailyTasks
+          .map(t => t.date)
+          .join(', ')}`,
+      );
+      if (dailyTasks.length > 0) {
+        console.log(`🔍 DailyTasksSelector: First task details:`, {
+          date: dailyTasks[0].date,
+          fajr: dailyTasks[0].fajrStatus,
+          dhuhr: dailyTasks[0].dhuhrStatus,
+          zikr: dailyTasks[0].totalZikrCount,
+          quran: dailyTasks[0].quranMinutes,
+        });
+      }
+    }, [dailyTasks]);
     // ✅ ENHANCED: Direct task toggle using WatermelonDB with automatic reactive updates
     const handleTaskToggle = useCallback(
       async (dateISO: string, taskId: string) => {
@@ -271,24 +291,24 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
   },
 );
 
-// Display name for debugging
-DailyTasksSelector.displayName = 'DailyTasksSelector';
-
-// ✅ FIXED: Simple reactive configuration - observe ALL database changes
-const enhance = withObservables([], () => {
-  console.log('📡 DailyTasksSelector: Observing all daily tasks for reactive updates');
-
-  return {
-    // Observe ALL daily tasks - no filters, no date dependencies
-    // This ensures reactive updates whenever ANY prayer/task data changes
-    dailyTasks: database
-      .get<DailyTasksModel>('daily_tasks')
-      .query(Q.sortBy('date', Q.desc))
-      .observe(),
-  };
-});
-
-const EnhancedDailyTasksSelector = enhance(DailyTasksSelector);
+// ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
+export default enhance(DailyTasksSelector);
 
 const styles = StyleSheet.create({
   container: {
@@ -307,5 +327,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
 });
-
-export default EnhancedDailyTasksSelector;

@@ -376,7 +376,20 @@ const styles = StyleSheet.create({
 
 // ✅ REACTIVE: Enhance with WatermelonDB observables for automatic updates
 const enhance = withObservables([], () => ({
-  dailyTasks: database.get<DailyTasksModel>('daily_tasks').query().observe(),
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
 }));
 
 export default enhance(FajrTimeChart);

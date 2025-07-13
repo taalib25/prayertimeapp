@@ -521,9 +521,27 @@ const styles = StyleSheet.create({
   },
 });
 
-// Enhanced HOC to observe all daily tasks for reactivity
-const enhance = withObservables([], () => ({
-  dailyTasks: database.get<DailyTasksModel>('daily_tasks').query().observe(),
-}));
+// ✅ BRUTE FORCE: Enhanced HOC to observe ALL daily tasks with maximum reactivity
+const enhance = withObservables([], () => {
+  console.log('📡 StreakCounter: Setting up BRUTE FORCE reactive observation');
+
+  // Get ALL daily tasks to ensure we catch every update
+  return {
+    dailyTasks: database
+      .get<DailyTasksModel>('daily_tasks')
+      .query(Q.sortBy('date', Q.desc))
+      .observeWithColumns([
+        'date',
+        'fajr_status',
+        'dhuhr_status',
+        'asr_status',
+        'maghrib_status',
+        'isha_status',
+        'total_zikr_count',
+        'quran_minutes',
+        'special_tasks',
+      ]),
+  };
+});
 
 export default enhance(StreakCounter);

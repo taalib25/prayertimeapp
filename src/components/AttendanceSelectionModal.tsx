@@ -74,7 +74,21 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   // ✅ FIX: Get actual prayer status from database instead of using currentAttendance prop
   const actualPrayerStatus = React.useMemo(() => {
     const dateToCheck = selectedDate || getTodayDateString();
-    const task = dailyTasks.find(t => t.date === dateToCheck);
+    
+    // Log all available tasks to help debug
+    console.log(`🔍 Modal: Looking for ${prayerName} status on ${dateToCheck}`);
+    console.log(`📋 Available dates: ${dailyTasks.map(t => t.date).join(', ')}`);
+    
+    // Improved task lookup with additional logging
+    const task = dailyTasks.find(t => {
+      const matches = t.date === dateToCheck;
+      if (matches) {
+        console.log(`✅ Found matching task for ${dateToCheck}: ${t.id}`);
+      }
+      return matches;
+    });
+
+    console.log(`📋 Modal: Found task:`, task ? `ID: ${task.id}` : 'none');
 
     if (!task) {
       console.log(`📅 No task found for date ${dateToCheck}`);
@@ -91,7 +105,23 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     return status as AttendanceType;
   }, [dailyTasks, selectedDate, prayerName]);
 
-  // Start animation when modal becomes visible
+  // ✅ REACTIVE: Force re-render when the modal becomes visible
+  React.useEffect(() => {
+    if (visible) {
+      console.log(`🔄 Modal for ${prayerName} opened - refreshing data`);
+      // Force WatermelonDB to refresh this query when modal opens
+      database.get<DailyTasksModel>('daily_tasks')
+        .query(Q.sortBy('date', Q.desc))
+        .fetch()
+        .then(tasks => {
+          console.log(`📊 Modal refresh: got ${tasks.length} tasks`);
+        })
+        .catch(err => {
+          console.error('❌ Error refreshing tasks in modal:', err);
+        });
+    }
+  }, [visible, prayerName]);
+
   React.useEffect(() => {
     if (visible) {
       slideAnim.value = withSpring(0, {damping: 20, stiffness: 300});
@@ -112,7 +142,7 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
 
   // ✅ SIMPLIFIED: Direct update without complex state management
   const handleSelect = async (attendance: AttendanceType) => {
-    if (isFuturePrayer) return;
+    // if (isFuturePrayer) return;
 
     try {
       const dateToUpdate = selectedDate || getTodayDateString();
@@ -141,8 +171,11 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
       console.error('❌ AttendanceModal: Update failed:', error);
       onSelect(attendance); // Still notify parent
     }
-  }; // ✅ SIMPLIFIED: Render option using actual database status
+  }; // ✅ ENHANCED: Render option using actual database status with improved logging
   const renderOption = (option: any) => {
+    // Explicitly log the status comparison to track reactivity issues
+    console.log(`🔍 Option ${option.type} vs actualStatus=${actualPrayerStatus}`);
+    
     const isSelected = actualPrayerStatus === option.type;
     const isMasjid = option.type === 'mosque';
     const isNone = option.type === 'none';
@@ -375,19 +408,23 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ FIXED: Simple reactive configuration - observe ALL database changes
-const enhance = withObservables([], () => {
-  console.log(`📡 AttendanceModal: Observing all daily tasks for reactive updates`);
-
-  return {
-    // Observe ALL daily tasks - no filters, no date dependencies
-    // This ensures reactive updates whenever ANY prayer/task data changes
-    dailyTasks: database
-      .get<DailyTasksModel>('daily_tasks')
-      .query(Q.sortBy('date', Q.desc))
-      .observe(),
-  };
-});
+// ✅ BRUTE FORCE: Maximum reactive configuration with enhanced debugging
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
 
 const EnhancedAttendanceSelectionModal = enhance(AttendanceSelectionModal);
 

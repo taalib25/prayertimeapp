@@ -34,15 +34,15 @@ export const useDailyTasks = (daysBack: number = 30) => {
   // ✅ REACTIVE: Create WatermelonDB query that will be observed
   const dailyTasksQuery = useMemo(() => {
     return dailyTasksCollection.query(
-      Q.where('date', Q.gte(dateRange.startDate)),
-      Q.where('date', Q.lte(dateRange.endDate)),
+      // Q.where('date', Q.gte(dateRange.startDate)),
+      // Q.where('date', Q.lte(dateRange.endDate)),
       Q.sortBy('date', Q.desc),
     );
   }, [dailyTasksCollection, dateRange.startDate, dateRange.endDate]);
 
   const todayTasksQuery = useMemo(() => {
     return dailyTasksCollection.query(
-      Q.where('date', Q.eq(dateRange.todayDate)),
+      // Q.where('date', Q.eq(dateRange.todayDate)),
       Q.sortBy('date', Q.desc),
     );
   }, [dailyTasksCollection, dateRange.todayDate]);
@@ -51,40 +51,71 @@ export const useDailyTasks = (daysBack: number = 30) => {
   const [dailyTasks, setDailyTasks] = useState<DailyTasksModel[]>([]);
   const [todayTasks, setTodayTasks] = useState<DailyTasksModel[]>([]);
 
-  // ✅ REACTIVE: Subscribe to WatermelonDB observables
+  // ✅ REACTIVE: Enhanced subscription to WatermelonDB observables with improved error handling
   useEffect(() => {
     console.log('🔄 Setting up WatermelonDB reactive subscriptions...');
+    let isActive = true; // For avoiding state updates after unmount
 
-    // Subscribe to daily tasks changes
-    const dailyTasksSubscription = dailyTasksQuery.observe().subscribe({
-      next: tasks => {
-        console.log(`📊 Reactive update: ${tasks.length} daily tasks received`);
-        setDailyTasks(tasks);
-        setIsLoading(false);
-      },
-      error: error => {
-        console.error('❌ Error in daily tasks subscription:', error);
-        setIsLoading(false);
-      },
-    });
+    try {
+      // Subscribe to daily tasks changes with enhanced error handling
+      const dailyTasksSubscription = dailyTasksQuery.observe().subscribe({
+        next: tasks => {
+          if (!isActive) return;
+          console.log(
+            `📊 Reactive update: ${tasks.length} daily tasks received`,
+          );
+          console.log(
+            `📅 First few dates: ${tasks
+              .slice(0, 3)
+              .map(t => t.date)
+              .join(', ')}`,
+          );
 
-    // Subscribe to today's tasks changes
-    const todayTasksSubscription = todayTasksQuery.observe().subscribe({
-      next: tasks => {
-        console.log(`📋 Reactive update: ${tasks.length} today tasks received`);
-        setTodayTasks(tasks);
-      },
-      error: error => {
-        console.error('❌ Error in today tasks subscription:', error);
-      },
-    });
+          // Force new reference to trigger re-renders
+          setDailyTasks([...tasks]);
+          setIsLoading(false);
 
-    // Cleanup subscriptions
-    return () => {
-      console.log('🧹 Cleaning up WatermelonDB subscriptions');
-      dailyTasksSubscription.unsubscribe();
-      todayTasksSubscription.unsubscribe();
-    };
+          // Manual trigger to ensure subscribers update
+          setUpdateTrigger(prev => prev + 1);
+        },
+        error: error => {
+          if (!isActive) return;
+          console.error('❌ Error in daily tasks subscription:', error);
+          setIsLoading(false);
+        },
+      });
+
+      // Subscribe to today's tasks changes with enhanced error handling
+      const todayTasksSubscription = todayTasksQuery.observe().subscribe({
+        next: tasks => {
+          if (!isActive) return;
+          console.log(
+            `📋 Reactive update: ${tasks.length} today tasks received`,
+          );
+
+          // Force new reference to trigger re-renders
+          setTodayTasks([...tasks]);
+        },
+        error: error => {
+          if (!isActive) return;
+          console.error('❌ Error in today tasks subscription:', error);
+        },
+      });
+
+      // Cleanup subscriptions
+      return () => {
+        console.log('🧹 Cleaning up WatermelonDB subscriptions');
+        isActive = false;
+        dailyTasksSubscription.unsubscribe();
+        todayTasksSubscription.unsubscribe();
+      };
+    } catch (e) {
+      console.error('🔥 Fatal error in useDailyTasks subscription setup:', e);
+      setIsLoading(false);
+      return () => {
+        isActive = false;
+      };
+    }
   }, [dailyTasksQuery, todayTasksQuery]);
 
   // Force update trigger function (for manual refresh if needed)

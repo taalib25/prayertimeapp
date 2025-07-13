@@ -463,18 +463,21 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ FIXED: Simple reactive configuration - observe ALL database changes
-const enhance = withObservables([], () => {
-  console.log('📡 ProgressScreen: Observing all daily tasks for reactive updates');
-
-  return {
-    // Observe ALL daily tasks - no filters, no date dependencies
-    // This ensures reactive updates whenever ANY prayer/task data changes
-    dailyTasks: database
-      .get<DailyTasksModel>('daily_tasks')
-      .query(Q.sortBy('date', Q.desc))
-      .observe(),
-  };
-});
-
+// ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
 export default enhance(ProgressScreen);
