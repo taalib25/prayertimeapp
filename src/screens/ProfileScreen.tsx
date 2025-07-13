@@ -47,7 +47,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
   dailyTasks,
 }) => {
   const {logout} = useAuth();
-  const { user, userInitials, refresh} = useUser();
+  const {user, userInitials, refresh} = useUser();
 
   // Helper function to calculate consecutive Fajr streak at mosque
   const calculateFajrStreak = useCallback(
@@ -268,9 +268,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </Text>
               /{badgeData.totalBadges}
             </Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
+      
           </View>
           <View style={styles.badgesCard}>
             <View style={styles.badgesContainer}>

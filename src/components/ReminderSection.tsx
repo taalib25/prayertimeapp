@@ -31,7 +31,6 @@ import {typography} from '../utils/typography';
 import {colors} from '../utils/theme';
 import ApiTaskServices from '../services/apiHandler';
 import {FeedItem} from '../services/PrayerAppAPI';
-import {useWebViewInstallationCheck} from '../hooks/useWebViewInstallationCheck';
 
 // Use FeedItem from the API instead of separate Reminder interface
 type Reminder = FeedItem & {
@@ -151,9 +150,6 @@ const ReminderSection: React.FC<ReminderSectionProps> = ({
   maxItems,
   onSeeAllPress,
 }) => {
-  // Check for WebView installation and provide guidance if missing
-  useWebViewInstallationCheck();
-
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

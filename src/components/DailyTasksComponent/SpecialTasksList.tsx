@@ -67,10 +67,7 @@ interface SpecialTasksListProps {
   actualTaskData?: any[]; // Tasks from the database for this date
 }
 
-/**
- * Component that renders the list of special daily tasks
- * ✅ SIMPLIFIED: Basic functionality without complex optimizations
- */
+
 const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
   ({dateISO, onTaskToggle, isToday = false, actualTaskData = []}) => {
     // ✅ SIMPLE: Basic task data transformation
@@ -92,9 +89,9 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
 
         // Allow editing all three days (day before yesterday, yesterday, today)
         try {
-          console.log(`🔄 Calling onTaskToggle for ${taskId}`);
+          
           await onTaskToggle(dateISO, taskId);
-          console.log(`✅ Task toggle completed for ${taskId}`);
+         
         } catch (error) {
           console.error('❌ Error toggling task:', error);
         }
@@ -110,7 +107,7 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
         case 'quran':
           return colors.primary;
         case 'zikr':
-          return colors.warning;
+          return colors.primary;
         default:
           return colors.primary;
       }
@@ -119,16 +116,13 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     return (
       <View style={styles.container}>
         {specialTasks.map(task => {
-          console.log(
-            `📝 Rendering task: ${task.id}, completed: ${task.completed}, isToday: ${isToday}`,
-          );
+         
           return (
             <SpecialTaskItem
               key={task.id}
               task={task}
-              color={getTaskColor(task.category)}
+              color={colors.primary}
               onPress={() => {
-                console.log(`🔘 SpecialTaskItem pressed: ${task.id}`);
                 handleTaskPress(task.id);
               }}
               disabled={false}
