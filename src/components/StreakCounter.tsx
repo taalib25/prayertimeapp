@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dayIndicator: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
@@ -444,8 +444,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FA',
   },
   navButtonRight: {
-    width: 30,
-    height: 30,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
