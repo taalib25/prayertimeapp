@@ -463,21 +463,13 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ REACTIVE: Enhance with WatermelonDB observables for last 30 days
+// ✅ FIXED: Simple reactive configuration - observe ALL database changes
 const enhance = withObservables([], () => {
-  const today = new Date();
-  const startDate = new Date(today); // Create a copy to avoid mutation
-  startDate.setDate(today.getDate() - 29); // Get last 30 days (including today)
-
-  // Use proper date string formatting that matches helpers.ts
-  const todayStr = formatDateString(today);
-  const startDateStr = formatDateString(startDate);
-
-  console.log(
-    `📅 ProgressScreen: Querying from ${startDateStr} to ${todayStr}`,
-  );
+  console.log('📡 ProgressScreen: Observing all daily tasks for reactive updates');
 
   return {
+    // Observe ALL daily tasks - no filters, no date dependencies
+    // This ensures reactive updates whenever ANY prayer/task data changes
     dailyTasks: database
       .get<DailyTasksModel>('daily_tasks')
       .query(Q.sortBy('date', Q.desc))

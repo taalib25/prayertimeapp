@@ -65,8 +65,22 @@ export const transformDailyData = (
           // Completed if current Quran minutes >= task amount
           completed = (dayData.quranMinutes || 0) >= templateTask.amount;
         } else if (templateTask.category === 'zikr') {
-          // Completed if current Zikr count >= task amount
-          completed = (dayData.totalZikrCount || 0) >= templateTask.amount;
+          // ✅ FIXED: Robustly determine zikr completion using a greedy approach
+          // This correctly handles multiple zikr tasks with different counts
+          const zikrTasks = getSpecialTasksForDate(dayData.date)
+            .filter(t => t.category === 'zikr')
+            .sort((a, b) => b.amount - a.amount); // Sort descending by amount
+
+          let tempCount = dayData.totalZikrCount || 0;
+          const completedZikrIds = new Set<string>();
+
+          for (const zikrTask of zikrTasks) {
+            if (tempCount >= zikrTask.amount) {
+              completedZikrIds.add(zikrTask.id);
+              tempCount -= zikrTask.amount;
+            }
+          }
+          completed = completedZikrIds.has(templateTask.id);
         } else if (
           templateTask.category === 'prayer' &&
           templateTask.prayerName

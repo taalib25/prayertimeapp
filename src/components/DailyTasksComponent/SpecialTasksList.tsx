@@ -86,20 +86,20 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     }, [actualTaskData]);
 
     // ✅ SIMPLE: Task press handler
-  const handleTaskPress = useCallback(
-    async (taskId: string) => {
-      console.log(`🔘 Task pressed: ${taskId}, date: ${dateISO}`);
+    const handleTaskPress = useCallback(
+      async (taskId: string) => {
+        console.log(`🔘 Task pressed: ${taskId}, date: ${dateISO}`);
 
-      // Allow editing all three days (day before yesterday, yesterday, today)
-      try {
-        console.log(`🔄 Calling onTaskToggle for ${taskId}`);
-        await onTaskToggle(dateISO, taskId);
-        console.log(`✅ Task toggle completed for ${taskId}`);
-      } catch (error) {
-        console.error('❌ Error toggling task:', error);
-      }
-    },
-      [isToday, onTaskToggle, dateISO],
+        // Allow editing all three days (day before yesterday, yesterday, today)
+        try {
+          console.log(`🔄 Calling onTaskToggle for ${taskId}`);
+          await onTaskToggle(dateISO, taskId);
+          console.log(`✅ Task toggle completed for ${taskId}`);
+        } catch (error) {
+          console.error('❌ Error toggling task:', error);
+        }
+      },
+      [onTaskToggle, dateISO],
     );
 
     // ✅ SIMPLE: Basic color mapping
@@ -131,7 +131,7 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
                 console.log(`🔘 SpecialTaskItem pressed: ${task.id}`);
                 handleTaskPress(task.id);
               }}
-              disabled={!isToday}
+              disabled={false}
             />
           );
         })}

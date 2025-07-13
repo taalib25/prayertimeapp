@@ -12,12 +12,15 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
+import withObservables from '@nozbe/with-observables';
+import {Q} from '@nozbe/watermelondb';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
 import {colors} from '../utils/theme';
 import {fontFamilies, typography} from '../utils/typography';
-import {useDailyTasks} from '../hooks/useDailyTasks';
 import {getTodayDateString} from '../utils/helpers';
+import {updatePrayerStatus} from '../services/db/dailyTaskServices';
 
 export type AttendanceType = 'home' | 'mosque' | 'none' | null;
 
@@ -50,6 +53,7 @@ interface AttendanceSelectionModalProps {
   prayerName: string;
   isFuturePrayer?: boolean; // Added prop to identify future prayers
   selectedDate?: string; // Add selectedDate prop
+  dailyTasks: DailyTasksModel[]; // Added for withObservables
 }
 
 const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
@@ -58,16 +62,34 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   onSelect,
   onClose,
   prayerName,
-  isFuturePrayer = false, // Default to false
-  selectedDate, // Add selectedDate prop
+  isFuturePrayer = false,
+  selectedDate,
+  dailyTasks, // Now comes from withObservables
 }) => {
-  // Use the enhanced useDailyTasks hook for reactive data updates
-  const {updatePrayerStatus} = useDailyTasks();
-
   // Animation values
-  const slideAnim = useSharedValue(300);
-  const scaleAnim = useSharedValue(0.97); // Reduced scaling effect
+  const slideAnim = useSharedValue(100);
+  const scaleAnim = useSharedValue(0.97);
   const opacityAnim = useSharedValue(0);
+
+  // ✅ FIX: Get actual prayer status from database instead of using currentAttendance prop
+  const actualPrayerStatus = React.useMemo(() => {
+    const dateToCheck = selectedDate || getTodayDateString();
+    const task = dailyTasks.find(t => t.date === dateToCheck);
+
+    if (!task) {
+      console.log(`📅 No task found for date ${dateToCheck}`);
+      return null;
+    }
+
+    const prayerField =
+      `${prayerName.toLowerCase()}Status` as keyof DailyTasksModel;
+    const status = task[prayerField] as string;
+
+    console.log(
+      `🔍 AttendanceModal: ${prayerName} status for ${dateToCheck}: ${status}`,
+    );
+    return status as AttendanceType;
+  }, [dailyTasks, selectedDate, prayerName]);
 
   // Start animation when modal becomes visible
   React.useEffect(() => {
@@ -77,10 +99,10 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
       opacityAnim.value = withTiming(1, {duration: 300});
     } else {
       slideAnim.value = withTiming(300, {duration: 250});
-      scaleAnim.value = withTiming(0.97, {duration: 250}); // Reduced scaling effect
+      scaleAnim.value = withTiming(0.97, {duration: 250});
       opacityAnim.value = withTiming(0, {duration: 250});
     }
-  }, [visible]);
+  }, [visible, slideAnim, scaleAnim, opacityAnim]);
 
   // Animated styles
   const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -88,51 +110,51 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     opacity: opacityAnim.value,
   }));
 
-  // Enhanced selection handler with WatermelonDB reactive updates
+  // ✅ SIMPLIFIED: Direct update without complex state management
   const handleSelect = async (attendance: AttendanceType) => {
-    // Don't allow selection for future prayers
     if (isFuturePrayer) return;
 
     try {
-      // // Add a small bounce animation on selection - reduced scaling
-      // scaleAnim.value = withSpring(0.99, {duration: 100}, () => {
-      //   scaleAnim.value = withSpring(1, {duration: 150});
-      // });
+      const dateToUpdate = selectedDate || getTodayDateString();
 
-      // Update prayer status using the enhanced hook with automatic sync
-      const dateToUpdate = selectedDate || getTodayDateString(); // Use selectedDate if provided
+      console.log(
+        `🔄 AttendanceModal: Updating ${prayerName} to ${attendance} for ${dateToUpdate}`,
+      );
+
+      // Update database directly - WatermelonDB will handle reactive updates
       await updatePrayerStatus(
         dateToUpdate,
         prayerName.toLowerCase(),
         attendance,
       );
 
-      // Call the parent onSelect callback for any additional UI updates
+      // Close modal immediately for better UX
+      onClose();
+
+      // Call parent callback for any additional logic
       onSelect(attendance);
 
       console.log(
-        `✅ Prayer ${prayerName} attendance updated to: ${attendance}`,
+        `✅ AttendanceModal: Successfully updated ${prayerName} to ${attendance}`,
       );
     } catch (error) {
-      console.error('❌ Error updating prayer attendance:', error);
-      // Still call parent callback in case of error
-      onSelect(attendance);
+      console.error('❌ AttendanceModal: Update failed:', error);
+      onSelect(attendance); // Still notify parent
     }
-  }; // Render option as a simple button
+  }; // ✅ SIMPLIFIED: Render option using actual database status
   const renderOption = (option: any) => {
-    const isSelected = currentAttendance === option.type;
+    const isSelected = actualPrayerStatus === option.type;
     const isMasjid = option.type === 'mosque';
     const isNone = option.type === 'none';
 
-    // Only show selection if there's a valid attendance value (not null or 'home')
-    const hasValidSelection =
-      currentAttendance !== null && currentAttendance !== 'home';
-    const shouldShowAsSelected = hasValidSelection && isSelected;
+    console.log(
+      `🎨 Rendering ${option.type}: selected=${isSelected}, actualStatus=${actualPrayerStatus}`,
+    );
 
     const getButtonStyle = () => {
-      if (shouldShowAsSelected && isMasjid) {
+      if (isSelected && isMasjid) {
         return [styles.optionButton, styles.selectedYesButton];
-      } else if (shouldShowAsSelected && !isMasjid) {
+      } else if (isSelected && isNone) {
         return [styles.optionButton, styles.selectedNoButton];
       } else {
         return [styles.optionButton, styles.unselectedButton];
@@ -140,9 +162,9 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     };
 
     const getTextStyle = () => {
-      if (shouldShowAsSelected && isMasjid) {
+      if (isSelected && isMasjid) {
         return [styles.optionLabel, styles.selectedYesText];
-      } else if (shouldShowAsSelected && !isMasjid) {
+      } else if (isSelected && isNone) {
         return [styles.optionLabel, styles.selectedNoText];
       } else {
         return [styles.optionLabel, styles.unselectedText];
@@ -159,11 +181,11 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
         <Text
           style={[
             styles.optionDescription,
-            shouldShowAsSelected && styles.selectedDescription,
+            isSelected && styles.selectedDescription,
           ]}>
           {option.description}
         </Text>
-        {/* Show a cross symbol when "No" is selected */}
+        {/* Show cross symbol when "No" is selected */}
         {isNone && isSelected && <Text style={styles.crossSymbol}>✖</Text>}
       </TouchableOpacity>
     );
@@ -353,4 +375,20 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AttendanceSelectionModal;
+// ✅ FIXED: Simple reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => {
+  console.log(`📡 AttendanceModal: Observing all daily tasks for reactive updates`);
+
+  return {
+    // Observe ALL daily tasks - no filters, no date dependencies
+    // This ensures reactive updates whenever ANY prayer/task data changes
+    dailyTasks: database
+      .get<DailyTasksModel>('daily_tasks')
+      .query(Q.sortBy('date', Q.desc))
+      .observe(),
+  };
+});
+
+const EnhancedAttendanceSelectionModal = enhance(AttendanceSelectionModal);
+
+export default EnhancedAttendanceSelectionModal;

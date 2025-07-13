@@ -1,11 +1,13 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import {useFajrChartData} from '../hooks/useContextualData';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import SvgIcon from './SvgIcon';
-import {useDailyTasks} from '../hooks/useDailyTasks';
 import {getTodayDateString, formatDateString} from '../utils/helpers';
+import withObservables from '@nozbe/with-observables';
+import database from '../services/db';
+import {Q} from '@nozbe/watermelondb';
+import DailyTasksModel from '../model/DailyTasks';
 
 interface DayStatus {
   date: string;
@@ -15,7 +17,11 @@ interface DayStatus {
   isFuture?: boolean;
 }
 
-const StreakCounter: React.FC = () => {
+interface StreakCounterProps {
+  dailyTasks: DailyTasksModel[];
+}
+
+const StreakCounter: React.FC<StreakCounterProps> = ({dailyTasks}) => {
   // Initialize today date
   const today = useMemo(() => {
     const date = new Date();
@@ -35,8 +41,51 @@ const StreakCounter: React.FC = () => {
 
   const [currentWeekStart, setCurrentWeekStart] = useState(getCurrentWeekStart);
 
-  const {getFajrDataForDates} = useFajrChartData();
-  const {updateTrigger} = useDailyTasks(30); // Get update trigger for reactivity
+  // Replace useFajrChartData with direct dailyTasks processing
+  const getFajrDataForDates = useCallback(
+    (dates: string[]) => {
+      return dates.map(date => {
+        const dayData = dailyTasks.find(task => task.date === date);
+        const fajrStatus = dayData?.fajrStatus || 'none'; // Default to 'none' if no data
+        return {
+          date,
+          fajrStatus,
+          completionValue: fajrStatus === 'mosque' ? 1 : 0,
+          dayLabel: formatDayLabel(date),
+        };
+      });
+    },
+    [dailyTasks],
+  );
+
+  // Helper function for day labels
+  const formatDayLabel = useCallback((dateStr: string): string => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+
+    const diffTime = compareDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    }
+    if (diffDays === 1) {
+      return 'Tomorrow';
+    }
+    if (diffDays === -1) {
+      return 'Yesterday';
+    }
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    };
+    return date.toLocaleDateString('en', options);
+  }, []);
 
   // Format date to string (YYYY-MM-DD) - using helper function
   const formatDate = useCallback((date: Date): string => {
@@ -163,8 +212,8 @@ const StreakCounter: React.FC = () => {
     getWeekDates,
     getFajrDataForDates,
     today,
-    updateTrigger,
-  ]); // Add updateTrigger
+    dailyTasks, // Use reactive dailyTasks instead of manual updateTrigger
+  ]); // Now reactive to actual data changes
 
   useEffect(() => {
     calculateStreakData();
@@ -266,7 +315,9 @@ const StreakCounter: React.FC = () => {
                 <Text
                   style={[
                     styles.dayLabel,
-                    day.status === 'attended' && !day.isToday && styles.dayLabelActive,
+                    day.status === 'attended' &&
+                      !day.isToday &&
+                      styles.dayLabelActive,
                     day.isToday && styles.dayLabelToday,
                   ]}>
                   {day.dayName}
@@ -274,8 +325,12 @@ const StreakCounter: React.FC = () => {
                 <View
                   style={[
                     styles.dayIndicator,
-                    day.status === 'attended' && !day.isToday && styles.dayAttended,
-                    day.status === 'attended' && day.isToday && styles.dayAttendedToday,
+                    day.status === 'attended' &&
+                      !day.isToday &&
+                      styles.dayAttended,
+                    day.status === 'attended' &&
+                      day.isToday &&
+                      styles.dayAttendedToday,
                     day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
                   ]}>
@@ -320,9 +375,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
   },
-  streakContainer: {
-
-  },
+  streakContainer: {},
   streakCounterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -468,4 +521,9 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StreakCounter;
+// Enhanced HOC to observe all daily tasks for reactivity
+const enhance = withObservables([], () => ({
+  dailyTasks: database.get<DailyTasksModel>('daily_tasks').query().observe(),
+}));
+
+export default enhance(StreakCounter);
