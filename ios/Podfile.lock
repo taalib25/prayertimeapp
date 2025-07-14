@@ -1356,7 +1356,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-date-picker (5.0.13):
+  - react-native-date-picker (5.0.12):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2495,7 +2495,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: c04fcda1c6281fc0a6824c7dcc1633dd217ac1ec
   React-microtasksnativemodule: ca2804a25fdcefffa0aa942aa23ab53b99614a34
   react-native-blur: b6750125c409d8aaa7ae1a1f21cf3632d24a9bd8
-  react-native-date-picker: 3f997d3f1313adc1cd2bd8bc21d872cf012a2322
+  react-native-date-picker: ffb59a0dd7d3a1e78795c738c8dea68b90b18389
   react-native-image-picker: c73e6edfdbc2bbc1c12b3fe9c2149441fa08f149
   react-native-pager-view: 32cf333014f4a55c85c5d1018a28e5f83675718b
   react-native-safe-area-context: 638038e064cdf9747580a2e47717b09be309a321
