@@ -13,10 +13,11 @@ interface DayTasks {
   dayLabel: string;
   tasks: Task[];
   isToday: boolean;
+  isEditable?: boolean; // Added for editability control
 }
 
 export const transformDailyData = (
-  recentTasks: DailyTaskData[],
+  recentTasks: (DailyTaskData & { isEditable?: boolean })[],
 ): DayTasks[] => {
   const today = getTodayDateString();
 
@@ -109,6 +110,7 @@ export const transformDailyData = (
           completed: task.completed,
         })),
         isToday: dayData.date === today,
+        isEditable: dayData.isEditable ?? true, // Default to editable if not specified
       };
     });
 

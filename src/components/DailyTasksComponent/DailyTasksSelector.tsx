@@ -14,6 +14,7 @@ import {
   updatePrayerStatus,
   updateQuranMinutes,
   updateZikrCount,
+  createDailyTasks,
 } from '../../services/db/dailyTaskServices';
 import {DAILY_SPECIAL_TASKS} from './specialTasks';
 
@@ -50,12 +51,35 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
         try {
           console.log(`🔄 Toggling task ${taskId} for date ${dateISO}`);
 
+          // ✅ SAFETY CHECK: Only allow editing today's tasks for new records
+          const today = getTodayDateString();
+          const existingTask = dailyTasks.find(task => task.date === dateISO);
+          
+          if (!existingTask && dateISO !== today) {
+            console.warn(`❌ Cannot create new records for past dates. Date: ${dateISO}, Today: ${today}`);
+            return;
+          }
+
+          // ✅ CREATE RECORD: If no task exists for today, create it first
+          if (!existingTask && dateISO === today) {
+            console.log(`📝 Creating new daily task record for today: ${dateISO}`);
+            try {
+              await createDailyTasks(dateISO);
+              // The reactive system will update the component automatically
+              // Wait a short moment for the creation to complete before proceeding
+              await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (createError) {
+              console.error(`❌ Failed to create daily task record for ${dateISO}:`, createError);
+              // Still try to proceed with the update in case the record was created by another process
+            }
+          }
+
           // Parse the task ID to determine the type
           if (taskId.startsWith('prayer_')) {
             // Handle prayer tasks
             const prayerName = taskId.replace('prayer_', '');
 
-            // Find current task to get current status
+            // Re-fetch current task in case it was just created
             const currentTask = dailyTasks.find(task => task.date === dateISO);
             const currentStatus = currentTask?.[
               `${prayerName}Status` as keyof DailyTasksModel
@@ -136,15 +160,18 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
       const dayBeforeYesterday = new Date(today);
       dayBeforeYesterday.setDate(today.getDate() - 2);
 
+      const todayString = getTodayDateString();
       const requiredDates = [
         formatDateString(dayBeforeYesterday),
         formatDateString(yesterday),
-        formatDateString(today),
+        todayString,
       ];
 
       // Create data for all 3 days, using database data if available or defaults if not
       const dailyTasksData = requiredDates.map(date => {
         const existingTask = dailyTasks.find(task => task.date === date);
+        const isToday = date === todayString;
+        const isEditable = isToday || !!existingTask; // Only editable if it's today or record already exists
 
         if (existingTask) {
           // Use existing data from database
@@ -160,6 +187,7 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
             specialTasks: existingTask.specialTasks
               ? JSON.parse(existingTask.specialTasks)
               : [],
+            isEditable,
           };
         } else {
           // Create default empty data for missing dates
@@ -173,6 +201,7 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
             totalZikrCount: 0,
             quranMinutes: 0,
             specialTasks: [],
+            isEditable,
           };
         }
       });
@@ -182,6 +211,7 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
           dailyTasksData.length
         } days (${requiredDates.join(', ')})`,
       );
+      console.log(`📝 Editability: ${dailyTasksData.map(d => `${d.date}:${d.isEditable}`).join(', ')}`);
       return transformDailyData(dailyTasksData);
     }, [dailyTasks]); // Now reactive to withObservables prop
 
