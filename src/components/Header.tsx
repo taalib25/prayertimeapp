@@ -96,7 +96,7 @@ const Header: React.FC = () => {
                 'Ahmed'}
             </Text>
             <Text style={styles.welcomeBack} numberOfLines={1}>
-              ID: {user?.memberId || '1001'} • Welcome Back!
+              ID: {user?.memberId || '1001'}
             </Text>
           </View>
         </View>

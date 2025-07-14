@@ -116,6 +116,31 @@ export interface FeedsResponse {
   data: FeedItem[];
 }
 
+export interface CreateMemberRequest {
+  fullName: string;
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  dateOfBirth?: string; // YYYY-MM-DD
+  address?: string;
+  area?: string;
+}
+
+export interface CreateMemberResponse {
+  id: string;
+  memberId: string;
+  fullName: string;
+  username: string;
+  email: string;
+  phone?: string;
+  dateOfBirth?: string;
+  address?: string;
+  area?: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface PickupRequest {
   pickup_location: string;
   days: string[]; // ["monday", "tuesday", "wednesday"]
@@ -207,6 +232,41 @@ class PrayerAppAPI {
    */
   async logout(): Promise<ApiResponse<{message: string}>> {
     return this.apiService.post('/auth/logout');
+  }
+
+  /**
+   * Create new member
+   */
+  async createMember(
+    data: CreateMemberRequest,
+  ): Promise<ApiResponse<CreateMemberResponse>> {
+    try {
+      console.log('📝 API: Creating new member:', {
+        email: data.email,
+        fullName: data.fullName,
+        username: data.username,
+      });
+
+      const response = await this.apiService.post<CreateMemberResponse>(
+        '/members',
+        data,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Member created successfully:', response.data);
+      } else {
+        console.log('❌ API: Member creation failed:', response.error);
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error creating member:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
   }
 
   // ========== PRAYER TIMES ENDPOINTS ==========

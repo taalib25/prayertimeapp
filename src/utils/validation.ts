@@ -102,6 +102,7 @@ export const areaSchema = z.string().min(1, 'Area is required');
 export const registrationSchema = z.object({
   firstName: nameSchema,
   lastName: nameSchema,
+  username: usernameSchema,
   contactNumber: phoneSchema,
   area: areaSchema,
   email: emailSchema,

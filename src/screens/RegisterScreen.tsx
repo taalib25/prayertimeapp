@@ -12,9 +12,9 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  ToastAndroid,
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
+import AlertModal from '../components/AlertModel';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
 import {typography} from '../utils/typography';
@@ -36,6 +36,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     contactNumber: '',
     area: '',
     email: '',
@@ -46,6 +47,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
   const [errors, setErrors] = useState<
     Partial<Record<keyof RegistrationFormData, string>>
   >({});
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const apiService = ApiTaskServices.getInstance();
 
   const updateField = (field: keyof RegistrationFormData, value: string) => {
@@ -86,6 +88,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
       const registerResponse = await apiService.registerUser({
         firstName: formData.firstName,
         lastName: formData.lastName,
+        username: formData.username,
         phoneNumber: formData.contactNumber,
         area: formData.area,
         email: formData.email,
@@ -93,11 +96,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
       });
 
       if (registerResponse.success) {
-        ToastAndroid.show(
-          'Registration successful! Please check your email for verification.',
-          ToastAndroid.LONG,
-        );
-        navigation.goBack();
+        setShowSuccessModal(true);
       } else {
         Alert.alert(
           'Error',
@@ -161,6 +160,19 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
                 />
                 {errors.lastName && (
                   <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+
+                {/* Username */}
+                <TextInput
+                  style={[styles.input, errors.username && styles.inputError]}
+                  placeholder="Username"
+                  placeholderTextColor={colors.text.muted}
+                  value={formData.username}
+                  onChangeText={value => updateField('username', value)}
+                  autoCapitalize="none"
+                />
+                {errors.username && (
+                  <Text style={styles.errorText}>{errors.username}</Text>
                 )}
 
                 {/* Contact Number */}
@@ -244,6 +256,22 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+
+      <AlertModal
+        visible={showSuccessModal}
+        title="Account Created"
+        message="Your account has been created successfully and is under review. You will be notified once it's approved."
+        onCancel={() => {
+          setShowSuccessModal(false);
+          navigation.goBack();
+        }}
+        onConfirm={() => {
+          setShowSuccessModal(false);
+          navigation.goBack();
+        }}
+        confirmText="OK"
+        cancelText=""
+      />
     </SafeAreaView>
   );
 };
