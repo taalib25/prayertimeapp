@@ -514,6 +514,7 @@ class ApiTaskServices {
   async registerUser(userData: {
     firstName: string;
     lastName: string;
+    username: string;
     phoneNumber: string;
     area: string;
     email: string;
@@ -526,25 +527,33 @@ class ApiTaskServices {
     try {
       console.log('📝 API: Registering new user:', {
         email: userData.email,
+        username: userData.username,
         name: `${userData.firstName} ${userData.lastName}`,
       });
 
-      // This is a mock implementation since the real API endpoint isn't available
-      // Replace with actual API call when available
-      // const response = await this.api.register(userData);
+      // Use the real API endpoint
+      const response = await this.api.createMember({
+        fullName: `${userData.firstName} ${userData.lastName}`,
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        phone: userData.phoneNumber,
+        area: userData.area,
+      });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock successful response
-      return {
-        success: true,
-        user: {
-          id: Math.floor(Math.random() * 1000),
-          email: userData.email,
-          name: `${userData.firstName} ${userData.lastName}`,
-        },
-      };
+      if (response.success) {
+        console.log('✅ API: Member created successfully:', response.data);
+        return {
+          success: true,
+          user: response.data,
+        };
+      } else {
+        console.log('❌ API: Member creation failed:', response.error);
+        return {
+          success: false,
+          error: response.error || 'Registration failed. Please try again.',
+        };
+      }
     } catch (error) {
       console.error('❌ API: Error registering user:', error);
       return {
