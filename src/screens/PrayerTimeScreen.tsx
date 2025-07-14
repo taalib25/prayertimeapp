@@ -126,9 +126,9 @@ const PrayerTimeScreen = () => {
   return (
     <View style={styles.safeArea}>
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="transparent"
+        backgroundColor="#ffffff"
         translucent={true}
+        hidden= {true}
       />
       <ScrollView style={styles.scrollContainer}>
         {/* Header with user profile and mosque info */}

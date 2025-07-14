@@ -149,17 +149,18 @@ const styles = StyleSheet.create({
   compactProgressText: {
     alignItems: 'center',
     justifyContent: 'center',
-    // Remove fixed width/height that might be constraining
+   
     flex: 1, // Allow container to expand
-    paddingHorizontal: 12, // Add more padding
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
   compactProgressValue: {
+    // backgroundColor : colors.accent,
     textAlign: 'center',
     ...typography.h3,
 
-    fontSize: 38, // Reduced from 32 to ensure it fits
-    lineHeight: 32, // Adjusted line height
+    fontSize: 42, // Reduced from 32 to ensure it fits
+    lineHeight: 62, // Adjusted line height
     color: 'inherit', // Use inherited color
   },
   compactProgressTotal: {

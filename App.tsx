@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   SafeAreaView,
   StatusBar,
@@ -7,12 +7,12 @@ import {
   StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
 import {
   NavigationContainer,
   NavigationContainerRef,
 } from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -29,15 +29,15 @@ import PickupSettingsScreen from './src/screens/PickupSettingsScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
 
 // Services & Context
-import {DatabaseProvider} from './src/services/db/databaseProvider';
-import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import {initializePrayerTimesDatabase} from './src/services/db/dbInitalizer';
+import { DatabaseProvider } from './src/services/db/databaseProvider';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { initializePrayerTimesDatabase } from './src/services/db/dbInitalizer';
 import {
   initializeUserBackgroundTasks,
   checkBackgroundTasksHealth,
 } from './src/services/backgroundTasks';
 import PermissionInitializer from './src/services/PermissionInitializer';
-import {colors} from './src/utils/theme';
+import { colors } from './src/utils/theme';
 import FeedsScreen from './src/screens/FeedsScreen';
 import DatabaseScreen from './src/screens/DatabaseScreen';
 // Types
@@ -45,7 +45,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  OTP: {email: string; username?: string; password?: string};
+  OTP: { email: string; username?: string; password?: string };
   MainApp: undefined;
   DatabaseScreen: undefined;
   PrayerChallenge: undefined;
@@ -73,7 +73,7 @@ export function goBack() {
 
 // Main App Navigator Component
 function AppNavigator() {
-  const {isAuthenticated, isLoading, checkAuthState} = useAuth();
+  const { isAuthenticated, isLoading, checkAuthState } = useAuth();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
     null,
   );
@@ -166,7 +166,7 @@ function AppNavigator() {
       <Stack.Navigator screenOptions={screenOptions}>
         {!hasSeenOnboarding ? (
           // Onboarding Flow
-          <Stack.Screen name="Onboarding" options={{gestureEnabled: false}}>
+          <Stack.Screen name="Onboarding" options={{ gestureEnabled: false }}>
             {props => (
               <OnboardingScreen
                 {...props}
@@ -258,8 +258,10 @@ function App(): React.JSX.Element {
       <AuthProvider>
         <SafeAreaView style={styles.container}>
           <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor="transparent"
+            backgroundColor="#F5F5F5"
+            translucent={true}
+            hidden={true}
+            showHideTransition={'fade'}
           />
           <AppNavigator />
         </SafeAreaView>

@@ -42,11 +42,6 @@ const OnboardingScreen: React.FC<Props> = ({
 
   return (
     <>
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="light-content"
-      />
       <ImageBackground
         source={require('../assets/images/welcome.png')}
         style={styles.backgroundImage}

@@ -229,7 +229,8 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={onClose}
-      statusBarTranslucent>
+      // statusBarTranslucent
+      >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Animated.View style={[styles.container, animatedContainerStyle]}>
           {/* Header with improved hierarchy */}
