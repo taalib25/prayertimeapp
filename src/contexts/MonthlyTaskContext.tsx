@@ -1,6 +1,5 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {useMonthlyAggregatedData} from '../hooks/useContextualData';
-import {dataCache} from '../utils/dataCache';
+import {useDailyTasks} from '../hooks/useDailyTasks';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -19,13 +18,12 @@ interface MonthData {
 interface MonthlyTaskContextType {
   monthlyData: MonthData[];
   getCurrentMonthIndex: () => number;
+  isLoading: boolean;
 }
 
 const MonthlyTaskContext = createContext<MonthlyTaskContextType | undefined>(
   undefined,
 );
-
-const MOCK_USER_ID = 1001;
 
 export const MonthlyTaskProvider: React.FC<{
   children: React.ReactNode;
@@ -38,80 +36,82 @@ export const MonthlyTaskProvider: React.FC<{
   };
   const goals = userGoals || defaultGoals;
 
-  // Get monthly data using the centralized context instead of direct database access
-  const {getMonthlyStats} = useMonthlyAggregatedData();
-  // Get daily tasks data to include in dependency + reactive trigger
-  const {dailyTasks, updateTrigger} = useMonthlyAggregatedData();  // Transform raw data to format needed for UI - now reactive to prayer updates
+  // ✅ SIMPLIFIED: Use direct WatermelonDB queries for 90 days
+  const {dailyTasks} = useDailyTasks(90);
+
+  // ✅ SIMPLIFIED: Direct monthly data calculation without caching
   const monthlyData = useMemo(() => {
-    // ⚡ PERFORMANCE: Cache monthly data calculations - include detailed dailyTasks hash for reactivity
-    const quranTotal = dailyTasks.reduce(
-      (sum, t) => sum + (t.quranMinutes || 0),
-      0,
-    );
-    const zikrTotal = dailyTasks.reduce(
-      (sum, t) => sum + (t.totalZikrCount || 0),
-      0,
-    );
-    const dailyTasksHash = `${dailyTasks.length}-Q${quranTotal}-Z${zikrTotal}-T${updateTrigger || 0}`;
-    const cacheKey = `monthly-stats-${JSON.stringify(goals)}-${dailyTasksHash}`;
-
     console.log(
-      `🔍 MonthlyTaskContext: Detailed stats - Length: ${dailyTasks.length}, Quran: ${quranTotal}, Zikr: ${zikrTotal}, Trigger: ${updateTrigger || 0}`,
+      `🔍 MonthlyTaskContext: Computing monthly data from ${dailyTasks.length} daily tasks`,
     );
-    console.log(
-      `🔍 MonthlyTaskContext: Cache key: ${cacheKey.slice(0, 120)}...`,
-    );
-
-    let cached = dataCache.get<MonthData[]>(cacheKey);
-    if (cached) {
-      console.log('📊 Using cached monthly data with hash:', dailyTasksHash);
-      return cached;
-    }
-
-    console.log('🔄 Computing fresh monthly data transform...');
 
     // Generate all months for the past 3 months
     const today = new Date();
-    const allMonths = [];
+    const allMonths: MonthData[] = [];
 
     for (let i = 2; i >= 0; i--) {
       const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthName = monthDate.toLocaleDateString('en-US', {month: 'long'});
       const year = monthDate.getFullYear();
+      const monthIndex = monthDate.getMonth();
 
-      // Get existing data for this month using centralized context
-      const existingData = getMonthlyStats(year, monthDate.getMonth());
+      // Filter tasks for this specific month
+      const monthTasks = dailyTasks.filter(task => {
+        const taskDate = new Date(task.date);
+        return (
+          taskDate.getFullYear() === year && taskDate.getMonth() === monthIndex
+        );
+      });
 
-      // Create month data with existing or default values
+      // Calculate totals directly from filtered tasks
+      const totalZikr = monthTasks.reduce(
+        (sum, task) => sum + (task.totalZikrCount || 0),
+        0,
+      );
+      const totalQuranMinutes = monthTasks.reduce(
+        (sum, task) => sum + (task.quranMinutes || 0),
+        0,
+      );
+      const fajrCompletedDays = monthTasks.filter(
+        task => task.fajrStatus === 'mosque' || task.fajrStatus === 'home',
+      ).length;
+      const ishaCompletedDays = monthTasks.filter(
+        task => task.ishaStatus === 'mosque' || task.ishaStatus === 'home',
+      ).length;
+
+      // Get total days in this month
+      const totalDaysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
       allMonths.push({
         monthLabel: monthName,
         year: year,
         zikr: {
-          current: existingData?.totalZikr || 0,
+          current: totalZikr,
           total: goals.monthlyZikrGoal,
         },
         quran: {
-          current: existingData?.totalQuranPages || 0,
+          current: Math.floor(totalQuranMinutes / 15), // Convert minutes to pages (15 min = 1 page)
           total: goals.monthlyQuranPagesGoal,
         },
         fajr: {
-          current: existingData?.fajrCompletedDays || 0,
-          total:
-            existingData?.totalDays ||
-            new Date(year, monthDate.getMonth() + 1, 0).getDate(),
+          current: fajrCompletedDays,
+          total: totalDaysInMonth,
         },
         isha: {
-          current: existingData?.ishaCompletedDays || 0,
-          total:
-            existingData?.totalDays ||
-            new Date(year, monthDate.getMonth() + 1, 0).getDate(),
+          current: ishaCompletedDays,
+          total: totalDaysInMonth,
         },
       });
-    }    // Cache the result for 30 seconds (reduced from 2 minutes for better reactivity)
-    dataCache.set(cacheKey, allMonths, 30000);
-    console.log('💾 Monthly data cached with key:', dailyTasksHash);
+
+      console.log(
+        `📊 Month ${monthName}: Zikr=${totalZikr}, Quran=${Math.floor(
+          totalQuranMinutes / 15,
+        )}, Fajr=${fajrCompletedDays}, Isha=${ishaCompletedDays}`,
+      );
+    }
+
     return allMonths;
-  }, [getMonthlyStats, goals, dailyTasks, updateTrigger]); // Include updateTrigger for reactivity
+  }, [dailyTasks, goals]);
 
   // Get current month index
   const getCurrentMonthIndex = useMemo(() => {
@@ -136,6 +136,7 @@ export const MonthlyTaskProvider: React.FC<{
   const value: MonthlyTaskContextType = {
     monthlyData,
     getCurrentMonthIndex,
+    isLoading: false,
   };
 
   return (

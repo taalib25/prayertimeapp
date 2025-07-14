@@ -40,7 +40,7 @@ const DailyTasksSelector: React.FC = React.memo(() => {
           // Update with WatermelonDB - this will automatically trigger reactive updates and sync
           await updatePrayerStatus(dateISO, prayerName, newStatus);
         } else if (taskId.startsWith('quran_')) {
-          // Handle Quran tasks
+          // Handle Quran tasks - simple toggle between 0 and 15 minutes
           const currentData = getTaskForDate(dateISO);
           const currentMinutes = currentData?.quranMinutes || 0;
           const newMinutes = currentMinutes >= 15 ? 0 : 15;
@@ -48,18 +48,26 @@ const DailyTasksSelector: React.FC = React.memo(() => {
           // Update with WatermelonDB - this will automatically trigger reactive updates and sync
           await updateQuranMinutes(dateISO, newMinutes);
         } else if (taskId.startsWith('zikr_')) {
-          // Handle Zikr tasks
+          // Handle Zikr tasks - add individual counts
           const currentData = getTaskForDate(dateISO);
           const currentCount = currentData?.totalZikrCount || 0;
-          // Toggle based on task requirements: 500 for "allahuakbar", 100 for "istighfar"
-          let targetCount = 100; // Default for istighfar
+
+          // Add individual task amounts instead of toggling
+          let amountToAdd = 100; // Default for istighfar
           if (taskId.includes('allahuakbar')) {
-            targetCount = 500;
+            amountToAdd = 500;
           }
-          const newCount = currentCount >= targetCount ? 0 : targetCount;
+
+          // Check if this specific amount is already included
+          const targetAmount = amountToAdd;
+          const hasThisTask = currentCount >= targetAmount;
+
+          const newCount = hasThisTask
+            ? currentCount - targetAmount
+            : currentCount + targetAmount;
 
           // Update with WatermelonDB - this will automatically trigger reactive updates and sync
-          await updateZikrCount(dateISO, newCount);
+          await updateZikrCount(dateISO, Math.max(0, newCount));
         }
 
         console.log(`✅ Task ${taskId} toggle completed`);
@@ -90,7 +98,8 @@ const DailyTasksSelector: React.FC = React.memo(() => {
     );
 
     // If today is found, use it; otherwise use the last page (which should be today)
-    const targetPage = todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
+    const targetPage =
+      todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
 
     console.log(
       `📅 Daily tasks: ${transformedDailyData.length} days, today at index ${todayIndex}, showing page ${targetPage}`,

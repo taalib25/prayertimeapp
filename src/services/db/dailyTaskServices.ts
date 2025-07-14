@@ -29,11 +29,7 @@ const DEFAULT_DAILY_TASKS: Omit<DailyTaskData, 'date'> = {
   ishaStatus: 'none',
   totalZikrCount: 0,
   quranMinutes: 0,
-  specialTasks: [
-    {id: 't1', title: 'Fajr at Masjid', completed: false},
-    {id: 't2', title: '100 x Dhikr', completed: false},
-    {id: 't3', title: 'Read Quran', completed: false},
-  ],
+  specialTasks: [], // ✅ SIMPLIFIED: No default special tasks
 };
 
 /**
@@ -158,7 +154,7 @@ export const createDailyTasks = async (
         task.ishaStatus = DEFAULT_DAILY_TASKS.ishaStatus || 'none';
         task.totalZikrCount = DEFAULT_DAILY_TASKS.totalZikrCount;
         task.quranMinutes = DEFAULT_DAILY_TASKS.quranMinutes;
-        task.specialTasks = JSON.stringify(DEFAULT_DAILY_TASKS.specialTasks);
+        task.specialTasks = JSON.stringify(DEFAULT_DAILY_TASKS.specialTasks); // Empty array
       });
       return newTask;
     });
@@ -338,7 +334,7 @@ export const updateQuranMinutes = async (
 };
 
 /**
- * Update special task completion status
+ * Update special task completion status with reactive updates
  */
 export const updateSpecialTaskStatus = async (
   date: string,
@@ -358,6 +354,10 @@ export const updateSpecialTaskStatus = async (
     const existingTasks = await dailyTasksCollection
       .query(Q.where('date', date))
       .fetch();
+
+    if (existingTasks.length === 0) {
+      throw new Error(`No daily task found for date ${date}`);
+    }
 
     const targetTask = existingTasks[0];
 

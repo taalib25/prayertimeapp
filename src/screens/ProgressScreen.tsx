@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {
-  getRecentDailyTasks,
-  DailyTaskData,
-} from '../services/db/dailyTaskServices';
 import {getTodayDateString, formatDateString} from '../utils/helpers';
+import {DailyTaskData} from '../services/db/dailyTaskServices';
+import withObservables from '@nozbe/with-observables';
+import {Q} from '@nozbe/watermelondb';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
 
 interface ProgressSummary {
   date: string;
@@ -28,12 +29,11 @@ interface ProgressSummary {
   completionPercentage: number;
 }
 
-const ProgressScreen: React.FC = () => {
-  const [progressData, setProgressData] = useState<ProgressSummary[]>([]);
-  const [taskDataMap, setTaskDataMap] = useState<Map<string, DailyTaskData>>(
-    new Map(),
-  );
-  const [loading, setLoading] = useState(true);
+interface ProgressScreenProps {
+  dailyTasks: DailyTasksModel[];
+}
+
+const ProgressScreen: React.FC<ProgressScreenProps> = ({dailyTasks}) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const formatDate = useCallback((dateString: string): string => {
@@ -55,7 +55,7 @@ const ProgressScreen: React.FC = () => {
     }
   }, []);
 
-  const countCompletedPrayers = useCallback((task: DailyTaskData): number => {
+  const countCompletedPrayers = useCallback((task: DailyTasksModel): number => {
     const statuses = [
       task.fajrStatus,
       task.dhuhrStatus,
@@ -67,19 +67,38 @@ const ProgressScreen: React.FC = () => {
       .length;
   }, []);
 
-  const loadProgressData = useCallback(async () => {
-    try {
-      // Get at least 30 records, but try to get more to ensure we have enough data
-      const tasks = await getRecentDailyTasks(50);
+  // ✅ REACTIVE: Convert dailyTasks to progress data automatically + Generate 30 days
+  const {progressData, taskDataMap} = useMemo(() => {
+    console.log(
+      `🔍 ProgressScreen: Processing ${dailyTasks?.length || 0} daily tasks`,
+    );
 
-      // Create a map for quick task lookup
-      const taskMap = new Map<string, DailyTaskData>();
-      tasks.forEach(task => {
+    // Generate last 30 days (including today)
+    const last30Days: string[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last30Days.push(formatDateString(date));
+    }
+
+    console.log(
+      `📅 ProgressScreen: Generating data for last 30 days from ${last30Days[0]} to ${last30Days[29]}`,
+    );
+
+    // Create task map for quick lookup
+    const taskMap = new Map<string, DailyTasksModel>();
+    if (dailyTasks) {
+      dailyTasks.forEach(task => {
         taskMap.set(task.date, task);
       });
-      setTaskDataMap(taskMap);
+    }
 
-      const progressSummary: ProgressSummary[] = tasks.map(task => {
+    // Generate progress summary for all 30 days (with empty data for missing days)
+    const progressSummary: ProgressSummary[] = last30Days.map(dateStr => {
+      const task = taskMap.get(dateStr);
+
+      if (task) {
+        // Real data exists
         const prayersCompleted = countCompletedPrayers(task);
         const totalPrayers = 5;
         const completionPercentage = (prayersCompleted / totalPrayers) * 100;
@@ -94,38 +113,60 @@ const ProgressScreen: React.FC = () => {
           zikrCount: task.totalZikrCount,
           completionPercentage,
         };
-      });
+      } else {
+        // No data - create empty entry
+        return {
+          date: dateStr,
+          formattedDate: formatDate(dateStr),
+          isToday: dateStr === getTodayDateString(),
+          prayersCompleted: 0,
+          totalPrayers: 5,
+          quranMinutes: 0,
+          zikrCount: 0,
+          completionPercentage: 0,
+        };
+      }
+    });
 
-      // Sort by date (newest first)
-      progressSummary.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+    // Sort by date (newest first)
+    progressSummary.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
 
-      // Ensure we display at least 30 records
-      const recordsToShow = Math.max(30, progressSummary.length);
-      setProgressData(progressSummary.slice(0, recordsToShow));
-    } catch (error) {
-      console.error('Error loading progress data:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [formatDate, countCompletedPrayers]);
+    const realDataCount = dailyTasks?.length || 0;
+    const emptyDataCount = 30 - realDataCount;
 
-  useEffect(() => {
-    loadProgressData();
-  }, [loadProgressData]);
+    console.log(
+      `✅ ProgressScreen: Generated 30 days of data (${realDataCount} real entries, ${emptyDataCount} empty entries)`,
+    );
+    console.log(
+      `📊 ProgressScreen: First 5 dates: ${progressSummary
+        .slice(0, 5)
+        .map(p => `${p.date} (${p.formattedDate})`)
+        .join(', ')}`,
+    );
 
-  const onRefresh = useCallback(() => {
+    return {
+      progressData: progressSummary, // Always show 30 days
+      taskDataMap: taskMap,
+    };
+  }, [dailyTasks, formatDate, countCompletedPrayers]);
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    loadProgressData();
-  }, [loadProgressData]);
+    // Since we use observables, data will automatically refresh
+    // Just simulate a brief refresh for user feedback
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 500);
+  }, []);
 
   const getPrayerStatus = (
-    task: DailyTaskData,
+    task: DailyTasksModel | undefined,
     prayer: string,
   ): 'completed' | 'missed' => {
-    const status = task[`${prayer}Status` as keyof DailyTaskData] as string;
+    if (!task) return 'missed'; // No data means missed
+    const status = task[`${prayer}Status` as keyof DailyTasksModel] as string;
     return status === 'home' || status === 'mosque' ? 'completed' : 'missed';
   };
 
@@ -157,7 +198,7 @@ const ProgressScreen: React.FC = () => {
 
   const TableRow: React.FC<{
     item: ProgressSummary;
-    taskData?: DailyTaskData;
+    taskData?: DailyTasksModel;
   }> = ({item, taskData}) => (
     <View style={[styles.tableRow, item.isToday && styles.todayRow]}>
       {/* Date Column */}
@@ -171,30 +212,26 @@ const ProgressScreen: React.FC = () => {
       {/* Prayers Column - 5 Individual Prayer Indicators */}
       <View style={styles.prayersColumn}>
         <View style={styles.prayersGrid}>
-          {taskData && (
-            <>
-              <PrayerIndicator
-                status={getPrayerStatus(taskData, 'fajr')}
-                prayer="F"
-              />
-              <PrayerIndicator
-                status={getPrayerStatus(taskData, 'dhuhr')}
-                prayer="D"
-              />
-              <PrayerIndicator
-                status={getPrayerStatus(taskData, 'asr')}
-                prayer="A"
-              />
-              <PrayerIndicator
-                status={getPrayerStatus(taskData, 'maghrib')}
-                prayer="M"
-              />
-              <PrayerIndicator
-                status={getPrayerStatus(taskData, 'isha')}
-                prayer="I"
-              />
-            </>
-          )}
+          <PrayerIndicator
+            status={getPrayerStatus(taskData, 'fajr')}
+            prayer="F"
+          />
+          <PrayerIndicator
+            status={getPrayerStatus(taskData, 'dhuhr')}
+            prayer="D"
+          />
+          <PrayerIndicator
+            status={getPrayerStatus(taskData, 'asr')}
+            prayer="A"
+          />
+          <PrayerIndicator
+            status={getPrayerStatus(taskData, 'maghrib')}
+            prayer="M"
+          />
+          <PrayerIndicator
+            status={getPrayerStatus(taskData, 'isha')}
+            prayer="I"
+          />
         </View>
       </View>
 
@@ -212,18 +249,6 @@ const ProgressScreen: React.FC = () => {
     </View>
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading progress...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
@@ -231,35 +256,29 @@ const ProgressScreen: React.FC = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Progress</Text>
-        <Text style={styles.headerSubtitle}>Track your spiritual journey</Text>
+        <Text style={styles.headerSubtitle}>
+          Last 30 days spiritual journey
+        </Text>
       </View>
 
       {/* Full Screen Table */}
       <View style={styles.tableContainer}>
         <TableHeader />
 
-        {progressData.length > 0 ? (
-          <ScrollView
-            style={styles.tableScrollView}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }>
-            {progressData.map(item => (
-              <TableRow
-                key={item.date}
-                item={item}
-                taskData={taskDataMap.get(item.date)}
-              />
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No progress data available</Text>
-            <Text style={styles.emptySubtext}>
-              Start completing your daily tasks to see progress here
-            </Text>
-          </View>
-        )}
+        {/* Always show data since we generate 30 days */}
+        <ScrollView
+          style={styles.tableScrollView}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }>
+          {progressData.map(item => (
+            <TableRow
+              key={item.date}
+              item={item}
+              taskData={taskDataMap.get(item.date)}
+            />
+          ))}
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -444,4 +463,26 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProgressScreen;
+// ✅ REACTIVE: Enhance with WatermelonDB observables for last 30 days
+const enhance = withObservables([], () => {
+  const today = new Date();
+  const startDate = new Date(today); // Create a copy to avoid mutation
+  startDate.setDate(today.getDate() - 29); // Get last 30 days (including today)
+
+  // Use proper date string formatting that matches helpers.ts
+  const todayStr = formatDateString(today);
+  const startDateStr = formatDateString(startDate);
+
+  console.log(
+    `📅 ProgressScreen: Querying from ${startDateStr} to ${todayStr}`,
+  );
+
+  return {
+    dailyTasks: database
+      .get<DailyTasksModel>('daily_tasks')
+      .query(Q.sortBy('date', Q.desc))
+      .observe(),
+  };
+});
+
+export default enhance(ProgressScreen);

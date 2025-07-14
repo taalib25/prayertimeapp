@@ -245,6 +245,65 @@ export const useDailyTasks = (daysBack: number = 30) => {
     [dailyTasksCollection, fetchDailyTasks, apiService, triggerUpdate],
   );
 
+  // Update special task status with automatic reactive updates
+  const updateSpecialTask = useCallback(
+    async (date: string, taskId: string, completed: boolean) => {
+      try {
+        console.log(
+          `🔄 Updating special task: ${taskId} = ${completed} for ${date}`,
+        );
+
+        await database.write(async () => {
+          let task = await dailyTasksCollection
+            .query(Q.where('date', Q.eq(date)))
+            .fetch();
+
+          if (task.length === 0) {
+            // Create new task if it doesn't exist
+            await dailyTasksCollection.create((task: DailyTasksModel) => {
+              task.date = date;
+              task.quranMinutes = 0;
+              task.totalZikrCount = 0;
+              const specialTasks = [{id: taskId, title: '', completed}];
+              task.specialTasks = JSON.stringify(specialTasks);
+            });
+          } else {
+            // Update existing task
+            await task[0].update((task: DailyTasksModel) => {
+              const specialTasks = task.specialTasks
+                ? JSON.parse(task.specialTasks)
+                : [];
+
+              const taskIndex = specialTasks.findIndex(
+                (t: any) => t.id === taskId,
+              );
+              if (taskIndex >= 0) {
+                specialTasks[taskIndex].completed = completed;
+              } else {
+                specialTasks.push({id: taskId, title: '', completed});
+              }
+
+              task.specialTasks = JSON.stringify(specialTasks);
+            });
+          }
+        });
+
+        // Trigger reactive updates FIRST before API call
+        triggerUpdate();
+
+        // Then refresh local data
+        await fetchDailyTasks();
+
+        console.log(
+          `✅ Special task "${taskId}" updated with reactive updates`,
+        );
+      } catch (error) {
+        console.error('Error updating special task:', error);
+      }
+    },
+    [dailyTasksCollection, fetchDailyTasks, triggerUpdate],
+  );
+
   // Get task for specific date
   const getTaskForDate = useCallback(
     (date: string) => {
@@ -306,6 +365,7 @@ export const useDailyTasks = (daysBack: number = 30) => {
     updatePrayerStatus,
     updateQuranMinutes,
     updateZikrCount,
+    updateSpecialTask,
 
     // Utility methods
     getTaskForDate,
