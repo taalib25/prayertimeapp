@@ -42,31 +42,32 @@ export const usePrayerTimes = (date: string) => {
         {
           name: 'fajr',
           displayName: 'Fajr',
-          time: formatTo12HourTime(dbData.fajr),
+          // use original 24h string; format display in UI
+          time: dbData.fajr,
           totalMinutes: 0,
         },
         {
           name: 'dhuhr',
           displayName: 'Dhuhr',
-          time: formatTo12HourTime(dbData.dhuhr),
+          time: dbData.dhuhr,
           totalMinutes: 0,
         },
         {
           name: 'asr',
           displayName: 'Asr',
-          time: formatTo12HourTime(dbData.asr),
+          time: dbData.asr,
           totalMinutes: 0,
         },
         {
           name: 'maghrib',
           displayName: 'Maghrib',
-          time: formatTo12HourTime(dbData.maghrib),
+          time: dbData.maghrib,
           totalMinutes: 0,
         },
         {
           name: 'isha',
           displayName: 'Isha',
-          time: formatTo12HourTime(dbData.isha),
+          time: dbData.isha,
           totalMinutes: 0,
         },
       ].map(prayer => {

@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -19,19 +19,117 @@ import {typography} from '../utils/typography';
 import {CompactChallengeCard} from '../components/MonthViewComponent/CompactChallengeCard';
 import {useAuth} from '../contexts/AuthContext';
 import {useUser} from '../hooks/useUser';
-import {useBadgeCalculation} from '../hooks/useBadgeCalculation';
 import ImageService from '../services/ImageService';
 import AlertModal from '../components/AlertModel';
 import {useFocusEffect} from '@react-navigation/native';
+import withObservables from '@nozbe/with-observables';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
+import {Q} from '@nozbe/watermelondb';
+import {getTodayDateString} from '../utils/helpers';
+
+interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  isEarned: boolean;
+  category: string;
+}
 
 interface ProfileScreenProps {
   navigation: any;
+  dailyTasks: DailyTasksModel[];
 }
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({
+  navigation,
+  dailyTasks,
+}) => {
   const {logout} = useAuth();
-  const {displayName, user, userInitials, refresh} = useUser();
-  const badgeData = useBadgeCalculation();
+  const {user, userInitials, refresh} = useUser();
+
+  // Helper function to calculate consecutive Fajr streak at mosque
+  const calculateFajrStreak = useCallback(
+    (dailyTasks: DailyTasksModel[]): number => {
+      if (!dailyTasks || dailyTasks.length === 0) return 0;
+
+      // Sort tasks by date in descending order (newest first)
+      const sortedTasks = [...dailyTasks].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      );
+
+      let streak = 0;
+
+      // Count consecutive Fajr mosque prayers from today backwards
+      for (const task of sortedTasks) {
+        if (task.fajrStatus === 'mosque') {
+          streak++;
+        } else {
+          // Break on first non-mosque day (including null, 'home', 'none')
+          break;
+        }
+      }
+
+      return streak;
+    },
+    [],
+  );
+  // Replace useBadgeCalculation with direct badge calculation
+  const badgeData = useMemo(() => {
+    // Calculate Challenge 40 badge (40+ consecutive Fajr at mosque)
+    const fajrMosqueStreak = calculateFajrStreak(dailyTasks);
+    const challenge40Earned = fajrMosqueStreak >= 40;
+
+    // Calculate Zikr Star badge (200+ zikr count in a single day)
+    const maxDailyZikrCount = Math.max(
+      ...dailyTasks.map(task => task.totalZikrCount || 0),
+      0,
+    );
+    const zikrStarEarned = maxDailyZikrCount >= 200;
+
+    // Highlight Recite Master badge if Quran recited today
+    const today = getTodayDateString();
+    const todayTask = dailyTasks.find(task => task.date === today);
+    const reciteMasterEarned = (todayTask?.quranMinutes || 0) > 0;
+
+    const badges: Badge[] = [
+      {
+        id: '1',
+        title: 'Challenge 40',
+        description: 'Completed 40+ consecutive Fajr prayers at mosque',
+        icon: 'mosque',
+        isEarned: challenge40Earned,
+        category: 'prayer',
+      },
+      {
+        id: '2',
+        title: 'Zikr Star',
+        description: 'Completed 200+ zikr count in a single day',
+        icon: 'prayer-beads',
+        isEarned: zikrStarEarned,
+        category: 'zikr',
+      },
+      {
+        id: '3',
+        title: 'Recite Master',
+        description: 'Recited Quran today',
+        icon: 'quran',
+        isEarned: reciteMasterEarned,
+        category: 'quran',
+      },
+    ];
+
+    const earnedBadges = badges.filter(badge => badge.isEarned).length;
+    const totalBadges = badges.length;
+
+    return {
+      badges,
+      earnedBadges,
+      totalBadges,
+    };
+  }, [dailyTasks]);
+
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const imageService = ImageService.getInstance();
 
@@ -139,7 +237,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
             )}
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.firstName || user?.username}</Text>
+            <Text style={styles.userName}>
+              {user?.firstName || user?.username}
+            </Text>
             <Text style={styles.memberSince}>
               {user?.joinedDate
                 ? `Member Since ${new Date(user.joinedDate).toLocaleDateString(
@@ -168,9 +268,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
               </Text>
               /{badgeData.totalBadges}
             </Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAll}>View All</Text>
-            </TouchableOpacity>
+      
           </View>
           <View style={styles.badgesCard}>
             <View style={styles.badgesContainer}>
@@ -235,10 +333,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({navigation}) => {
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
-          <MenuButton
+          {/* <MenuButton
             title="Notification Settings"
             onPress={handleNotificationSettings}
-          />
+          /> */}
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           {/* Pickup Settings - Available for all users */}
           <MenuButton
@@ -504,4 +602,22 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen;
+// Add withObservables enhancement for reactive daily tasks
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
+
+export default enhance(ProfileScreen);

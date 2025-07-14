@@ -36,7 +36,6 @@ import {typography} from '../utils/typography';
 import SvgIcon from '../components/SvgIcon';
 import ApiTaskServices from '../services/apiHandler';
 import {FeedItem} from '../services/PrayerAppAPI';
-import {useWebViewInstallationCheck} from '../hooks/useWebViewInstallationCheck';
 
 type FeedCategory = 'All Feeds' | 'Reminders' | 'Events';
 
@@ -154,8 +153,7 @@ const FeedCard: React.FC<{
 };
 
 const FeedsScreen: React.FC = () => {
-  // Check for WebView installation and provide guidance if missing
-  useWebViewInstallationCheck();
+
 
   const navigation = useNavigation();
   const [feeds, setFeeds] = useState<FeedItem[]>([]);

@@ -1,5 +1,9 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {useDailyTasks} from '../hooks/useDailyTasks';
+import withObservables from '@nozbe/with-observables';
+import {Q} from '@nozbe/watermelondb';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
+import {formatDateString} from '../utils/helpers';
 
 interface UserGoals {
   monthlyZikrGoal: number;
@@ -21,14 +25,23 @@ interface MonthlyTaskContextType {
   isLoading: boolean;
 }
 
+// ✅ PROPER REACTIVE: Context props interface for withObservables
+interface MonthlyTaskProviderProps {
+  children: React.ReactNode;
+  userGoals?: UserGoals;
+  dailyTasks: DailyTasksModel[]; // Added for withObservables
+}
+
 const MonthlyTaskContext = createContext<MonthlyTaskContextType | undefined>(
   undefined,
 );
 
-export const MonthlyTaskProvider: React.FC<{
-  children: React.ReactNode;
-  userGoals?: UserGoals;
-}> = ({children, userGoals}) => {
+// ✅ PROPER REACTIVE: Component using withObservables enhanced dailyTasks
+const MonthlyTaskProviderInner: React.FC<MonthlyTaskProviderProps> = ({
+  children,
+  userGoals,
+  dailyTasks, // Now comes from withObservables
+}) => {
   // Default goals
   const defaultGoals = {
     monthlyZikrGoal: 3000,
@@ -36,13 +49,10 @@ export const MonthlyTaskProvider: React.FC<{
   };
   const goals = userGoals || defaultGoals;
 
-  // ✅ SIMPLIFIED: Use direct WatermelonDB queries for 90 days
-  const {dailyTasks} = useDailyTasks(90);
-
-  // ✅ SIMPLIFIED: Direct monthly data calculation without caching
+  // ✅ REACTIVE: Direct monthly data calculation using reactive dailyTasks prop
   const monthlyData = useMemo(() => {
     console.log(
-      `🔍 MonthlyTaskContext: Computing monthly data from ${dailyTasks.length} daily tasks`,
+      `🔍 MonthlyTaskContext: Computing monthly data from ${dailyTasks.length} reactive daily tasks`,
     );
 
     // Generate all months for the past 3 months
@@ -146,6 +156,37 @@ export const MonthlyTaskProvider: React.FC<{
   );
 };
 
+// ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
+const EnhancedMonthlyTaskProvider = enhance(MonthlyTaskProviderInner);
+
+// ✅ WRAPPER: Public interface component that accepts original props
+export const MonthlyTaskProviderWrapper: React.FC<{
+  children: React.ReactNode;
+  userGoals?: UserGoals;
+}> = ({children, userGoals}) => {
+  return (
+    <EnhancedMonthlyTaskProvider userGoals={userGoals}>
+      {children}
+    </EnhancedMonthlyTaskProvider>
+  );
+};
+
 export const useMonthlyTask = () => {
   const context = useContext(MonthlyTaskContext);
   if (!context) {
@@ -153,3 +194,6 @@ export const useMonthlyTask = () => {
   }
   return context;
 };
+
+// Export the wrapper as the main provider
+export {MonthlyTaskProviderWrapper as MonthlyTaskProvider};

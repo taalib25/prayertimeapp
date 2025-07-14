@@ -9,9 +9,10 @@ import Animated, {
 import {LineChart} from 'react-native-chart-kit';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
-import {useFajrChartData} from '../hooks/useContextualData';
-import useDailyTasks from '../hooks/useDailyTasks';
 import {formatDateString} from '../utils/helpers';
+import withObservables from '@nozbe/with-observables';
+import database from '../services/db';
+import DailyTasksModel from '../model/DailyTasks';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -22,16 +23,62 @@ interface FajrCompletionData {
   dayLabel: string;
 }
 
-const FajrTimeChart: React.FC = () => {
+interface FajrTimeChartProps {
+  dailyTasks: DailyTasksModel[];
+}
+
+const FajrTimeChart: React.FC<FajrTimeChartProps> = ({dailyTasks}) => {
   const [currentCenterDate, setCurrentCenterDate] = useState(new Date());
   const [fajrData, setFajrData] = useState<FajrCompletionData[]>([]);
 
   // Reanimated shared value for chart opacity
   const chartOpacity = useSharedValue(1);
 
-  // Use centralized context instead of direct database access
-  const {getFajrDataForDates} = useFajrChartData();
-  const {updateTrigger} = useDailyTasks(30); // Get update trigger for reactivity  // Helper functions - memoized for performance
+  // Replace useFajrChartData with direct dailyTasks processing
+  const getFajrDataForDates = useCallback(
+    (dates: string[]) => {
+      return dates.map(date => {
+        const dayData = dailyTasks.find(task => task.date === date);
+        const fajrStatus = dayData?.fajrStatus || 'none'; // Default to 'none' if no data
+        return {
+          date,
+          fajrStatus,
+          completionValue: fajrStatus === 'mosque' ? 1 : 0,
+          dayLabel: formatDayLabel(date),
+        };
+      });
+    },
+    [dailyTasks],
+  );
+
+  // Helper function for day labels
+  const formatDayLabel = useCallback((dateStr: string): string => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+
+    const diffTime = compareDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    }
+    if (diffDays === 1) {
+      return 'Tomorrow';
+    }
+    if (diffDays === -1) {
+      return 'Yesterday';
+    }
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    };
+    return date.toLocaleDateString('en', options);
+  }, []); // Helper functions - memoized for performance
   const formatDate = useCallback((date: Date): string => {
     return formatDateString(date);
   }, []);
@@ -117,7 +164,7 @@ const FajrTimeChart: React.FC = () => {
     } catch (error) {
       console.error('Error fetching Fajr completion data:', error);
     }
-  }, [currentCenterDate, getFajrDataForDates, getDatesRange, updateTrigger]); // Add updateTrigger
+  }, [currentCenterDate, getFajrDataForDates, getDatesRange, dailyTasks]); // Now reactive to actual data changes
   useEffect(() => {
     fetchFajrCompletionData();
   }, [fetchFajrCompletionData]); // Reanimated animation function for chart transitions
@@ -327,4 +374,22 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FajrTimeChart;
+// ✅ REACTIVE: Enhance with WatermelonDB observables for automatic updates
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
+
+export default enhance(FajrTimeChart);

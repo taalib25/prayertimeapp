@@ -13,10 +13,12 @@ interface DayTasks {
   dayLabel: string;
   tasks: Task[];
   isToday: boolean;
+  isEditable?: boolean; // Added for editability control
 }
 
 export const transformDailyData = (
-  recentTasks: DailyTaskData[],
+  recentTasks: (DailyTaskData & {isEditable?: boolean})[],
+  isPrayerTimeArrived?: (prayerName: string, date: string) => boolean,
 ): DayTasks[] => {
   const today = getTodayDateString();
 
@@ -65,8 +67,22 @@ export const transformDailyData = (
           // Completed if current Quran minutes >= task amount
           completed = (dayData.quranMinutes || 0) >= templateTask.amount;
         } else if (templateTask.category === 'zikr') {
-          // Completed if current Zikr count >= task amount
-          completed = (dayData.totalZikrCount || 0) >= templateTask.amount;
+          // ✅ FIXED: Robustly determine zikr completion using a greedy approach
+          // This correctly handles multiple zikr tasks with different counts
+          const zikrTasks = getSpecialTasksForDate(dayData.date)
+            .filter(t => t.category === 'zikr')
+            .sort((a, b) => b.amount - a.amount); // Sort descending by amount
+
+          let tempCount = dayData.totalZikrCount || 0;
+          const completedZikrIds = new Set<string>();
+
+          for (const zikrTask of zikrTasks) {
+            if (tempCount >= zikrTask.amount) {
+              completedZikrIds.add(zikrTask.id);
+              tempCount -= zikrTask.amount;
+            }
+          }
+          completed = completedZikrIds.has(templateTask.id);
         } else if (
           templateTask.category === 'prayer' &&
           templateTask.prayerName
@@ -83,8 +99,30 @@ export const transformDailyData = (
         };
       });
 
+      // ✅ PRAYER TIME FILTERING: Filter out prayer tasks that haven't reached their time yet
+      const filteredTasks = tasksToShow.filter(task => {
+        // Only filter prayer tasks for today
+        if (
+          task.category === 'prayer' &&
+          task.prayerName &&
+          isPrayerTimeArrived
+        ) {
+          const timeArrived = isPrayerTimeArrived(
+            task.prayerName,
+            dayData.date,
+          );
+          if (!timeArrived) {
+            console.log(
+              `🕐 Hiding ${task.prayerName} prayer task - time hasn't arrived yet for ${dayData.date}`,
+            );
+            return false;
+          }
+        }
+        return true;
+      });
+
       // Convert to regular tasks for display
-      const regularTasks = convertToRegularTasks(tasksToShow);
+      const regularTasks = convertToRegularTasks(filteredTasks);
 
       return {
         dateISO: dayData.date,
@@ -95,6 +133,7 @@ export const transformDailyData = (
           completed: task.completed,
         })),
         isToday: dayData.date === today,
+        isEditable: dayData.isEditable ?? true, // Default to editable if not specified
       };
     });
 

@@ -463,26 +463,21 @@ const styles = StyleSheet.create({
   },
 });
 
-// ✅ REACTIVE: Enhance with WatermelonDB observables for last 30 days
-const enhance = withObservables([], () => {
-  const today = new Date();
-  const startDate = new Date(today); // Create a copy to avoid mutation
-  startDate.setDate(today.getDate() - 29); // Get last 30 days (including today)
-
-  // Use proper date string formatting that matches helpers.ts
-  const todayStr = formatDateString(today);
-  const startDateStr = formatDateString(startDate);
-
-  console.log(
-    `📅 ProgressScreen: Querying from ${startDateStr} to ${todayStr}`,
-  );
-
-  return {
-    dailyTasks: database
-      .get<DailyTasksModel>('daily_tasks')
-      .query(Q.sortBy('date', Q.desc))
-      .observe(),
-  };
-});
-
+// ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
+const enhance = withObservables([], () => ({
+  dailyTasks: database
+    .get<DailyTasksModel>('daily_tasks')
+    .query(Q.sortBy('date', Q.desc))
+    .observeWithColumns([
+      'date',
+      'fajr_status',
+      'dhuhr_status',
+      'asr_status',
+      'maghrib_status',
+      'isha_status',
+      'total_zikr_count',
+      'quran_minutes',
+      'special_tasks',
+    ]),
+}));
 export default enhance(ProgressScreen);

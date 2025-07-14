@@ -14,6 +14,7 @@ interface DayTasks {
   dateISO: string; // YYYY-MM-DD
   dayLabel: string; // "Today", "Yesterday", or formatted date
   tasks: Task[];
+  isEditable?: boolean; // Whether this day's tasks can be edited
 }
 
 interface DayViewProps {
@@ -31,8 +32,14 @@ const DayView: React.FC<DayViewProps> = React.memo(
 
     return (
       <View style={styles.dayViewContainer}>
-        <Text style={[styles.dayLabel, !isToday && styles.dayLabelPast]}>
+        <Text
+          style={[
+            styles.dayLabel,
+            !isToday && styles.dayLabelPast,
+            !(dayTasks.isEditable ?? true) && styles.dayLabelDisabled,
+          ]}>
           {dayTasks.dayLabel}
+          {!(dayTasks.isEditable ?? true)}
         </Text>
         <ScrollView
           style={[
@@ -53,6 +60,7 @@ const DayView: React.FC<DayViewProps> = React.memo(
             onTaskToggle={onTaskToggle}
             isToday={isToday}
             actualTaskData={dayTasks.tasks}
+            isEditable={dayTasks.isEditable ?? true}
           />
         </ScrollView>
       </View>
@@ -85,6 +93,9 @@ const styles = StyleSheet.create({
   dayLabelPast: {
     color: colors.text.prayerBlue,
     opacity: 0.9,
+  },
+  dayLabelDisabled: {
+    opacity: 0.6,
   },
 });
 
