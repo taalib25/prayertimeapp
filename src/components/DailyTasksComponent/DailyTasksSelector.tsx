@@ -17,6 +17,7 @@ import {
   createDailyTasks,
 } from '../../services/db/dailyTaskServices';
 import {DAILY_SPECIAL_TASKS} from './specialTasks';
+import {usePrayerTimes} from '../../hooks/usePrayerTimes';
 
 // ✅ PROPER REACTIVE: Component using withObservables HOC pattern
 interface DailyTasksSelectorProps {
@@ -25,6 +26,63 @@ interface DailyTasksSelectorProps {
 
 const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
   ({dailyTasks}) => {
+    // ✅ PRAYER TIMES: Get today's prayer times for filtering
+    const {prayerTimes} = usePrayerTimes(getTodayDateString());
+
+    // ✅ PRAYER TIME CHECK: Function to determine if prayer time has arrived
+    const isPrayerTimeArrived = useCallback(
+      (prayerName: string, date: string): boolean => {
+        const today = getTodayDateString();
+
+        // Only filter for today - show all tasks for past days
+        if (date !== today) {
+          return true;
+        }
+
+        // Find the prayer time for this prayer
+        const prayer = prayerTimes.find(
+          p => p.name.toLowerCase() === prayerName.toLowerCase(),
+        );
+        if (!prayer) {
+          // If no prayer time found, show the task (fallback behavior)
+          console.log(
+            `⚠️ No prayer time found for ${prayerName}, showing task`,
+          );
+          return true;
+        }
+
+        const now = new Date();
+        const currentHours = now.getHours();
+        const currentMinutes = now.getMinutes();
+
+        // Convert prayer time string to 24-hour format
+        let [hours, minutes] = prayer.time.split(':').map(Number);
+
+        // Add AM/PM conversion if needed (prayer times should be in 24h format already)
+        if (prayer.time.toLowerCase().includes('pm') && hours < 12) {
+          hours += 12;
+        } else if (prayer.time.toLowerCase().includes('am') && hours === 12) {
+          hours = 0;
+        }
+
+        // Check if current time is at or after prayer time
+        const timeArrived =
+          currentHours > hours ||
+          (currentHours === hours && currentMinutes >= minutes);
+
+        console.log(`🕐 Prayer time check for ${prayerName} on ${date}:`, {
+          prayerTime: prayer.time,
+          currentTime: `${currentHours
+            .toString()
+            .padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`,
+          timeArrived,
+        });
+
+        return timeArrived;
+      },
+      [prayerTimes],
+    );
+
     // ✅ REACTIVE: Debug effect to track ALL reactive changes
     useEffect(() => {
       console.log(
@@ -54,22 +112,29 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
           // ✅ SAFETY CHECK: Only allow editing today's tasks for new records
           const today = getTodayDateString();
           const existingTask = dailyTasks.find(task => task.date === dateISO);
-          
+
           if (!existingTask && dateISO !== today) {
-            console.warn(`❌ Cannot create new records for past dates. Date: ${dateISO}, Today: ${today}`);
+            console.warn(
+              `❌ Cannot create new records for past dates. Date: ${dateISO}, Today: ${today}`,
+            );
             return;
           }
 
           // ✅ CREATE RECORD: If no task exists for today, create it first
           if (!existingTask && dateISO === today) {
-            console.log(`📝 Creating new daily task record for today: ${dateISO}`);
+            console.log(
+              `📝 Creating new daily task record for today: ${dateISO}`,
+            );
             try {
               await createDailyTasks(dateISO);
               // The reactive system will update the component automatically
               // Wait a short moment for the creation to complete before proceeding
               await new Promise(resolve => setTimeout(resolve, 100));
             } catch (createError) {
-              console.error(`❌ Failed to create daily task record for ${dateISO}:`, createError);
+              console.error(
+                `❌ Failed to create daily task record for ${dateISO}:`,
+                createError,
+              );
               // Still try to proceed with the update in case the record was created by another process
             }
           }
@@ -211,9 +276,13 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
           dailyTasksData.length
         } days (${requiredDates.join(', ')})`,
       );
-      console.log(`📝 Editability: ${dailyTasksData.map(d => `${d.date}:${d.isEditable}`).join(', ')}`);
-      return transformDailyData(dailyTasksData);
-    }, [dailyTasks]); // Now reactive to withObservables prop
+      console.log(
+        `📝 Editability: ${dailyTasksData
+          .map(d => `${d.date}:${d.isEditable}`)
+          .join(', ')}`,
+      );
+      return transformDailyData(dailyTasksData, isPrayerTimeArrived);
+    }, [dailyTasks, isPrayerTimeArrived]); // Now reactive to withObservables prop and prayer times
 
     // ✅ SIMPLE: Find today's page with better fallback
     const initialPage = useMemo(() => {

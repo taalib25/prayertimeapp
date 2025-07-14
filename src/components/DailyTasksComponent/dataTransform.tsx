@@ -17,7 +17,8 @@ interface DayTasks {
 }
 
 export const transformDailyData = (
-  recentTasks: (DailyTaskData & { isEditable?: boolean })[],
+  recentTasks: (DailyTaskData & {isEditable?: boolean})[],
+  isPrayerTimeArrived?: (prayerName: string, date: string) => boolean,
 ): DayTasks[] => {
   const today = getTodayDateString();
 
@@ -98,8 +99,30 @@ export const transformDailyData = (
         };
       });
 
+      // ✅ PRAYER TIME FILTERING: Filter out prayer tasks that haven't reached their time yet
+      const filteredTasks = tasksToShow.filter(task => {
+        // Only filter prayer tasks for today
+        if (
+          task.category === 'prayer' &&
+          task.prayerName &&
+          isPrayerTimeArrived
+        ) {
+          const timeArrived = isPrayerTimeArrived(
+            task.prayerName,
+            dayData.date,
+          );
+          if (!timeArrived) {
+            console.log(
+              `🕐 Hiding ${task.prayerName} prayer task - time hasn't arrived yet for ${dayData.date}`,
+            );
+            return false;
+          }
+        }
+        return true;
+      });
+
       // Convert to regular tasks for display
-      const regularTasks = convertToRegularTasks(tasksToShow);
+      const regularTasks = convertToRegularTasks(filteredTasks);
 
       return {
         dateISO: dayData.date,

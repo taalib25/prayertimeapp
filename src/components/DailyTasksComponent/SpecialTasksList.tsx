@@ -68,9 +68,14 @@ interface SpecialTasksListProps {
   isEditable?: boolean; // Whether tasks can be edited
 }
 
-
 const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
-  ({dateISO, onTaskToggle, isToday = false, actualTaskData = [], isEditable = true}) => {
+  ({
+    dateISO,
+    onTaskToggle,
+    isToday = false,
+    actualTaskData = [],
+    isEditable = true,
+  }) => {
     // ✅ SIMPLE: Basic task data transformation
     const specialTasks: EnhancedSpecialTask[] = React.useMemo(() => {
       return DAILY_SPECIAL_TASKS.map(task => {
@@ -86,19 +91,21 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     // ✅ SIMPLE: Task press handler
     const handleTaskPress = useCallback(
       async (taskId: string) => {
-        console.log(`🔘 Task pressed: ${taskId}, date: ${dateISO}, editable: ${isEditable}`);
+        console.log(
+          `🔘 Task pressed: ${taskId}, date: ${dateISO}, editable: ${isEditable}`,
+        );
 
         // Don't allow editing if not editable
         if (!isEditable) {
-          console.warn(`❌ Cannot edit tasks for non-editable date: ${dateISO}`);
+          console.warn(
+            `❌ Cannot edit tasks for non-editable date: ${dateISO}`,
+          );
           return;
         }
 
         // Allow editing all three days (day before yesterday, yesterday, today)
         try {
-          
           await onTaskToggle(dateISO, taskId);
-         
         } catch (error) {
           console.error('❌ Error toggling task:', error);
         }
@@ -123,7 +130,6 @@ const SpecialTasksList: React.FC<SpecialTasksListProps> = React.memo(
     return (
       <View style={styles.container}>
         {specialTasks.map(task => {
-         
           return (
             <SpecialTaskItem
               key={task.id}
