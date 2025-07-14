@@ -334,9 +334,7 @@ const StreakCounter: React.FC<StreakCounterProps> = ({dailyTasks}) => {
                     day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
                   ]}>
-                  {day.status === 'attended' && (
-                    <SvgIcon name="attended" size={16} color="#fff" />
-                  )}
+                  
                 </View>
               </View>
             ))}
@@ -405,6 +403,7 @@ const styles = StyleSheet.create({
   },
   weeklyHeaderContainer: {
     marginBottom: 16,
+    paddingLeft : 5,
     alignItems: 'flex-start', // Left-align the week range text
   },
   weeklyTitle: {
