@@ -9,6 +9,8 @@ import {
   Platform,
   ToastAndroid,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../App';
@@ -174,7 +176,7 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
       const response = await loginUser(username, password, otpCode);
 
       if (response.success && response.user) {
-        console.log('User Details >>>>>>>> ',response?.user); // Store auth token
+        console.log('User Details >>>>>>>> ', response?.user); // Store auth token
         if (response.token) {
           await userService.setAuthToken(response.token);
         } // Create simplified user data from real API response only
@@ -278,55 +280,57 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}>
-        <View style={styles.content}>
-          <View>
-            <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
-            <Text style={styles.title}>OTP Verification</Text>
-            <Text style={styles.subtitle}>
-              We've sent a verification code to your email{'\n'}
-            </Text>
-
-            <View style={styles.otpContainer}>
-              {[0, 1, 2, 3].map(index => (
-                <TextInput
-                  key={index}
-                  ref={(ref: any) => {
-                    inputRefs.current[index] = ref;
-                  }}
-                  style={[styles.otpInput, errors.otp && styles.inputError]}
-                  keyboardType="numeric"
-                  maxLength={1}
-                  value={otp[index]}
-                  onChangeText={(value: any) => handleOtpChange(index, value)}
-                />
-              ))}
-            </View>
-            {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
-            <CustomButton
-              title="Submit"
-              onPress={handleVerifyOTP}
-              style={styles.submitButton}
-              loading={isLoading}
-            />
-            <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>
-                Didn't receive the code?{' '}
-                <Text
-                  onPress={handleResendOTP}
-                  style={[
-                    styles.resendLink,
-                    !canResend && styles.resendDisabled,
-                  ]}>
-                  {canResend ? 'Resend' : `Resend (${resendTimer}s)`}
-                </Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}>
+          <View style={styles.content}>
+            <View>
+              <SvgIcon name="fajrlogo" size={160} style={styles.logo} />
+              <Text style={styles.title}>OTP Verification</Text>
+              <Text style={styles.subtitle}>
+                We've sent a verification code to your email{'\n'}
               </Text>
+
+              <View style={styles.otpContainer}>
+                {[0, 1, 2, 3].map(index => (
+                  <TextInput
+                    key={index}
+                    ref={(ref: any) => {
+                      inputRefs.current[index] = ref;
+                    }}
+                    style={[styles.otpInput, errors.otp && styles.inputError]}
+                    keyboardType="numeric"
+                    maxLength={1}
+                    value={otp[index]}
+                    onChangeText={(value: any) => handleOtpChange(index, value)}
+                  />
+                ))}
+              </View>
+              {errors.otp && <Text style={styles.errorText}>{errors.otp}</Text>}
+              <CustomButton
+                title="Submit"
+                onPress={handleVerifyOTP}
+                style={styles.submitButton}
+                loading={isLoading}
+              />
+              <View style={styles.resendContainer}>
+                <Text style={styles.resendText}>
+                  Didn't receive the code?{' '}
+                  <Text
+                    onPress={handleResendOTP}
+                    style={[
+                      styles.resendLink,
+                      !canResend && styles.resendDisabled,
+                    ]}>
+                    {canResend ? 'Resend' : `Resend (${resendTimer}s)`}
+                  </Text>
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };

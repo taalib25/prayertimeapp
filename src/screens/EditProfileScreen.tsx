@@ -15,13 +15,14 @@ import {
   SaveButton,
   useEditProfile,
 } from '../components/EditProfile';
+import KeyboardDismissWrapper from '../components/KeyboardDismissWrapper';
 
 // Content component that uses the context
 const EditProfileContent: React.FC = () => {
   const {handleSave, isLoading} = useEditProfile();
 
   return (
-    <>
+    <KeyboardDismissWrapper>
       <Header />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <ProfileHeader />
@@ -29,7 +30,7 @@ const EditProfileContent: React.FC = () => {
         <SaveButton onPress={handleSave} isLoading={isLoading} />
         <View style={{height: spacing.xl}} />
       </ScrollView>
-    </>
+    </KeyboardDismissWrapper>
   );
 };
 
