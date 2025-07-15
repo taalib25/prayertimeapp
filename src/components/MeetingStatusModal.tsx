@@ -9,6 +9,8 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
@@ -121,60 +123,66 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}>
-        <Pressable style={styles.overlay} onPress={handleClose}>
-          <Pressable
-            style={styles.container}
-            onPress={e => e.stopPropagation()}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Meeting Status</Text>
-              <Text style={styles.memberName}>{member.member_name}</Text>
-            </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}>
+          <Pressable style={styles.overlay} onPress={handleClose}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Pressable
+                style={styles.container}
+                onPress={e => e.stopPropagation()}>
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.title}>Meeting Status</Text>
+                  <Text style={styles.memberName}>{member.member_name}</Text>
+                </View>
 
-            {/* Status Options in Row */}
-            <View style={styles.statusRow}>
-              {STATUS_OPTIONS.map(renderStatusOption)}
-            </View>
+                {/* Status Options in Row */}
+                <View style={styles.statusRow}>
+                  {STATUS_OPTIONS.map(renderStatusOption)}
+                </View>
 
-            {/* Meeting Notes */}
-            <View style={styles.notesSection}>
-              <Text style={styles.notesLabel}>Meeting Notes (Optional)</Text>
-              <TextInput
-                style={styles.notesInput}
-                placeholder="Add any notes about the meeting..."
-                placeholderTextColor={colors.text.muted}
-                value={note}
-                onChangeText={setNote}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-            </View>
+                {/* Meeting Notes */}
+                <View style={styles.notesSection}>
+                  <Text style={styles.notesLabel}>
+                    Meeting Notes (Optional)
+                  </Text>
+                  <TextInput
+                    style={styles.notesInput}
+                    placeholder="Add any notes about the meeting..."
+                    placeholderTextColor={colors.text.muted}
+                    value={note}
+                    onChangeText={setNote}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
 
-            {/* Action Buttons */}
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleClose}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+                {/* Action Buttons */}
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={handleClose}>
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  !selectedStatus && styles.disabledButton,
-                ]}
-                onPress={handleSave}
-                disabled={!selectedStatus}>
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.saveButton,
+                      !selectedStatus && styles.disabledButton,
+                    ]}
+                    onPress={handleSave}
+                    disabled={!selectedStatus}>
+                    <Text style={styles.saveButtonText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </Pressable>
+            </TouchableWithoutFeedback>
           </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

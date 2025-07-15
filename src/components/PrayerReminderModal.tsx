@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text as RNText,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import notifee, {
   TriggerType,
@@ -45,8 +47,12 @@ const PrayerReminderModal: React.FC<PrayerReminderModalProps> = ({
 
     // Convert to 24-hour format for calculations
     let hour24 = parseInt(hours);
-    if (isPM && hour24 !== 12) {hour24 += 12;}
-    if (!isPM && hour24 === 12) {hour24 = 0;}
+    if (isPM && hour24 !== 12) {
+      hour24 += 12;
+    }
+    if (!isPM && hour24 === 12) {
+      hour24 = 0;
+    }
 
     const today = new Date();
     const reminderDate = new Date();
@@ -183,76 +189,85 @@ const PrayerReminderModal: React.FC<PrayerReminderModalProps> = ({
       animationType="slide"
       onRequestClose={() => {}} // Empty function to prevent back button dismiss
       statusBarTranslucent={true}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}>
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <View style={styles.dragIndicator} />
-            <Text style={styles.modalTitle}>
-              {isNotification ? 'Set Notification' : 'Set Alarm'} for
-              {prayerName}
-            </Text>
-            <Text style={styles.prayerTimeText}>Prayer Time: {prayerTime}</Text>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Minutes before:</Text>
-              <View style={styles.minuteSelector}>
-                <TouchableOpacity
-                  style={styles.arrowButton}
-                  onPress={() =>
-                    setMinutesBefore(Math.max(0, minutesBefore - 5))
-                  }>
-                  <Text style={styles.arrowText}>−</Text>
-                </TouchableOpacity>
-                <Text style={styles.minuteValue}>{minutesBefore}</Text>
-                <TouchableOpacity
-                  style={styles.arrowButton}
-                  onPress={() =>
-                    setMinutesBefore(Math.min(60, minutesBefore + 5))
-                  }>
-                  <Text style={styles.arrowText}>+</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Repeat daily</Text>
-              <Switch value={repeat} onValueChange={setRepeat} />
-            </View>
-
-            {!isNotification && (
-              <>
-                <View style={styles.settingRow}>
-                  <Text style={styles.settingLabel}>Enable sound</Text>
-                  <Switch value={enableSound} onValueChange={setEnableSound} />
-                </View>
-
-                <View style={styles.settingRow}>
-                  <Text style={styles.settingLabel}>Enable vibration</Text>
-                  <Switch
-                    value={enableVibration}
-                    onValueChange={setEnableVibration}
-                  />
-                </View>
-              </>
-            )}
-
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.button} onPress={onClose}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
-                onPress={handleSave}>
-                <Text style={[styles.buttonText, styles.saveButtonText]}>
-                  Save
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}>
+          <View style={styles.centeredView}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalView}>
+                <View style={styles.dragIndicator} />
+                <Text style={styles.modalTitle}>
+                  {isNotification ? 'Set Notification' : 'Set Alarm'} for
+                  {prayerName}
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <Text style={styles.prayerTimeText}>
+                  Prayer Time: {prayerTime}
+                </Text>
+
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>Minutes before:</Text>
+                  <View style={styles.minuteSelector}>
+                    <TouchableOpacity
+                      style={styles.arrowButton}
+                      onPress={() =>
+                        setMinutesBefore(Math.max(0, minutesBefore - 5))
+                      }>
+                      <Text style={styles.arrowText}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.minuteValue}>{minutesBefore}</Text>
+                    <TouchableOpacity
+                      style={styles.arrowButton}
+                      onPress={() =>
+                        setMinutesBefore(Math.min(60, minutesBefore + 5))
+                      }>
+                      <Text style={styles.arrowText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingLabel}>Repeat daily</Text>
+                  <Switch value={repeat} onValueChange={setRepeat} />
+                </View>
+
+                {!isNotification && (
+                  <>
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>Enable sound</Text>
+                      <Switch
+                        value={enableSound}
+                        onValueChange={setEnableSound}
+                      />
+                    </View>
+
+                    <View style={styles.settingRow}>
+                      <Text style={styles.settingLabel}>Enable vibration</Text>
+                      <Switch
+                        value={enableVibration}
+                        onValueChange={setEnableVibration}
+                      />
+                    </View>
+                  </>
+                )}
+
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.button} onPress={onClose}>
+                    <Text style={styles.buttonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.saveButton]}
+                    onPress={handleSave}>
+                    <Text style={[styles.buttonText, styles.saveButtonText]}>
+                      Save
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

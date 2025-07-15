@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,17 @@ import {
   TextInput,
   Platform,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { spacing } from '../utils/theme';
-import { typography } from '../utils/typography';
-import { pickupRequestSchema } from '../utils/validation';
+import {useNavigation} from '@react-navigation/native';
+import {spacing} from '../utils/theme';
+import {typography} from '../utils/typography';
+import {pickupRequestSchema} from '../utils/validation';
 import SvgIcon from '../components/SvgIcon';
 import UserService from '../services/UserService';
 import ApiTaskServices from '../services/apiHandler';
-import { PickupSettings } from '../types/User';
+import {PickupSettings} from '../types/User';
 import AlertModal from '../components/AlertModel';
 
 // Request status types
@@ -280,7 +282,8 @@ const PickupSettingsScreen: React.FC = () => {
 
         setModalConfig({
           title: 'Request Submitted ✅',
-          message: 'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
+          message:
+            'Your pickup assistance request has been sent to the mosque committee for review. You will be notified once it has been reviewed.',
           onConfirm: () => setModalVisible(false),
           confirmText: 'OK',
         });
@@ -412,14 +415,14 @@ const PickupSettingsScreen: React.FC = () => {
     <View
       style={[
         styles.statusCard,
-        { borderLeftColor: getStatusColor(settings.status) },
+        {borderLeftColor: getStatusColor(settings.status)},
       ]}>
       <View style={styles.statusHeader}>
         <Text style={styles.statusIcon}>{getStatusIcon(settings.status)}</Text>
         <Text
           style={[
             styles.statusTitle,
-            { color: getStatusColor(settings.status) },
+            {color: getStatusColor(settings.status)},
           ]}>
           {getStatusText(settings.status)}
         </Text>
@@ -453,7 +456,7 @@ const PickupSettingsScreen: React.FC = () => {
     value: boolean;
     onValueChange: (value: boolean) => void;
     isMainToggle?: boolean; // Optional prop for the main toggle
-  }> = ({ title, description, value, onValueChange, isMainToggle = false }) => (
+  }> = ({title, description, value, onValueChange, isMainToggle = false}) => (
     <View style={styles.settingItem}>
       <View style={styles.settingInfo}>
         <Text style={styles.settingTitle}>{title}</Text>
@@ -476,9 +479,9 @@ const PickupSettingsScreen: React.FC = () => {
             setModalVisible(true);
             return;
           }
-          setSettings(prev => ({ ...prev, enabled: value }));
+          setSettings(prev => ({...prev, enabled: value}));
         }}
-        trackColor={{ false: '#E0E0E0', true: '#4CAF50' }}
+        trackColor={{false: '#E0E0E0', true: '#4CAF50'}}
         thumbColor={value ? '#FFF' : '#FFF'}
         ios_backgroundColor="#E0E0E0"
         disabled={isMainToggle ? !canEditMainToggle() : !canEditRequest()}
@@ -518,65 +521,68 @@ const PickupSettingsScreen: React.FC = () => {
     </View>
   );
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
-      {/* Add status bar height for Android */}
-      {Platform.OS === 'android' && <View style={styles.statusBarSpacer} />}
+        {/* Add status bar height for Android */}
+        {Platform.OS === 'android' && <View style={styles.statusBarSpacer} />}
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <SvgIcon name="backBtn" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Pickup Assistance Request</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {/* Show subtle loading during initial render */}
-      {isInitialLoad ? (
-        <View style={styles.initialLoadingContainer}>
-          <View style={styles.contentSkeleton}>
-            <View style={styles.skeletonCard} />
-            <View style={styles.skeletonSection} />
-            <View style={styles.skeletonSection} />
-          </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <SvgIcon name="backBtn" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Pickup Assistance Request</Text>
+          <View style={styles.headerSpacer} />
         </View>
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Status Card */}
-          <StatusCard />
-          <View style={styles.settingSection}>
-            <SettingItem
-              title="Request Pickup Assistance"
-              description="Request help with transportation to and from mosque"
-              value={settings.enabled}
-              onValueChange={value => {
-                // If trying to disable while request is pending/approved, show warning
-                if (
-                  !value &&
-                  (settings.status === 'pending' ||
-                    settings.status === 'approved')
-                ) {
-                  setModalConfig({
-                    title: 'Cannot Disable',
-                    message: `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
-                    onConfirm: () => setModalVisible(false),
-                    confirmText: 'OK',
-                  });
-                  setModalVisible(true);
-                  return;
-                }
-                setSettings(prev => ({ ...prev, enabled: value }));
-              }}
-              isMainToggle={true} // Special flag for the main toggle
-            />
+
+        {/* Show subtle loading during initial render */}
+        {isInitialLoad ? (
+          <View style={styles.initialLoadingContainer}>
+            <View style={styles.contentSkeleton}>
+              <View style={styles.skeletonCard} />
+              <View style={styles.skeletonSection} />
+              <View style={styles.skeletonSection} />
+            </View>
           </View>
-          {/* Detailed Settings - Only show when enabled */}
-          {settings.enabled && (
-            <>
-              {/* Time Settings */}
-              {/* <View style={styles.settingSection}>
+        ) : (
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}>
+            {/* Status Card */}
+            <StatusCard />
+            <View style={styles.settingSection}>
+              <SettingItem
+                title="Request Pickup Assistance"
+                description="Request help with transportation to and from mosque"
+                value={settings.enabled}
+                onValueChange={value => {
+                  // If trying to disable while request is pending/approved, show warning
+                  if (
+                    !value &&
+                    (settings.status === 'pending' ||
+                      settings.status === 'approved')
+                  ) {
+                    setModalConfig({
+                      title: 'Cannot Disable',
+                      message: `You cannot disable pickup assistance while your request is ${settings.status}. Please contact the mosque committee if you need to cancel your request.`,
+                      onConfirm: () => setModalVisible(false),
+                      confirmText: 'OK',
+                    });
+                    setModalVisible(true);
+                    return;
+                  }
+                  setSettings(prev => ({...prev, enabled: value}));
+                }}
+                isMainToggle={true} // Special flag for the main toggle
+              />
+            </View>
+            {/* Detailed Settings - Only show when enabled */}
+            {settings.enabled && (
+              <>
+                {/* Time Settings */}
+                {/* <View style={styles.settingSection}>
               <Text style={styles.sectionTitle}>Preferred Pickup Time</Text>
               <View style={styles.timeContainer}>
                 <Text style={styles.timeLabel}>
@@ -598,156 +604,165 @@ const PickupSettingsScreen: React.FC = () => {
               </View>
             </View> */}
 
-              {/* Days Selector */}
-              <View style={styles.settingSection}>
-                <DaySelector />
-              </View>
+                {/* Days Selector */}
+                <View style={styles.settingSection}>
+                  <DaySelector />
+                </View>
 
-              {/* Contact Information */}
-              <View style={styles.settingSection}>
-                <Text style={styles.sectionTitle}>Contact Information</Text>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>
-                    Emergency Contact Number
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      !canEditRequest() && styles.inputDisabled,
-                      fieldErrors.emergencyContact && styles.textInputError,
-                    ]}
-                    value={settings.emergencyContact}
-                    onChangeText={value => {
-                      setSettings(prev => ({ ...prev, emergencyContact: value }));
-                      // Validate and show error if any
-                      const error = validateField('emergencyContact', value);
-                      setFieldErrors(prev => ({
-                        ...prev,
-                        emergencyContact: error,
-                      }));
-                    }}
-                    placeholder="Enter emergency contact number"
-                    keyboardType="phone-pad"
-                    editable={canEditRequest()}
-                  />
-                  {fieldErrors.emergencyContact && (
-                    <Text style={styles.errorText}>
-                      {fieldErrors.emergencyContact}
+                {/* Contact Information */}
+                <View style={styles.settingSection}>
+                  <Text style={styles.sectionTitle}>Contact Information</Text>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>
+                      Emergency Contact Number
                     </Text>
-                  )}
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        !canEditRequest() && styles.inputDisabled,
+                        fieldErrors.emergencyContact && styles.textInputError,
+                      ]}
+                      value={settings.emergencyContact}
+                      onChangeText={value => {
+                        setSettings(prev => ({
+                          ...prev,
+                          emergencyContact: value,
+                        }));
+                        // Validate and show error if any
+                        const error = validateField('emergencyContact', value);
+                        setFieldErrors(prev => ({
+                          ...prev,
+                          emergencyContact: error,
+                        }));
+                      }}
+                      placeholder="Enter emergency contact number"
+                      keyboardType="phone-pad"
+                      editable={canEditRequest()}
+                    />
+                    {fieldErrors.emergencyContact && (
+                      <Text style={styles.errorText}>
+                        {fieldErrors.emergencyContact}
+                      </Text>
+                    )}
+                  </View>
                 </View>
-              </View>
 
-              {/* Location Details */}
-              <View style={styles.settingSection}>
-                <Text style={styles.sectionTitle}>Location Details</Text>
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>
-                    Specific Pickup Location
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      !canEditRequest() && styles.inputDisabled,
-                      fieldErrors.specificLocation && styles.textInputError,
-                    ]}
-                    value={settings.specificLocation}
-                    onChangeText={value => {
-                      setSettings(prev => ({ ...prev, specificLocation: value }));
-                      // Validate and show error if any
-                      const error = validateField('specificLocation', value);
-                      setFieldErrors(prev => ({
-                        ...prev,
-                        specificLocation: error,
-                      }));
-                    }}
-                    placeholder="Enter specific pickup address or landmark"
-                    multiline={true}
-                    numberOfLines={3}
-                    editable={canEditRequest()}
-                  />
-                  {fieldErrors.specificLocation && (
-                    <Text style={styles.errorText}>
-                      {fieldErrors.specificLocation}
+                {/* Location Details */}
+                <View style={styles.settingSection}>
+                  <Text style={styles.sectionTitle}>Location Details</Text>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>
+                      Specific Pickup Location
                     </Text>
-                  )}
-                </View>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        !canEditRequest() && styles.inputDisabled,
+                        fieldErrors.specificLocation && styles.textInputError,
+                      ]}
+                      value={settings.specificLocation}
+                      onChangeText={value => {
+                        setSettings(prev => ({
+                          ...prev,
+                          specificLocation: value,
+                        }));
+                        // Validate and show error if any
+                        const error = validateField('specificLocation', value);
+                        setFieldErrors(prev => ({
+                          ...prev,
+                          specificLocation: error,
+                        }));
+                      }}
+                      placeholder="Enter specific pickup address or landmark"
+                      multiline={true}
+                      numberOfLines={3}
+                      editable={canEditRequest()}
+                    />
+                    {fieldErrors.specificLocation && (
+                      <Text style={styles.errorText}>
+                        {fieldErrors.specificLocation}
+                      </Text>
+                    )}
+                  </View>
 
-                <View style={styles.inputContainer}>
-                  <Text style={styles.inputLabel}>Additional Notes</Text>
-                  <TextInput
-                    style={[
-                      styles.textInput,
-                      !canEditRequest() && styles.inputDisabled,
-                      fieldErrors.notes && styles.textInputError,
-                    ]}
-                    value={settings.notes}
-                    onChangeText={value => {
-                      setSettings(prev => ({ ...prev, notes: value }));
-                      // Validate and show error if any
-                      const error = validateField('notes', value);
-                      setFieldErrors(prev => ({ ...prev, notes: error }));
-                    }}
-                    placeholder="Any additional information for pickup assistance"
-                    multiline={true}
-                    numberOfLines={3}
-                    editable={canEditRequest()}
-                  />
-                  {fieldErrors.notes && (
-                    <Text style={styles.errorText}>{fieldErrors.notes}</Text>
-                  )}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Additional Notes</Text>
+                    <TextInput
+                      style={[
+                        styles.textInput,
+                        !canEditRequest() && styles.inputDisabled,
+                        fieldErrors.notes && styles.textInputError,
+                      ]}
+                      value={settings.notes}
+                      onChangeText={value => {
+                        setSettings(prev => ({...prev, notes: value}));
+                        // Validate and show error if any
+                        const error = validateField('notes', value);
+                        setFieldErrors(prev => ({...prev, notes: error}));
+                      }}
+                      placeholder="Any additional information for pickup assistance"
+                      multiline={true}
+                      numberOfLines={3}
+                      editable={canEditRequest()}
+                    />
+                    {fieldErrors.notes && (
+                      <Text style={styles.errorText}>{fieldErrors.notes}</Text>
+                    )}
+                  </View>
                 </View>
+              </>
+            )}
+            {/* Info Section */}
+            <View style={styles.infoSection}>
+              <View style={styles.infoCard}>
+                <Text style={styles.infoTitle}>
+                  💡 How Pickup Request Works
+                </Text>
+                <Text style={styles.infoText}>
+                  {settings.enabled
+                    ? 'Your pickup request will be reviewed by the mosque committee. Once approved, community members who offer transportation assistance will be able to see your request and coordinate pickup times with you.'
+                    : 'Submit a pickup assistance request to coordinate transportation help from community members. This is especially useful if you usually walk to mosque but sometimes need a ride due to weather, health, or other circumstances.'}
+                </Text>
               </View>
-            </>
-          )}
-          {/* Info Section */}
-          <View style={styles.infoSection}>
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>💡 How Pickup Request Works</Text>
-              <Text style={styles.infoText}>
-                {settings.enabled
-                  ? 'Your pickup request will be reviewed by the mosque committee. Once approved, community members who offer transportation assistance will be able to see your request and coordinate pickup times with you.'
-                  : 'Submit a pickup assistance request to coordinate transportation help from community members. This is especially useful if you usually walk to mosque but sometimes need a ride due to weather, health, or other circumstances.'}
-              </Text>
             </View>
-          </View>
-          {/* Submit Button - Only show when pickup is enabled */}
-          {settings.enabled && (
-            <View style={styles.saveSection}>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  (isLoading ||
+            {/* Submit Button - Only show when pickup is enabled */}
+            {settings.enabled && (
+              <View style={styles.saveSection}>
+                <TouchableOpacity
+                  style={[
+                    styles.saveButton,
+                    (isLoading ||
+                      settings.status === 'pending' ||
+                      settings.status === 'approved' ||
+                      !settings.enabled) &&
+                      styles.saveButtonDisabled,
+                  ]}
+                  onPress={submitRequest}
+                  disabled={
+                    isLoading ||
                     settings.status === 'pending' ||
                     settings.status === 'approved' ||
-                    !settings.enabled) &&
-                    styles.saveButtonDisabled,
-                ]}
-                onPress={submitRequest}
-                disabled={
-                  isLoading ||
-                  settings.status === 'pending' ||
-                  settings.status === 'approved' ||
-                  !settings.enabled
-                }>
-                <Text style={styles.saveButtonText}>{getButtonText()}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          <View style={{ height: 40 }} />
-        </ScrollView>
-      )}
-      <AlertModal
-        visible={modalVisible}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        onCancel={modalConfig.onCancel || (() => setModalVisible(false))}
-        onConfirm={modalConfig.onConfirm}
-        confirmText={modalConfig.confirmText}
-        cancelText={modalConfig.cancelText}
-        confirmDestructive={modalConfig.confirmDestructive}
-      />
-    </SafeAreaView>
+                    !settings.enabled
+                  }>
+                  <Text style={styles.saveButtonText}>{getButtonText()}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={{height: 40}} />
+          </ScrollView>
+        )}
+        <AlertModal
+          visible={modalVisible}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          onCancel={modalConfig.onCancel || (() => setModalVisible(false))}
+          onConfirm={modalConfig.onConfirm}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          confirmDestructive={modalConfig.confirmDestructive}
+        />
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
