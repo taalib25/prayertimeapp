@@ -4,6 +4,7 @@ import {typography} from '../utils/typography';
 import {borderRadius, colors, spacing} from '../utils/theme';
 import SvgIcon from './SvgIcon';
 import MeetingStatusModal from './MeetingStatusModal';
+import PrayerAppAPI from '../services/PrayerAppAPI';
 
 // Define MeetingMember type to match MeetingCard
 interface MeetingMember {
@@ -11,51 +12,12 @@ interface MeetingMember {
   member_phone: string;
   scheduled_date: string;
   scheduled_time: string;
+  session_notes: string;
   status: 'scheduled' | 'completed' | 'excused' | 'absent';
   member_username: string;
   location?: string;
+  id?: string | number; // Add ID for API data
 }
-
-// Sample data for counseling meetings
-const counselingMeetings: MeetingMember[] = [
-  {
-    member_name: 'Ahmed Al-Rashid',
-    member_phone: '+94-77-123-4567',
-    scheduled_date: '2025-07-03T00:00:00.000Z', // Today
-    scheduled_time: '15:00',
-    status: 'scheduled',
-    member_username: 'ahmedrashid',
-    location: 'Colombo Mosque',
-  },
-  {
-    member_name: 'Omar Abdullah',
-    member_phone: '+94-77-123-4569',
-    scheduled_date: '2025-07-14T00:00:00.000Z', // Tomorrow
-    scheduled_time: '10:00',
-    status: 'scheduled',
-    member_username: 'omarabdullah',
-    location: 'Galle Office',
-  },
-  {
-    member_name: 'Hassan Ibrahim',
-    member_phone: '+94-77-123-4568',
-    scheduled_date: '2025-07-13T00:00:00.000Z', // Today
-    scheduled_time: '16:30',
-    status: 'scheduled',
-    member_username: 'hassanibrahim',
-    location: 'Kandy Center',
-  },
-
-  {
-    member_name: 'Bilal Khan',
-    member_phone: '+94-77-123-4571',
-    scheduled_date: '2025-07-15T00:00:00.000Z', // Day after tomorrow
-    scheduled_time: '11:30',
-    status: 'scheduled',
-    member_username: 'bilalkhan',
-    location: 'Matara Mosque',
-  },
-];
 
 // Group meetings by date
 const groupMeetingsByDate = (meetings: MeetingMember[]) => {
@@ -111,16 +73,133 @@ const formatTimeDisplay = (timeString: string): string => {
 interface PersonalMeetingState {
   modalVisible: boolean;
   selectedMember: MeetingMember | null;
+  counselingMeetings: MeetingMember[];
+  isLoading: boolean;
+  error: string | null;
+  isUpdating: boolean; // Add loading state for updates
 }
 
 export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
+  private api: PrayerAppAPI;
+
   constructor(props: {}) {
     super(props);
+    this.api = PrayerAppAPI.getInstance();
     this.state = {
       modalVisible: false,
       selectedMember: null,
+      counselingMeetings: [],
+      isLoading: true,
+      error: null,
+      isUpdating: false,
     };
   }
+
+  componentDidMount() {
+    this.fetchCouncilSessions();
+  }
+
+  fetchCouncilSessions = async () => {
+    try {
+      this.setState({isLoading: true, error: null});
+
+      console.log('📡 PersonalMeeting: Fetching council sessions...');
+
+      // Fetch data from API
+      const response = await this.api.getCouncilSessions();
+
+      if (response.success && response.data) {
+        console.log(
+          '✅ PersonalMeeting: Council sessions fetched successfully',
+        );
+
+        // Transform API response to match our MeetingMember interface
+        const transformedMeetings = this.transformApiData(response.data);
+
+        this.setState({
+          counselingMeetings: transformedMeetings,
+          isLoading: false,
+        });
+      } else {
+        console.log(
+          '❌ PersonalMeeting: Failed to fetch council sessions:',
+          response.error,
+        );
+        this.setState({
+          error: response.error || 'Failed to fetch meetings',
+          isLoading: false,
+        });
+      }
+    } catch (error: any) {
+      console.error(
+        '❌ PersonalMeeting: Error fetching council sessions:',
+        error,
+      );
+      this.setState({
+        error: error.message || 'An error occurred while fetching meetings',
+        isLoading: false,
+      });
+    }
+  };
+
+  transformApiData = (apiData: any): MeetingMember[] => {
+    try {
+      // Handle different possible API response structures
+      const sessions = apiData.data || apiData.sessions || apiData || [];
+
+      if (!Array.isArray(sessions)) {
+        console.warn('⚠️ PersonalMeeting: API data is not an array:', sessions);
+        return [];
+      }
+
+      return sessions.map((session: any) => {
+        // Map API fields to our MeetingMember interface based on actual response
+        const meeting: MeetingMember = {
+          id: session.id,
+          member_name: session.member_name || 'Unknown Member',
+          member_phone: session.member_phone || '',
+          scheduled_date: session.scheduled_date || new Date().toISOString(),
+          scheduled_time: session.scheduled_time || '00:00',
+          status: this.mapApiStatus(session.status),
+          member_username: session.member_username || '',
+          location:
+            session.session_type === 'phone_call'
+              ? 'Phone Call'
+              : session.location || 'TBD',
+          // Add session notes to the interface
+          session_notes: session.session_notes || '',
+        };
+
+        return meeting;
+      });
+    } catch (error) {
+      console.error('❌ PersonalMeeting: Error transforming API data:', error);
+      return [];
+    }
+  };
+
+  mapApiStatus = (
+    apiStatus: string,
+  ): 'scheduled' | 'completed' | 'excused' | 'absent' => {
+    // Map API status values to our component's status values
+    const statusMap: {
+      [key: string]: 'scheduled' | 'completed' | 'excused' | 'absent';
+    } = {
+      scheduled: 'scheduled',
+      pending: 'scheduled',
+      confirmed: 'scheduled',
+      completed: 'completed',
+      finished: 'completed',
+      done: 'completed',
+      excused: 'excused',
+      cancelled: 'excused',
+      absent: 'absent',
+      'no-show': 'absent',
+      missed: 'absent',
+    };
+
+    return statusMap[apiStatus?.toLowerCase()] || 'scheduled';
+  };
 
   handleMarkPress = (member: MeetingMember) => {
     this.setState({
@@ -136,20 +215,75 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
     });
   };
 
-  handleStatusUpdate = (
+  handleStatusUpdate = async (
     status: 'completed' | 'excused' | 'absent',
     note: string,
   ) => {
     const {selectedMember} = this.state;
-    if (selectedMember) {
-      // Update the member's status in the data
-      // For now, just log it - in a real app, you'd update the backend
-      console.log('Status updated:', status, 'Note:', note);
+    if (!selectedMember) return;
 
-      // Update the member's status locally
-      selectedMember.status = status;
+    try {
+      this.setState({isUpdating: true});
+
+      console.log('🔄 PersonalMeeting: Updating status for member:', {
+        memberId: selectedMember.id,
+        memberName: selectedMember.member_name,
+        newStatus: status,
+        note: note,
+      });
+
+      // Update via API
+      const response = await this.api.updateCounsellingSession({
+        session_id: selectedMember.id!,
+        status: status,
+        session_notes: note,
+        actual_start_time:
+          status === 'completed' ? new Date().toISOString() : undefined,
+        actual_end_time:
+          status === 'completed' ? new Date().toISOString() : undefined,
+      });
+
+      if (response.success) {
+        console.log('✅ PersonalMeeting: Status updated successfully via API');
+
+        // Update local state to reflect the change immediately (optimistic update)
+        const updatedMeetings = this.state.counselingMeetings.map(meeting => {
+          if (
+            meeting.id === selectedMember.id ||
+            (meeting.member_username === selectedMember.member_username &&
+              meeting.scheduled_date === selectedMember.scheduled_date)
+          ) {
+            return {
+              ...meeting,
+              status,
+              session_notes: note,
+            };
+          }
+          return meeting;
+        });
+
+        this.setState({
+          counselingMeetings: updatedMeetings,
+        });
+
+        // Optionally refresh data from server to ensure consistency
+        // await this.fetchCouncilSessions();
+      } else {
+        console.error('❌ PersonalMeeting: API update failed:', response.error);
+        // Show error to user
+        this.setState({
+          error: response.error || 'Failed to update meeting status',
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ PersonalMeeting: Error updating status:', error);
+      this.setState({
+        error: error.message || 'Failed to update meeting status',
+      });
+    } finally {
+      this.setState({isUpdating: false});
+      this.handleModalClose();
     }
-    this.handleModalClose();
   };
 
   renderMeetingItem = ({item}: {item: MeetingMember}) => {
@@ -202,6 +336,12 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
               <View style={styles.namePhoneContainer}>
                 <Text style={styles.memberName}>{item.member_name}</Text>
                 <Text style={styles.memberPhone}>{item.member_phone}</Text>
+                {/* Show existing session notes if any */}
+                {item.session_notes && (
+                  <Text style={styles.sessionNotes} numberOfLines={2}>
+                    Notes: {item.session_notes}
+                  </Text>
+                )}
               </View>
               <TouchableOpacity
                 style={[
@@ -210,8 +350,10 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
                     backgroundColor: statusInfo.backgroundColor,
                     borderColor: statusInfo.borderColor,
                   },
+                  this.state.isUpdating && styles.disabledButton,
                 ]}
-                onPress={() => this.handleMarkPress(item)}>
+                onPress={() => this.handleMarkPress(item)}
+                disabled={this.state.isUpdating}>
                 <SvgIcon
                   name={statusInfo.icon}
                   size={16}
@@ -219,7 +361,7 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
                 />
                 <Text
                   style={[styles.markButtonText, {color: statusInfo.color}]}>
-                  {statusInfo.text}
+                  {this.state.isUpdating ? 'Updating...' : statusInfo.text}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -260,7 +402,7 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
 
         {/* Replace FlatList with map to avoid nesting virtualized lists */}
         {item.meetings.map((meeting, index) => (
-          <View key={`${item.date}-${index}`}>
+          <View key={`${item.date}-${meeting.id || index}`}>
             {this.renderMeetingItem({item: meeting})}
           </View>
         ))}
@@ -268,7 +410,57 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
     );
   };
 
+  renderEmptyState = () => {
+    if (this.state.isLoading) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>Loading meetings...</Text>
+        </View>
+      );
+    }
+
+    if (this.state.error) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>Error: {this.state.error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={this.fetchCouncilSessions}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyStateText}>No meetings scheduled</Text>
+      </View>
+    );
+  };
+
   render() {
+    const {counselingMeetings, isLoading, error} = this.state;
+
+    // Show empty state if loading, error, or no data
+    if (isLoading || error || counselingMeetings.length === 0) {
+      return (
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Counseling Meetings</Text>
+            <Text style={styles.headerSubtitle}>
+              {isLoading
+                ? 'Loading...'
+                : error
+                ? 'Error loading meetings'
+                : 'No meetings scheduled'}
+            </Text>
+          </View>
+          {this.renderEmptyState()}
+        </View>
+      );
+    }
+
     const groupedMeetings = groupMeetingsByDate(counselingMeetings);
     const sortedDates = Object.keys(groupedMeetings).sort();
 
@@ -305,6 +497,7 @@ export class PersonalMeeting extends Component<{}, PersonalMeetingState> {
             onClose={this.handleModalClose}
             onSave={this.handleStatusUpdate}
             member={this.state.selectedMember}
+            isLoading={this.state.isUpdating}
           />
         )}
       </View>
@@ -461,6 +654,39 @@ const styles = StyleSheet.create({
   markButtonText: {
     ...typography.bodySmall,
     fontSize: 13,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  emptyStateText: {
+    ...typography.bodyLarge,
+    color: colors.text.muted,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  retryButtonText: {
+    ...typography.bodyMedium,
+    color: colors.white,
+    fontWeight: '600',
+  },
+  sessionNotes: {
+    ...typography.caption,
+    color: colors.text.muted,
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: spacing.xs / 2,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

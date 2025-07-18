@@ -24,6 +24,8 @@ interface MeetingMember {
   status: 'scheduled' | 'completed' | 'excused' | 'absent';
   member_username: string;
   location?: string;
+  session_notes?: string; // Add session notes
+  pre_session_notes?: string; // Add pre-session notes
 }
 
 interface MeetingStatusModalProps {
@@ -31,6 +33,7 @@ interface MeetingStatusModalProps {
   onClose: () => void;
   onSave: (status: 'completed' | 'excused' | 'absent', note: string) => void;
   member: MeetingMember;
+  isLoading?: boolean; // Add loading prop
 }
 
 const STATUS_OPTIONS = [
@@ -62,16 +65,32 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
   onClose,
   onSave,
   member,
+  isLoading = false,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<
     'completed' | 'excused' | 'absent' | null
   >(null);
   const [note, setNote] = useState('');
 
+  // Initialize with existing data when modal opens
+  React.useEffect(() => {
+    if (visible && member) {
+      // Set current status if it's not 'scheduled'
+      if (member.status !== 'scheduled') {
+        setSelectedStatus(member.status as 'completed' | 'excused' | 'absent');
+      } else {
+        setSelectedStatus(null);
+      }
+
+      // Set existing session notes
+      setNote(member.session_notes || '');
+    }
+  }, [visible, member]);
+
   const handleSave = () => {
     if (selectedStatus) {
       onSave(selectedStatus, note);
-      handleClose();
+      // Don't reset state here - let parent handle it
     }
   };
 
@@ -138,6 +157,28 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
                   <Text style={styles.memberName}>{member.member_name}</Text>
                 </View>
 
+                {/* Meeting Info Section */}
+                <View style={styles.memberInfo}>
+                  <Text style={styles.memberName}>{member.member_name}</Text>
+                  <Text style={styles.meetingDetails}>
+                    {new Date(member.scheduled_date).toLocaleDateString()} at{' '}
+                    {formatTimeDisplay(member.scheduled_time)}
+                  </Text>
+                  {member.location && (
+                    <Text style={styles.locationText}>{member.location}</Text>
+                  )}
+                  {member.pre_session_notes && (
+                    <View style={styles.preNotesSection}>
+                      <Text style={styles.preNotesLabel}>
+                        Pre-session Notes:
+                      </Text>
+                      <Text style={styles.preNotesText}>
+                        {member.pre_session_notes}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
                 {/* Status Options in Row */}
                 <View style={styles.statusRow}>
                   {STATUS_OPTIONS.map(renderStatusOption)}
@@ -146,36 +187,62 @@ const MeetingStatusModal: React.FC<MeetingStatusModalProps> = ({
                 {/* Meeting Notes */}
                 <View style={styles.notesSection}>
                   <Text style={styles.notesLabel}>
-                    Meeting Notes (Optional)
+                    Session Notes{' '}
+                    {selectedStatus === 'completed'
+                      ? '(Required)'
+                      : '(Optional)'}
                   </Text>
                   <TextInput
-                    style={styles.notesInput}
-                    placeholder="Add any notes about the meeting..."
+                    style={[
+                      styles.notesInput,
+                      selectedStatus === 'completed' &&
+                        !note.trim() &&
+                        styles.requiredField,
+                    ]}
+                    placeholder={
+                      selectedStatus === 'completed'
+                        ? 'Please add notes about the completed session...'
+                        : 'Add any notes about the meeting...'
+                    }
                     placeholderTextColor={colors.text.muted}
                     value={note}
                     onChangeText={setNote}
                     multiline
-                    numberOfLines={3}
+                    numberOfLines={4}
                     textAlignVertical="top"
+                    editable={!isLoading}
                   />
                 </View>
 
                 {/* Action Buttons */}
                 <View style={styles.buttonRow}>
                   <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={handleClose}>
+                    style={[
+                      styles.cancelButton,
+                      isLoading && styles.disabledButton,
+                    ]}
+                    onPress={handleClose}
+                    disabled={isLoading}>
                     <Text style={styles.cancelButtonText}>Cancel</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[
                       styles.saveButton,
-                      !selectedStatus && styles.disabledButton,
+                      (!selectedStatus ||
+                        isLoading ||
+                        (selectedStatus === 'completed' && !note.trim())) &&
+                        styles.disabledButton,
                     ]}
                     onPress={handleSave}
-                    disabled={!selectedStatus}>
-                    <Text style={styles.saveButtonText}>Save</Text>
+                    disabled={
+                      !selectedStatus ||
+                      isLoading ||
+                      (selectedStatus === 'completed' && !note.trim())
+                    }>
+                    <Text style={styles.saveButtonText}>
+                      {isLoading ? 'Saving...' : 'Save Status'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </Pressable>
@@ -289,12 +356,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: colors.background.light,
+    opacity: 0.6,
   },
   saveButtonText: {
     ...typography.bodyMedium,
     color: colors.white,
   },
+  memberInfo: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.background.light,
+  },
+  meetingDetails: {
+    ...typography.bodyMedium,
+    color: colors.text.muted,
+    marginTop: spacing.xs / 2,
+  },
+  locationText: {
+    ...typography.caption,
+    color: colors.primary,
+    marginTop: spacing.xs / 2,
+  },
+  preNotesSection: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.background.light,
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+  },
+  preNotesLabel: {
+    ...typography.caption,
+    color: colors.text.muted,
+    fontWeight: '600',
+    marginBottom: spacing.xs / 2,
+  },
+  preNotesText: {
+    ...typography.caption,
+    color: colors.text.dark,
+    fontStyle: 'italic',
+  },
+  requiredField: {
+    borderColor: colors.error,
+    borderWidth: 1,
+  },
 });
+
+// Helper function for time formatting (add this at the top if not already present)
+const formatTimeDisplay = (timeString: string): string => {
+  const [hours, minutes] = timeString.split(':');
+  const hour24 = parseInt(hours);
+  const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+  const ampm = hour24 >= 12 ? 'PM' : 'AM';
+  return `${hour12}:${minutes} ${ampm}`;
+};
 
 export default MeetingStatusModal;
