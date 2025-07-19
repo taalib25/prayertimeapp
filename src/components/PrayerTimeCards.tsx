@@ -33,8 +33,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
   selectedDate,
   dailyTasks, // Now comes from withObservables
 }) => {
-  // Use real API service
-  const apiService = ApiTaskServices.getInstance();
+
 
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
@@ -167,13 +166,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
           attendance,
         );
 
-        // API sync in background (optional)
-        try {
-          await apiService.updatePrayerStatus(dateToUpdate,  selectedPrayerForAttendance.name.toLowerCase(), attendance);
-          console.log(`🔄 Prayer ${selectedPrayerForAttendance} synced with server for ${dateToUpdate}`);
-        } catch (apiError) {
-          console.warn('⚠️ API sync failed for prayer update:', apiError);
-        }
+       
 
         console.log(
           `✅ Prayer ${selectedPrayerForAttendance.name} updated to ${attendance} for date ${dateToUpdate}`,
