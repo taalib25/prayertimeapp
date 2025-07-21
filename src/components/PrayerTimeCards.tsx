@@ -24,14 +24,14 @@ interface PrayerTime {
 
 interface PrayerTimeCardsProps {
   prayers: PrayerTime[];
-  selectedDate?: string; // Add optional selectedDate prop
-  dailyTasks: DailyTasksModel[]; // Added for withObservables
+  selectedDate?: string; 
+  dailyTasks: DailyTasksModel[]; 
 }
 
 const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
   prayers,
   selectedDate,
-  dailyTasks, // Now comes from withObservables
+  dailyTasks,
 }) => {
 
 
