@@ -36,19 +36,6 @@ const DailyTasksSelector = React.lazy(
 );
 // const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
-const dummyMeeting = {
-  id: 'meeting-001',
-  title: 'Personal Meeting',
-  description: 'Discussion about upcoming events and community initiatives',
-  date: new Date(Date.now()).toISOString(), // 2 days from now
-  time: '18:00',
-  location: 'Main Prayer Hall',
-  committeeMember: {
-    name: 'Imam Abdullah',
-    phone: '+1234567890',
-  },
-};
-
 const PrayerTimeScreen = () => {
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
@@ -135,20 +122,7 @@ const PrayerTimeScreen = () => {
         <Header />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
-          {!showPrimaryContent ? (
-            <View style={styles.loadingCardsPlaceholder}>
-              <ActivityIndicator
-                size="large"
-                color={colors.accent}
-                style={styles.cardLoader}
-              />
-            </View>
-          ) : (
-            <PrayerTimeCards
-              prayers={prayerTimes}
-              selectedDate={selectedDate}
-            />
-          )}
+          <PrayerTimeCards selectedDate={selectedDate} />
         </View>
         {/* Main content container - always visible */}
         <View style={styles.container}>
@@ -211,9 +185,9 @@ const PrayerTimeScreen = () => {
               />
               {/* <FajrTimeChart /> */}
 
-              {/* <PersonalMeeting /> */}
+              {/* Meeting Details - Shows only if user has a meeting */}
               {user?.role === 'Member' ? (
-                <MeetingDetailsCard meeting={dummyMeeting} />
+                <MeetingDetailsCard />
               ) : (
                 <PersonalMeeting />
               )}
@@ -383,3 +357,207 @@ const styles = StyleSheet.create({
 });
 
 export default PrayerTimeScreen;
+
+// // {
+//     "success": true,
+//     "data": [
+//         {
+//             "id": 16,
+//             "member_id": 33,
+//             "counsellor_id": 18,
+//             "mosque_id": 1,
+//             "member_name": "Dhanish",
+//             "member_phone": "0712345678",
+//             "member_email": "dhanish@gmail.com",
+//             "attendance_rate": null,
+//             "total_prayers": 0,
+//             "prayed_count": 0,
+//             "scheduled_date": "2025-07-31T00:00:00.000Z",
+//             "scheduled_time": "03:05:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "medium",
+//             "status": "scheduled",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Meeting scheduled for dhanish with mentor",
+//             "session_notes": null,
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-07-16T21:34:23.000Z",
+//             "updated_at": "2025-07-16T21:34:23.000Z",
+//             "member_username": "dhanish",
+//             "counsellor_username": "amer",
+//             "counsellor_full_name": null
+//         },
+//         {
+//             "id": 12,
+//             "member_id": 16,
+//             "counsellor_id": 2,
+//             "mosque_id": 1,
+//             "member_name": "abdullah",
+//             "member_phone": "0772648650",
+//             "member_email": "inshaf4online@gmail.com",
+//             "attendance_rate": null,
+//             "total_prayers": 0,
+//             "prayed_count": 0,
+//             "scheduled_date": "2025-07-31T00:00:00.000Z",
+//             "scheduled_time": "03:50:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "medium",
+//             "status": "completed",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Meeting scheduled for abdullah with mentor",
+//             "session_notes": "done",
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-07-16T20:19:54.000Z",
+//             "updated_at": "2025-07-16T20:20:32.000Z",
+//             "member_username": "abdullah",
+//             "counsellor_username": "testfounder",
+//             "counsellor_full_name": null
+//         },
+//         {
+//             "id": 15,
+//             "member_id": 12,
+//             "counsellor_id": 2,
+//             "mosque_id": 1,
+//             "member_name": "insaf01",
+//             "member_phone": "0772648650",
+//             "member_email": "inshaf0420@gmail.com",
+//             "attendance_rate": null,
+//             "total_prayers": 0,
+//             "prayed_count": 0,
+//             "scheduled_date": "2025-07-25T00:00:00.000Z",
+//             "scheduled_time": "02:52:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "medium",
+//             "status": "scheduled",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Meeting scheduled for insaf01 with mentor",
+//             "session_notes": null,
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-07-16T21:22:26.000Z",
+//             "updated_at": "2025-07-16T21:22:26.000Z",
+//             "member_username": "insaf01",
+//             "counsellor_username": "testfounder",
+//             "counsellor_full_name": null
+//         },
+//         {
+//             "id": 13,
+//             "member_id": 33,
+//             "counsellor_id": 2,
+//             "mosque_id": 1,
+//             "member_name": "Dhanish",
+//             "member_phone": "0712345678",
+//             "member_email": "dhanish@gmail.com",
+//             "attendance_rate": null,
+//             "total_prayers": 0,
+//             "prayed_count": 0,
+//             "scheduled_date": "2025-07-22T00:00:00.000Z",
+//             "scheduled_time": "02:11:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "medium",
+//             "status": "scheduled",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Meeting scheduled for dhanish with mentor",
+//             "session_notes": null,
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-07-16T20:39:04.000Z",
+//             "updated_at": "2025-07-16T20:39:04.000Z",
+//             "member_username": "dhanish",
+//             "counsellor_username": "testfounder",
+//             "counsellor_full_name": null
+//         },
+//         {
+//             "id": 11,
+//             "member_id": 33,
+//             "counsellor_id": 18,
+//             "mosque_id": 1,
+//             "member_name": "Dhanish",
+//             "member_phone": "0712345678",
+//             "member_email": "dhanish@gmail.com",
+//             "attendance_rate": null,
+//             "total_prayers": 0,
+//             "prayed_count": 0,
+//             "scheduled_date": "2025-07-20T00:00:00.000Z",
+//             "scheduled_time": "04:00:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "medium",
+//             "status": "completed",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Meeting scheduled for dhanish with mentor",
+//             "session_notes": "ghsd",
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-07-16T20:18:03.000Z",
+//             "updated_at": "2025-07-16T21:19:14.000Z",
+//             "member_username": "dhanish",
+//             "counsellor_username": "amer",
+//             "counsellor_full_name": null
+//         },
+//         {
+//             "id": 2,
+//             "member_id": 1,
+//             "counsellor_id": 18,
+//             "mosque_id": 1,
+//             "member_name": "Member",
+//             "member_phone": "+94-77-123-4567",
+//             "member_email": "member@prayertracker.com",
+//             "attendance_rate": "100.00",
+//             "total_prayers": 8,
+//             "prayed_count": 8,
+//             "scheduled_date": "2024-12-25T00:00:00.000Z",
+//             "scheduled_time": "15:00:00",
+//             "actual_start_time": null,
+//             "actual_end_time": null,
+//             "priority": "high",
+//             "status": "scheduled",
+//             "session_type": "phone_call",
+//             "pre_session_notes": "Member has very low attendance rate. Needs immediate counselling.",
+//             "session_notes": null,
+//             "issues_identified": null,
+//             "action_items": null,
+//             "follow_up_required": 0,
+//             "follow_up_date": null,
+//             "member_response": null,
+//             "commitment_made": null,
+//             "improvement_plan": null,
+//             "created_at": "2025-06-27T03:07:22.000Z",
+//             "updated_at": "2025-06-27T03:07:22.000Z",
+//             "member_username": "testmember",
+//             "counsellor_username": "amer",
+//             "counsellor_full_name": null
+//         }
+//     ]
+// }

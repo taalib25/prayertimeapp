@@ -13,6 +13,7 @@ import AttendanceSelectionModal, {
 } from './AttendanceSelectionModal';
 import {getTodayDateString, formatDateString} from '../utils/helpers';
 import {updatePrayerStatus} from '../services/db/dailyTaskServices';
+import UserService from '../services/UserService';
 
 interface PrayerTime {
   name: string;
@@ -22,29 +23,56 @@ interface PrayerTime {
 }
 
 interface PrayerTimeCardsProps {
-  prayers: PrayerTime[];
-  selectedDate?: string; // Add optional selectedDate prop
-  dailyTasks: DailyTasksModel[]; // Added for withObservables
+  selectedDate?: string;
+  dailyTasks: DailyTasksModel[];
 }
 
 const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
-  prayers,
   selectedDate,
-  dailyTasks, // Now comes from withObservables
+  dailyTasks,
 }) => {
+  const [prayers, setPrayers] = useState<PrayerTime[]>([]);
+  const [loading, setLoading] = useState(true);
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
     useState<PrayerTime | null>(null);
 
-  // ✅ REACTIVE: Debug effect to track dailyTasks changes
+  const userService = UserService.getInstance();
+
+  // Get prayer times for the selected date using UserService
   useEffect(() => {
-    console.log(
-      `🔄 PrayerTimeCards: dailyTasks updated, count: ${dailyTasks.length}`,
-    );
-    console.log(
-      `📅 Available dates: ${dailyTasks.map(t => t.date).join(', ')}`,
-    );
-  }, [dailyTasks]);
+    const loadPrayerTimes = async () => {
+      try {
+        setLoading(true);
+        const prayerTimesData = await userService.getPrayerTimesForDate(selectedDate!);
+
+        if (prayerTimesData) {
+          const formattedPrayers: PrayerTime[] = [
+            {name: 'fajr', displayName: 'Fajr', time: prayerTimesData.fajr},
+            {name: 'dhuhr', displayName: 'Dhuhr', time: prayerTimesData.dhuhr},
+            {name: 'asr', displayName: 'Asr', time: prayerTimesData.asr},
+            {
+              name: 'maghrib',
+              displayName: 'Maghrib',
+              time: prayerTimesData.maghrib,
+            },
+            {name: 'isha', displayName: 'Isha', time: prayerTimesData.isha},
+          ];
+          setPrayers(formattedPrayers);
+        } else {
+          console.warn(`No prayer times found for date: ${selectedDate}`);
+          setPrayers([]);
+        }
+      } catch (error) {
+        console.error('Error loading prayer times:', error);
+        setPrayers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPrayerTimes();
+  }, [selectedDate, userService]);
 
   // Use reactive dailyTasks prop instead of hook
 
@@ -60,11 +88,6 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
       // Find task for the date from reactive dailyTasks prop
       const task = dailyTasks.find(t => t.date === dateToCheck);
-
-      console.log(
-        `🔍 getPrayerStatus: ${prayerName} for ${dateToCheck}, found task:`,
-        task ? `ID: ${task.id}, date: ${task.date}` : 'none',
-      );
 
       if (!task) return null;
 
@@ -99,7 +122,6 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
   // Convert prayer time string to hours and minutes for comparison
   const isPrayerInFuture = useCallback((prayerTimeStr: string) => {
-    console.log('time >>>>>>>>>>>>>', prayerTimeStr);
     const now = new Date();
     const currentHours = now.getHours();
     const currentMinutes = now.getMinutes();
@@ -185,94 +207,100 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     <>
       {/* Prayer Cards Container */}
       <View style={styles.container}>
-        <View style={styles.prayerCardsRow}>
-          {prayers.map((prayer, index) => {
-            const prayerStatus = getPrayerStatus(prayer.name);
-            const isFuture = isToday && isPrayerInFuture(prayer.time);
-            const formattedTime = formatPrayerTime(prayer.time);
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading prayer times...</Text>
+          </View>
+        ) : (
+          <View style={styles.prayerCardsRow}>
+            {prayers.map((prayer, index) => {
+              const prayerStatus = getPrayerStatus(prayer.name);
+              const isFuture = isToday && isPrayerInFuture(prayer.time);
+              const formattedTime = formatPrayerTime(prayer.time);
 
-            return (
-              <TouchableOpacity
-                key={index}
-                style={styles.prayerColumn}
-                onPress={() => {
-                  // Only allow updating prayers for today and not future prayers
-                  if (isToday && !isFuture) {
-                    handleAttendancePress(prayer);
-                  } else if (isToday && isFuture) {
-                    Alert.alert(
-                      'Future Prayer',
-                      'You cannot mark future prayers',
-                    );
-                  } else {
-                    Alert.alert(
-                      'Past Date',
-                      'You can only mark prayers for today',
-                    );
-                  }
-                }}
-                activeOpacity={isToday && !isFuture ? 0.7 : 0.9}>
-                <View
-                  style={[
-                    styles.prayerCard,
-                    prayer.isActive && styles.activeCard,
-                    isToday && isFuture && styles.futurePrayerCard,
-                  ]}>
-                  <Text
-                    style={
-                      prayer.displayName === 'Maghrib'
-                        ? styles.maghribName
-                        : styles.prayerName
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.prayerColumn}
+                  onPress={() => {
+                    // Only allow updating prayers for today and not future prayers
+                    if (isToday && !isFuture) {
+                      handleAttendancePress(prayer);
+                    } else if (isToday && isFuture) {
+                      Alert.alert(
+                        'Future Prayer',
+                        'You cannot mark future prayers',
+                      );
+                    } else {
+                      Alert.alert(
+                        'Past Date',
+                        'You can only mark prayers for today',
+                      );
                     }
-                    numberOfLines={1}
-                    adjustsFontSizeToFit={true}>
-                    {prayer.displayName}
-                  </Text>
-                  <View style={styles.iconContainer}>
-                    <SvgIcon
-                      name={prayer.name.toLowerCase() as IconName}
-                      size={26}
-                    />
-                    {isToday && selectedDate === getTodayDateString() && (
-                      <>
-                        {prayerStatus === 'mosque' && (
-                          <View
-                            style={[
-                              styles.attendanceIndicator,
-                              styles.mosqueIndicator,
-                            ]}>
-                            <Text style={styles.checkmark}>✓</Text>
-                          </View>
-                        )}
-                        {prayerStatus === 'home' && (
-                          <View
-                            style={[
-                              styles.attendanceIndicator,
-                              styles.homeIndicator,
-                            ]}>
-                            <Text style={styles.checkmark}>✓</Text>
-                          </View>
-                        )}
-                        {/* Only show cross when explicitly marked as 'none' (missed), not when null */}
-                        {prayerStatus === 'none' && !isFuture && (
-                          <View
-                            style={[
-                              styles.attendanceIndicator,
-                              styles.missedIndicator,
-                            ]}>
-                            <Text style={styles.crossmark}>✕</Text>
-                          </View>
-                        )}
-                        {/* We don't show any indicator when prayerStatus is null */}
-                      </>
-                    )}
+                  }}
+                  activeOpacity={isToday && !isFuture ? 0.7 : 0.9}>
+                  <View
+                    style={[
+                      styles.prayerCard,
+                      prayer.isActive && styles.activeCard,
+                      isToday && isFuture && styles.futurePrayerCard,
+                    ]}>
+                    <Text
+                      style={
+                        prayer.displayName === 'Maghrib'
+                          ? styles.maghribName
+                          : styles.prayerName
+                      }
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={true}>
+                      {prayer.displayName}
+                    </Text>
+                    <View style={styles.iconContainer}>
+                      <SvgIcon
+                        name={prayer.name.toLowerCase() as IconName}
+                        size={26}
+                      />
+                      {isToday && selectedDate === getTodayDateString() && (
+                        <>
+                          {prayerStatus === 'mosque' && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.mosqueIndicator,
+                              ]}>
+                              <Text style={styles.checkmark}>✓</Text>
+                            </View>
+                          )}
+                          {prayerStatus === 'home' && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.homeIndicator,
+                              ]}>
+                              <Text style={styles.checkmark}>✓</Text>
+                            </View>
+                          )}
+                          {/* Only show cross when explicitly marked as 'none' (missed), not when null */}
+                          {prayerStatus === 'none' && !isFuture && (
+                            <View
+                              style={[
+                                styles.attendanceIndicator,
+                                styles.missedIndicator,
+                              ]}>
+                              <Text style={styles.crossmark}>✕</Text>
+                            </View>
+                          )}
+                          {/* We don't show any indicator when prayerStatus is null */}
+                        </>
+                      )}
+                    </View>
+                    <Text style={styles.prayerTime}>{formattedTime}</Text>
                   </View>
-                  <Text style={styles.prayerTime}>{formattedTime}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
       </View>
       {/* Attendance Selection Modal */}
       <AttendanceSelectionModal

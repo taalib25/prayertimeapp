@@ -13,6 +13,7 @@ import {
   UserUpdate,
   SystemUpdate,
 } from '../types/User';
+import prayerTimes from '../types/prayer_times.json';
 
 class UserService {
   private static instance: UserService;
@@ -312,13 +313,183 @@ class UserService {
       // This will create default data if none exists
       await this.getUser();
       const systemData = await this.getSystemData();
-
+      await this.loadPrayerTimes();
       // Reset profile alert flag on app start for session-based tracking
       if (systemData.hasSeenProfileAlert) {
         await this.updateSystemData({hasSeenProfileAlert: false});
       }
     } catch (error) {
       console.error('Error initializing data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Load prayer times JSON data into system data
+   */
+  async loadPrayerTimes(): Promise<void> {
+    try {
+      // Save the entire prayer times JSON data in system storage
+      const systemData = await this.getSystemData();
+      const updatedSystemData = {
+        ...systemData,
+        prayerTimesData: prayerTimes, // Store the entire JSON
+        prayerTimes: [], // Keep this empty, we'll use the method below to get specific dates
+      };
+      await this.saveSystemData(updatedSystemData);
+    } catch (error) {
+      console.error('Error loading prayer times:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Simple function to get prayer times for a specific date
+   * @param date String in format "YYYY-MM-DD"
+   * @returns Prayer times object or null if not found
+   */
+  async getPrayerTimesForDate(
+    date: string,
+  ): Promise<SystemData['prayerTimes'][0] | null> {
+    try {
+      // First try to get from storage
+      const systemData = await this.getSystemData();
+      if (systemData.prayerTimesData) {
+        const [, monthStr, dayStr] = date.split('-');
+        const month = parseInt(monthStr);
+        const day = parseInt(dayStr);
+
+        const monthNames = [
+          'january',
+          'february',
+          'march',
+          'april',
+          'may',
+          'june',
+          'july',
+          'august',
+          'september',
+          'october',
+          'november',
+          'december',
+        ];
+
+        const monthName = monthNames[month - 1];
+        const monthData =
+          systemData.prayerTimesData.monthly_prayer_times?.[monthName];
+
+        if (monthData) {
+          const dateRange = monthData.date_ranges.find((range: any) => {
+            const fromDay = parseInt(range.from_date.split('-')[0]);
+            const toDay = parseInt(range.to_date.split('-')[0]);
+            return day >= fromDay && day <= toDay;
+          });
+
+          if (dateRange) {
+            return {
+              date,
+              fajr: dateRange.times.fajr,
+              dhuhr: dateRange.times.luhr,
+              asr: dateRange.times.asr,
+              maghrib: dateRange.times.magrib,
+              isha: dateRange.times.isha,
+            };
+          }
+        }
+      }
+
+      // Fallback to imported JSON
+      return this.getPrayerTimesFromImportedJSON(date);
+    } catch (error) {
+      console.error(`Error getting prayer times for date ${date}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Get prayer times from imported JSON file
+   * @param date String in format "YYYY-MM-DD"
+   * @returns Prayer times for the specified date or null if not found
+   */
+  private getPrayerTimesFromImportedJSON(
+    date: string,
+  ): SystemData['prayerTimes'][0] | null {
+    try {
+      const [, monthStr, dayStr] = date.split('-');
+      const month = parseInt(monthStr);
+      const day = parseInt(dayStr);
+
+      const monthNames = [
+        'january',
+        'february',
+        'march',
+        'april',
+        'may',
+        'june',
+        'july',
+        'august',
+        'september',
+        'october',
+        'november',
+        'december',
+      ];
+
+      const monthName = monthNames[month - 1];
+      if (!monthName) return null;
+
+      const monthData = (prayerTimes.monthly_prayer_times as any)[monthName];
+      if (!monthData) return null;
+
+      const dateRange = monthData.date_ranges.find((range: any) => {
+        const fromDay = parseInt(range.from_date.split('-')[0]);
+        const toDay = parseInt(range.to_date.split('-')[0]);
+        return day >= fromDay && day <= toDay;
+      });
+
+      if (!dateRange) return null;
+
+      return {
+        date,
+        fajr: dateRange.times.fajr,
+        dhuhr: dateRange.times.luhr,
+        asr: dateRange.times.asr,
+        maghrib: dateRange.times.magrib,
+        isha: dateRange.times.isha,
+      };
+    } catch (error) {
+      console.error(
+        `Error getting prayer times from imported JSON for date ${date}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Load prayer times for a specific date into system data
+   */
+  async loadPrayerTimeForDate(date: string): Promise<void> {
+    try {
+      const prayerTime = await this.getPrayerTimesForDate(date);
+      if (!prayerTime) {
+        console.warn(`No prayer times found for date: ${date}`);
+        return;
+      }
+
+      const systemData = await this.getSystemData();
+      // Filter out any existing entry for this date
+      const filteredPrayerTimes = systemData.prayerTimes.filter(
+        pt => pt.date !== date,
+      );
+
+      const updatedSystemData = {
+        ...systemData,
+        prayerTimes: [...filteredPrayerTimes, prayerTime],
+      };
+
+      await this.saveSystemData(updatedSystemData);
+    } catch (error) {
+      console.error('Error loading prayer time for date:', error);
       throw error;
     }
   }

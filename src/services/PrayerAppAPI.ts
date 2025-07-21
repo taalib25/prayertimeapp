@@ -179,6 +179,21 @@ export interface WakeUpCallResponse {
   created_at: string;
 }
 
+export interface UpdateCounsellingSessionRequest {
+  session_id: string | number;
+  status: 'scheduled' | 'completed' | 'excused' | 'absent';
+  session_notes?: string;
+  actual_start_time?: string;
+  actual_end_time?: string;
+}
+
+export interface UpdateCounsellingSessionResponse {
+  id: string | number;
+  status: string;
+  session_notes: string;
+  updated_at: string;
+}
+
 /**
  * Prayer App API Endpoints
  * Uses the ApiService for consistent HTTP requests
@@ -248,7 +263,7 @@ class PrayerAppAPI {
       });
 
       const response = await this.apiService.post<CreateMemberResponse>(
-        '/members',
+        '/register',
         data,
       );
 
@@ -297,6 +312,41 @@ class PrayerAppAPI {
     }
 
     return this.apiService.get<PrayerTimesResponse[]>('/prayer-times', params);
+  }
+
+  //get council sessoiins
+  /**
+   * Get council sessions
+   */
+  async getCouncilSessions(
+    params?: Record<string, any>,
+  ): Promise<ApiResponse<any>> {
+    try {
+      console.log('📡 API: Fetching council sessions with params:', params);
+
+      const response = await this.apiService.get<any>(
+        '/counselling-sessions',
+        params,
+      );
+
+      if (response.success) {
+        console.log('✅ API: Council sessions fetched successfully');
+      } else {
+        console.log(
+          '❌ API: Fetching council sessions failed:',
+          response.error,
+        );
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error fetching council sessions:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
   }
 
   /**
@@ -717,6 +767,48 @@ class PrayerAppAPI {
       return response;
     } catch (error: any) {
       console.error('❌ API: Error fetching counselling sessions:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Update counselling session status and notes
+   */
+  async updateCounsellingSession(
+    data: UpdateCounsellingSessionRequest,
+  ): Promise<ApiResponse<UpdateCounsellingSessionResponse>> {
+    try {
+      console.log('📡 API: Updating counselling session:', {
+        sessionId: data.session_id,
+        status: data.status,
+        hasNotes: !!data.session_notes,
+      });
+
+      const response =
+        await this.apiService.put<UpdateCounsellingSessionResponse>(
+          `/counselling-sessions/${data.session_id}`,
+          {
+            status: data.status,
+            sessionNotes: data.session_notes || '',
+          },
+        );
+
+      if (response.success) {
+        console.log('✅ API: Counselling session updated successfully');
+      } else {
+        console.log(
+          '❌ API: Counselling session update failed:',
+          response.error,
+        );
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ API: Error updating counselling session:', error);
       return {
         success: false,
         error: error.response?.data?.message || error.message,

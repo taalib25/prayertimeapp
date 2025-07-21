@@ -2,6 +2,7 @@ import {Q} from '@nozbe/watermelondb';
 import database from '.';
 import DailyTasksModel, {PrayerStatus} from '../../model/DailyTasks';
 import {getTodayDateString, formatDateString} from '../../utils/helpers';
+import ApiTaskServices from '../apiHandler';
 
 export interface DailyTaskData {
   date: string; // Primary key
@@ -32,6 +33,8 @@ const DEFAULT_DAILY_TASKS: Omit<DailyTaskData, 'date'> = {
   specialTasks: [], // ✅ SIMPLIFIED: No default special tasks
 };
 
+// Use real API service
+const apiService = ApiTaskServices.getInstance();
 /**
  * Get recent daily tasks for a user
  */
@@ -259,21 +262,16 @@ export const updatePrayerStatus = async (
         }
       });
     }); // Verify the update
-    console.log(
-      `🔍 After update - ${lcPrayer}Status: ${
-        (targetTask as any)[lcPrayer + 'Status']
-      }`,
-    );
-
-    // Double-check by refetching the task from database
-    const verifyTask = await dailyTasksCollection.find(targetTask.id);
-    console.log(
-      `🔎 Database verification - ${lcPrayer}Status: ${
-        (verifyTask as any)[lcPrayer + 'Status']
-      }`,
-    );
 
     console.log(`✅ Updated ${lcPrayer} prayer to "${status}" for ${date}`);
+
+    // API sync in background (optional)
+    try {
+      await apiService.updatePrayerStatus(date, prayerName, status);
+      console.log(`🔄 Prayer ${prayerName} synced with server for ${status}`);
+    } catch (apiError) {
+      console.warn('⚠️ API sync failed for prayer update:', apiError);
+    }
   } catch (error) {
     console.error('❌ Failed to update prayer status:', error);
     throw error;
@@ -298,6 +296,15 @@ export const updateZikrCount = async (
         task.totalZikrCount = count;
       });
     });
+
+
+     // API sync in background (optional)
+    try {
+      await apiService.updateZikrCount(date,count);
+      console.log(`🔄 Zikr ${count} synced with server for ${date}`);
+    } catch (apiError) {
+      console.warn('⚠️ API sync failed for prayer update:', apiError);
+    }
 
     console.log(`✅ Updated zikr count to ${count} for ${date}`);
   } catch (error) {
@@ -325,6 +332,14 @@ export const updateQuranMinutes = async (
         task.quranMinutes = minutes;
       });
     });
+
+
+      try {
+      await apiService.updateQuranMinutes(date,minutes);
+      console.log(`Quran ${minutes} synced with server for ${date}`);
+    } catch (apiError) {
+      console.warn('⚠️ API sync failed for prayer update:', apiError);
+    }
 
     console.log(`✅ Updated Quran minutes for ${date}: ${minutes} minutes`);
   } catch (error) {

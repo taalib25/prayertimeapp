@@ -16,9 +16,7 @@ interface SpecialTaskItemProps {
 
 const SpecialTaskItem: React.FC<SpecialTaskItemProps> = React.memo(
   ({task, color, onPress, disabled = false}) => {
-    console.log(
-      `🔧 SpecialTaskItem render: ${task.id}, completed: ${task.completed}, disabled: ${disabled}`,
-    );
+
 
     return (
       <TouchableOpacity
