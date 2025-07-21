@@ -77,6 +77,15 @@ export interface SystemData {
   fajrReminderDuration: number | null; // Duration in minutes
   fajrReminderTiming: 'before' | 'after' | null; // Before or after Fajr
   hasSeenProfileAlert: boolean; // Track if user has dismissed profile completion alert
+  prayerTimesData?: any; // Store the entire prayer times JSON data
+  prayerTimes: {
+    date: string; // Date in YYYY-MM-DD format
+    fajr: string; // Time in HH:mm format
+    dhuhr: string;
+    asr: string;
+    maghrib: string;
+    isha: string;
+  }[];
 }
 
 // Default values - removed mock fallbacks to ensure only real API data is used
@@ -117,6 +126,7 @@ export const DEFAULT_SYSTEM: SystemData = {
   fajrReminderDuration: null,
   fajrReminderTiming: null,
   hasSeenProfileAlert: false,
+  prayerTimes: [],
 };
 
 // Storage keys - only two keys needed

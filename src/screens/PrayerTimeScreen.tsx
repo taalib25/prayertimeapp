@@ -135,20 +135,9 @@ const PrayerTimeScreen = () => {
         <Header />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
-          {!showPrimaryContent ? (
-            <View style={styles.loadingCardsPlaceholder}>
-              <ActivityIndicator
-                size="large"
-                color={colors.accent}
-                style={styles.cardLoader}
-              />
-            </View>
-          ) : (
-            <PrayerTimeCards
-              prayers={prayerTimes}
-              selectedDate={selectedDate}
-            />
-          )}
+          <PrayerTimeCards
+            selectedDate={selectedDate}
+          />
         </View>
         {/* Main content container - always visible */}
         <View style={styles.container}>
@@ -212,7 +201,7 @@ const PrayerTimeScreen = () => {
               {/* <FajrTimeChart /> */}
 
               {/* <PersonalMeeting /> */}
-              {user?.role != 'Member' ? (
+              {user?.role === 'Member' ? (
                 <MeetingDetailsCard meeting={dummyMeeting} />
               ) : (
                 <PersonalMeeting />
