@@ -17,6 +17,9 @@ node_require('react-native-permissions/scripts/setup.rb')
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+# Intel Mac compatibility - disable Flipper which causes issues on Intel Macs
+flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
+
 setup_permissions([
   'LocationWhenInUse',
   'Motion',
@@ -35,6 +38,7 @@ target 'prayer_app' do
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => false,
+    :flipper_configuration => flipper_config,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -42,28 +46,80 @@ target 'prayer_app' do
   pod 'simdjson', :path => '../node_modules/@nozbe/simdjson'
 
   post_install do |installer|
+    # Intel Mac and Apple Silicon compatibility fixes
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false
     )
     
-    # Fix for Xcode version detection
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
+        # Ensure minimum deployment target for compatibility
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
+        
+        # Exclude architectures based on the platform
+        if RUBY_PLATFORM.include?('arm64')
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+        elsif RUBY_PLATFORM.include?('x86_64')
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        end
         
         # Fix for WatermelonDB simdjson dependency
         if target.name == 'simdjson'
           config.build_settings['COMPILER_INDEX_STORE_ENABLE'] = 'NO'
         end
+        
+        # Xcode 14+ compatibility
+        config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
+        config.build_settings['LIBRARY_SEARCH_PATHS'] = ['$(SDKROOT)/usr/lib/swift', '$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)', '$(inherited)']
+        
+        # Fix for React Native compilation issues
+        if target.name.start_with?('React')
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= []
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'NDEBUG=1'
+        end
+        
+        # Flipper compatibility for Intel Macs
+        if target.name == 'Flipper'
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+        end
+        
+        # Fix for React Native 0.72+ on Apple Silicon and Intel Macs
+        if target.name.include?('hermes') || target.name.include?('Hermes')
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64' if RUBY_PLATFORM.include?('x86_64')
+        end
       end
     end
     
-    # Additional fix for Xcode 15 compatibility
+    # Additional fixes for Xcode 15 and architecture compatibility
     installer.pods_project.build_configurations.each do |config|
       config.build_settings['CODE_SIGNING_REQUIRED'] = "NO"
       config.build_settings['CODE_SIGNING_ALLOWED'] = "NO"
+      
+      # Exclude architectures based on the platform
+      if RUBY_PLATFORM.include?('arm64')
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+      elsif RUBY_PLATFORM.include?('x86_64')
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+      end
+      
+      # Fix for Xcode 14+ warnings
+      config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = "YES"
+      config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = "YES"
+    end
+    
+    # Fix for Rosetta compatibility on Apple Silicon
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |target|
+        target.build_configurations.each do |config|
+          if RUBY_PLATFORM.include?('arm64')
+            config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+          elsif RUBY_PLATFORM.include?('x86_64')
+            config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+          end
+        end
+      end
     end
   end
 end
