@@ -36,19 +36,6 @@ const DailyTasksSelector = React.lazy(
 );
 // const FajrTimeChart = React.lazy(() => import('../components/FajrTimeChart'));
 
-const dummyMeeting = {
-  id: 'meeting-001',
-  title: 'Personal Meeting',
-  description: 'Discussion about upcoming events and community initiatives',
-  date: new Date(Date.now()).toISOString(), // 2 days from now
-  time: '18:00',
-  location: 'Main Prayer Hall',
-  committeeMember: {
-    name: 'Imam Abdullah',
-    phone: '+1234567890',
-  },
-};
-
 const PrayerTimeScreen = () => {
   const navigation =
     useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
@@ -135,9 +122,7 @@ const PrayerTimeScreen = () => {
         <Header />
         {/* Prayer Time Cards - Priority 1: Show immediately when available */}
         <View style={styles.prayerCardsContainer}>
-          <PrayerTimeCards
-            selectedDate={selectedDate}
-          />
+          <PrayerTimeCards selectedDate={selectedDate} />
         </View>
         {/* Main content container - always visible */}
         <View style={styles.container}>
@@ -200,9 +185,9 @@ const PrayerTimeScreen = () => {
               />
               {/* <FajrTimeChart /> */}
 
-              {/* <PersonalMeeting /> */}
+              {/* Meeting Details - Shows only if user has a meeting */}
               {user?.role === 'Member' ? (
-                <MeetingDetailsCard meeting={dummyMeeting} />
+                <MeetingDetailsCard />
               ) : (
                 <PersonalMeeting />
               )}
@@ -372,7 +357,6 @@ const styles = StyleSheet.create({
 });
 
 export default PrayerTimeScreen;
-
 
 // // {
 //     "success": true,

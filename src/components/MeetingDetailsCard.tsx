@@ -1,39 +1,134 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
+import PrayerAppAPI from '../services/PrayerAppAPI';
+import UserService from '../services/UserService';
 
 interface MeetingDetails {
   title: string;
   isUrgent?: boolean;
   date: string;
   time: string;
-  // location removed
   committeeMember: {
     name: string;
     phone: string;
   };
+  session_notes?: string;
 }
 
 interface MeetingDetailsCardProps {
   onClose?: () => void;
-  meeting?: MeetingDetails | null;
-  isLoading?: boolean;
-  error?: string | null;
 }
 
-const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({
-  onClose,
-  meeting,
-  isLoading = false,
-  error = null,
-}) => {
+const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({onClose}) => {
+  const [meeting, setMeeting] = useState<MeetingDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const api = PrayerAppAPI.getInstance();
+  const userService = UserService.getInstance();
+
+  useEffect(() => {
+    fetchUserMeeting();
+  }, []);
+
+  const fetchUserMeeting = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Get current user data
+      const user = await userService.getUser();
+      if (!user.memberId) {
+        console.log('No member ID found for user');
+        setMeeting(null);
+        setIsLoading(false);
+        return;
+      }
+
+      console.log(
+        '🔍 MeetingDetailsCard: Fetching council sessions for member:',
+        user.memberId,
+      );
+
+      // Fetch council sessions from API
+      const response = await api.getCouncilSessions();
+
+      if (response.success && response.data) {
+        // Handle different possible API response structures
+        const sessions =
+          response.data.data || response.data.sessions || response.data || [];
+
+        if (!Array.isArray(sessions)) {
+          console.warn(
+            '⚠️ MeetingDetailsCard: API data is not an array:',
+            sessions,
+          );
+          setMeeting(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // Filter sessions for the current user's member ID
+        const userSession = sessions.find(
+          (session: any) =>
+            session.member_id === user.memberId ||
+            session.member_username === user.username ||
+            session.member_name === user.fullName ||
+            session.member_name === user.username,
+        );
+
+        if (userSession) {
+          console.log(
+            '✅ MeetingDetailsCard: Found user session:',
+            userSession,
+          );
+
+          // Transform to MeetingDetails format
+          const meetingDetails: MeetingDetails = {
+            title: userSession.session_title || 'Personal Meeting',
+            isUrgent: userSession.is_urgent || false,
+            date: userSession.scheduled_date || new Date().toISOString(),
+            time: userSession.scheduled_time || '00:00',
+            committeeMember: {
+              name:
+                userSession.counselor_name ||
+                userSession.committee_member_name ||
+                'Council Member',
+              phone:
+                userSession.counselor_phone ||
+                userSession.committee_member_phone ||
+                '',
+            },
+            session_notes: userSession.session_notes || '',
+          };
+
+          setMeeting(meetingDetails);
+        } else {
+          console.log('ℹ️ MeetingDetailsCard: No meeting found for user');
+          setMeeting(null);
+        }
+      } else {
+        console.error(
+          '❌ MeetingDetailsCard: Failed to fetch council sessions:',
+          response.error,
+        );
+        setError(response.error || 'Failed to fetch meeting details');
+      }
+    } catch (error: any) {
+      console.error(
+        '❌ MeetingDetailsCard: Error fetching user meeting:',
+        error,
+      );
+      setError(
+        error.message || 'An error occurred while fetching meeting details',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -44,21 +139,42 @@ const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({
     });
   };
 
+  const formatTime = (timeString: string) => {
+    if (!timeString.includes(':')) return timeString;
+
+    const [hoursStr, minutesStr] = timeString.split(':');
+    let hours = parseInt(hoursStr, 10);
+    const minutes = parseInt(minutesStr, 10);
+    const suffix = hours >= 12 ? 'PM' : 'AM';
+
+    // Convert hour to 12-hour clock
+    hours = hours % 12 || 12;
+
+    return `${hours}:${minutes.toString().padStart(2, '0')} ${suffix}`;
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>
-            Loading meeting details...
-          </Text>
+          <Text style={styles.loadingText}>Loading meeting details...</Text>
         </View>
       </View>
     );
   }
 
-  if (error || !meeting) {
-    return null; // Don't show the component if there's an error or no meeting
+  if (error) {
+    console.warn(
+      'MeetingDetailsCard: Error occurred, not showing card:',
+      error,
+    );
+    return null; // Don't show the component if there's an error
+  }
+
+  if (!meeting) {
+    console.log('MeetingDetailsCard: No meeting found, not showing card');
+    return null; // Don't show the component if no meeting is found
   }
 
   return (
@@ -102,8 +218,16 @@ const MeetingDetailsCard: React.FC<MeetingDetailsCardProps> = ({
           <View style={styles.detailItem}>
             <Text style={styles.clockIcon}>🕐</Text>
             <Text style={styles.detailLabel}>Time:</Text>
-            <Text style={styles.detailValue}>{meeting.time}</Text>
+            <Text style={styles.detailValue}>{formatTime(meeting.time)}</Text>
           </View>
+
+          {meeting.session_notes && (
+            <View style={styles.detailItem}>
+              <SvgIcon name="profile" size={16} color={colors.text.muted} />
+              <Text style={styles.detailLabel}>Notes:</Text>
+              <Text style={styles.notesValue}>{meeting.session_notes}</Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -233,6 +357,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
     flex: 1,
+  },
+  notesValue: {
+    ...typography.body,
+    color: colors.text.muted,
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
+    fontStyle: 'italic',
+    lineHeight: 18,
   },
   addressRow: {
     marginTop: 4,
