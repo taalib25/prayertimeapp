@@ -333,10 +333,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
         {/* Menu Section */}
         <View style={styles.menuSection}>
           <MenuButton title="Edit Information" onPress={handleEditProfile} />
-          {/* <MenuButton
+          <MenuButton
             title="Notification Settings"
             onPress={handleNotificationSettings}
-          /> */}
+          />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           {/* Pickup Settings - Available for all users */}
           <MenuButton

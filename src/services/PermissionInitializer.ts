@@ -47,12 +47,6 @@ class PermissionInitializer {
     }
   }
 
-  /**
-   * Check if permissions are initialized
-   */
-  isPermissionsInitialized(): boolean {
-    return this.isInitialized;
-  }
 
   /**
    * Re-initialize permissions if needed

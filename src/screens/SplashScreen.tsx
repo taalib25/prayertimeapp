@@ -3,7 +3,6 @@ import {View, StyleSheet, Animated, Easing} from 'react-native';
 import {colors} from '../utils/theme';
 import SvgIcon from '../components/SvgIcon';
 import UserService from '../services/UserService';
-import {initializePrayerTimesDatabase} from '../services/db/dbInitalizer';
 import {getPrayerTimesForDate} from '../services/db/PrayerServices';
 import {getTodayDateString} from '../utils/helpers';
 
@@ -57,23 +56,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
         console.log('🚀 Starting splash screen initialization...');
 
         // Start all critical data loading in parallel
-        const [authResult, , , prayerData] = await Promise.all([
+        const [authResult] = await Promise.all([
           userService.isAuthenticated(),
-          // Preload critical data during splash
-          initializePrayerTimesDatabase(),
+
           userService.initializeIfNeeded(),
-          // Preload and cache today's prayer times
-          getPrayerTimesForDate(getTodayDateString()),
+
           // Minimum splash duration to show logo animation
           new Promise(resolve => setTimeout(resolve, 1800)),
         ]);
-
-        // Cache prayer data globally for immediate access
-        if (prayerData) {
-          (global as any).cachedTodayPrayerTimes = prayerData;
-        }
-
-        console.log('✅ Splash screen initialization completed');
         onAuthCheck(authResult);
       } catch (error) {
         console.error('Error during splash initialization:', error);
