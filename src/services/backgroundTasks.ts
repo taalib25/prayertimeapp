@@ -22,10 +22,10 @@ export const initializeUserBackgroundTasks = async (
     await permissionInitializer.initializeAppPermissions();
 
     // 2. Initialize services in parallel for better performance
-    const [notificationService, preferencesService] = await Promise.all([
-      UnifiedNotificationService.getInstance()
-        .initialize()
-        .then(() => UnifiedNotificationService.getInstance()),
+    const [preferencesService] = await Promise.all([
+      // UnifiedNotificationService.getInstance()
+      //   .initialize()
+      //   .then(() => UnifiedNotificationService.getInstance()),
       UserPreferencesService.getInstance(),
     ]);
 
@@ -34,44 +34,17 @@ export const initializeUserBackgroundTasks = async (
 
     // 4. Schedule daily prayer notifications
     const today = getTodayDateString();
-    await notificationService.scheduleDailyPrayerNotifications(uid, today);
+    // await notificationService.scheduleDailyPrayerNotifications(uid, today);
 
     // 5. Mark as initialized with timestamp
-    await AsyncStorage.setItem(
-      `notification_services_init_${uid}`,
-      Date.now().toString(),
-    );
+    // await AsyncStorage.setItem(
+    //   `notification_services_init_${uid}`,
+    //   Date.now().toString(),
+    // );
 
     console.log(`✅ Background services initialized for user ${uid}`);
   } catch (error) {
     console.error('❌ Error initializing background services:', error);
     // Don't throw here to prevent cascading failures
-  }
-};
-
-/**
- * Check if background tasks are healthy
- */
-export const checkBackgroundTasksHealth = async (
-  uid: number,
-): Promise<boolean> => {
-  try {
-    const lastInit = await AsyncStorage.getItem(
-      `notification_services_init_${uid}`,
-    );
-
-    if (!lastInit) {
-      return false;
-    }
-
-    const lastInitTime = parseInt(lastInit);
-    const now = Date.now();
-    const hoursSinceInit = (now - lastInitTime) / (1000 * 60 * 60);
-
-    // Consider healthy if initialized within last 24 hours
-    return hoursSinceInit < 24;
-  } catch (error) {
-    console.error('Error checking background task health:', error);
-    return false;
   }
 };
