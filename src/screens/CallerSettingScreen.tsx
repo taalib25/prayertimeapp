@@ -14,10 +14,8 @@ import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useUser} from '../hooks/useUser';
 import UnifiedNotificationService from '../services/CallerServices';
-import {getPrayerTimesForDate} from '../services/db/PrayerServices';
-import {getTodayDateString, getTomorrowDateString} from '../utils/helpers';
+import {getTomorrowDateString} from '../utils/helpers';
 import UserService from '../services/UserService';
-import {PrayerTime} from '../utils/types';
 
 interface CallerSettingScreenProps {
   navigation: any;
