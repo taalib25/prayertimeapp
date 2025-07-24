@@ -15,7 +15,9 @@ import {typography} from '../utils/typography';
 import {useUser} from '../hooks/useUser';
 import UnifiedNotificationService from '../services/CallerServices';
 import {getPrayerTimesForDate} from '../services/db/PrayerServices';
-import {getTodayDateString} from '../utils/helpers';
+import {getTodayDateString, getTomorrowDateString} from '../utils/helpers';
+import UserService from '../services/UserService';
+import {PrayerTime} from '../utils/types';
 
 interface CallerSettingScreenProps {
   navigation: any;
@@ -33,9 +35,14 @@ const TIMING_OPTIONS = [
   {label: 'After', value: 'after'},
 ];
 
-const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) => {
+const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
+  navigation,
+}) => {
   const {systemData, updateSystemData} = useUser();
-  
+  const userService = UserService.getInstance();
+  const tommorrowDate = getTomorrowDateString();
+  const fajr = userService.getPrayerTimesForDate(tommorrowDate!);
+
   // Consolidated state
   const [state, setState] = useState({
     fajrCallEnabled: false,
@@ -46,7 +53,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
     showTimingDropdown: false,
     isAlarmSet: false,
     scheduledReminderTime: '',
-    currentFajrTime: '05:30',
+    currentFajrTime: '04:30',
   });
 
   useEffect(() => {
@@ -60,10 +67,16 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
   const loadTodayFajrTime = async () => {
     try {
-      const todayDate = getTodayDateString();
-      const prayerTimes = await getPrayerTimesForDate(todayDate);
-      if (prayerTimes?.fajr) {
-        updateState({currentFajrTime: prayerTimes.fajr});
+      const prayerTimesData = await userService.getPrayerTimesForDate(
+        tommorrowDate!,
+      );
+
+      if (prayerTimesData) {
+        if (prayerTimesData.fajr) {
+          console.log('Fajr time for tomorrow:', prayerTimesData.fajr);
+           updateState({currentFajrTime: prayerTimesData.fajr});
+          return prayerTimesData.fajr;
+        }
       }
     } catch (error) {
       console.error('Error loading Fajr time:', error);
@@ -73,14 +86,16 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
   const loadSettings = async () => {
     try {
       const isEnabled = Boolean(systemData?.callPreference);
-      
-      const duration = DURATION_OPTIONS.find(
-        opt => opt.value === systemData?.fajrReminderDuration
-      ) || DURATION_OPTIONS[1];
-      
-      const timing = TIMING_OPTIONS.find(
-        opt => opt.value === systemData?.fajrReminderTiming
-      ) || TIMING_OPTIONS[0];
+
+      const duration =
+        DURATION_OPTIONS.find(
+          opt => opt.value === systemData?.fajrReminderDuration,
+        ) || DURATION_OPTIONS[1];
+
+      const timing =
+        TIMING_OPTIONS.find(
+          opt => opt.value === systemData?.fajrReminderTiming,
+        ) || TIMING_OPTIONS[0];
 
       updateState({
         fajrCallEnabled: isEnabled,
@@ -98,7 +113,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
     try {
       updateState({fajrCallEnabled: value});
       await updateSystemData({callPreference: value});
-      
+
       if (!value) {
         // Reset everything when disabling
         updateState({
@@ -107,9 +122,11 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
           isAlarmSet: false,
           scheduledReminderTime: '',
         });
-        
+
         const notificationService = UnifiedNotificationService.getInstance();
         await notificationService.cancelFajrFakeCalls();
+      } else {
+        rescheduleAlarm();
       }
     } catch (error) {
       console.error('Error saving caller settings:', error);
@@ -117,7 +134,10 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
     }
   };
 
-  const handleDropdownChange = async (type: 'duration' | 'timing', option: any) => {
+  const handleDropdownChange = async (
+    type: 'duration' | 'timing',
+    option: any,
+  ) => {
     try {
       if (type === 'duration') {
         updateState({
@@ -145,7 +165,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
   const rescheduleAlarm = async () => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
-      
+
       // Cancel existing alarm
       await notificationService.cancelFajrFakeCalls();
 
@@ -156,11 +176,11 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
       // Calculate new reminder time using existing logic
       const reminderTime = calculatePreviewTime();
-      
+
       // Schedule new alarm with simplified API - just pass the reminder time
       const callId = await notificationService.scheduleFajrFakeCall(
         reminderTime,
-        state.currentFajrTime
+        state.currentFajrTime,
       );
 
       if (callId) {
@@ -171,7 +191,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
         // Show brief confirmation
         Alert.alert(
-          'Wake-Up Call Updated ✅',
+          'Wake-Up Call Updated ',
           `Your wake-up call has been rescheduled for ${reminderTime}`,
           [{text: 'OK', style: 'default'}],
         );
@@ -184,7 +204,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
   const toggleDropdown = (type: 'duration' | 'timing') => {
     if (!state.fajrCallEnabled) return;
-    
+
     if (type === 'duration') {
       updateState({
         showDurationDropdown: !state.showDurationDropdown,
@@ -202,9 +222,10 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
     const [hours, minutes] = state.currentFajrTime.split(':').map(Number);
     const fajrMinutes = hours * 60 + minutes;
 
-    let reminderMinutes = state.selectedTiming.value === 'before'
-      ? fajrMinutes - state.selectedDuration.value
-      : fajrMinutes + state.selectedDuration.value;
+    let reminderMinutes =
+      state.selectedTiming.value === 'before'
+        ? fajrMinutes - state.selectedDuration.value
+        : fajrMinutes + state.selectedDuration.value;
 
     // Handle day overflow/underflow
     if (reminderMinutes < 0) reminderMinutes += 24 * 60;
@@ -212,20 +233,18 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
     const reminderHours = Math.floor(reminderMinutes / 60);
     const reminderMins = reminderMinutes % 60;
-
-    return `${reminderHours.toString().padStart(2, '0')}:${reminderMins.toString().padStart(2, '0')}`;
-  };
-
-  const handleSetCallAlarm = async () => {
-    // This function is no longer needed but kept for reference
-    // All alarm scheduling is now handled automatically
+    return `${reminderHours.toString().padStart(2, '0')}:${reminderMins
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   const renderDropdown = (type: 'duration' | 'timing') => {
     const isDuration = type === 'duration';
     const options = isDuration ? DURATION_OPTIONS : TIMING_OPTIONS;
     const selected = isDuration ? state.selectedDuration : state.selectedTiming;
-    const showDropdown = isDuration ? state.showDurationDropdown : state.showTimingDropdown;
+    const showDropdown = isDuration
+      ? state.showDurationDropdown
+      : state.showTimingDropdown;
 
     return (
       <View style={[styles.settingItem, {position: 'relative'}]}>
@@ -234,25 +253,32 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
             {isDuration ? 'Reminder Duration' : 'Timing'}
           </Text>
           <Text style={styles.settingDescription}>
-            {isDuration 
+            {isDuration
               ? 'How long before/after Fajr should the reminder be triggered'
-              : 'When should the reminder be triggered relative to Fajr time'
-            }
+              : 'When should the reminder be triggered relative to Fajr time'}
           </Text>
         </View>
-        
+
         <TouchableOpacity
-          style={[styles.dropdown, !state.fajrCallEnabled && styles.dropdownDisabled]}
+          style={[
+            styles.dropdown,
+            !state.fajrCallEnabled && styles.dropdownDisabled,
+          ]}
           onPress={() => toggleDropdown(type)}
           disabled={!state.fajrCallEnabled}>
-          <Text style={[styles.dropdownText, !state.fajrCallEnabled && styles.dropdownTextDisabled]}>
+          <Text
+            style={[
+              styles.dropdownText,
+              !state.fajrCallEnabled && styles.dropdownTextDisabled,
+            ]}>
             {selected.label}
           </Text>
-          <Text style={[
-            styles.dropdownArrow,
-            !state.fajrCallEnabled && styles.dropdownTextDisabled,
-            showDropdown && styles.dropdownArrowUp,
-          ]}>
+          <Text
+            style={[
+              styles.dropdownArrow,
+              !state.fajrCallEnabled && styles.dropdownTextDisabled,
+              showDropdown && styles.dropdownArrowUp,
+            ]}>
             ▼
           </Text>
         </TouchableOpacity>
@@ -269,10 +295,12 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
                     index === options.length - 1 && styles.lastDropdownOption,
                   ]}
                   onPress={() => handleDropdownChange(type, option)}>
-                  <Text style={[
-                    styles.dropdownOptionText,
-                    selected.value === option.value && styles.selectedOptionText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.dropdownOptionText,
+                      selected.value === option.value &&
+                        styles.selectedOptionText,
+                    ]}>
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -302,7 +330,9 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}>
           <SvgIcon name="backBtn" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Caller Settings</Text>
@@ -311,12 +341,11 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Call Time Info - Only show when alarm is set */}
-        {state.fajrCallEnabled && state.isAlarmSet && state.scheduledReminderTime && (
+        {/* Call Time Info - Always show when Fajr is enabled */}
+        {state.fajrCallEnabled && (
           <View style={styles.callInfoSection}>
             <View style={styles.callInfoCard}>
-              <Text style={styles.callInfoTitle}>✅ Wake-Up Call Active</Text>
-              <Text style={styles.callInfoTime}>{state.scheduledReminderTime}</Text>
+              <Text style={styles.callInfoTime}>{calculatePreviewTime()}</Text>
               <Text style={styles.callInfoDescription}>
                 Your wake-up call is scheduled for this time
               </Text>
@@ -326,7 +355,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
 
         <View style={styles.settingSection}>
           <Text style={styles.sectionTitle}>Prayer Call Settings</Text>
-          
+
           {/* Fajr Call Toggle */}
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
@@ -351,17 +380,16 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) =
           {renderDropdown('timing')}
         </View>
 
-
-
         {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>💡 How Wake-Up Calls Work</Text>
             <Text style={styles.infoText}>
               {state.fajrCallEnabled
-                ? `The app will automatically schedule a fake incoming call to help you wake up for Fajr prayer. The call will bypass silent mode and appear even when your phone is locked. Current settings: ${state.selectedDuration.label} ${state.selectedTiming.label.toLowerCase()} Fajr${state.isAlarmSet ? ` - scheduled for ${state.scheduledReminderTime}` : ''}.`
-                : 'Enable Fajr calls to receive a wake-up notification that looks like an incoming call. This helps ensure you wake up for the morning prayer, even in silent mode. The alarm will be automatically scheduled when you enable this feature.'
-              }
+                ? `The app automatically schedules a fake incoming call to help you wake up for Fajr prayer. Current settings: ${
+                    state.selectedDuration.label
+                  } ${state.selectedTiming.label.toLowerCase()} Fajr - scheduled for ${calculatePreviewTime()}.`
+                : 'Enable Fajr calls to receive a wake-up notification that looks like an incoming call. This helps ensure you wake up for the morning prayer, even in silent mode. The alarm will be automatically scheduled when you enable this feature.'}
             </Text>
           </View>
         </View>
@@ -549,17 +577,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: '600',
     marginBottom: 8,
-    fontSize: 16,
+    fontSize: 17,
   },
   callInfoTime: {
     ...typography.h1,
-    color: '#FFF',
-    fontSize: 32,
-    marginBottom: 8,
+   color: '#FFF',
+    fontSize: 52,
+    paddingVertical: 14,
   },
   callInfoDescription: {
     ...typography.bodySmall,
-    color: '#FFF',
+ 
+      color: '#e4f4e4ff',
     textAlign: 'center',
     opacity: 0.9,
   },

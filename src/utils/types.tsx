@@ -31,3 +31,10 @@ export interface PrayerNotification {
 
 export type PrayerName = 'fajr' | 'luhr' | 'asr' | 'magrib' | 'isha';
 
+
+export interface PrayerTime {
+  name: string;
+  displayName: string;
+  time: string;
+  isActive?: boolean;
+}
