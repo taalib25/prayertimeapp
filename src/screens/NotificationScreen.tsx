@@ -12,107 +12,23 @@ import {
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
 import MeetingCard from '../components/MeetingCard';
-import UnifiedNotificationService from '../services/UnifiedNotificationService';
+import UnifiedNotificationService from '../services/CallerServices';
+import FakeCallerNotificationService from '../services/notifications/fakeCallerService';
 
 const NotificationScreen: React.FC = () => {
   // Sample data for the meeting cards with enhanced icons support
-  const personalizedMeeting = {
-    title: 'Personalized Meeting',
-    subtitle: '3 Days Remaining',
-    persons: [
-      {name: 'Ahmed Al-Rashid', phone: '07712345698', completed: false},
-      {name: 'Hassan Ibrahim', phone: '07712345699', completed: true},
-      {name: 'Omar Abdullah', phone: '07712345700', completed: false},
-    ],
-    stats: [
-      {label: 'Assigned', value: '3'},
-      {label: 'Completed', value: '1'},
-      {label: 'Remaining', value: '2'},
-    ],
-  };
-
-  const meetingAttendance = {
-    title: 'Meeting Attendance',
-    subtitle: 'Last 5 meetings',
-    stats: [
-      {label: 'Attended', value: '4'},
-      {label: 'Absent', value: '1'},
-      {label: 'Completion Rate', value: '80%'},
-    ],
-  };
-
-  const handlePersonPress = (person: any, index: number) => {
-    console.log(`Pressed person ${index + 1}: ${person.phone}`);
-  };
+  const notificationService = UnifiedNotificationService.getInstance();
 
   // Test fake call notification (fullscreen)
-  const testFakeCallNotification = async () => {
+  const callNotification = async () => {
     try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTestFakeCall(1001, 5);
+      await notificationService.scheduleTestFakeCall();
       Alert.alert(
         'Fake Call Scheduled ✅',
         'Fake call notification will appear in 5 seconds and should bypass DND/Silent mode!',
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to schedule fake call notification');
-    }
-  };
-
-  // Test prayer notifications for today
-  const testPrayerNotifications = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleTodayPrayerNotifications(1001);
-
-      Alert.alert(
-        'Prayer Notifications Scheduled ✅',
-        'Prayer notifications have been scheduled for today based on your settings!',
-      );
-    } catch (error: any) {
-      console.error('Prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule prayer notifications: ${error?.message || error}`,
-      );
-    }
-  };
-
-  // Test simple notification
-  const testSimpleNotification = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-
-      const result = await notificationService.scheduleCustomNotification(
-        1001,
-        5,
-      );
-
-    } catch (error: any) {
-      console.error('Test notification error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to schedule test notification: ${error?.message || error}`,
-      );
-    }
-  };
-
-  // Replace scheduleWeeklyPrayers function with this:
-  const initializeDailyPrayers = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.scheduleDailyPrayerNotifications(1001);
-
-      Alert.alert(
-        'Daily Prayer Notifications Set ✅',
-        'Prayer notifications are now scheduled with daily repeat. They will automatically update when prayer times change!',
-      );
-    } catch (error: any) {
-      console.error('Daily prayer notifications error:', error);
-      Alert.alert(
-        'Error',
-        `Failed to setup daily prayers: ${error?.message || error}`,
-      );
     }
   };
 
@@ -168,16 +84,8 @@ const NotificationScreen: React.FC = () => {
             </Text>
           </TouchableOpacity> */}
           <TouchableOpacity
-            style={[styles.testButton, styles.standardButton]}
-            onPress={testSimpleNotification}>
-            <Text style={styles.testButtonText}>Try Simple Notification</Text>
-            <Text style={styles.testButtonSubtext}>
-              Standard notification in 5 seconds
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
             style={[styles.testButton, styles.fakeCallButton]}
-            onPress={testFakeCallNotification}>
+            onPress={callNotification}>
             <Text style={styles.testButtonText}>Try Fake Call</Text>
             <Text style={styles.testButtonSubtext}>
               Fake call notification in 5 seconds

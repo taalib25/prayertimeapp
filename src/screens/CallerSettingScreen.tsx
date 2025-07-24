@@ -13,7 +13,7 @@ import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useUser} from '../hooks/useUser';
-import UnifiedNotificationService from '../services/UnifiedNotificationService';
+import UnifiedNotificationService from '../services/CallerServices';
 import {getPrayerTimesForDate} from '../services/db/PrayerServices';
 import {getTodayDateString} from '../utils/helpers';
 
@@ -21,7 +21,6 @@ interface CallerSettingScreenProps {
   navigation: any;
 }
 
-// Duration options for reminders
 const DURATION_OPTIONS = [
   {label: '5 minutes', value: 5},
   {label: '10 minutes', value: 10},
@@ -29,278 +28,263 @@ const DURATION_OPTIONS = [
   {label: '20 minutes', value: 20},
 ];
 
-// Before/After options
 const TIMING_OPTIONS = [
   {label: 'Before', value: 'before'},
   {label: 'After', value: 'after'},
 ];
 
-const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
-  navigation,
-}) => {
+const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({navigation}) => {
   const {systemData, updateSystemData} = useUser();
-  const [fajrCallEnabled, setFajrCallEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedDuration, setSelectedDuration] = useState(DURATION_OPTIONS[1]); // Default: 10 minutes
-  const [selectedTiming, setSelectedTiming] = useState(TIMING_OPTIONS[0]); // Default: Before
-  const [showDurationDropdown, setShowDurationDropdown] = useState(false);
-  const [showTimingDropdown, setShowTimingDropdown] = useState(false);
-  const [showSetAlarmButton, setShowSetAlarmButton] = useState(false);
-  const [isAlarmSet, setIsAlarmSet] = useState(false);
-  const [scheduledReminderTime, setScheduledReminderTime] = useState('');
-  const [currentFajrTime, setCurrentFajrTime] = useState('05:30'); // Default fallback
+  
+  // Consolidated state
+  const [state, setState] = useState({
+    fajrCallEnabled: false,
+    isLoading: true,
+    selectedDuration: DURATION_OPTIONS[1], // Default: 10 minutes
+    selectedTiming: TIMING_OPTIONS[0], // Default: Before
+    showDurationDropdown: false,
+    showTimingDropdown: false,
+    isAlarmSet: false,
+    scheduledReminderTime: '',
+    currentFajrTime: '05:30',
+  });
 
   useEffect(() => {
     loadSettings();
     loadTodayFajrTime();
   }, [systemData]);
 
+  const updateState = (updates: Partial<typeof state>) => {
+    setState(prev => ({...prev, ...updates}));
+  };
+
   const loadTodayFajrTime = async () => {
     try {
       const todayDate = getTodayDateString();
       const prayerTimes = await getPrayerTimesForDate(todayDate);
-      if (prayerTimes && prayerTimes.fajr) {
-        setCurrentFajrTime(prayerTimes.fajr);
+      if (prayerTimes?.fajr) {
+        updateState({currentFajrTime: prayerTimes.fajr});
       }
     } catch (error) {
       console.error('Error loading Fajr time:', error);
     }
   };
+
   const loadSettings = async () => {
     try {
-      if (
-        systemData?.callPreference !== null &&
-        systemData?.callPreference !== undefined
-      ) {
-        const isEnabled = Boolean(systemData.callPreference);
-        setFajrCallEnabled(isEnabled);
-        setShowSetAlarmButton(isEnabled);
-      } else {
-        // First time user or no preference set yet - default to false
-        setFajrCallEnabled(false);
-        setShowSetAlarmButton(false);
-      }
+      const isEnabled = Boolean(systemData?.callPreference);
+      
+      const duration = DURATION_OPTIONS.find(
+        opt => opt.value === systemData?.fajrReminderDuration
+      ) || DURATION_OPTIONS[1];
+      
+      const timing = TIMING_OPTIONS.find(
+        opt => opt.value === systemData?.fajrReminderTiming
+      ) || TIMING_OPTIONS[0];
 
-      // Load duration and timing settings from system data with defaults
-      if (
-        systemData?.fajrReminderDuration !== null &&
-        systemData?.fajrReminderDuration !== undefined
-      ) {
-        const duration =
-          DURATION_OPTIONS.find(
-            opt => opt.value === systemData.fajrReminderDuration,
-          ) || DURATION_OPTIONS[1];
-        setSelectedDuration(duration);
-      } else {
-        // Set default duration if not found
-        setSelectedDuration(DURATION_OPTIONS[1]); // Default: 10 minutes
-      }
-
-      if (
-        systemData?.fajrReminderTiming !== null &&
-        systemData?.fajrReminderTiming !== undefined
-      ) {
-        const timing =
-          TIMING_OPTIONS.find(
-            opt => opt.value === systemData.fajrReminderTiming,
-          ) || TIMING_OPTIONS[0];
-        setSelectedTiming(timing);
-      } else {
-        // Set default timing if not found
-        setSelectedTiming(TIMING_OPTIONS[0]); // Default: Before
-      }
+      updateState({
+        fajrCallEnabled: isEnabled,
+        selectedDuration: duration,
+        selectedTiming: timing,
+        isLoading: false,
+      });
     } catch (error) {
       console.error('Error loading caller settings:', error);
-    } finally {
-      setIsLoading(false);
+      updateState({isLoading: false});
     }
   };
 
   const toggleFajrCall = async (value: boolean) => {
     try {
-      setFajrCallEnabled(value);
-      await updateSystemData({callPreference: value}); // Close dropdowns when disabling Fajr call
+      updateState({fajrCallEnabled: value});
+      await updateSystemData({callPreference: value});
+      
       if (!value) {
-        setShowDurationDropdown(false);
-        setShowTimingDropdown(false);
-        setShowSetAlarmButton(false); // Hide set alarm button when disabled
-        setIsAlarmSet(false); // Reset alarm status
-        setScheduledReminderTime(''); // Clear scheduled time
-
-        // Cancel any existing Fajr fake calls when disabling
+        // Reset everything when disabling
+        updateState({
+          showDurationDropdown: false,
+          showTimingDropdown: false,
+          isAlarmSet: false,
+          scheduledReminderTime: '',
+        });
+        
         const notificationService = UnifiedNotificationService.getInstance();
         await notificationService.cancelFajrFakeCalls();
-        console.log(
-          'Cancelled existing Fajr fake calls due to preference change',
-        );
-      } else {
-        setShowSetAlarmButton(true); // Show set alarm button when enabled
       }
     } catch (error) {
       console.error('Error saving caller settings:', error);
-      // Revert the UI state if save failed
-      setFajrCallEnabled(!value);
+      updateState({fajrCallEnabled: !value});
     }
   };
-  const saveDuration = async (duration: (typeof DURATION_OPTIONS)[0]) => {
+
+  const handleDropdownChange = async (type: 'duration' | 'timing', option: any) => {
     try {
-      setSelectedDuration(duration);
-      await updateSystemData({fajrReminderDuration: duration.value});
-      toggleDurationDropdown();
+      if (type === 'duration') {
+        updateState({
+          selectedDuration: option,
+          showDurationDropdown: false,
+        });
+        await updateSystemData({fajrReminderDuration: option.value});
+      } else {
+        updateState({
+          selectedTiming: option,
+          showTimingDropdown: false,
+        });
+        await updateSystemData({fajrReminderTiming: option.value});
+      }
 
-      // Show set alarm button when user makes changes (even if alarm was previously set)
-      setShowSetAlarmButton(true);
-
-      // Reset alarm status since settings changed - user needs to set alarm again
-      if (isAlarmSet) {
-        setIsAlarmSet(false);
-        setScheduledReminderTime('');
-        // Cancel existing alarm since settings changed
-        const notificationService = UnifiedNotificationService.getInstance();
-        await notificationService.cancelFajrFakeCalls();
+      // If Fajr is enabled, automatically reschedule the alarm with new settings
+      if (state.fajrCallEnabled) {
+        await rescheduleAlarm();
       }
     } catch (error) {
-      console.error('Error saving duration:', error);
+      console.error(`Error saving ${type}:`, error);
     }
   };
 
-  const saveTiming = async (timing: (typeof TIMING_OPTIONS)[0]) => {
+  const rescheduleAlarm = async () => {
     try {
-      setSelectedTiming(timing);
-      await updateSystemData({
-        fajrReminderTiming: timing.value as 'before' | 'after',
+      const notificationService = UnifiedNotificationService.getInstance();
+      
+      // Cancel existing alarm
+      await notificationService.cancelFajrFakeCalls();
+
+      if (!state.currentFajrTime) {
+        console.error('No Fajr time available for rescheduling');
+        return;
+      }
+
+      // Calculate new reminder time using existing logic
+      const reminderTime = calculatePreviewTime();
+      
+      // Schedule new alarm with simplified API - just pass the reminder time
+      const callId = await notificationService.scheduleFajrFakeCall(
+        reminderTime,
+        state.currentFajrTime
+      );
+
+      if (callId) {
+        updateState({
+          isAlarmSet: true,
+          scheduledReminderTime: reminderTime,
+        });
+
+        // Show brief confirmation
+        Alert.alert(
+          'Wake-Up Call Updated ✅',
+          `Your wake-up call has been rescheduled for ${reminderTime}`,
+          [{text: 'OK', style: 'default'}],
+        );
+      }
+    } catch (error) {
+      console.error('Error rescheduling alarm:', error);
+      Alert.alert('Error ❌', 'Failed to reschedule wake-up call.');
+    }
+  };
+
+  const toggleDropdown = (type: 'duration' | 'timing') => {
+    if (!state.fajrCallEnabled) return;
+    
+    if (type === 'duration') {
+      updateState({
+        showDurationDropdown: !state.showDurationDropdown,
+        showTimingDropdown: false,
       });
-      toggleTimingDropdown();
-
-      // Show set alarm button when user makes changes (even if alarm was previously set)
-      setShowSetAlarmButton(true);
-
-      // Reset alarm status since settings changed - user needs to set alarm again
-      if (isAlarmSet) {
-        setIsAlarmSet(false);
-        setScheduledReminderTime('');
-        // Cancel existing alarm since settings changed
-        const notificationService = UnifiedNotificationService.getInstance();
-        await notificationService.cancelFajrFakeCalls();
-      }
-    } catch (error) {
-      console.error('Error saving timing:', error);
+    } else {
+      updateState({
+        showTimingDropdown: !state.showTimingDropdown,
+        showDurationDropdown: false,
+      });
     }
   };
 
-  const toggleDurationDropdown = () => {
-    if (!fajrCallEnabled) {return;}
-    setShowDurationDropdown(!showDurationDropdown);
-    // Close timing dropdown if it's open
-    if (showTimingDropdown) {
-      setShowTimingDropdown(false);
-    }
-  };
-
-  const toggleTimingDropdown = () => {
-    if (!fajrCallEnabled) {return;}
-    setShowTimingDropdown(!showTimingDropdown);
-    // Close duration dropdown if it's open
-    if (showDurationDropdown) {
-      setShowDurationDropdown(false);
-    }
-  }; // Calculate reminder time for preview using actual Fajr time
   const calculatePreviewTime = () => {
-    const [hours, minutes] = currentFajrTime.split(':').map(Number);
+    const [hours, minutes] = state.currentFajrTime.split(':').map(Number);
     const fajrMinutes = hours * 60 + minutes;
 
-    let reminderMinutes;
-    if (selectedTiming.value === 'before') {
-      reminderMinutes = fajrMinutes - selectedDuration.value;
-    } else {
-      reminderMinutes = fajrMinutes + selectedDuration.value;
-    }
+    let reminderMinutes = state.selectedTiming.value === 'before'
+      ? fajrMinutes - state.selectedDuration.value
+      : fajrMinutes + state.selectedDuration.value;
 
     // Handle day overflow/underflow
-    if (reminderMinutes < 0) {
-      reminderMinutes += 24 * 60;
-    } else if (reminderMinutes >= 24 * 60) {
-      reminderMinutes -= 24 * 60;
-    }
+    if (reminderMinutes < 0) reminderMinutes += 24 * 60;
+    else if (reminderMinutes >= 24 * 60) reminderMinutes -= 24 * 60;
 
     const reminderHours = Math.floor(reminderMinutes / 60);
     const reminderMins = reminderMinutes % 60;
 
-    return `${reminderHours.toString().padStart(2, '0')}:${reminderMins
-      .toString()
-      .padStart(2, '0')}`;
-  }; // Get button text with preview time
-  const getSetAlarmButtonText = () => {
-    const previewTime = calculatePreviewTime();
-    return `Set Wake-Up Call to ${previewTime} 📞`;
+    return `${reminderHours.toString().padStart(2, '0')}:${reminderMins.toString().padStart(2, '0')}`;
   };
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
   const handleSetCallAlarm = async () => {
-    try {
-      const notificationService = UnifiedNotificationService.getInstance();
-
-      // Cancel any existing Fajr fake calls first
-      await notificationService.cancelFajrFakeCalls();
-
-      // Use current Fajr time that's already loaded
-      if (!currentFajrTime) {
-        Alert.alert(
-          'Error ❌',
-          'Unable to get prayer times. Please try again.',
-          [{text: 'OK', style: 'default'}],
-        );
-        return;
-      }
-
-      // Calculate reminder time using current Fajr time
-      const reminderTime = calculatePreviewTime();
-
-      // Schedule the wake-up call
-      const callId = await notificationService.scheduleFajrFakeCall(
-        1001,
-        currentFajrTime,
-        selectedDuration.value,
-        selectedTiming.value as 'before' | 'after',
-      );
-
-      if (callId) {
-        // Mark alarm as set and hide the button
-        setIsAlarmSet(true);
-        setShowSetAlarmButton(false);
-        setScheduledReminderTime(reminderTime);
-
-        Alert.alert(
-          'Wake-Up Call Scheduled ✅',
-          `Your wake-up call is set for ${reminderTime}!\n\nSettings: ${
-            selectedDuration.label
-          } ${selectedTiming.label.toLowerCase()} Fajr (${currentFajrTime})`,
-          [{text: 'OK', style: 'default'}],
-        );
-
-        // Save settings
-        await updateSystemData({
-          fajrReminderDuration: selectedDuration.value,
-          fajrReminderTiming: selectedTiming.value as 'before' | 'after',
-        });
-
-        console.log('Call alarm set for:', reminderTime);
-      } else {
-        throw new Error('Failed to schedule wake-up call');
-      }
-    } catch (error) {
-      console.error('Error setting call alarm:', error);
-      Alert.alert(
-        'Error ❌',
-        'Failed to schedule wake-up call. Please try again.',
-        [{text: 'OK', style: 'default'}],
-      );
-    }
+    // This function is no longer needed but kept for reference
+    // All alarm scheduling is now handled automatically
   };
 
-  if (isLoading) {
+  const renderDropdown = (type: 'duration' | 'timing') => {
+    const isDuration = type === 'duration';
+    const options = isDuration ? DURATION_OPTIONS : TIMING_OPTIONS;
+    const selected = isDuration ? state.selectedDuration : state.selectedTiming;
+    const showDropdown = isDuration ? state.showDurationDropdown : state.showTimingDropdown;
+
+    return (
+      <View style={[styles.settingItem, {position: 'relative'}]}>
+        <View style={styles.settingInfo}>
+          <Text style={styles.settingTitle}>
+            {isDuration ? 'Reminder Duration' : 'Timing'}
+          </Text>
+          <Text style={styles.settingDescription}>
+            {isDuration 
+              ? 'How long before/after Fajr should the reminder be triggered'
+              : 'When should the reminder be triggered relative to Fajr time'
+            }
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={[styles.dropdown, !state.fajrCallEnabled && styles.dropdownDisabled]}
+          onPress={() => toggleDropdown(type)}
+          disabled={!state.fajrCallEnabled}>
+          <Text style={[styles.dropdownText, !state.fajrCallEnabled && styles.dropdownTextDisabled]}>
+            {selected.label}
+          </Text>
+          <Text style={[
+            styles.dropdownArrow,
+            !state.fajrCallEnabled && styles.dropdownTextDisabled,
+            showDropdown && styles.dropdownArrowUp,
+          ]}>
+            ▼
+          </Text>
+        </TouchableOpacity>
+
+        {showDropdown && (
+          <View style={styles.dropdownWrapper}>
+            <View style={styles.dropdownOptions}>
+              {options.map((option, index) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.dropdownOption,
+                    selected.value === option.value && styles.selectedOption,
+                    index === options.length - 1 && styles.lastDropdownOption,
+                  ]}
+                  onPress={() => handleDropdownChange(type, option)}>
+                  <Text style={[
+                    styles.dropdownOptionText,
+                    selected.value === option.value && styles.selectedOptionText,
+                  ]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  if (state.isLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -310,13 +294,15 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     );
   }
 
+  const previewTime = calculatePreviewTime();
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <SvgIcon name="backBtn" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Caller Settings</Text>
@@ -325,20 +311,23 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
 
       {/* Content */}
       <View style={styles.content}>
-        {/* Call Time Info - Green Box - Only show when alarm is actually set */}
-        {fajrCallEnabled && isAlarmSet && scheduledReminderTime && (
+        {/* Call Time Info - Only show when alarm is set */}
+        {state.fajrCallEnabled && state.isAlarmSet && state.scheduledReminderTime && (
           <View style={styles.callInfoSection}>
             <View style={styles.callInfoCard}>
               <Text style={styles.callInfoTitle}>✅ Wake-Up Call Active</Text>
-              <Text style={styles.callInfoTime}>{scheduledReminderTime}</Text>
+              <Text style={styles.callInfoTime}>{state.scheduledReminderTime}</Text>
               <Text style={styles.callInfoDescription}>
                 Your wake-up call is scheduled for this time
               </Text>
             </View>
           </View>
         )}
+
         <View style={styles.settingSection}>
           <Text style={styles.sectionTitle}>Prayer Call Settings</Text>
+          
+          {/* Fajr Call Toggle */}
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingTitle}>Fajr Call</Text>
@@ -347,158 +336,32 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
               </Text>
             </View>
             <Switch
-              value={fajrCallEnabled}
+              value={state.fajrCallEnabled}
               onValueChange={toggleFajrCall}
               trackColor={{false: '#E0E0E0', true: '#4CAF50'}}
-              thumbColor={fajrCallEnabled ? '#FFF' : '#FFF'}
+              thumbColor="#FFF"
               ios_backgroundColor="#E0E0E0"
             />
           </View>
-          {/* Reminder Duration Setting */}
-          <View style={[styles.settingItem, {position: 'relative'}]}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Reminder Duration</Text>
-              <Text style={styles.settingDescription}>
-                How long before/after Fajr should the reminder be triggered
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.dropdown,
-                !fajrCallEnabled && styles.dropdownDisabled,
-              ]}
-              onPress={toggleDurationDropdown}
-              disabled={!fajrCallEnabled}>
-              <Text
-                style={[
-                  styles.dropdownText,
-                  !fajrCallEnabled && styles.dropdownTextDisabled,
-                ]}>
-                {selectedDuration.label}
-              </Text>
-              <Text
-                style={[
-                  styles.dropdownArrow,
-                  !fajrCallEnabled && styles.dropdownTextDisabled,
-                  showDurationDropdown && styles.dropdownArrowUp,
-                ]}>
-                ▼
-              </Text>
-            </TouchableOpacity>
 
-            {/* Duration Options */}
-            {showDurationDropdown && (
-              <View style={styles.dropdownWrapper}>
-                <View style={styles.dropdownOptions}>
-                  {DURATION_OPTIONS.map((option, index) => (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={[
-                        styles.dropdownOption,
-                        selectedDuration.value === option.value &&
-                          styles.selectedOption,
-                        index === DURATION_OPTIONS.length - 1 &&
-                          styles.lastDropdownOption,
-                      ]}
-                      onPress={() => saveDuration(option)}>
-                      <Text
-                        style={[
-                          styles.dropdownOptionText,
-                          selectedDuration.value === option.value &&
-                            styles.selectedOptionText,
-                        ]}>
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-          </View>
-          {/* Before/After Setting */}
-          <View style={[styles.settingItem, {position: 'relative'}]}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Timing</Text>
-              <Text style={styles.settingDescription}>
-                When should the reminder be triggered relative to Fajr time
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.dropdown,
-                !fajrCallEnabled && styles.dropdownDisabled,
-              ]}
-              onPress={toggleTimingDropdown}
-              disabled={!fajrCallEnabled}>
-              <Text
-                style={[
-                  styles.dropdownText,
-                  !fajrCallEnabled && styles.dropdownTextDisabled,
-                ]}>
-                {selectedTiming.label}
-              </Text>
-              <Text
-                style={[
-                  styles.dropdownArrow,
-                  !fajrCallEnabled && styles.dropdownTextDisabled,
-                  showTimingDropdown && styles.dropdownArrowUp,
-                ]}>
-                ▼
-              </Text>
-            </TouchableOpacity>
+          {/* Duration Dropdown */}
+          {renderDropdown('duration')}
 
-            {/* Timing Options */}
-            {showTimingDropdown && (
-              <View style={styles.dropdownWrapper}>
-                <View style={styles.dropdownOptions}>
-                  {TIMING_OPTIONS.map((option, index) => (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={[
-                        styles.dropdownOption,
-                        selectedTiming.value === option.value &&
-                          styles.selectedOption,
-                        index === TIMING_OPTIONS.length - 1 &&
-                          styles.lastDropdownOption,
-                      ]}
-                      onPress={() => saveTiming(option)}>
-                      <Text
-                        style={[
-                          styles.dropdownOptionText,
-                          selectedTiming.value === option.value &&
-                            styles.selectedOptionText,
-                        ]}>
-                        {option.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-          </View>
+          {/* Timing Dropdown */}
+          {renderDropdown('timing')}
         </View>
-        {/* Set Call Alarm Button */}
-        {fajrCallEnabled && showSetAlarmButton && (
-          <View style={styles.setAlarmSection}>
-            <TouchableOpacity
-              style={styles.setAlarmButton}
-              onPress={handleSetCallAlarm}>
-              <Text style={styles.setAlarmButtonText}>
-                {getSetAlarmButtonText()}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+
+
+
         {/* Info Section */}
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>💡 How Wake-Up Calls Work</Text>
             <Text style={styles.infoText}>
-              {fajrCallEnabled
-                ? `When enabled, the app will show a fake incoming call to help you wake up for Fajr prayer. The call will bypass silent mode and appear even when your phone is locked. Your current settings: ${
-                    selectedDuration.label
-                  } ${selectedTiming.label.toLowerCase()} Fajr.`
-                : 'Enable Fajr calls to receive a wake-up notification that looks like an incoming call. This helps ensure you wake up for the morning prayer, even in silent mode.'}
+              {state.fajrCallEnabled
+                ? `The app will automatically schedule a fake incoming call to help you wake up for Fajr prayer. The call will bypass silent mode and appear even when your phone is locked. Current settings: ${state.selectedDuration.label} ${state.selectedTiming.label.toLowerCase()} Fajr${state.isAlarmSet ? ` - scheduled for ${state.scheduledReminderTime}` : ''}.`
+                : 'Enable Fajr calls to receive a wake-up notification that looks like an incoming call. This helps ensure you wake up for the morning prayer, even in silent mode. The alarm will be automatically scheduled when you enable this feature.'
+              }
             </Text>
           </View>
         </View>
@@ -541,7 +404,7 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
     textAlign: 'center',
-    marginRight: 32, // Compensate for back button width
+    marginRight: 32,
   },
   headerSpacer: {
     width: 32,
@@ -554,7 +417,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 80, // Increased margin to provide space for dropdowns
+    marginBottom: 80,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,

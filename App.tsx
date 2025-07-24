@@ -23,10 +23,10 @@ import DatabaseScreen from './src/screens/DatabaseScreen';
 // Services & Context
 import {DatabaseProvider} from './src/services/db/databaseProvider';
 import {AuthProvider, useAuth} from './src/contexts/AuthContext';
-import {initializeUserBackgroundTasks} from './src/services/backgroundTasks';
 import {colors} from './src/utils/theme';
 import PrayerTimeService from './src/services/notifications/prayerTimeService';
 import NotificationService from './src/services/notifications/notificationServices';
+import PermissionInitializer from './src/services/PermissionInitializer';
 
 // Types
 export type RootStackParamList = {
@@ -75,7 +75,8 @@ function AppNavigator() {
   // Initialize app on mount
   useEffect(() => {
     initializeApp();
-    setupAppStateListener();
+    const cleanup = setupAppStateListener();
+    return cleanup; // Cleanup on unmount
   }, []);
 
   // Initialize background services when authenticated
@@ -87,6 +88,8 @@ function AppNavigator() {
 
   const initializeApp = async () => {
     try {
+      console.log(`📱 App launched at ${new Date().toLocaleString()}`);
+
       // Check onboarding status
       const onboardingValue = await AsyncStorage.getItem('hasSeenOnboarding');
       const hasSeenOnboarding = onboardingValue === 'true';
@@ -99,7 +102,7 @@ function AppNavigator() {
       // Check auth state
       await checkAuthState();
       
-      // 🚀 Initialize Prayer Notification Service
+      // 🚀 Initialize Prayer Notification Service with enhanced logic
       await initializePrayerNotifications();
       
       setAppState(prev => ({
@@ -108,7 +111,7 @@ function AppNavigator() {
         isReady: true,
       }));
     } catch (error) {
-      console.error('App initialization error:', error);
+      console.error('❌ App initialization error:', error);
       setAppState(prev => ({
         ...prev,
         hasSeenOnboarding: false,
@@ -120,52 +123,99 @@ function AppNavigator() {
 
   const initializePrayerNotifications = async () => {
     try {
-      // 🚀 PRIMARY ENTRY POINT - Sets up the entire prayer notification chain
-      const count = await PrayerTimeService.setupPerpetualChain();
-      setScheduledCount(count);
+      // 🔍 Smart initialization - check if notifications are properly set up
+      const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
+      
+      if (!isProperlySetup) {
+        console.log('🔧 Prayers not properly set up, initializing complete chain...');
+        const count = await PrayerTimeService.setupPerpetualChain();
+        setScheduledCount(count);
+        console.log(`✅ Prayer notifications initialized with ${count} notifications`);
+        
+        // Log what was scheduled for debugging
+        const remaining = await NotificationService.getScheduledNotifications();
+        const todayCount = remaining.filter(n => {
+          const notifDate = new Date(n.trigger.timestamp);
+          const today = new Date();
+          return notifDate.toDateString() === today.toDateString();
+        }).length;
+        console.log(`📅 Scheduled: ${todayCount} for today, ${count - todayCount} for future days`);
+        
+      } else {
+        console.log('✅ Prayer notifications already properly set up');
+        const existing = await NotificationService.getScheduledNotifications();
+        setScheduledCount(existing.length);
+      }
+
       setAppState(prev => ({
         ...prev,
         isNotificationInitialized: true,
       }));
-      console.log(`✅ Prayer notifications initialized with ${count} notifications`);
+
     } catch (error) {
       console.error('❌ Prayer notification initialization failed:', error);
+      // Try fallback initialization
+      try {
+        console.log('🔄 Attempting fallback initialization...');
+        const count = await PrayerTimeService.setupPerpetualChain();
+        setScheduledCount(count);
+        setAppState(prev => ({
+          ...prev,
+          isNotificationInitialized: true,
+        }));
+        console.log(`✅ Fallback initialization successful: ${count} notifications`);
+      } catch (fallbackError) {
+        console.error('❌ Fallback initialization also failed:', fallbackError);
+      }
     }
   };
 
   const initializeAuthenticatedServices = async () => {
     try {
-      console.log('Initializing authenticated user services');
-      // Initialize existing background tasks
-      setTimeout(() => initializeUserBackgroundTasks(1001), 300);
+      console.log('🔧 Initializing authenticated user services');
+      // Initialize existing background tasks with delay to avoid conflicts
+      setTimeout(() => {
+            // 1. Initialize permissions first
+            const permissionInitializer = PermissionInitializer.getInstance();
+            permissionInitializer.initializeAppPermissions();
+        
+      }, 500);
     } catch (error) {
-      console.error('Failed to initialize authenticated services:', error);
+      console.error('❌ Failed to initialize authenticated services:', error);
     }
   };
 
   const setupAppStateListener = () => {
-    // 🔄 SMART REFRESH - Only when app comes back from background
+    // 🔄 SMART REFRESH - Enhanced logic for app state changes
     const handleAppStateChange = async (nextAppState: string) => {
       if (nextAppState === 'active' && appState.isNotificationInitialized) {
         try {
-          // Check if notifications are running low (less than 5 remaining)
-          const remaining = await NotificationService.getScheduledNotifications();
-          if (remaining.length < 5) {
-            console.log('🔄 Auto-refreshing due to low notification count');
-            const newCount = await PrayerTimeService.handleRefresh();
-            if (typeof newCount === 'number') {
-              setScheduledCount(newCount);
-            }
+          console.log('📱 App became active, checking prayer notifications...');
+          
+          // Smart check - only refresh if notifications are not properly set up
+          const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
+          
+          if (!isProperlySetup) {
+            console.log('🔄 Auto-refreshing due to missing/insufficient notifications');
+            const count = await PrayerTimeService.setupPerpetualChain();
+            setScheduledCount(count);
+            console.log(`✅ Refreshed with ${count} notifications`);
+          } else {
+            // Just update the count for display
+            const remaining = await NotificationService.getScheduledNotifications();
+            setScheduledCount(remaining.length);
+            console.log(`✅ Notifications properly set up: ${remaining.length} total`);
           }
+
         } catch (error) {
-          console.error('Error during app state refresh:', error);
+          console.error('❌ Error during app state refresh:', error);
         }
       }
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     
-    // Cleanup function
+    // Return cleanup function
     return () => {
       subscription?.remove();
     };
