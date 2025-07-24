@@ -53,7 +53,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({onAuthCheck}) => {
     // Check authentication status with data preloading
     const checkAuth = async () => {
       try {
-        console.log('🚀 Starting splash screen initialization...');
 
         // Start all critical data loading in parallel
         const [authResult] = await Promise.all([

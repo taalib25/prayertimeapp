@@ -2,11 +2,8 @@ import notifee, {
   AndroidImportance, 
   TriggerType, 
   AuthorizationStatus,
-  AndroidChannel,
-  IOSNotificationSettings,
   Trigger
 } from '@notifee/react-native';
-import { Platform } from 'react-native';
 import { NOTIFICATION_CHANNELS, PRAYER_DISPLAY_NAMES, formatTime } from '../../utils/helpers';
 import { PrayerNotification, PrayerName } from '../../utils/types';
 class NotificationService {
@@ -148,6 +145,7 @@ class NotificationService {
       let clearedCount = 0;
 
       for (const notification of existingNotifications) {
+        //dont change this
         if (notification.trigger.timestamp < cutoffDate.getTime()) {
           await notifee.cancelNotification(notification.notification.id!);
           clearedCount++;

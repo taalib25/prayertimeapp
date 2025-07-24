@@ -3,14 +3,9 @@ import notifee, {
   AndroidVisibility,
   AndroidCategory,
   TriggerType,
-  RepeatFrequency,
-  TimestampTrigger,
   TriggerNotification,
-  AndroidColor,
 } from '@notifee/react-native';
 import {Platform, PermissionsAndroid, Alert, Linking} from 'react-native';
-import {getPrayerTimesForDate} from './db/PrayerServices';
-import {getTodayDateString} from '../utils/helpers';
 import UserPreferencesService from './UserPreferencesService';
 
 class UnifiedNotificationService {
@@ -168,10 +163,6 @@ class UnifiedNotificationService {
       ];
 
       const allCriticalGranted = criticalPermissions.every(p => p === true);
-
-      console.log('📊 Permission Summary:', permissions);
-      console.log('⚠️ Warnings:', warnings);
-
       return {
         granted: allCriticalGranted,
         permissions,
