@@ -38,9 +38,8 @@ class UserPreferencesService {
   }
 
   async getNotificationSettings(
-    uid: number,
   ): Promise<NotificationSettings | null> {
-    const cacheKey = `settings_${uid}`;
+    const cacheKey = `settings_${1234}}`;
 
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey);
@@ -48,7 +47,7 @@ class UserPreferencesService {
 
     try {
       const settingsData = await AsyncStorage.getItem(
-        `notification_settings_${uid}`,
+        `notification_settings_${1001}`,
       );
 
       if (settingsData) {
@@ -59,7 +58,7 @@ class UserPreferencesService {
 
       // Return default settings if none found
       const defaultSettings = this.getDefaultSettings();
-      await this.saveNotificationSettings(uid, defaultSettings);
+      await this.saveNotificationSettings(defaultSettings);
       return defaultSettings;
     } catch (error) {
       console.error('Error getting notification settings:', error);
@@ -68,24 +67,23 @@ class UserPreferencesService {
   }
 
   async saveNotificationSettings(
-    uid: number,
     settings: NotificationSettings,
   ): Promise<void> {
     try {
       await AsyncStorage.setItem(
-        `notification_settings_${uid}`,
+        `notification_settings_1001`,
         JSON.stringify(settings),
       );
-      this.cache.set(`settings_${uid}`, settings);
+      this.cache.set(`settings_1001`, settings);
     } catch (error) {
       console.error('Error saving notification settings:', error);
     }
   }
 
   async initializeDefaultSettings(uid: number): Promise<void> {
-    const existing = await this.getNotificationSettings(uid);
+    const existing = await this.getNotificationSettings();
     if (!existing) {
-      await this.saveNotificationSettings(uid, this.getDefaultSettings());
+      await this.saveNotificationSettings(this.getDefaultSettings());
     }
   }
 

@@ -3,7 +3,7 @@
  * Handles early permission requests for the app
  */
 
-import UnifiedNotificationService from './UnifiedNotificationService';
+import UnifiedNotificationService from './CallerServices';
 
 class PermissionInitializer {
   private static instance: PermissionInitializer;
@@ -46,7 +46,6 @@ class PermissionInitializer {
       this.isInitialized = true;
     }
   }
-
 
   /**
    * Re-initialize permissions if needed

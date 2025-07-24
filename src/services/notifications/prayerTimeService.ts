@@ -21,13 +21,15 @@ class PrayerTimeService {
 
   static async processNotificationsForDateRange(
     startDate: Date, 
-    daysAhead: number = 2
+    daysAhead: number = 2,
+    includeCurrentDayRemaining: boolean = true
   ): Promise<PrayerNotification[]> {
     await this.loadPrayerData();
     
     const currentYear = startDate.getFullYear();
     const endDate = addDays(startDate, daysAhead);
     const notifications: PrayerNotification[] = [];
+    const now = new Date();
 
     try {
       Object.entries(this.yearlyData!.monthly_prayer_times).forEach(([monthName, monthData]) => {
@@ -46,6 +48,7 @@ class PrayerTimeService {
             for (let dayOffset = 0; dayOffset < daysDiff; dayOffset++) {
               const currentDate = new Date(actualStart);
               currentDate.setDate(actualStart.getDate() + dayOffset);
+              const isToday = this.isSameDay(currentDate, now);
 
               // Schedule notifications for each prayer
               PRAYER_NAMES.forEach((prayer) => {
@@ -56,8 +59,21 @@ class PrayerTimeService {
                     prayerDateTime.getTime() - (ADVANCE_WARNING_MINUTES * 60 * 1000)
                   );
 
-                  // Only include future notifications
-                  if (notificationTime > new Date()) {
+                  // Enhanced logic for current day and future notifications
+                  let shouldInclude = false;
+
+                  if (isToday && includeCurrentDayRemaining) {
+                    // For today: include if the PRAYER TIME (not notification time) is still in the future
+                    shouldInclude = prayerDateTime > now;
+                    if (shouldInclude) {
+                      console.log(`📅 Including today's ${prayer} prayer at ${prayerDateTime.toLocaleTimeString()}`);
+                    }
+                  } else if (!isToday) {
+                    // For future days: include if notification time is in the future
+                    shouldInclude = notificationTime > now;
+                  }
+
+                  if (shouldInclude) {
                     notifications.push({
                       id: `${prayer}-prayer-${currentDate.toISOString().split('T')[0]}`,
                       prayer,
@@ -76,7 +92,7 @@ class PrayerTimeService {
       // Sort by notification time
       notifications.sort((a, b) => a.notificationTime.getTime() - b.notificationTime.getTime());
       
-      console.log(`📅 Processed ${notifications.length} notifications for ${daysAhead} days`);
+      console.log(`📅 Processed ${notifications.length} notifications for ${daysAhead} days (includeToday: ${includeCurrentDayRemaining})`);
       return notifications;
     } catch (error) {
       console.error('❌ Error processing prayer notifications:', error);
@@ -84,19 +100,41 @@ class PrayerTimeService {
     }
   }
 
+  // Helper method to check if two dates are the same day
+  private static isSameDay(date1: Date, date2: Date): boolean {
+    return date1.toDateString() === date2.toDateString();
+  }
+
   static async setupPerpetualChain(): Promise<number> {
     try {
       await NotificationService.initialize();
       const now = new Date();
 
-      // Clear old notifications (before today 00:00)
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      await NotificationService.clearOldNotifications(today);
+      console.log(`🚀 Setting up perpetual chain at ${now.toLocaleString()}`);
 
-      // Schedule next 2 days
-      const notifications = await this.processNotificationsForDateRange(now, 2);
+      // Clear ALL old notifications first
+      await NotificationService.clearAllPrayerNotifications();
+
+      // Schedule notifications starting from today (including remaining prayers for today)
+      const notifications = await this.processNotificationsForDateRange(now, 2, true);
+      
+      if (notifications.length === 0) {
+        console.log('⚠️ No notifications to schedule - might be end of day');
+        // If no notifications for today, try next 3 days
+        const extendedNotifications = await this.processNotificationsForDateRange(now, 3, false);
+        const scheduledCount = await NotificationService.batchScheduleNotifications(extendedNotifications);
+        await this.scheduleNextRefreshTrigger(extendedNotifications);
+        return scheduledCount;
+      }
+
       const scheduledCount = await NotificationService.batchScheduleNotifications(notifications);
+
+      // Log what was scheduled for today
+      const todayNotifications = notifications.filter(n => this.isSameDay(n.date, now));
+      console.log(`📅 Scheduled ${todayNotifications.length} notifications for today:`);
+      todayNotifications.forEach(n => {
+        console.log(`   - ${n.prayer}: ${n.originalTime.toLocaleTimeString()} (reminder at ${n.notificationTime.toLocaleTimeString()})`);
+      });
 
       // Schedule the next refresh trigger
       await this.scheduleNextRefreshTrigger(notifications);
@@ -110,21 +148,18 @@ class PrayerTimeService {
 
   static async scheduleNextRefreshTrigger(scheduledNotifications: PrayerNotification[]): Promise<void> {
     try {
-      // Find tomorrow's Isha notification
-      const tomorrow = addDays(new Date(), 1);
-      const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
-      
-      const tomorrowIsha = scheduledNotifications.find(notif =>
-        notif.prayer === 'isha' && 
-        notif.date.toISOString().split('T')[0] === tomorrowDateStr
-      );
+      // Find the next available Isha notification (could be today or tomorrow)
+      const now = new Date();
+      const nextIsha = scheduledNotifications
+        .filter(notif => notif.prayer === 'isha')
+        .find(notif => notif.originalTime > now);
 
       let triggerTime: Date;
 
-      if (tomorrowIsha) {
-        // Schedule 5 minutes before Isha notification
-        triggerTime = new Date(tomorrowIsha.notificationTime.getTime() - (5 * 60 * 1000));
-        console.log(`⏰ Chain trigger scheduled for ${triggerTime.toLocaleString()}`);
+      if (nextIsha) {
+        // Schedule 5 minutes before the next Isha notification
+        triggerTime = new Date(nextIsha.notificationTime.getTime() - (5 * 60 * 1000));
+        console.log(`⏰ Chain trigger scheduled for ${triggerTime.toLocaleString()} (5min before ${nextIsha.prayer})`);
       } else {
         // Fallback: schedule for 00:30 next day
         triggerTime = addDays(new Date(), 1);
@@ -148,13 +183,11 @@ class PrayerTimeService {
       
       const now = new Date();
       
-      // Clear old notifications (before today 00:00)
-      const today = new Date(now);
-      today.setHours(0, 0, 0, 0);
-      await NotificationService.clearOldNotifications(today);
+      // Clear ALL existing prayer notifications
+      await NotificationService.clearAllPrayerNotifications();
 
-      // Schedule next 2 days
-      const notifications = await this.processNotificationsForDateRange(now, 2);
+      // Schedule next 2-3 days (don't include today's remaining since it's likely end of day)
+      const notifications = await this.processNotificationsForDateRange(now, 3, false);
       await NotificationService.batchScheduleNotifications(notifications);
 
       // Schedule the next chain trigger
@@ -177,19 +210,59 @@ class PrayerTimeService {
 
   static async getTodaysPrayerTimes(): Promise<Record<PrayerName, Date>> {
     const today = new Date();
-    const notifications = await this.processNotificationsForDateRange(today, 1);
+    // Get all of today's prayers (not just remaining ones)
+    const notifications = await this.processNotificationsForDateRange(today, 0, false);
     
-    return notifications.reduce((acc, notif) => {
-      acc[notif.prayer as PrayerName] = notif.originalTime;
+    // Also get any remaining prayers for today
+    const remainingNotifications = await this.processNotificationsForDateRange(today, 0, true);
+    
+    // Combine and deduplicate
+    const allTodayNotifications = [...notifications, ...remainingNotifications];
+    const uniqueNotifications = allTodayNotifications.filter((notif, index, arr) => 
+      arr.findIndex(n => n.prayer === notif.prayer && this.isSameDay(n.date, today)) === index
+    );
+    
+    return uniqueNotifications.reduce((acc, notif) => {
+      if (this.isSameDay(notif.date, today)) {
+        acc[notif.prayer as PrayerName] = notif.originalTime;
+      }
       return acc;
     }, {} as Record<PrayerName, Date>);
   }
 
   static async getUpcomingPrayer(): Promise<PrayerNotification | null> {
     const now = new Date();
-    const notifications = await this.processNotificationsForDateRange(now, 2);
+    const notifications = await this.processNotificationsForDateRange(now, 2, true);
     
     return notifications.find(notif => notif.originalTime > now) || null;
+  }
+
+  // New method: Check if notifications are already set up properly
+  static async checkAndEnsureNotifications(): Promise<boolean> {
+    try {
+      const existingNotifications = await NotificationService.getScheduledNotifications();
+      const now = new Date();
+      
+      // Check if we have notifications for today's remaining prayers
+      const todayRemaining = await this.processNotificationsForDateRange(now, 0, true);
+      const hasAllTodayNotifications = todayRemaining.every(expected => 
+        existingNotifications.some(existing => existing.notification.id === expected.id)
+      );
+
+      // Check if we have enough future notifications (at least 5)
+      const futureNotifications = existingNotifications.filter(n => 
+        n.trigger.timestamp && n.trigger.timestamp > now.getTime()
+      );
+
+      const isProperlySetup = hasAllTodayNotifications && futureNotifications.length >= 5;
+      
+      console.log(`📊 Notification check: today=${hasAllTodayNotifications}, future=${futureNotifications.length}, proper=${isProperlySetup}`);
+      
+      return isProperlySetup;
+    } catch (error) {
+      console.error('❌ Failed to check notifications:', error);
+      return false;
+    }
   }
 }
 
