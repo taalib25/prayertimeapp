@@ -74,7 +74,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
       if (prayerTimesData) {
         if (prayerTimesData.fajr) {
           console.log('Fajr time for tomorrow:', prayerTimesData.fajr);
-           updateState({currentFajrTime: prayerTimesData.fajr});
+          updateState({currentFajrTime: prayerTimesData.fajr});
           return prayerTimesData.fajr;
         }
       }
@@ -109,43 +109,50 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     }
   };
 
-  const toggleFajrCall = async (value: boolean) => {
-    try {
-      updateState({fajrCallEnabled: value});
-      await updateSystemData({callPreference: value});
+const toggleFajrCall = async (value: boolean) => {
+  try {
+    updateState({fajrCallEnabled: value});
+    await updateSystemData({callPreference: value});
 
-      if (!value) {
-        // Reset everything when disabling
-        updateState({
-          showDurationDropdown: false,
-          showTimingDropdown: false,
-          isAlarmSet: false,
-          scheduledReminderTime: '',
-        });
+    if (!value) {
+      // Reset everything when disabling
+      updateState({
+        showDurationDropdown: false,
+        showTimingDropdown: false,
+        isAlarmSet: false,
+        scheduledReminderTime: '',
+      });
 
-        const notificationService = UnifiedNotificationService.getInstance();
-        await notificationService.cancelFajrFakeCalls();
-      } else {
-        rescheduleAlarm();
-      }
-    } catch (error) {
-      console.error('Error saving caller settings:', error);
-      updateState({fajrCallEnabled: !value});
+      const notificationService = UnifiedNotificationService.getInstance();
+      await notificationService.cancelFajrFakeCalls();
+    } else {
+      // Use current state values when enabling
+      await rescheduleAlarm();
     }
-  };
+  } catch (error) {
+    console.error('Error saving caller settings:', error);
+    updateState({fajrCallEnabled: !value});
+  }
+};
+
 
   const handleDropdownChange = async (
     type: 'duration' | 'timing',
     option: any,
   ) => {
     try {
+      let newDuration = state.selectedDuration;
+      let newTiming = state.selectedTiming;
+
       if (type === 'duration') {
+        newDuration = option;
         updateState({
           selectedDuration: option,
           showDurationDropdown: false,
         });
         await updateSystemData({fajrReminderDuration: option.value});
       } else {
+        newTiming = option;
         updateState({
           selectedTiming: option,
           showTimingDropdown: false,
@@ -153,16 +160,16 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
         await updateSystemData({fajrReminderTiming: option.value});
       }
 
-      // If Fajr is enabled, automatically reschedule the alarm with new settings
+      // If Fajr is enabled, reschedule with the new values immediately
       if (state.fajrCallEnabled) {
-        await rescheduleAlarm();
+        await rescheduleAlarm(newDuration, newTiming);
       }
     } catch (error) {
       console.error(`Error saving ${type}:`, error);
     }
   };
 
-  const rescheduleAlarm = async () => {
+  const rescheduleAlarm = async (customDuration?: any, customTiming?: any) => {
     try {
       const notificationService = UnifiedNotificationService.getInstance();
 
@@ -174,10 +181,14 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
         return;
       }
 
-      // Calculate new reminder time using existing logic
-      const reminderTime = calculatePreviewTime();
+      // Use custom values if provided, otherwise use current state
+      const duration = customDuration || state.selectedDuration;
+      const timing = customTiming || state.selectedTiming;
 
-      // Schedule new alarm with simplified API - just pass the reminder time
+      // Calculate reminder time with the specified values
+      const reminderTime = calculatePreviewTime(duration, timing);
+
+      // Schedule new alarm
       const callId = await notificationService.scheduleFajrFakeCall(
         reminderTime,
         state.currentFajrTime,
@@ -189,9 +200,8 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
           scheduledReminderTime: reminderTime,
         });
 
-        // Show brief confirmation
         Alert.alert(
-          'Wake-Up Call Updated ',
+          'Wake-Up Call Updated ✅',
           `Your wake-up call has been rescheduled for ${reminderTime}`,
           [{text: 'OK', style: 'default'}],
         );
@@ -218,16 +228,20 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     }
   };
 
-  const calculatePreviewTime = () => {
+  const calculatePreviewTime = (customDuration?: any, customTiming?: any) => {
     const [hours, minutes] = state.currentFajrTime.split(':').map(Number);
     const fajrMinutes = hours * 60 + minutes;
 
-    let reminderMinutes =
-      state.selectedTiming.value === 'before'
-        ? fajrMinutes - state.selectedDuration.value
-        : fajrMinutes + state.selectedDuration.value;
+    // Use custom values if provided, otherwise use state
+    const duration = customDuration || state.selectedDuration;
+    const timing = customTiming || state.selectedTiming;
 
-    // Handle day overflow/underflow
+    let reminderMinutes =
+      timing.value === 'before'
+        ? fajrMinutes - duration.value
+        : fajrMinutes + duration.value;
+
+    // Handle day overflow/underflow properly
     if (reminderMinutes < 0) reminderMinutes += 24 * 60;
     else if (reminderMinutes >= 24 * 60) reminderMinutes -= 24 * 60;
 
@@ -581,14 +595,14 @@ const styles = StyleSheet.create({
   },
   callInfoTime: {
     ...typography.h1,
-   color: '#FFF',
+    color: '#FFF',
     fontSize: 52,
     paddingVertical: 14,
   },
   callInfoDescription: {
     ...typography.bodySmall,
- 
-      color: '#e4f4e4ff',
+
+    color: '#e4f4e4ff',
     textAlign: 'center',
     opacity: 0.9,
   },
