@@ -15,6 +15,7 @@ interface FormData {
   mobilityOther: string;
   dateOfBirth: string;
   // Additional information flags
+  mosqueName: string;
   livingOnRent: boolean;
   zakatEligible: boolean;
   differentlyAbled: boolean;
@@ -66,6 +67,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     mobile: '',
     address: '',
     mobility: '',
+    mosqueName: '',
     mobilityOther: '',
     dateOfBirth: '',
     livingOnRent: false,
@@ -81,6 +83,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     email: '',
     mobile: '',
     address: '',
+    mosqueName: '',
     mobility: '',
     mobilityOther: '',
     dateOfBirth: '',
@@ -101,6 +104,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         mobile: user.phone || '',
         address: user.address || '',
         mobility: user.mobility || '',
+        mosqueName : user.mosqueName || '',
         mobilityOther: '', // This field doesn't exist in User type, set to empty
         dateOfBirth: user.dateOfBirth || '',
         livingOnRent: user.onRent || false,
@@ -219,6 +223,9 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     if (changedData.mobility !== undefined) {
       apiData.mobility = changedData.mobility;
     }
+     if (changedData.mosque !== undefined) {
+      apiData.mosque = changedData.mosque;
+    }
     if (changedData.dateOfBirth !== undefined) {
       apiData.dateOfBirth = changedData.dateOfBirth;
     }
@@ -271,6 +278,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         phone: formData.mobile,
         address: formData.address,
         mobility: formData.mobility,
+        mosqueName: formData.mosqueName,
         dateOfBirth: formData.dateOfBirth,
         onRent: formData.livingOnRent,
         zakathEligible: formData.zakatEligible,

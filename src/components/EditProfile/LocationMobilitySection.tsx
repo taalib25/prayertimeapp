@@ -16,11 +16,20 @@ const MOBILITY_OPTIONS = [
   {key: 'other', value: 'Other'},
 ];
 
+const MOSQUES = [
+  {key: 'kawdana', value: 'Kawdana Jummah Masjid'},
+  {key: 'rathmalana', value: 'Rathmalana Jummah Masjid'},
+  {key: 'other', value: 'Other'},
+];
+
 const LocationMobilitySection: React.FC = () => {
   const {formData, errors, updateField} = useEditProfile();
 
   const handleMobilityChange = (value: string) => {
     updateField('mobility', value);
+  };
+  const handleMosqueChange = (value: string) => {
+    updateField('mosqueName', value);
   };
 
   return (
@@ -30,6 +39,19 @@ const LocationMobilitySection: React.FC = () => {
         <Text style={styles.sectionTitle}>Location & Mobility</Text>
 
         <View style={styles.sectionContent}>
+
+
+              {/* Mobility Dropdown */}
+          <DropdownField
+            label="Mosque Area"
+            value={formData.mobility}
+            onValueChange={handleMobilityChange}
+            options={MOSQUES}
+            placeholder="Select the Mosque Area"
+            error={errors.mobility}
+          />
+
+
           {/* Location/Address Field */}
           <FormField
             label="Location/Address"
@@ -45,7 +67,7 @@ const LocationMobilitySection: React.FC = () => {
           <DropdownField
             label="How do you travel to mosque?"
             value={formData.mobility}
-            onValueChange={handleMobilityChange}
+            onValueChange={handleMosqueChange}
             options={MOBILITY_OPTIONS}
             placeholder="Select mobility option"
             error={errors.mobility}
