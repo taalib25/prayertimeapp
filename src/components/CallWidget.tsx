@@ -1,9 +1,11 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Animated} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Animated, Alert} from 'react-native';
 import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import UserService from '../services/UserService';
+import UnifiedNotificationService from '../services/CallerServices';
+import {getTomorrowDateString} from '../utils/helpers';
 
 interface CallWidgetProps {
   onCallPreferenceSet: (needsCall: boolean) => void;
@@ -15,6 +17,10 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const userService = UserService.getInstance();
 
+  // Default settings for first-time users
+  const DEFAULT_DURATION = 10; // 10 minutes
+  const DEFAULT_TIMING = 'before'; // before Fajr
+
   useEffect(() => {
     checkIfFirstTimeUser();
   }, []);
@@ -22,14 +28,63 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
   const checkIfFirstTimeUser = async () => {
     try {
       const systemData = await userService.getSystemData();
-
-      // Show widget only if callPreference is null (user hasn't made a choice yet)
-      if (systemData.callPreference === null) {
+   if (systemData.callPreference === null) {
         setIsVisible(true);
       }
     } catch (error) {
       console.error('Error checking first time user status:', error);
     }
+  };
+
+  const setupInitialFajrCall = async () => {
+    try {
+      // Get tomorrow's Fajr time
+      const tomorrowDate = getTomorrowDateString();
+      const prayerTimesData = await userService.getPrayerTimesForDate(tomorrowDate!);
+      
+      if (!prayerTimesData?.fajr) {
+        console.error('No Fajr time available for scheduling');
+        return false;
+      }
+
+      const fajrTime = prayerTimesData.fajr;
+      console.log('Setting up initial Fajr call for:', fajrTime);
+
+      // Calculate reminder time (10 minutes before Fajr by default)
+      const reminderTime = calculateReminderTime(fajrTime, DEFAULT_DURATION, DEFAULT_TIMING);
+      
+      // Schedule the fake call
+      const notificationService = UnifiedNotificationService.getInstance();
+      const callId = await notificationService.scheduleFajrFakeCall(reminderTime, fajrTime);
+
+      if (callId) {
+        console.log('Initial Fajr call scheduled successfully for:', reminderTime);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error setting up initial Fajr call:', error);
+      return false;
+    }
+  };
+
+  const calculateReminderTime = (fajrTime: string, duration: number, timing: string) => {
+    const [hours, minutes] = fajrTime.split(':').map(Number);
+    const fajrMinutes = hours * 60 + minutes;
+
+    let reminderMinutes = timing === 'before' 
+      ? fajrMinutes - duration 
+      : fajrMinutes + duration;
+
+    // Handle day overflow/underflow
+    if (reminderMinutes < 0) reminderMinutes += 24 * 60;
+    else if (reminderMinutes >= 24 * 60) reminderMinutes -= 24 * 60;
+
+    const reminderHours = Math.floor(reminderMinutes / 60);
+    const reminderMins = reminderMinutes % 60;
+    
+    return `${reminderHours.toString().padStart(2, '0')}:${reminderMins.toString().padStart(2, '0')}`;
   };
 
   const handlePreference = async (needsCall: boolean) => {
@@ -42,21 +97,61 @@ const CallWidget: React.FC<CallWidgetProps> = ({onCallPreferenceSet}) => {
         duration: 500,
         useNativeDriver: true,
       }).start(async () => {
-        // Save preference using the proper SystemData structure
-        await userService.updateSystemData({
-          callPreference: needsCall,
-        });
+        try {
+          // Save preference and default settings
+          await userService.updateSystemData({
+            callPreference: needsCall,
+            fajrReminderDuration: needsCall ? DEFAULT_DURATION : null,
+            fajrReminderTiming: needsCall ? DEFAULT_TIMING : null,
+          });
 
-        setIsVisible(false);
-        onCallPreferenceSet(needsCall);
+          // If user wants calls, automatically set up the first one
+          if (needsCall) {
+            const setupSuccess = await setupInitialFajrCall();
+            
+            if (setupSuccess) {
+              // Show success message
+              setTimeout(() => {
+                Alert.alert(
+                  'Wake-Up Call Enabled ✅',
+                  `Great! Your Fajr wake-up call has been automatically scheduled.\n\n• Default: 10 minutes before Fajr\n• You can customize this in Settings anytime`,
+                  [{text: 'Got it!', style: 'default'}],
+                );
+              }, 600);
+            } else {
+              // Show warning if scheduling failed
+              setTimeout(() => {
+                Alert.alert(
+                  'Setup Incomplete ⚠️',
+                  'Your preference has been saved, but please visit Caller Settings to complete the setup.',
+                  [{text: 'OK', style: 'default'}],
+                );
+              }, 600);
+            }
+          }
+
+          setIsVisible(false);
+          onCallPreferenceSet(needsCall);
+        } catch (error) {
+          console.error('Error in handlePreference completion:', error);
+          setIsVisible(false);
+          onCallPreferenceSet(needsCall);
+        }
       });
     } catch (error) {
       console.error('Error saving call preference:', error);
       // Reset animation on error
       fadeAnim.setValue(1);
       setIsFadingOut(false);
+      
+      Alert.alert(
+        'Error ❌', 
+        'Failed to save your preference. Please try again.',
+        [{text: 'OK', style: 'default'}]
+      );
     }
   };
+
   if (!isVisible) {
     return null;
   }
@@ -112,7 +207,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    // gap: 1,
   },
   iconContainer: {
     alignItems: 'center',
@@ -122,6 +216,13 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: '#FFFFFF',
     flex: 1,
+  },
+  infoText: {
+    ...typography.bodySmall,
+    color: '#B8C5D1',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
   },
   buttonContainer: {
     gap: 16,
@@ -141,13 +242,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#3498db',
     borderRadius: 120,
     padding: 12,
-  },
-  noButtonText: {
-    ...typography.bodyMedium,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    textAlign: 'center',
-    fontSize: 16,
   },
 });
 
