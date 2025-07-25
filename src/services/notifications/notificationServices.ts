@@ -95,7 +95,7 @@ class NotificationService {
       await notifee.createTriggerNotification(
         {
           id,
-          title: `🕌 ${PRAYER_DISPLAY_NAMES[prayer as PrayerName]} Prayer Time`,
+          title: ` ${PRAYER_DISPLAY_NAMES[prayer as PrayerName]}`,
           body: `Prayer time in 15 minutes • ${formatTime(originalTime)}`,
           android: {
             channelId: this.prayerChannelId!,

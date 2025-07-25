@@ -870,7 +870,7 @@ const openMaps = useCallback(async (placeName: string) => {
             contentContainerStyle={styles.scrollContentContainer}>
             
             {/* Main Test Controls */}
-            <MainTestControls />
+            {/* <MainTestControls /> */}
             
             {/* Status Card - Always show */}
             <StatusCard />
