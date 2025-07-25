@@ -21,16 +21,35 @@ const DateField: React.FC<DateFieldProps> = ({
 }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-
-  // Initialize date from value
+  
+  // Only initialize date from value when component mounts or when value changes from empty to filled
   useEffect(() => {
-    if (value) {
+    if (value && value.trim() !== '') {
       const parsedDate = new Date(value);
       if (!isNaN(parsedDate.getTime())) {
         setSelectedDate(parsedDate);
       }
+    } else {
+      // If no initial value, set to a reasonable default (e.g., 25 years ago for date of birth)
+      const defaultDate = new Date();
+      defaultDate.setFullYear(defaultDate.getFullYear() - 25);
+      setSelectedDate(defaultDate);
     }
-  }, [value]);
+  }, []); // Remove 'value' from dependency array to prevent constant resets
+
+  // Separate effect to handle external value changes (if parent component updates the value)
+  useEffect(() => {
+    // Only update if there's a significant difference and the picker is not open
+    if (value && !showDatePicker) {
+      const parsedDate = new Date(value);
+      const currentSelected = selectedDate.toDateString();
+      const newSelected = parsedDate.toDateString();
+      
+      if (!isNaN(parsedDate.getTime()) && currentSelected !== newSelected) {
+        setSelectedDate(parsedDate);
+      }
+    }
+  }, [value, showDatePicker]); // Only react to external value changes when picker is closed
 
   const handleDateConfirm = (pickedDate: Date) => {
     setShowDatePicker(false);
@@ -53,12 +72,10 @@ const DateField: React.FC<DateFieldProps> = ({
     if (!dateValue) {
       return '';
     }
-
     const date = new Date(dateValue);
     if (isNaN(date.getTime())) {
       return '';
     }
-
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -81,9 +98,7 @@ const DateField: React.FC<DateFieldProps> = ({
         </Text>
         <SvgIcon name="calendar" size={20} color={colors.text.muted} />
       </Pressable>
-
       {error && <Text style={styles.errorText}>{error}</Text>}
-
       <DatePicker
         modal
         open={showDatePicker}
