@@ -326,19 +326,76 @@ const PickupSettingsScreen: React.FC = () => {
   }, [loadSettings]);
 
   // New function to open Google Maps
-  const openMaps = useCallback((placeName: string) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(placeName)}`;
+// Replace the existing openMaps function with this improved version
+const openMaps = useCallback(async (placeName: string) => {
+  const encodedPlace = encodeURIComponent(placeName);
+  
+  try {
+    if (Platform.OS === 'ios') {
+      // iOS: Try Apple Maps first, then Google Maps, then web fallback
+      const appleMapsUrl = `maps://maps.apple.com/?q=${encodedPlace}`;
+      const googleMapsUrl = `comgooglemaps://?q=${encodedPlace}`;
+      const webUrl = `https://maps.apple.com/?q=${encodedPlace}`;
+      
+      // Try Apple Maps (native)
+      const canOpenAppleMaps = await Linking.canOpenURL(appleMapsUrl);
+      if (canOpenAppleMaps) {
+        await Linking.openURL(appleMapsUrl);
+        return;
+      }
+      
+      // Try Google Maps app
+      const canOpenGoogleMaps = await Linking.canOpenURL(googleMapsUrl);
+      if (canOpenGoogleMaps) {
+        await Linking.openURL(googleMapsUrl);
+        return;
+      }
+      
+      // Fallback to web Apple Maps
+      await Linking.openURL(webUrl);
+      
+    } else {
+      // Android: Try Google Maps app first, then web fallback
+      const googleMapsUrl = `geo:0,0?q=${encodedPlace}`;
+      const googleMapsPackageUrl = `https://maps.google.com/?q=${encodedPlace}`;
+      
+      // Try native Google Maps with geo: scheme
+      const canOpenGeo = await Linking.canOpenURL(googleMapsUrl);
+      if (canOpenGeo) {
+        await Linking.openURL(googleMapsUrl);
+        return;
+      }
+      
+      // Try to open Google Maps through intent (Android specific)
+      const intentUrl = `intent://maps.google.com/maps?q=${encodedPlace}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
+      const canOpenIntent = await Linking.canOpenURL(intentUrl);
+      if (canOpenIntent) {
+        await Linking.openURL(intentUrl);
+        return;
+      }
+      
+      // Fallback to web Google Maps
+      await Linking.openURL(googleMapsPackageUrl);
+    }
     
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (!supported) {
-          Alert.alert('Error', 'Google Maps is not available');
-        } else {
-          return Linking.openURL(url);
-        }
-      })
-      .catch((err) => Alert.alert('Error', 'Failed to open maps: ' + err));
-  }, []);
+  } catch (error) {
+    console.log('Maps opening error:', error);
+    
+    // Final fallback - open in web browser
+    try {
+      const webFallbackUrl = `https://www.google.com/maps/search/?api=1&query=${encodedPlace}`;
+      await Linking.openURL(webFallbackUrl);
+    } catch (finalError) {
+      console.log('Final fallback failed:', finalError);
+      Alert.alert(
+        'Unable to Open Maps',
+        'Could not open maps application. Please install Google Maps or Apple Maps and try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
+  }
+}, []);
+
 
   // Existing submitRequest function
   const submitRequest = async () => {
