@@ -7,15 +7,28 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Pressable,
 } from 'react-native';
 import {colors, spacing, borderRadius} from '../utils/theme';
 import {typography} from '../utils/typography';
-import MeetingCard from '../components/MeetingCard';
 import UnifiedNotificationService from '../services/CallerServices';
-import FakeCallerNotificationService from '../services/notifications/fakeCallerService';
-
+import NotificationService from '../services/notifications/notificationServices';
 const NotificationScreen: React.FC = () => {
+  const triggerTestNotification = async () => {
+    try {
+      await NotificationService.testNotificationIn5Seconds();
+      // Or use the simpler version:
+      // await NotificationService.scheduleSimpleTestNotification();
+
+      Alert.alert(
+        'Test Scheduled ✅',
+        'A test notification will appear in 5 seconds!',
+      );
+    } catch (error) {
+      Alert.alert('Error ❌', 'Failed to schedule test notification');
+      console.error(error);
+    }
+  };
+
   // Sample data for the meeting cards with enhanced icons support
   const notificationService = UnifiedNotificationService.getInstance();
 
@@ -83,6 +96,12 @@ const NotificationScreen: React.FC = () => {
               Smart daily repeating notifications
             </Text>
           </TouchableOpacity> */}
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={triggerTestNotification}
+            activeOpacity={0.7}>
+            <Text style={styles.testButtonText}>🧪 Test Notification (5s)</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.testButton, styles.fakeCallButton]}
             onPress={callNotification}>
