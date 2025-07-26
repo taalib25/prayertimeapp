@@ -177,18 +177,21 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
 
       if (response.success && response.user) {
         console.log('User Details >>>>>>>> ', response?.user); // Store auth token
+        
         if (response.token) {
           await userService.setAuthToken(response.token);
         } // Create simplified user data from real API response only
         const userData: Partial<User> = {
-          id: response.user.id || 21,
-          memberId: response.user.memberId || 'GE0021',
-          username:
-            response.user.name || response.user.username || email.split('@')[0],
+          fullName: response.user.fullName,
+          id: response.user.id,
+          memberId: response.user.memberId,
+          username: response.user.username || email.split('@')[0],
           email: response.user.email || email,
-          phone: response.user.phoneNumber || response.user.phone || '',
-          // Remove hardcoded mock values - use API data only
-          address: response.user.location || response.user.address || undefined,
+          area : response.user.area,
+          phone: response.user.phoneNumber || response.user.phone ,
+          dateOfBirth: response.user.dateOfBirth,
+          address:response.user.address,
+          mobility: response.user.mobility,
           mosqueName:
             response.user.mosqueName || response.user.masjid || undefined,
           mosqueId: response.user.mosqueId || 1,
@@ -198,7 +201,7 @@ const OTPScreen: React.FC<Props> = ({route, navigation}) => {
           zakathEligible: response.user.zakathEligible || false,
           differentlyAbled: response.user.differentlyAbled || false,
           MuallafathilQuloob: response.user.MuallafathilQuloob || false,
-          zikriGoal: response.user.zikriGoal || 600,
+          zikriGoal: response.user.zikriGoal || 18000,
           quranGoal: response.user.quranGoal || 30,
           theme: 'light',
           language: 'en',

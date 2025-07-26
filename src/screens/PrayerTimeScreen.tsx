@@ -76,6 +76,7 @@ const PrayerTimeScreen = () => {
   // Simple profile validation - only on app start if not seen
   useEffect(() => {
     if (user && !hasSeenProfileAlert) {
+      console.log("user >>>>>>>>>>>>>>>",user)
       const validation = validateUserProfile(user);
       if (!validation.isComplete) {
         setShowProfileAlert(true);
