@@ -107,32 +107,31 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     }
   };
 
-const toggleFajrCall = async (value: boolean) => {
-  try {
-    updateState({fajrCallEnabled: value});
-    await updateSystemData({callPreference: value});
+  const toggleFajrCall = async (value: boolean) => {
+    try {
+      updateState({fajrCallEnabled: value});
+      await updateSystemData({callPreference: value});
 
-    if (!value) {
-      // Reset everything when disabling
-      updateState({
-        showDurationDropdown: false,
-        showTimingDropdown: false,
-        isAlarmSet: false,
-        scheduledReminderTime: '',
-      });
+      if (!value) {
+        // Reset everything when disabling
+        updateState({
+          showDurationDropdown: false,
+          showTimingDropdown: false,
+          isAlarmSet: false,
+          scheduledReminderTime: '',
+        });
 
-      const notificationService = UnifiedNotificationService.getInstance();
-      await notificationService.cancelFajrFakeCalls();
-    } else {
-      // Use current state values when enabling
-      await rescheduleAlarm();
+        const notificationService = UnifiedNotificationService.getInstance();
+        await notificationService.cancelFajrFakeCalls();
+      } else {
+        // Use current state values when enabling
+        await rescheduleAlarm();
+      }
+    } catch (error) {
+      console.error('Error saving caller settings:', error);
+      updateState({fajrCallEnabled: !value});
     }
-  } catch (error) {
-    console.error('Error saving caller settings:', error);
-    updateState({fajrCallEnabled: !value});
-  }
-};
-
+  };
 
   const handleDropdownChange = async (
     type: 'duration' | 'timing',
@@ -485,7 +484,6 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: '#333',
     marginBottom: 4,
-    fontWeight: '600',
   },
   settingDescription: {
     ...typography.bodySmall,
@@ -568,7 +566,6 @@ const styles = StyleSheet.create({
   },
   selectedOptionText: {
     color: '#FFF',
-    fontWeight: '600',
   },
   callInfoSection: {
     backgroundColor: colors.emerald,
@@ -587,7 +584,7 @@ const styles = StyleSheet.create({
   callInfoTitle: {
     ...typography.bodyMedium,
     color: '#FFF',
-    fontWeight: '600',
+
     marginBottom: 8,
     fontSize: 17,
   },
@@ -633,7 +630,7 @@ const styles = StyleSheet.create({
   infoTitle: {
     ...typography.bodyMedium,
     color: '#1976D2',
-    fontWeight: '600',
+
     marginBottom: 8,
   },
   infoText: {

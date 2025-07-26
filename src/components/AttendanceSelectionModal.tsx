@@ -74,11 +74,13 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   // ✅ FIX: Get actual prayer status from database instead of using currentAttendance prop
   const actualPrayerStatus = React.useMemo(() => {
     const dateToCheck = selectedDate || getTodayDateString();
-    
+
     // Log all available tasks to help debug
     console.log(`🔍 Modal: Looking for ${prayerName} status on ${dateToCheck}`);
-    console.log(`📋 Available dates: ${dailyTasks.map(t => t.date).join(', ')}`);
-    
+    console.log(
+      `📋 Available dates: ${dailyTasks.map(t => t.date).join(', ')}`,
+    );
+
     // Improved task lookup with additional logging
     const task = dailyTasks.find(t => {
       const matches = t.date === dateToCheck;
@@ -110,7 +112,8 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
     if (visible) {
       console.log(`🔄 Modal for ${prayerName} opened - refreshing data`);
       // Force WatermelonDB to refresh this query when modal opens
-      database.get<DailyTasksModel>('daily_tasks')
+      database
+        .get<DailyTasksModel>('daily_tasks')
         .query(Q.sortBy('date', Q.desc))
         .fetch()
         .then(tasks => {
@@ -174,8 +177,10 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
   }; // ✅ ENHANCED: Render option using actual database status with improved logging
   const renderOption = (option: any) => {
     // Explicitly log the status comparison to track reactivity issues
-    console.log(`🔍 Option ${option.type} vs actualStatus=${actualPrayerStatus}`);
-    
+    console.log(
+      `🔍 Option ${option.type} vs actualStatus=${actualPrayerStatus}`,
+    );
+
     const isSelected = actualPrayerStatus === option.type;
     const isMasjid = option.type === 'mosque';
     const isNone = option.type === 'none';
@@ -297,7 +302,7 @@ const styles = StyleSheet.create({
     ...typography.h2,
     fontSize: 22,
     color: 'rgba(255, 255, 255, 0.95)',
-    fontWeight: '600',
+
     marginBottom: 4,
   },
   helpText: {

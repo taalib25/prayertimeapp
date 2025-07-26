@@ -261,7 +261,6 @@ const styles = StyleSheet.create({
   seeAllText: {
     ...typography.bodyMedium,
     color: colors.primary,
-    fontWeight: '600',
   },
   loader: {marginTop: 40},
   cardLoader: {

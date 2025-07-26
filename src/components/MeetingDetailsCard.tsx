@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: colors.text.dark,
     fontSize: 16,
-    fontWeight: '600',
+
     marginBottom: 2,
   },
   contactNumber: {
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text.dark,
     fontSize: 14,
-    fontWeight: '600',
+
     marginLeft: 8,
     flex: 1,
   },

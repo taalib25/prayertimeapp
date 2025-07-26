@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   prayerName: {
     fontSize: 18,
-    fontWeight: '600',
+
     color: colors.text.dark,
   },
   completedText: {

@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     fontSize: 14,
     color: colors.text.dark,
-    // fontWeight: '600',
+    //
     lineHeight: 16,
   },
   // mosqueLocation: {

@@ -289,7 +289,9 @@ const DatabaseScreen: React.FC = () => {
   };
 
   const loadTableData = async () => {
-    if (!selectedTable || !database) {return;}
+    if (!selectedTable || !database) {
+      return;
+    }
 
     const tableConfig = availableTables.find(t => t.name === selectedTable);
 
@@ -375,7 +377,9 @@ const DatabaseScreen: React.FC = () => {
 
   // Helper function to format cell content
   const formatCellContent = (value: any, header: string): string => {
-    if (value === null || value === undefined) {return '';}
+    if (value === null || value === undefined) {
+      return '';
+    }
 
     switch (header) {
       case 'special_tasks_raw':
@@ -601,7 +605,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+
     marginBottom: 10,
     color: '#333',
   },
@@ -621,7 +625,7 @@ const styles = StyleSheet.create({
   },
   tableButtonText: {
     color: '#2196F3',
-    fontWeight: '600',
+
     marginRight: 5,
   },
   selectedTableButtonText: {
@@ -649,7 +653,7 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 14,
     color: '#333',
-    fontWeight: '600',
+
     flex: 1,
     textAlign: 'right',
   },
@@ -663,7 +667,7 @@ const styles = StyleSheet.create({
   },
   refreshButtonText: {
     color: 'white',
-    fontWeight: '600',
+
     fontSize: 12,
   },
   loadingContainer: {

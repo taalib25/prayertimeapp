@@ -330,7 +330,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.white,
     fontSize: 11,
-    fontWeight: '600',
   },
 });
 

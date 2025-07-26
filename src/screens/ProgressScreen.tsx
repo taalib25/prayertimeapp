@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   tableDateText: {
     ...typography.bodyMedium,
     fontSize: 16,
-    fontWeight: '600',
+
     color: colors.text.dark,
   },
   tableDateSubtext: {
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   tableValue: {
     ...typography.bodyMedium,
     fontSize: 16,
-    fontWeight: '600',
+
     color: colors.primary,
     textAlign: 'center',
   },
@@ -439,7 +439,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontSize: 12,
     color: colors.text.muted,
-    fontWeight: '600',
   },
 
   emptyState: {

@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   tabLabel: {
     ...typography.caption,
     fontSize: 10,
-    fontWeight: '600',
+
     marginTop: 4,
   },
 });

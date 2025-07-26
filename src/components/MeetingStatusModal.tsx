@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
   preNotesLabel: {
     ...typography.caption,
     color: colors.text.muted,
-    fontWeight: '600',
+
     marginBottom: spacing.xs / 2,
   },
   preNotesText: {
