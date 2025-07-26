@@ -24,16 +24,6 @@ import ApiTaskServices from '../services/apiHandler';
 import { registrationSchema, RegistrationFormData } from '../utils/validation';
 import { DropdownField } from '../components/EditProfile';
 
-// Area dropdown options (same as in EditProfile & previous step)
-const AREA_OPTIONS = [
-  { label: 'Select Area', value: '' },
-  { label: 'Downtown Mosque Area', value: 'downtown' },
-  { label: 'Northside Community', value: 'northside' },
-  { label: 'Westend District', value: 'westend' },
-  { label: 'Eastside Quarter', value: 'eastside' },
-  { label: 'Central Hub', value: 'central' },
-  // Add more areas as needed
-];
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -44,7 +34,39 @@ interface Props {
   navigation: RegisterScreenNavigationProp;
 }
 
+const DEFAULT_AREA_OPTIONS = [
+  {label: 'Kawdana Jummah Masjid', value: 'Kawdana Jummah Masjid'},
+  {label: 'Rathmalana Jummah Masjid', value: 'Rathmalana Jummah Masjid'},
+  {label: 'Other', value: 'Other'},
+];
+
 const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+  const [AREA_OPTIONS, setAreaOptions] = useState<{ label: string; value: string }[]>([]);
+
+  React.useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const response = (await apiService.getAreas()).data;
+        if (Array.isArray(response) && response.length > 0) {
+          const options = response.map((area: any) => ({
+            label: area.area_name,
+            value: area.area_name,
+          }));
+          setAreaOptions(options);
+        } else {
+          // fallback to default values
+          setAreaOptions(DEFAULT_AREA_OPTIONS);
+        }
+      } catch (error) {
+        console.error('Failed to fetch areas:', error);
+        // fallback to default values
+        setAreaOptions(DEFAULT_AREA_OPTIONS);
+      }
+    };
+    fetchAreas();
+  }, []);
+
+
   // Update formData structure here: fullName instead of firstName+lastName
   const [formData, setFormData] = useState({
     fullName: '',

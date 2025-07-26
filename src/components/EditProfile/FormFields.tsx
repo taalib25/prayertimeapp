@@ -1,5 +1,5 @@
 // FormFields.tsx - Updated configuration
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import FormField from './FormField';
 import DateField from './DateField';
@@ -9,15 +9,16 @@ import DropdownField from './DropdownField'; // Assuming you have this component
 import {useEditProfile} from '../../contexts/EditProfileContext';
 import {spacing, colors, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
-
-const AREA_OPTIONS = [
-  {label: 'Select Area', value: ''},
-  {label: 'Kawdana Jummah Masjid', value: 'kawdana'},
-  {label: 'Rathmalana Jummah Masjid', value: 'rathmalana'},
-  {label: 'Other', value: 'other'},
-];
+import ApiTaskServices from '../../services/apiHandler';
 
 // Mobility options - for your mobility dropdown if using the same component
+
+const DEFAULT_AREA_OPTIONS = [
+  {label: 'Kawdana Jummah Masjid', value: 'Kawdana Jummah Masjid'},
+  {label: 'Rathmalana Jummah Masjid', value: 'Rathmalana Jummah Masjid'},
+  {label: 'Other', value: 'Other'},
+];
+
 export const MOBILITY_OPTIONS = [
   {label: 'Select Mobility', value: ''},
   {label: 'Walking', value: 'walking'},
@@ -26,7 +27,6 @@ export const MOBILITY_OPTIONS = [
   {label: 'Public Transport', value: 'public_transport'},
   {label: 'Car', value: 'car'},
   {label: 'Other', value: 'other'},
-  
 ];
 
 // Configuration for basic form fields - UPDATED
@@ -60,7 +60,6 @@ const BASIC_FIELDS_CONFIG = [
     key: 'area' as const,
     label: 'Area',
     type: 'dropdown',
-    options: AREA_OPTIONS,
     placeholder: 'Select your area',
   },
 ];
@@ -87,11 +86,38 @@ const ADDITIONAL_INFO_CONFIG = [
 
 const FormFields: React.FC = () => {
   const {formData, errors, updateField} = useEditProfile();
-
+  const apiService = ApiTaskServices.getInstance();
   // Set required field status for basic fields
   const renderBasicField = (fieldConfig: (typeof BASIC_FIELDS_CONFIG)[0]) => {
     const {key, type, ...props} = fieldConfig;
     const isRequired = props.label.includes('*');
+    const [AREA_OPTIONS, setAreaOptions] = useState<
+      {label: string; value: string}[]
+    >([]);
+
+    React.useEffect(() => {
+        const fetchAreas = async () => {
+          try {
+            const response = await apiService.getAreas();
+             console.log('Fetched areas:', response);
+            if (Array.isArray(response.data) && response.data.length > 0) {
+              const options = response.data.map((area: any) => ({
+                label: area.area_name,
+                value: area.area_name,
+              }));
+              setAreaOptions(options);
+            } else {
+              // fallback to default values
+              setAreaOptions(DEFAULT_AREA_OPTIONS);
+            }
+          } catch (error) {
+            console.error('Failed to fetch areas:', error);
+            // fallback to default values
+            setAreaOptions(DEFAULT_AREA_OPTIONS);
+          }
+        };
+        fetchAreas();
+      }, []);
 
     if (type === 'date') {
       return (
@@ -111,7 +137,7 @@ const FormFields: React.FC = () => {
           key={key}
           label={props.label}
           value={formData[key] as string}
-          options={props.options ?? []}
+          options={AREA_OPTIONS ?? []}
           onValueChange={value => updateField(key, value)}
           error={errors[key]}
           placeholder="Select an area"

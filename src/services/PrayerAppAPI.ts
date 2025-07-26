@@ -572,6 +572,8 @@ class PrayerAppAPI {
       };
     }
   }
+
+ 
   /**
    * Get feeds from API (legacy method - use fetchFeeds instead)
    * @deprecated Use fetchFeeds() instead
@@ -847,6 +849,23 @@ class PrayerAppAPI {
   setLogging(enabled: boolean): void {
     this.apiService.setLogging(enabled);
   }
+
+   /**
+   * Get list of areas
+   */
+  async getAreas(): Promise<ApiResponse<{data: string[]}>> {
+    try {
+      const response = await this.apiService.get<{data: string[]}>('/areas');
+      return response;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+        data: undefined,
+      };
+    }
+  }
+
 }
 
 export default PrayerAppAPI;

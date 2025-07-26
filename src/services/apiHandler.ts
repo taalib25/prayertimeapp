@@ -562,6 +562,30 @@ class ApiTaskServices {
       };
     }
   }
+  /**
+   * Get list of areas via API
+   */
+  async getAreas(): Promise<{
+    success: boolean;
+    data?: any[];
+    error?: string;
+  }> {
+    try {
+      console.log('📡 API: Fetching areas...');
+      const response = await this.api.getAreas();
+      if (response.success) {
+        console.log('✅ API: Areas fetched successfully');
+        return { success: true, data: response.data };
+      } else {
+        console.log('❌ API: Failed to fetch areas:', response.error);
+        return { success: false, error: response.error };
+      }
+    } catch (error) {
+      console.error('❌ API: Error fetching areas:', error);
+      return { success: false, error: 'Network error occurred' };
+    }
+  }
+  
 }
 
 export default ApiTaskServices;
