@@ -14,13 +14,8 @@ import AttendanceSelectionModal, {
 import {getTodayDateString, formatDateString} from '../utils/helpers';
 import {updatePrayerStatus} from '../services/db/dailyTaskServices';
 import UserService from '../services/UserService';
+import { PrayerTime } from '../utils/types';
 
-interface PrayerTime {
-  name: string;
-  displayName: string;
-  time: string;
-  isActive?: boolean;
-}
 
 interface PrayerTimeCardsProps {
   selectedDate?: string;
@@ -39,9 +34,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
 
   const userService = UserService.getInstance();
 
-  // Get prayer times for the selected date using UserService
-  useEffect(() => {
-    const loadPrayerTimes = async () => {
+     const loadPrayerTimes = async () => {
       try {
         setLoading(true);
         const prayerTimesData = await userService.getPrayerTimesForDate(selectedDate!);
@@ -70,7 +63,8 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
         setLoading(false);
       }
     };
-
+  // Get prayer times for the selected date using UserService
+  useEffect(() => {
     loadPrayerTimes();
   }, [selectedDate, userService]);
 

@@ -24,12 +24,8 @@ export const validateUserProfile = (
   const missingFields: string[] = [];
 
   // Check required fields based on EditProfileContext validation
-  if (!user.firstName?.trim()) {
-    missingFields.push('First Name');
-  }
-
-  if (!user.lastName?.trim()) {
-    missingFields.push('Last Name');
+  if (!user.fullName?.trim()) {
+    missingFields.push('Full Name');
   }
 
   if (!user.email?.trim()) {

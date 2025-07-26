@@ -334,7 +334,6 @@ const StreakCounter: React.FC<StreakCounterProps> = ({dailyTasks}) => {
                     day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
                   ]}>
-                  
                 </View>
               </View>
             ))}
@@ -393,8 +392,6 @@ const styles = StyleSheet.create({
     ...typography.h2,
     fontSize: 22,
     color: colors.text.dark,
-    fontWeight: '700',
-    marginLeft: 4,
     marginTop: 12,
     lineHeight: 28,
   },
@@ -403,7 +400,6 @@ const styles = StyleSheet.create({
   },
   weeklyHeaderContainer: {
     marginBottom: 16,
-    paddingLeft : 5,
     alignItems: 'flex-start', // Left-align the week range text
   },
   weeklyTitle: {
@@ -423,56 +419,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     flex: 1,
-    // paddingHorizontal: 12,
+    paddingHorizontal: 1,
   },
   dayColumn: {
     alignItems: 'center',
+    flex: 1,
+  
   },
   dayLabel: {
     ...typography.bodySmall,
     fontSize: 13,
     color: colors.text.muted,
-    fontWeight: '500',
     marginBottom: 12,
     lineHeight: 16,
   },
   dayLabelActive: {
     color: colors.success,
-    fontWeight: '600',
+
   },
   dayLabelToday: {
     color: colors.primary,
-    fontWeight: '700',
   },
   dayIndicator: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: 18,
+    marginBottom: 8,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F8F9FA',
-    borderWidth: 1,
     borderColor: 'transparent',
-
   },
   dayAttended: {
     backgroundColor: colors.success,
     borderColor: colors.success,
     shadowColor: colors.success,
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
+    // shadowOpacity: 0.2,
+    // shadowRadius: 3,
+    // elevation: 3,
   },
   dayAttendedToday: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryLight,
     borderColor: colors.primary,
     shadowColor: colors.primary,
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
-    transform: [{scale: 1.1}],
   },
   dayMissed: {
     backgroundColor: '#FFE6E6',

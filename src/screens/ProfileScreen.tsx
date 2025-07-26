@@ -238,7 +238,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>
-              {user?.firstName || user?.username}
+              {user?.fullName || user?.username}
             </Text>
             <Text style={styles.memberSince}>
               {user?.joinedDate
@@ -332,15 +332,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </View> */}
         {/* Menu Section */}
         <View style={styles.menuSection}>
-          <MenuButton title="Edit Information" onPress={handleEditProfile} />
-          {/* <MenuButton
+          <MenuButton title="Edit Profile" onPress={handleEditProfile} />
+          <MenuButton
             title="Notification Settings"
             onPress={handleNotificationSettings}
-          /> */}
+          />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           {/* Pickup Settings - Available for all users */}
           <MenuButton
-            title="Pickup Assistance"
+            title="Request Pickup"
             onPress={handlePickupSettings}
           />
           {/* <MenuButton title="Database Explorer" onPress={handleDatabaseView} /> */}

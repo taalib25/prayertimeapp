@@ -1,18 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  SafeAreaView,
-  StatusBar,
-  View,
-  useColorScheme,
-  StyleSheet,
-} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {SafeAreaView, StatusBar, View, useColorScheme, StyleSheet, AppState} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
-import {
-  NavigationContainer,
-  NavigationContainerRef,
-} from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -25,27 +16,24 @@ import NotificationScreen from './src/screens/NotificationScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import CallerSettingScreen from './src/screens/CallerSettingScreen';
 import PickupSettingsScreen from './src/screens/PickupSettingsScreen';
-// import DatabaseTestScreen from './src/screens/DatabaseTestScreen';
 import BottomTabNavigator from './src/navigation/BottomTabNavigator';
-
-// Services & Context
-import { DatabaseProvider } from './src/services/db/databaseProvider';
-import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { initializePrayerTimesDatabase } from './src/services/db/dbInitalizer';
-import {
-  initializeUserBackgroundTasks,
-  checkBackgroundTasksHealth,
-} from './src/services/backgroundTasks';
-import PermissionInitializer from './src/services/PermissionInitializer';
-import { colors } from './src/utils/theme';
 import FeedsScreen from './src/screens/FeedsScreen';
 import DatabaseScreen from './src/screens/DatabaseScreen';
+
+// Services & Context
+import {DatabaseProvider} from './src/services/db/databaseProvider';
+import {AuthProvider, useAuth} from './src/contexts/AuthContext';
+import {colors} from './src/utils/theme';
+import PrayerTimeService from './src/services/notifications/prayerTimeService';
+import NotificationService from './src/services/notifications/notificationServices';
+import PermissionInitializer from './src/services/PermissionInitializer';
+
 // Types
 export type RootStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  OTP: { email: string; username?: string; password?: string };
+  OTP: {email: string; username?: string; password?: string};
   MainApp: undefined;
   DatabaseScreen: undefined;
   PrayerChallenge: undefined;
@@ -60,8 +48,7 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Navigation helpers
-export const navigationRef =
-  React.createRef<NavigationContainerRef<RootStackParamList>>();
+export const navigationRef = React.createRef<NavigationContainerRef<RootStackParamList>>();
 
 export function navigate(name: keyof RootStackParamList, params?: any) {
   navigationRef.current?.navigate(name as any, params);
@@ -71,161 +58,228 @@ export function goBack() {
   navigationRef.current?.goBack();
 }
 
+// Loading component
+const LoadingScreen = () => <View style={styles.loadingContainer} />;
+
 // Main App Navigator Component
 function AppNavigator() {
-  const { isAuthenticated, isLoading, checkAuthState } = useAuth();
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(
-    null,
-  );
-  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
-  const [showingSplash, setShowingSplash] = useState(true);
-  const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const {isAuthenticated, isLoading, checkAuthState} = useAuth();
+  const [appState, setAppState] = useState({
+    showingSplash: true,
+    hasSeenOnboarding: null as boolean | null,
+    isReady: false,
+    isNotificationInitialized: false,
+  });
+  const [scheduledCount, setScheduledCount] = useState(0);
 
-  // Initialize app data and permissions on mount
+  // Initialize app on mount
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Initialize permissions early
-        const permissionInitializer = PermissionInitializer.getInstance();
-        await permissionInitializer.initializeAppPermissions();
-
-        // Initialize other app data
-        await Promise.all([
-          checkOnboardingStatus(),
-          initializePrayerTimesDatabase(),
-        ]);
-      } catch (error) {
-        console.error('Error during app initialization:', error);
-      }
-    };
-
     initializeApp();
+    const cleanup = setupAppStateListener();
+    return cleanup; // Cleanup on unmount
   }, []);
-
-  // Check auth state after splash
-  useEffect(() => {
-    if (!showingSplash && !isAuthChecked) {
-      checkAuthState().finally(() => setIsAuthChecked(true));
-    }
-  }, [showingSplash, isAuthChecked, checkAuthState]);
 
   // Initialize background services when authenticated
   useEffect(() => {
-    console.log(
-      `Auth state: isAuthenticated=${isAuthenticated}, isLoading=${isLoading}`,
-    );
-    if (isAuthenticated && !isLoading) {
-      console.log('Initializing background services for authenticated user');
-      setTimeout(() => initializeUserBackgroundTasks(1001), 300);
+    if (isAuthenticated && !isLoading && appState.isReady) {
+      initializeAuthenticatedServices();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, appState.isReady]);
 
-  // Check onboarding status
-  const checkOnboardingStatus = async () => {
+  const initializeApp = async () => {
     try {
-      const value = await AsyncStorage.getItem('hasSeenOnboarding');
-      setHasSeenOnboarding(value === 'true');
+      console.log(`📱 App launched at ${new Date().toLocaleString()}`);
+
+      // Check onboarding status
+      const onboardingValue = await AsyncStorage.getItem('hasSeenOnboarding');
+      const hasSeenOnboarding = onboardingValue === 'true';
+      
+      setAppState(prev => ({
+        ...prev,
+        hasSeenOnboarding,
+      }));
+      
+      // Check auth state
+      await checkAuthState();
+      
+      // 🚀 Initialize Prayer Notification Service with enhanced logic
+      await initializePrayerNotifications();
+      
+      setAppState(prev => ({
+        ...prev,
+        showingSplash: false,
+        isReady: true,
+      }));
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
-      setHasSeenOnboarding(false);
-    } finally {
-      setIsCheckingOnboarding(false);
+      console.error('❌ App initialization error:', error);
+      setAppState(prev => ({
+        ...prev,
+        hasSeenOnboarding: false,
+        showingSplash: false,
+        isReady: true,
+      }));
     }
   };
 
-  // Handle onboarding completion
-  const handleOnboardingFinish = useCallback(async () => {
+  const initializePrayerNotifications = async () => {
+    try {
+      // 🔍 Smart initialization - check if notifications are properly set up
+      const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
+      
+      if (!isProperlySetup) {
+        console.log('🔧 Prayers not properly set up, initializing complete chain...');
+        const count = await PrayerTimeService.setupPerpetualChain();
+        setScheduledCount(count);
+        console.log(`✅ Prayer notifications initialized with ${count} notifications`);
+        
+        // Log what was scheduled for debugging
+        const remaining = await NotificationService.getScheduledNotifications();
+        const todayCount = remaining.filter(n => {
+          const notifDate = new Date(n.trigger.timestamp);
+          const today = new Date();
+          return notifDate.toDateString() === today.toDateString();
+        }).length;
+        console.log(`📅 Scheduled: ${todayCount} for today, ${count - todayCount} for future days`);
+        
+      } else {
+        console.log('✅ Prayer notifications already properly set up');
+        const existing = await NotificationService.getScheduledNotifications();
+        setScheduledCount(existing.length);
+      }
+
+      setAppState(prev => ({
+        ...prev,
+        isNotificationInitialized: true,
+      }));
+
+    } catch (error) {
+      console.error('❌ Prayer notification initialization failed:', error);
+      // Try fallback initialization
+      try {
+        console.log('🔄 Attempting fallback initialization...');
+        const count = await PrayerTimeService.setupPerpetualChain();
+        setScheduledCount(count);
+        setAppState(prev => ({
+          ...prev,
+          isNotificationInitialized: true,
+        }));
+        console.log(`✅ Fallback initialization successful: ${count} notifications`);
+      } catch (fallbackError) {
+        console.error('❌ Fallback initialization also failed:', fallbackError);
+      }
+    }
+  };
+
+  const initializeAuthenticatedServices = async () => {
+    try {
+      console.log('🔧 Initializing authenticated user services');
+      // Initialize existing background tasks with delay to avoid conflicts
+      setTimeout(() => {
+            // 1. Initialize permissions first
+            const permissionInitializer = PermissionInitializer.getInstance();
+            permissionInitializer.initializeAppPermissions();
+        
+      }, 500);
+    } catch (error) {
+      console.error('❌ Failed to initialize authenticated services:', error);
+    }
+  };
+
+  const setupAppStateListener = () => {
+    // 🔄 SMART REFRESH - Enhanced logic for app state changes
+    const handleAppStateChange = async (nextAppState: string) => {
+      if (nextAppState === 'active' && appState.isNotificationInitialized) {
+        try {
+          console.log('📱 App became active, checking prayer notifications...');
+          
+          // Smart check - only refresh if notifications are not properly set up
+          const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
+          
+          if (!isProperlySetup) {
+            console.log('🔄 Auto-refreshing due to missing/insufficient notifications');
+            const count = await PrayerTimeService.setupPerpetualChain();
+            setScheduledCount(count);
+            console.log(`✅ Refreshed with ${count} notifications`);
+          } else {
+            // Just update the count for display
+            const remaining = await NotificationService.getScheduledNotifications();
+            setScheduledCount(remaining.length);
+            console.log(`✅ Notifications properly set up: ${remaining.length} total`);
+          }
+
+        } catch (error) {
+          console.error('❌ Error during app state refresh:', error);
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    // Return cleanup function
+    return () => {
+      subscription?.remove();
+    };
+  };
+
+  const handleOnboardingFinish = async () => {
     try {
       await AsyncStorage.setItem('hasSeenOnboarding', 'true');
-      setHasSeenOnboarding(true);
+      setAppState(prev => ({...prev, hasSeenOnboarding: true}));
     } catch (error) {
       console.error('Failed to save onboarding status:', error);
-      setHasSeenOnboarding(true);
+      setAppState(prev => ({...prev, hasSeenOnboarding: true}));
     }
-  }, []);
+  };
 
-  // Handle splash screen completion
-  const handleAuthCheck = () => setShowingSplash(false);
+  const handleSplashFinish = () => {
+    setAppState(prev => ({...prev, showingSplash: false}));
+  };
 
-  // Loading states
-  if (showingSplash) {
-    return <SplashScreen onAuthCheck={handleAuthCheck} />;
-  }
-  if (isLoading || isCheckingOnboarding || !isAuthChecked) {
-    return <View style={styles.loadingContainer} />;
+  // Show loading states
+  if (appState.showingSplash) {
+    return <SplashScreen onAuthCheck={handleSplashFinish} />;
   }
 
-  // Screen configurations
+  if (isLoading || !appState.isReady) {
+    return <LoadingScreen />;
+  }
+
+  // Common screen options
   const screenOptions = {
     headerShown: false,
     animation: 'slide_from_right' as const,
     gestureEnabled: true,
   };
+
+  const modalScreenOptions = {
+    headerShown: false,
+    presentation: 'card' as const,
+  };
+
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={screenOptions}>
-        {!hasSeenOnboarding ? (
-          // Onboarding Flow
-          <Stack.Screen name="Onboarding" options={{ gestureEnabled: false }}>
-            {props => (
+       
+        {!appState.hasSeenOnboarding ? (
+          <Stack.Screen 
+            name="Onboarding" 
+            options={{gestureEnabled: false}}
+            children={({navigation}) => (
               <OnboardingScreen
-                {...props}
+                navigation={navigation}
                 onOnboardingComplete={handleOnboardingFinish}
               />
             )}
-          </Stack.Screen>
+          />
         ) : isAuthenticated ? (
-          // Authenticated User Screens
-          <Stack.Group>
+          <>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-            <Stack.Screen
-              name="Feeds"
-              component={FeedsScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
-            <Stack.Screen
-              name="NotificationScreen"
-              component={NotificationScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
-            <Stack.Screen
-              name="EditProfileScreen"
-              component={EditProfileScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
-            <Stack.Screen
-              name="CallerSettings"
-              component={CallerSettingScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
-            <Stack.Screen
-              name="PickupSettings"
-              component={PickupSettingsScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
-            <Stack.Screen
-              name="DatabaseScreen"
-              component={DatabaseScreen}
-              options={{
-                headerShown: false,
-                presentation: 'card',
-              }}
-            />
+            <Stack.Screen name="Feeds" component={FeedsScreen} options={modalScreenOptions} />
+            <Stack.Screen name="NotificationScreen" component={NotificationScreen} options={modalScreenOptions} />
+            <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} options={modalScreenOptions} />
+            <Stack.Screen name="CallerSettings" component={CallerSettingScreen} options={modalScreenOptions} />
+            <Stack.Screen name="PickupSettings" component={PickupSettingsScreen} options={modalScreenOptions} />
+            <Stack.Screen name="DatabaseScreen" component={DatabaseScreen} options={modalScreenOptions} />
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}
@@ -235,14 +289,13 @@ function AppNavigator() {
                 animationTypeForReplace: 'push',
               }}
             />
-          </Stack.Group>
+          </>
         ) : (
-          // Authentication Screens
-          <Stack.Group>
+          <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="OTP" component={OTPScreen} />
-          </Stack.Group>
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
@@ -258,10 +311,9 @@ function App(): React.JSX.Element {
       <AuthProvider>
         <SafeAreaView style={styles.container}>
           <StatusBar
-            backgroundColor="#F5F5F5"
-            translucent={true}
-            hidden={true}
-            showHideTransition={'fade'}
+            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+            backgroundColor="transparent"
+            translucent
           />
           <AppNavigator />
         </SafeAreaView>
