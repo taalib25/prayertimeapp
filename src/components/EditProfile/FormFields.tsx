@@ -1,38 +1,52 @@
+// FormFields.tsx - Updated configuration
 import React from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import FormField from './FormField';
 import DateField from './DateField';
 import CheckboxField from './CheckboxField';
 import LocationMobilitySection from './LocationMobilitySection';
+import DropdownField from './DropdownField'; // Assuming you have this component
 import {useEditProfile} from '../../contexts/EditProfileContext';
 import {spacing, colors, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
-// Configuration for basic form fields
+const AREA_OPTIONS = [
+  {label: 'Select Area', value: ''},
+  {label: 'Kawdana Jummah Masjid', value: 'kawdana'},
+  {label: 'Rathmalana Jummah Masjid', value: 'rathmalana'},
+  {label: 'Other', value: 'other'},
+];
+
+// Mobility options - for your mobility dropdown if using the same component
+export const MOBILITY_OPTIONS = [
+  {label: 'Select Mobility', value: ''},
+  {label: 'Walking', value: 'walking'},
+  {label: 'Motorcycle', value: 'motorcycle'},
+  {label: 'Bicycle', value: 'bicycle'},
+  {label: 'Public Transport', value: 'public_transport'},
+  {label: 'Car', value: 'car'},
+  {label: 'Other', value: 'other'},
+  
+];
+
+// Configuration for basic form fields - UPDATED
 const BASIC_FIELDS_CONFIG = [
   {
-    key: 'firstName' as const,
-    label: 'First Name',
-    placeholder: 'Enter first name',
-    type: 'text',
-  },
-  {
-    key: 'lastName' as const,
-    label: 'Last Name',
-    placeholder: 'Enter last name',
+    key: 'fullName' as const,
+    label: 'Full Name *',
+    placeholder: 'Enter your full name',
     type: 'text',
   },
   {
     key: 'email' as const,
-    label: 'Email Address',
+    label: 'Email Address *',
     placeholder: 'Enter email address',
     type: 'text',
-    keyboardType: 'email-address',
-    autoCapitalize: 'none' as const,
+    keyboardType: 'email-address as const',
   },
   {
     key: 'mobile' as const,
-    label: 'Phone Number',
+    label: 'Phone Number *',
     placeholder: 'Enter phone number',
     type: 'text',
     keyboardType: 'phone-pad',
@@ -42,9 +56,16 @@ const BASIC_FIELDS_CONFIG = [
     label: 'Date Of Birth',
     type: 'date',
   },
+  {
+    key: 'area' as const,
+    label: 'Area',
+    type: 'dropdown',
+    options: AREA_OPTIONS,
+    placeholder: 'Select your area',
+  },
 ];
 
-// Additional info configuration
+// Additional info configuration remains the same
 const ADDITIONAL_INFO_CONFIG = [
   {
     key: 'livingOnRent' as const,
@@ -80,6 +101,20 @@ const FormFields: React.FC = () => {
           value={formData[key] as string}
           onDateChange={value => updateField(key, value)}
           error={errors[key]}
+        />
+      );
+    }
+
+    if (type === 'dropdown') {
+      return (
+        <DropdownField
+          key={key}
+          label={props.label}
+          value={formData[key] as string}
+          options={props.options ?? []}
+          onValueChange={value => updateField(key, value)}
+          error={errors[key]}
+          placeholder="Select an area"
         />
       );
     }
@@ -144,6 +179,7 @@ const FormFields: React.FC = () => {
   );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
@@ -161,7 +197,6 @@ const styles = StyleSheet.create({
   errorsSummary: {
     ...typography.bodyMedium,
     color: colors.error || '#FF6B6B',
-    fontWeight: '600',
   },
   section: {
     marginBottom: spacing.xl,
@@ -178,7 +213,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.primary,
     marginBottom: spacing.md,
-    fontWeight: '600',
+
     paddingBottom: spacing.xs,
     borderBottomWidth: 2,
     borderBottomColor: colors.primary,

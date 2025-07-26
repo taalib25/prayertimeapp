@@ -1,3 +1,4 @@
+// EditProfileContext.tsx - Updated with fullName and area
 import React, {createContext, useContext, useState, useEffect} from 'react';
 import {Alert} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -5,12 +6,13 @@ import {useUser} from '../hooks/useUser';
 import {UserUpdate} from '../types/User';
 import ApiTaskServices from '../services/apiHandler';
 
+// Updated FormData interface
 interface FormData {
-  firstName: string;
-  lastName: string;
+  fullName: string;  // Changed from firstName/lastName
   email: string;
   mobile: string;
   address: string;
+  area: string;      // New field
   mobility: string;
   mobilityOther: string;
   dateOfBirth: string;
@@ -60,12 +62,13 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   const navigation = useNavigation();
   const apiService = ApiTaskServices.getInstance();
 
+  // Updated initial form data
   const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
+    fullName: '',       // Changed from firstName/lastName
     email: '',
     mobile: '',
     address: '',
+    area: '',           // New field
     mobility: '',
     mosqueName: '',
     mobilityOther: '',
@@ -76,13 +79,13 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     muallafathiQuloob: false,
   });
 
-  // Store original user data to track changes
+  // Updated original data store
   const [originalData, setOriginalData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
+    fullName: '',       // Changed from firstName/lastName
     email: '',
     mobile: '',
     address: '',
+    area: '',           // New field
     mosqueName: '',
     mobility: '',
     mobilityOther: '',
@@ -94,18 +97,20 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false); // Load user data from user
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Updated useEffect to load user data
   useEffect(() => {
     if (user) {
       const userData = {
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
+        fullName: user.fullName || '',        // Changed from firstName/lastName
         email: user.email || '',
         mobile: user.phone || '',
         address: user.address || '',
+        area: user.area || '',                // New field
         mobility: user.mobility || '',
-        mosqueName : user.mosqueName || '',
-        mobilityOther: '', // This field doesn't exist in User type, set to empty
+        mosqueName: user.mosqueName || '',
+        mobilityOther: '', 
         dateOfBirth: user.dateOfBirth || '',
         livingOnRent: user.onRent || false,
         zakatEligible: user.zakathEligible || false,
@@ -114,9 +119,10 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       };
 
       setFormData(userData);
-      setOriginalData(userData); // Store original data for comparison
+      setOriginalData(userData);
     }
   }, [user]);
+
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({...prev, [field]: value}));
     // Clear error for this field when user starts typing
@@ -133,7 +139,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     setErrors(prev => ({...prev, [field]: error}));
   };
 
-  // Validation functions
+  // Validation functions remain the same
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -143,21 +149,16 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     const mobileRegex = /^[+]?[0-9]{10,15}$/;
     return mobileRegex.test(mobile.replace(/\s/g, ''));
   };
+
+  // Updated validation function
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // First Name validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    } else if (formData.firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    // Last Name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    } else if (formData.lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
+    // Full Name validation (replaces firstName/lastName)
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Full name must be at least 2 characters';
     }
 
     // Email validation
@@ -179,14 +180,20 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       newErrors.address = 'Location must be at least 5 characters';
     }
 
-    // Mobility validation - make optional
-    if (formData.mobility === 'other' && !formData.mobilityOther.trim()) {
-      newErrors.mobilityOther = 'Please specify your mobility option';
-    }
+  // Area validation - optional but validate if provided
+  if (formData.area && formData.area.trim().length < 2) {
+    newErrors.area = 'Please select a valid area';
+  }
+
+  // Mobility validation
+  if (formData.mobility === 'other' && !formData.mobilityOther.trim()) {
+    newErrors.mobilityOther = 'Please specify your mobility option';
+  }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   // Helper function to get only changed fields
   const getChangedFields = (): Record<string, string | boolean> => {
     const changes: Record<string, string | boolean> = {};
@@ -200,16 +207,15 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     });
 
     return changes;
-  }; // Map form fields to API field names for profile update
+  };
+
+  // Updated API mapping function
   const mapToApiFields = (changedData: Record<string, string | boolean>) => {
     const apiData: any = {};
 
     // Map form fields to expected API field names
-    if (changedData.firstName !== undefined) {
-      apiData.firstName = changedData.firstName;
-    }
-    if (changedData.lastName !== undefined) {
-      apiData.lastName = changedData.lastName;
+    if (changedData.fullName !== undefined) {
+      apiData.fullName = changedData.fullName;
     }
     if (changedData.email !== undefined) {
       apiData.email = changedData.email;
@@ -220,11 +226,14 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
     if (changedData.address !== undefined) {
       apiData.address = changedData.address;
     }
+    if (changedData.area !== undefined) {
+      apiData.area = changedData.area;
+    }
     if (changedData.mobility !== undefined) {
       apiData.mobility = changedData.mobility;
     }
-     if (changedData.mosque !== undefined) {
-      apiData.mosque = changedData.mosque;
+    if (changedData.mosqueName !== undefined) {
+      apiData.mosqueName = changedData.mosqueName;
     }
     if (changedData.dateOfBirth !== undefined) {
       apiData.dateOfBirth = changedData.dateOfBirth;
@@ -244,6 +253,7 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
 
     return apiData;
   };
+
   const handleSave = async () => {
     clearErrors();
 
@@ -270,13 +280,13 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
         console.log('✅ EditProfile: API update successful');
       }
 
-      console.log('✅ EditProfile: API update successful'); // Update local user data with the same changes
+      // Updated local user data mapping
       const userUpdateData: UserUpdate = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        fullName: formData.fullName,          // Changed from firstName/lastName
         email: formData.email,
         phone: formData.mobile,
         address: formData.address,
+        area: formData.area,                  // New field
         mobility: formData.mobility,
         mosqueName: formData.mosqueName,
         dateOfBirth: formData.dateOfBirth,
@@ -287,7 +297,9 @@ export const EditProfileProvider: React.FC<EditProfileProviderProps> = ({
       };
 
       // Update local storage
-      await updateUser(userUpdateData); // Update original data to reflect the saved state
+      await updateUser(userUpdateData);
+
+      // Update original data to reflect the saved state
       setOriginalData({...formData});
 
       // Refresh global user context to propagate changes everywhere

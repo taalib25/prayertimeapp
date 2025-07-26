@@ -4,9 +4,10 @@ import {SelectList} from 'react-native-dropdown-select-list';
 import {colors, spacing, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
+// Updated interface to match the expected format from previous conversation
 export interface DropdownOption {
-  key: string;
-  value: string;
+  label: string;  // Display text
+  value: string;  // Actual value to be stored
 }
 
 export interface DropdownFieldProps {
@@ -28,7 +29,14 @@ const DropdownField: React.FC<DropdownFieldProps> = ({
   error,
   required = false,
 }) => {
+  // Transform options to match SelectList expected format
+  const transformedOptions = options.map(option => ({
+    key: option.value,    // Use value as key for SelectList
+    value: option.label   // Use label as display text for SelectList
+  }));
+
   const handleSelect = (selectedKey: string) => {
+    // selectedKey will be the 'value' from our original options
     onValueChange(selectedKey);
   };
 
@@ -41,14 +49,18 @@ const DropdownField: React.FC<DropdownFieldProps> = ({
       : styles.selectBox;
   };
 
+  const currentSelection = transformedOptions.find(option => option.key === value);
+
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, hasError && styles.labelError]}>{label}</Text>
+      <Text style={[styles.label, hasError && styles.labelError]}>
+        {label}{required && ' *'}
+      </Text>
       <SelectList
         setSelected={handleSelect}
-        data={options}
-        save="key"
-        defaultOption={options.find(option => option.key === value)}
+        data={transformedOptions}
+        save="key"  // This will return the 'key' field (which is our original 'value')
+        defaultOption={currentSelection}
         placeholder={placeholder}
         searchPlaceholder="Search..."
         boxStyles={getBoxStyles()}
@@ -115,7 +127,6 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.error || '#FF6B6B',
     marginTop: spacing.xs,
-    fontWeight: '500',
   },
 });
 

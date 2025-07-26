@@ -6,30 +6,14 @@ import {useEditProfile} from '../../contexts/EditProfileContext';
 import {spacing, colors} from '../../utils/theme';
 import {typography} from '../../utils/typography';
 
-// Mobility options with key-value format for SelectList
-const MOBILITY_OPTIONS = [
-  {key: 'walking', value: 'Walking'},
-  {key: 'bicycle', value: 'Bicycle'},
-  {key: 'motorcycle', value: 'Motorcycle'},
-  {key: 'car', value: 'Car'},
-  {key: 'public_transport', value: 'Public Transport'},
-  {key: 'other', value: 'Other'},
-];
-
-const MOSQUES = [
-  {key: 'kawdana', value: 'Kawdana Jummah Masjid'},
-  {key: 'rathmalana', value: 'Rathmalana Jummah Masjid'},
-  {key: 'other', value: 'Other'},
-];
+// Import MOBILITY_OPTIONS from FormFields (make sure it uses the correct format)
+import { MOBILITY_OPTIONS } from './FormFields';
 
 const LocationMobilitySection: React.FC = () => {
   const {formData, errors, updateField} = useEditProfile();
 
   const handleMobilityChange = (value: string) => {
     updateField('mobility', value);
-  };
-  const handleMosqueChange = (value: string) => {
-    updateField('mosqueName', value);
   };
 
   return (
@@ -39,19 +23,6 @@ const LocationMobilitySection: React.FC = () => {
         <Text style={styles.sectionTitle}>Location & Mobility</Text>
 
         <View style={styles.sectionContent}>
-
-
-              {/* Mobility Dropdown */}
-          <DropdownField
-            label="Mosque Area"
-            value={formData.mobility}
-            onValueChange={handleMobilityChange}
-            options={MOSQUES}
-            placeholder="Select the Mosque Area"
-            error={errors.mobility}
-          />
-
-
           {/* Location/Address Field */}
           <FormField
             label="Location/Address"
@@ -63,11 +34,11 @@ const LocationMobilitySection: React.FC = () => {
             error={errors.address}
           />
 
-          {/* Mobility Dropdown */}
+          {/* Mobility Dropdown - FIXED: now uses handleMobilityChange */}
           <DropdownField
             label="How do you travel to mosque?"
             value={formData.mobility}
-            onValueChange={handleMosqueChange}
+            onValueChange={handleMobilityChange}  // FIXED: was handleMosqueChange
             options={MOBILITY_OPTIONS}
             placeholder="Select mobility option"
             error={errors.mobility}
@@ -103,7 +74,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.primary,
     marginBottom: spacing.md,
-    fontWeight: '600',
     paddingBottom: spacing.xs,
     borderBottomWidth: 2,
     borderBottomColor: colors.primary,
