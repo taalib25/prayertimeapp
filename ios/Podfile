@@ -18,7 +18,7 @@ platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 # Intel Mac compatibility - disable Flipper which causes issues on Intel Macs
-flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
+# flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
 
 setup_permissions([
   'LocationWhenInUse',
@@ -38,7 +38,7 @@ target 'prayer_app' do
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => false,
-    :flipper_configuration => flipper_config,
+    # :flipper_configuration => flipper_config,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
