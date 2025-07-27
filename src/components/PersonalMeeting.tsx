@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   timeValue: {
     ...typography.bodyLarge,
     color: colors.primary,
-    fontWeight: '600',
+
     fontSize: 16,
   },
   markButton: {
@@ -676,7 +676,6 @@ const styles = StyleSheet.create({
   retryButtonText: {
     ...typography.bodyMedium,
     color: colors.white,
-    fontWeight: '600',
   },
   sessionNotes: {
     ...typography.caption,

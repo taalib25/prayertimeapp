@@ -1,38 +1,52 @@
-import React from 'react';
+// FormFields.tsx - Updated configuration
+import React, {useState} from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import FormField from './FormField';
 import DateField from './DateField';
 import CheckboxField from './CheckboxField';
 import LocationMobilitySection from './LocationMobilitySection';
+import DropdownField from './DropdownField'; // Assuming you have this component
 import {useEditProfile} from '../../contexts/EditProfileContext';
 import {spacing, colors, borderRadius} from '../../utils/theme';
 import {typography} from '../../utils/typography';
+import ApiTaskServices from '../../services/apiHandler';
 
-// Configuration for basic form fields
+// Mobility options - for your mobility dropdown if using the same component
+
+const DEFAULT_AREA_OPTIONS = [
+  {label: 'Kawdana Jummah Masjid', value: 'Kawdana Jummah Masjid'},
+  {label: 'Rathmalana Jummah Masjid', value: 'Rathmalana Jummah Masjid'},
+  {label: 'Other', value: 'Other'},
+];
+
+export const MOBILITY_OPTIONS = [
+  {label: 'Select Mobility', value: ''},
+  {label: 'Walking', value: 'walking'},
+  {label: 'Motorcycle', value: 'motorcycle'},
+  {label: 'Bicycle', value: 'bicycle'},
+  {label: 'Public Transport', value: 'public_transport'},
+  {label: 'Car', value: 'car'},
+  {label: 'Other', value: 'other'},
+];
+
+// Configuration for basic form fields - UPDATED
 const BASIC_FIELDS_CONFIG = [
   {
-    key: 'firstName' as const,
-    label: 'First Name',
-    placeholder: 'Enter first name',
-    type: 'text',
-  },
-  {
-    key: 'lastName' as const,
-    label: 'Last Name',
-    placeholder: 'Enter last name',
+    key: 'fullName' as const,
+    label: 'Full Name *',
+    placeholder: 'Enter your full name',
     type: 'text',
   },
   {
     key: 'email' as const,
-    label: 'Email Address',
+    label: 'Email Address *',
     placeholder: 'Enter email address',
     type: 'text',
-    keyboardType: 'email-address',
-    autoCapitalize: 'none' as const,
+    keyboardType: 'email-address as const',
   },
   {
     key: 'mobile' as const,
-    label: 'Phone Number',
+    label: 'Phone Number *',
     placeholder: 'Enter phone number',
     type: 'text',
     keyboardType: 'phone-pad',
@@ -42,9 +56,15 @@ const BASIC_FIELDS_CONFIG = [
     label: 'Date Of Birth',
     type: 'date',
   },
+  {
+    key: 'area' as const,
+    label: 'Area',
+    type: 'dropdown',
+    placeholder: 'Select your area',
+  },
 ];
 
-// Additional info configuration
+// Additional info configuration remains the same
 const ADDITIONAL_INFO_CONFIG = [
   {
     key: 'livingOnRent' as const,
@@ -66,11 +86,38 @@ const ADDITIONAL_INFO_CONFIG = [
 
 const FormFields: React.FC = () => {
   const {formData, errors, updateField} = useEditProfile();
-
+  const apiService = ApiTaskServices.getInstance();
   // Set required field status for basic fields
   const renderBasicField = (fieldConfig: (typeof BASIC_FIELDS_CONFIG)[0]) => {
     const {key, type, ...props} = fieldConfig;
     const isRequired = props.label.includes('*');
+    const [AREA_OPTIONS, setAreaOptions] = useState<
+      {label: string; value: string}[]
+    >([]);
+
+    React.useEffect(() => {
+        const fetchAreas = async () => {
+          try {
+            const response = await apiService.getAreas();
+             console.log('Fetched areas:', response);
+            if (Array.isArray(response.data) && response.data.length > 0) {
+              const options = response.data.map((area: any) => ({
+                label: area.area_name,
+                value: area.area_name,
+              }));
+              setAreaOptions(options);
+            } else {
+              // fallback to default values
+              setAreaOptions(DEFAULT_AREA_OPTIONS);
+            }
+          } catch (error) {
+            console.error('Failed to fetch areas:', error);
+            // fallback to default values
+            setAreaOptions(DEFAULT_AREA_OPTIONS);
+          }
+        };
+        fetchAreas();
+      }, []);
 
     if (type === 'date') {
       return (
@@ -80,6 +127,20 @@ const FormFields: React.FC = () => {
           value={formData[key] as string}
           onDateChange={value => updateField(key, value)}
           error={errors[key]}
+        />
+      );
+    }
+
+    if (type === 'dropdown') {
+      return (
+        <DropdownField
+          key={key}
+          label={props.label}
+          value={formData[key] as string}
+          options={AREA_OPTIONS ?? []}
+          onValueChange={value => updateField(key, value)}
+          error={errors[key]}
+          placeholder="Select an area"
         />
       );
     }
@@ -144,6 +205,7 @@ const FormFields: React.FC = () => {
   );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
@@ -161,7 +223,6 @@ const styles = StyleSheet.create({
   errorsSummary: {
     ...typography.bodyMedium,
     color: colors.error || '#FF6B6B',
-    fontWeight: '600',
   },
   section: {
     marginBottom: spacing.xl,
@@ -178,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.primary,
     marginBottom: spacing.md,
-    fontWeight: '600',
+
     paddingBottom: spacing.xs,
     borderBottomWidth: 2,
     borderBottomColor: colors.primary,

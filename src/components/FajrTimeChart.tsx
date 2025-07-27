@@ -347,7 +347,6 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontSize: 14,
     color: '#ffffff', // White text for dark background
-    fontWeight: '600',
   },
   dateRange: {
     ...typography.caption,

@@ -16,7 +16,6 @@ import {
 } from '../services/permissions/initPermissions';
 import {colors} from '../utils/theme';
 
-
 interface PermissionButtonProps {
   permissionType: PermissionType;
   onPermissionGranted?: () => void;
@@ -89,7 +88,9 @@ const PermissionButton: React.FC<PermissionButtonProps> = ({
 
   // Determine button text based on permission status
   const getButtonText = () => {
-    if (loading) {return 'Checking...';}
+    if (loading) {
+      return 'Checking...';
+    }
 
     switch (permissionStatus) {
       case RESULTS.GRANTED:
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontWeight: '600',
+
     fontSize: 16,
     textAlign: 'center',
   },

@@ -76,6 +76,7 @@ const PrayerTimeScreen = () => {
   // Simple profile validation - only on app start if not seen
   useEffect(() => {
     if (user && !hasSeenProfileAlert) {
+      console.log("user >>>>>>>>>>>>>>>",user)
       const validation = validateUserProfile(user);
       if (!validation.isComplete) {
         setShowProfileAlert(true);
@@ -261,7 +262,6 @@ const styles = StyleSheet.create({
   seeAllText: {
     ...typography.bodyMedium,
     color: colors.primary,
-    fontWeight: '600',
   },
   loader: {marginTop: 40},
   cardLoader: {

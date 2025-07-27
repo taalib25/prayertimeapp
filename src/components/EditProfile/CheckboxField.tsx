@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
   checkmark: {
     color: colors.white,
     fontSize: 12,
-    fontWeight: '600',
   },
   label: {
     ...typography.body,

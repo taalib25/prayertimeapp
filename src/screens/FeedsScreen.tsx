@@ -153,8 +153,6 @@ const FeedCard: React.FC<{
 };
 
 const FeedsScreen: React.FC = () => {
-
-
   const navigation = useNavigation();
   const [feeds, setFeeds] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -487,6 +485,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     paddingTop: 28, // Added for status bar margin
+    marginBottom : 60,
   },
   header: {
     flexDirection: 'row',
@@ -537,7 +536,6 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     color: '#ffffff',
-    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,
@@ -586,7 +584,7 @@ const styles = StyleSheet.create({
     ...typography.h3,
     fontSize: 16,
     color: colors.white,
-    fontWeight: '600',
+
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -637,7 +635,7 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     fontSize: 14,
     color: colors.white,
-    fontWeight: '600',
+
     lineHeight: 18,
   }, // Modal styles
   modalOverlay: {
@@ -776,7 +774,6 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
   },
   youtubeContainer: {
     marginBottom: 20,
@@ -797,7 +794,7 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+
     marginTop: 15,
     textAlign: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

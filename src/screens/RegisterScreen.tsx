@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,15 @@ import {
 } from 'react-native';
 import CustomButton from '../components/CustomButton';
 import AlertModal from '../components/AlertModel';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
-import {typography} from '../utils/typography';
-import {colors} from '../utils/theme';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../App';
+import { typography } from '../utils/typography';
+import { colors } from '../utils/theme';
 import SvgIcon from '../components/SvgIcon';
 import ApiTaskServices from '../services/apiHandler';
-import {registrationSchema, RegistrationFormData} from '../utils/validation';
+import { registrationSchema, RegistrationFormData } from '../utils/validation';
+import { DropdownField } from '../components/EditProfile';
+
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -32,16 +34,49 @@ interface Props {
   navigation: RegisterScreenNavigationProp;
 }
 
-const RegisterScreen: React.FC<Props> = ({navigation}) => {
+const DEFAULT_AREA_OPTIONS = [
+  {label: 'Kawdana Jummah Masjid', value: 'Kawdana Jummah Masjid'},
+  {label: 'Rathmalana Jummah Masjid', value: 'Rathmalana Jummah Masjid'},
+  {label: 'Other', value: 'Other'},
+];
+
+const RegisterScreen: React.FC<Props> = ({ navigation }) => {
+  const [AREA_OPTIONS, setAreaOptions] = useState<{ label: string; value: string }[]>([]);
+
+  React.useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const response = (await apiService.getAreas()).data;
+        if (Array.isArray(response) && response.length > 0) {
+          const options = response.map((area: any) => ({
+            label: area.area_name,
+            value: area.area_name,
+          }));
+          setAreaOptions(options);
+        } else {
+          // fallback to default values
+          setAreaOptions(DEFAULT_AREA_OPTIONS);
+        }
+      } catch (error) {
+        console.error('Failed to fetch areas:', error);
+        // fallback to default values
+        setAreaOptions(DEFAULT_AREA_OPTIONS);
+      }
+    };
+    fetchAreas();
+  }, []);
+
+
+  // Update formData structure here: fullName instead of firstName+lastName
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     username: '',
     contactNumber: '',
     area: '',
     email: '',
     password: '',
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<
@@ -51,10 +86,9 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
   const apiService = ApiTaskServices.getInstance();
 
   const updateField = (field: keyof RegistrationFormData, value: string) => {
-    setFormData(prev => ({...prev, [field]: value}));
-    // Clear error when user types
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({...prev, [field]: undefined}));
+      setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -64,8 +98,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
       setErrors({});
       return true;
     } catch (error: any) {
-      const fieldErrors: Partial<Record<keyof RegistrationFormData, string>> =
-        {};
+      const fieldErrors: Partial<Record<keyof RegistrationFormData, string>> = {};
       error.errors.forEach((err: any) => {
         const field = err.path[0] as keyof RegistrationFormData;
         fieldErrors[field] = err.message;
@@ -76,18 +109,21 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
 
     try {
       console.log('📝 Registration attempt...');
 
+      // Split fullName into first and last names for API
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName; // fallback lastName = firstName
+
       const registerResponse = await apiService.registerUser({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        firstName,
+        lastName,
         username: formData.username,
         phoneNumber: formData.contactNumber,
         area: formData.area,
@@ -98,10 +134,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
       if (registerResponse.success) {
         setShowSuccessModal(true);
       } else {
-        Alert.alert(
-          'Error',
-          registerResponse.error || 'Registration failed. Please try again.',
-        );
+        Alert.alert('Error', registerResponse.error || 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error('❌ Registration error:', error);
@@ -119,9 +152,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
           style={styles.keyboardAvoidingView}>
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
               <SvgIcon name="backBtn" size={24} color={colors.text.dark} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Create Account</Text>
@@ -134,33 +165,17 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
             bounces={false}>
             <View style={styles.container}>
               <View style={styles.formContainer}>
-                <Text style={styles.subtitle}>
-                  Please fill in your details to create an account
-                </Text>
+                <Text style={styles.subtitle}>Please fill in your details to create an account</Text>
 
-                {/* First Name */}
+                {/* Full Name */}
                 <TextInput
-                  style={[styles.input, errors.firstName && styles.inputError]}
-                  placeholder="First Name"
+                  style={[styles.input, errors.fullName && styles.inputError]}
+                  placeholder="Full Name"
                   placeholderTextColor={colors.text.muted}
-                  value={formData.firstName}
-                  onChangeText={value => updateField('firstName', value)}
+                  value={formData.fullName}
+                  onChangeText={value => updateField('fullName', value)}
                 />
-                {errors.firstName && (
-                  <Text style={styles.errorText}>{errors.firstName}</Text>
-                )}
-
-                {/* Last Name */}
-                <TextInput
-                  style={[styles.input, errors.lastName && styles.inputError]}
-                  placeholder="Last Name"
-                  placeholderTextColor={colors.text.muted}
-                  value={formData.lastName}
-                  onChangeText={value => updateField('lastName', value)}
-                />
-                {errors.lastName && (
-                  <Text style={styles.errorText}>{errors.lastName}</Text>
-                )}
+                {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
 
                 {/* Username */}
                 <TextInput
@@ -171,37 +186,30 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
                   onChangeText={value => updateField('username', value)}
                   autoCapitalize="none"
                 />
-                {errors.username && (
-                  <Text style={styles.errorText}>{errors.username}</Text>
-                )}
+                {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
 
                 {/* Contact Number */}
                 <TextInput
-                  style={[
-                    styles.input,
-                    errors.contactNumber && styles.inputError,
-                  ]}
+                  style={[styles.input, errors.contactNumber && styles.inputError]}
                   placeholder="Contact Number"
                   placeholderTextColor={colors.text.muted}
                   value={formData.contactNumber}
                   onChangeText={value => updateField('contactNumber', value)}
                   keyboardType="phone-pad"
                 />
-                {errors.contactNumber && (
-                  <Text style={styles.errorText}>{errors.contactNumber}</Text>
-                )}
+                {errors.contactNumber && <Text style={styles.errorText}>{errors.contactNumber}</Text>}
 
-                {/* Area */}
-                <TextInput
-                  style={[styles.input, errors.area && styles.inputError]}
-                  placeholder="Area"
-                  placeholderTextColor={colors.text.muted}
-                  value={formData.area}
-                  onChangeText={value => updateField('area', value)}
-                />
-                {errors.area && (
-                  <Text style={styles.errorText}>{errors.area}</Text>
-                )}
+                {/* Area Dropdown */}
+                <View style={styles.dropdownContainer}>
+                  <DropdownField
+                    label=""
+                    value={formData.area}
+                    onValueChange={(value: string) => updateField('area', value)}
+                    options={AREA_OPTIONS}
+                    placeholder="Select your area"
+                    error={errors.area}
+                  />
+                </View>
 
                 {/* Email */}
                 <TextInput
@@ -213,17 +221,12 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
+                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
                 {/* Password */}
                 <View style={styles.passwordContainer}>
                   <TextInput
-                    style={[
-                      styles.passwordInput,
-                      errors.password && styles.inputError,
-                    ]}
+                    style={[styles.passwordInput, errors.password && styles.inputError]}
                     placeholder="Password"
                     placeholderTextColor={colors.text.muted}
                     secureTextEntry={!showPassword}
@@ -241,9 +244,7 @@ const RegisterScreen: React.FC<Props> = ({navigation}) => {
                     />
                   </TouchableOpacity>
                 </View>
-                {errors.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
+                {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
                 <CustomButton
                   title={isLoading ? 'Registering...' : 'Register'}
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   headerRight: {
-    width: 24, // Same width as back button for center alignment
+    width: 24,
   },
   backButton: {
     padding: 8,
@@ -312,12 +313,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
-  },
-  title: {
-    ...typography.h1,
-    color: colors.primary,
-    marginBottom: 8,
-    textAlign: 'left',
   },
   subtitle: {
     ...typography.body,
@@ -335,6 +330,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     ...typography.body,
     color: '#333',
+  },
+  dropdownContainer: {
+    marginBottom: -4, // For consistent spacing with other fields
   },
   passwordContainer: {
     position: 'relative',

@@ -268,7 +268,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </Text>
               /{badgeData.totalBadges}
             </Text>
-      
           </View>
           <View style={styles.badgesCard}>
             <View style={styles.badgesContainer}>
@@ -339,10 +338,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
           />
           <MenuButton title="Caller Settings" onPress={handleCallerSettings} />
           {/* Pickup Settings - Available for all users */}
-          <MenuButton
-            title="Request Pickup"
-            onPress={handlePickupSettings}
-          />
+          <MenuButton title="Request Pickup" onPress={handlePickupSettings} />
           {/* <MenuButton title="Database Explorer" onPress={handleDatabaseView} /> */}
           {/* Logout fButton */}
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
@@ -476,7 +472,6 @@ const styles = StyleSheet.create({
   viewAll: {
     ...typography.bodySmall,
     color: '#4CAF50',
-    fontWeight: '600',
   },
   badgesContainer: {
     flexDirection: 'row',
@@ -598,7 +593,6 @@ const styles = StyleSheet.create({
   logoutText: {
     ...typography.button,
     color: colors.white,
-    fontWeight: '600',
   },
 });
 

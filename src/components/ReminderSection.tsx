@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     ...typography.h3,
     fontSize: 16,
     color: colors.white,
-    fontWeight: '600',
+
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -578,7 +578,6 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
   },
   // YouTube modal styles
   youtubeContainer: {
@@ -600,7 +599,7 @@ const styles = StyleSheet.create({
     ...typography.bodyMedium,
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+
     marginTop: 15,
     textAlign: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -740,7 +739,6 @@ const styles = StyleSheet.create({
   retryText: {
     ...typography.bodyMedium,
     color: colors.white,
-    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import { z } from 'zod';
 
 // Username validation schema
 export const usernameSchema = z
@@ -89,19 +89,21 @@ export const emailSchema = z
   .min(1, 'Email is required')
   .email('Please enter a valid email address');
 
-// Name validation schema
-export const nameSchema = z
+// Full Name validation schema - replaces firstName/lastName
+export const fullNameSchema = z
   .string()
-  .min(1, 'Name is required')
-  .min(2, 'Name must be at least 2 characters');
+  .min(1, 'Full name is required')
+  .min(2, 'Full name must be at least 2 characters')
+  .refine(val => val.trim().split(' ').length >= 2, {
+    message: 'Please enter your full name (first and last name)',
+  });
 
 // Area validation schema
 export const areaSchema = z.string().min(1, 'Area is required');
 
-// Registration form validation schema
+// Updated Registration form validation schema
 export const registrationSchema = z.object({
-  firstName: nameSchema,
-  lastName: nameSchema,
+  fullName: fullNameSchema, 
   username: usernameSchema,
   contactNumber: phoneSchema,
   area: areaSchema,

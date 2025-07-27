@@ -333,8 +333,7 @@ const StreakCounter: React.FC<StreakCounterProps> = ({dailyTasks}) => {
                       styles.dayAttendedToday,
                     day.status === 'missed' && styles.dayMissed,
                     day.status === 'upcoming' && styles.dayUpcoming,
-                  ]}>
-                </View>
+                  ]}></View>
               </View>
             ))}
           </View>
@@ -424,7 +423,6 @@ const styles = StyleSheet.create({
   dayColumn: {
     alignItems: 'center',
     flex: 1,
-  
   },
   dayLabel: {
     ...typography.bodySmall,
@@ -435,7 +433,6 @@ const styles = StyleSheet.create({
   },
   dayLabelActive: {
     color: colors.success,
-
   },
   dayLabelToday: {
     color: colors.primary,
@@ -507,7 +504,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: -2,
     textAlign: 'center',
-    fontWeight: '600',
   },
   navButtonTextDisabled: {
     color: colors.text.muted,

@@ -36,12 +36,15 @@ interface PickupRequest extends PickupSettings {
   reviewNotes?: string;
 }
 
-// New interfaces for approved request data
+// Updated interfaces for real API response
 interface MemberInfo {
   name: string;
   phone: string;
   pickupLocation: string;
   userId: string;
+  email?: string;
+  username?: string;
+  specialInstructions?: string;
 }
 
 interface DriverInfo {
@@ -49,11 +52,40 @@ interface DriverInfo {
   phone: string;
   vehicle: string;
   userId: string;
+  username?: string;
 }
 
 interface RideMatchPayload {
   member: MemberInfo;
   driver: DriverInfo | null;
+  requestId: number;
+  scheduledTime?: string;
+  prayers: string[];
+  days: string[];
+}
+
+// Interface for API pickup request data
+interface ApiPickupRequest {
+  id: number;
+  user_id: number;
+  status: string;
+  pickup_location: string;
+  contact_number: string;
+  special_instructions?: string;
+  days: string[];
+  prayers: string[];
+  created_at: string;
+  updated_at: string;
+  approved_at?: string;
+  assigned_driver_id?: number;
+  assigned_driver_name?: string;
+  driver_phone?: string;
+  member_name?: string;
+  member_phone?: string;
+  member_email?: string;
+  member_username?: string;
+  driver_username?: string;
+  scheduled_pickup_time?: string;
 }
 
 const PickupSettingsScreen: React.FC = () => {
@@ -108,8 +140,25 @@ const PickupSettingsScreen: React.FC = () => {
   const [rideMatch, setRideMatch] = useState<RideMatchPayload | null>(null);
   const [isLoadingRoleData, setIsLoadingRoleData] = useState(false);
 
+  // Current user ID (you'll need to get this from your auth service)
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
   // 🧪 TEMPORARY: Role simulation for testing
-  const [isTestMode, setIsTestMode] = useState(true); // Toggle this for testing
+  const [isTestMode, setIsTestMode] = useState(false); // Set to false for production
+
+  // Get current user ID
+  const getCurrentUserId = useCallback(async () => {
+    try {
+      const userData = await userService.getUser();
+      // Assuming your user data has an id field
+      const userId = userData?.id || userData?.id;
+      setCurrentUserId(userId);
+      return userId;
+    } catch (error) {
+      console.error('Error getting current user ID:', error);
+      return null;
+    }
+  }, [userService]);
 
   // Existing validation helper
   const validateField = useCallback((field: string, value: any) => {
@@ -146,7 +195,7 @@ const PickupSettingsScreen: React.FC = () => {
   // 🧪 TEMPORARY: Simulate role switching for testing
   const simulateRoleSwitch = (role: 'driver' | 'member') => {
     setUserRole(role);
-    
+
     // Simulate different ride match data based on role
     if (role === 'driver') {
       setRideMatch({
@@ -155,6 +204,7 @@ const PickupSettingsScreen: React.FC = () => {
           phone: '+1 555 123 456',
           pickupLocation: '1600 Amphitheatre Pkwy, Mountain View, CA',
           userId: 'member123',
+          specialInstructions: 'Please ring the doorbell twice',
         },
         driver: {
           name: 'Ahmed Khan (You)',
@@ -162,6 +212,10 @@ const PickupSettingsScreen: React.FC = () => {
           vehicle: 'Honda Civic – AB-123-CD',
           userId: 'driver456',
         },
+        requestId: 1,
+        scheduledTime: '05:00',
+        prayers: ['fajr'],
+        days: ['monday', 'wednesday', 'friday'],
       });
     } else {
       setRideMatch({
@@ -170,6 +224,7 @@ const PickupSettingsScreen: React.FC = () => {
           phone: '+1 555 123 456',
           pickupLocation: '1600 Amphitheatre Pkwy, Mountain View, CA',
           userId: 'member123',
+          specialInstructions: 'Please ring the doorbell twice',
         },
         driver: {
           name: 'Ahmed Khan',
@@ -177,6 +232,10 @@ const PickupSettingsScreen: React.FC = () => {
           vehicle: 'Honda Civic – AB-123-CD',
           userId: 'driver456',
         },
+        requestId: 1,
+        scheduledTime: '05:00',
+        prayers: ['fajr'],
+        days: ['monday', 'wednesday', 'friday'],
       });
     }
   };
@@ -192,11 +251,106 @@ const PickupSettingsScreen: React.FC = () => {
     simulateRoleSwitch('driver'); // Change to 'member' to test member view
   };
 
-  // New function to check user role and load ride data
-  const checkUserRoleAndLoadRideData = useCallback(async () => {
+  // Helper function to get Fajr time (you can customize this)
+  const getFajrTime = () => {
+    return '05:00'; // Default Fajr time, you can make this dynamic based on location/season
+  };
+
+  // Helper function to format prayer names
+  const formatPrayerName = (prayer: string): string => {
+    return prayer.charAt(0).toUpperCase() + prayer.slice(1);
+  };
+
+  // Helper function to format day names
+  const formatDayName = (day: string): string => {
+    return day.charAt(0).toUpperCase() + day.slice(1);
+  };
+
+  // New function to process API data and determine user role
+  const processApiDataAndDetermineRole = useCallback(async (apiData: ApiPickupRequest[], userId: number) => {
     try {
       setIsLoadingRoleData(true);
+
+      // Find approved requests where current user is involved
+      const approvedRequests = apiData.filter(request => request.status === 'approved');
       
+      let userRole: UserRole = null;
+      let matchingRequest: ApiPickupRequest | null = null;
+
+      // Check if user is a member (requested pickup)
+      const memberRequest = approvedRequests.find(request => request.user_id === userId);
+      
+      // Check if user is a driver (assigned to pickup)
+      const driverRequest = approvedRequests.find(request => request.assigned_driver_id === userId);
+
+      if (memberRequest) {
+        userRole = 'member';
+        matchingRequest = memberRequest;
+      } else if (driverRequest) {
+        userRole = 'driver';
+        matchingRequest = driverRequest;
+      }
+
+      if (userRole && matchingRequest) {
+        setUserRole(userRole);
+
+        // Build ride match payload
+        const scheduledTime = matchingRequest.scheduled_pickup_time || getFajrTime();
+        
+        const rideMatchData: RideMatchPayload = {
+          member: {
+            name: matchingRequest.member_name || matchingRequest.member_username || 'Unknown Member',
+            phone: matchingRequest.member_phone || 'N/A',
+            pickupLocation: matchingRequest.pickup_location,
+            userId: matchingRequest.user_id.toString(),
+            email: matchingRequest.member_email,
+            username: matchingRequest.member_username,
+            specialInstructions: matchingRequest.special_instructions,
+          },
+          driver: matchingRequest.assigned_driver_name ? {
+            name: matchingRequest.assigned_driver_name,
+            phone: matchingRequest.driver_phone || 'N/A',
+            vehicle: matchingRequest.assigned_driver_name, // This contains vehicle info from API
+            userId: matchingRequest.assigned_driver_id?.toString() || '',
+            username: matchingRequest.driver_username,
+          } : null,
+          requestId: matchingRequest.id,
+          scheduledTime,
+          prayers: matchingRequest.prayers,
+          days: matchingRequest.days,
+        };
+
+        // If user is member, mark themselves in the name
+        if (userRole === 'member') {
+          rideMatchData.member.name += ' (You)';
+        }
+        
+        // If user is driver, mark themselves in the name
+        if (userRole === 'driver' && rideMatchData.driver) {
+          rideMatchData.driver.name += ' (You)';
+        }
+
+        setRideMatch(rideMatchData);
+        
+        console.log('✅ Role determined:', userRole, 'for request:', matchingRequest.id);
+      } else {
+        // No approved requests found for this user
+        setUserRole(null);
+        setRideMatch(null);
+      }
+
+    } catch (error) {
+      console.error('Error processing API data and determining role:', error);
+      setUserRole(null);
+      setRideMatch(null);
+    } finally {
+      setIsLoadingRoleData(false);
+    }
+  }, []);
+
+  // New function to check user role and load ride data
+  const checkUserRoleAndLoadRideData = useCallback(async (apiData: ApiPickupRequest[]) => {
+    try {
       if (isTestMode) {
         // 🧪 TEMPORARY: Use simulated data
         await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
@@ -204,94 +358,116 @@ const PickupSettingsScreen: React.FC = () => {
         simulateRoleSwitch('driver');
         return;
       }
-      
-      // Real API calls (implement these in your ApiTaskServices)
-      const roleResponse = await apiService.getUserRole();
-      
-      if (roleResponse.success) {
-        const role = roleResponse.data.role;
-        setUserRole(role);
-        
-        const rideMatchResponse = await apiService.getRideMatch();
-        
-        if (rideMatchResponse.success) {
-          setRideMatch(rideMatchResponse.data);
-        }
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.error('No current user ID found');
+        setIsLoadingRoleData(false);
+        return;
       }
+
+      await processApiDataAndDetermineRole(apiData, userId);
+
     } catch (error) {
       console.error('Error checking user role and ride data:', error);
-      // Fallback to simulated data on error
-      simulateRoleSwitch('driver');
-    } finally {
+      if (isTestMode) {
+        // Fallback to simulated data on error in test mode
+        simulateRoleSwitch('driver');
+      } else {
+        setUserRole(null);
+        setRideMatch(null);
+      }
       setIsLoadingRoleData(false);
     }
-  }, [apiService, isTestMode]);
+  }, [isTestMode, getCurrentUserId, processApiDataAndDetermineRole]);
 
-  // Existing loadSettings function with fixed TypeScript logic
+  // Updated loadSettings function to handle real API data
   const loadSettings = useCallback(async () => {
     try {
       setIsLoading(true);
       await new Promise(resolve => setTimeout(resolve, 150));
+
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        console.error('No current user ID found');
+        setIsLoading(false);
+        setIsInitialLoad(false);
+        return;
+      }
 
       const apiResponse = await apiService.getPickupRequests();
 
       if (
         apiResponse.success &&
         apiResponse.data &&
-        apiResponse.data.data &&
-        apiResponse.data.data.length > 0
+        apiResponse.data.length > 0
       ) {
-        const latestRequest = apiResponse.data.data[0];
+        const apiData = apiResponse.data as ApiPickupRequest[];
+        
+        // Find the current user's most recent request
+        const userRequests = apiData.filter(request => request.user_id === userId);
+        const latestRequest = userRequests.length > 0 ? userRequests[0] : null;
 
-        const availableDaysObject = {
-          monday: false,
-          tuesday: false,
-          wednesday: false,
-          thursday: false,
-          friday: false,
-          saturday: false,
-          sunday: false,
-        };
-        latestRequest.days.forEach((day: string) => {
-          if (day in availableDaysObject) {
-            (availableDaysObject as any)[day] = true;
+        if (latestRequest) {
+          // Convert API days array to availableDays object
+          const availableDaysObject = {
+            monday: false,
+            tuesday: false,
+            wednesday: false,
+            thursday: false,
+            friday: false,
+            saturday: false,
+            sunday: false,
+          };
+          
+          latestRequest.days.forEach((day: string) => {
+            const dayKey = day.toLowerCase();
+            if (dayKey in availableDaysObject) {
+              (availableDaysObject as any)[dayKey] = true;
+            }
+          });
+
+          const newSettings: PickupRequest = {
+            enabled: true,
+            preferredTime: latestRequest.scheduled_pickup_time || getFajrTime(),
+            emergencyContact: latestRequest.contact_number || '',
+            specificLocation: latestRequest.pickup_location,
+            notes: latestRequest.special_instructions || '',
+            availableDays: availableDaysObject,
+            status: latestRequest.status as RequestStatus,
+            requestDate: latestRequest.created_at,
+            reviewDate: latestRequest.approved_at || latestRequest.updated_at,
+            reviewNotes: undefined,
+          };
+
+          setSettings(newSettings);
+
+          // If approved, check for role and ride data
+          if (newSettings.status === 'approved') {
+            await checkUserRoleAndLoadRideData(apiData);
           }
-        });
-
-        const newSettings: PickupRequest = {
-          enabled: true,
-          preferredTime: '05:00',
-          emergencyContact: latestRequest.contact_number,
-          specificLocation: latestRequest.pickup_location,
-          notes: latestRequest.special_instructions || '',
-          availableDays: availableDaysObject,
-          status: latestRequest.status as RequestStatus, // Type assertion to fix TS error
-          requestDate: latestRequest.created_at,
-          reviewDate: latestRequest.updated_at,
-          reviewNotes: undefined,
-        };
-
-        setSettings(newSettings);
-
-        // Fixed TypeScript comparison - check string equality properly
-        if (newSettings.status === 'approved') {
-          await checkUserRoleAndLoadRideData();
+        } else {
+          // No requests found for this user, check if they're assigned as driver
+          await checkUserRoleAndLoadRideData(apiData);
         }
       } else {
+        // No API data, try to load from local storage
         const systemData = await userService.getSystemData();
         if (systemData.pickupSettings) {
           const loadedSettings: PickupRequest = {
             ...systemData.pickupSettings,
-            status: ((systemData.pickupSettings as any).status as RequestStatus) || 'none',
+            status:
+              ((systemData.pickupSettings as any).status as RequestStatus) ||
+              'none',
             requestDate: (systemData.pickupSettings as any).requestDate,
             reviewDate: (systemData.pickupSettings as any).reviewDate,
             reviewNotes: (systemData.pickupSettings as any).reviewNotes,
           };
           setSettings(loadedSettings);
 
-          // Fixed TypeScript comparison
           if (loadedSettings.status === 'approved') {
-            await checkUserRoleAndLoadRideData();
+            // Try to check role with empty data (will set to null)
+            await checkUserRoleAndLoadRideData([]);
           }
         }
       }
@@ -302,7 +478,9 @@ const PickupSettingsScreen: React.FC = () => {
         if (systemData.pickupSettings) {
           setSettings({
             ...systemData.pickupSettings,
-            status: ((systemData.pickupSettings as any).status as RequestStatus) || 'none',
+            status:
+              ((systemData.pickupSettings as any).status as RequestStatus) ||
+              'none',
             requestDate: (systemData.pickupSettings as any).requestDate,
             reviewDate: (systemData.pickupSettings as any).reviewDate,
             reviewNotes: (systemData.pickupSettings as any).reviewNotes,
@@ -316,7 +494,7 @@ const PickupSettingsScreen: React.FC = () => {
       setIsInitialLoad(false);
       clearFieldErrors();
     }
-  }, [apiService, userService, clearFieldErrors, checkUserRoleAndLoadRideData]);
+  }, [apiService, userService, clearFieldErrors, checkUserRoleAndLoadRideData, getCurrentUserId]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -326,76 +504,72 @@ const PickupSettingsScreen: React.FC = () => {
   }, [loadSettings]);
 
   // New function to open Google Maps
-// Replace the existing openMaps function with this improved version
-const openMaps = useCallback(async (placeName: string) => {
-  const encodedPlace = encodeURIComponent(placeName);
-  
-  try {
-    if (Platform.OS === 'ios') {
-      // iOS: Try Apple Maps first, then Google Maps, then web fallback
-      const appleMapsUrl = `maps://maps.apple.com/?q=${encodedPlace}`;
-      const googleMapsUrl = `comgooglemaps://?q=${encodedPlace}`;
-      const webUrl = `https://maps.apple.com/?q=${encodedPlace}`;
-      
-      // Try Apple Maps (native)
-      const canOpenAppleMaps = await Linking.canOpenURL(appleMapsUrl);
-      if (canOpenAppleMaps) {
-        await Linking.openURL(appleMapsUrl);
-        return;
-      }
-      
-      // Try Google Maps app
-      const canOpenGoogleMaps = await Linking.canOpenURL(googleMapsUrl);
-      if (canOpenGoogleMaps) {
-        await Linking.openURL(googleMapsUrl);
-        return;
-      }
-      
-      // Fallback to web Apple Maps
-      await Linking.openURL(webUrl);
-      
-    } else {
-      // Android: Try Google Maps app first, then web fallback
-      const googleMapsUrl = `geo:0,0?q=${encodedPlace}`;
-      const googleMapsPackageUrl = `https://maps.google.com/?q=${encodedPlace}`;
-      
-      // Try native Google Maps with geo: scheme
-      const canOpenGeo = await Linking.canOpenURL(googleMapsUrl);
-      if (canOpenGeo) {
-        await Linking.openURL(googleMapsUrl);
-        return;
-      }
-      
-      // Try to open Google Maps through intent (Android specific)
-      const intentUrl = `intent://maps.google.com/maps?q=${encodedPlace}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
-      const canOpenIntent = await Linking.canOpenURL(intentUrl);
-      if (canOpenIntent) {
-        await Linking.openURL(intentUrl);
-        return;
-      }
-      
-      // Fallback to web Google Maps
-      await Linking.openURL(googleMapsPackageUrl);
-    }
-    
-  } catch (error) {
-    console.log('Maps opening error:', error);
-    
-    // Final fallback - open in web browser
-    try {
-      const webFallbackUrl = `https://www.google.com/maps/search/?api=1&query=${encodedPlace}`;
-      await Linking.openURL(webFallbackUrl);
-    } catch (finalError) {
-      console.log('Final fallback failed:', finalError);
-      Alert.alert(
-        'Unable to Open Maps',
-        'Could not open maps application. Please install Google Maps or Apple Maps and try again.',
-        [{ text: 'OK', style: 'default' }]
-      );
-    }
-  }
-}, []);
+  const openMaps = useCallback(async (placeName: string) => {
+    const encodedPlace = encodeURIComponent(placeName);
 
+    try {
+      if (Platform.OS === 'ios') {
+        // iOS: Try Apple Maps first, then Google Maps, then web fallback
+        const appleMapsUrl = `maps://maps.apple.com/?q=${encodedPlace}`;
+        const googleMapsUrl = `comgooglemaps://?q=${encodedPlace}`;
+        const webUrl = `https://maps.apple.com/?q=${encodedPlace}`;
+
+        // Try Apple Maps (native)
+        const canOpenAppleMaps = await Linking.canOpenURL(appleMapsUrl);
+        if (canOpenAppleMaps) {
+          await Linking.openURL(appleMapsUrl);
+          return;
+        }
+
+        // Try Google Maps app
+        const canOpenGoogleMaps = await Linking.canOpenURL(googleMapsUrl);
+        if (canOpenGoogleMaps) {
+          await Linking.openURL(googleMapsUrl);
+          return;
+        }
+
+        // Fallback to web Apple Maps
+        await Linking.openURL(webUrl);
+      } else {
+        // Android: Try Google Maps app first, then web fallback
+        const googleMapsUrl = `geo:0,0?q=${encodedPlace}`;
+        const googleMapsPackageUrl = `https://maps.google.com/?q=${encodedPlace}`;
+
+        // Try native Google Maps with geo: scheme
+        const canOpenGeo = await Linking.canOpenURL(googleMapsUrl);
+        if (canOpenGeo) {
+          await Linking.openURL(googleMapsUrl);
+          return;
+        }
+
+        // Try to open Google Maps through intent (Android specific)
+        const intentUrl = `intent://maps.google.com/maps?q=${encodedPlace}#Intent;scheme=https;package=com.google.android.apps.maps;end`;
+        const canOpenIntent = await Linking.canOpenURL(intentUrl);
+        if (canOpenIntent) {
+          await Linking.openURL(intentUrl);
+          return;
+        }
+
+        // Fallback to web Google Maps
+        await Linking.openURL(googleMapsPackageUrl);
+      }
+    } catch (error) {
+      console.log('Maps opening error:', error);
+
+      // Final fallback - open in web browser
+      try {
+        const webFallbackUrl = `https://www.google.com/maps/search/?api=1&query=${encodedPlace}`;
+        await Linking.openURL(webFallbackUrl);
+      } catch (finalError) {
+        console.log('Final fallback failed:', finalError);
+        Alert.alert(
+          'Unable to Open Maps',
+          'Could not open maps application. Please install Google Maps or Apple Maps and try again.',
+          [{text: 'OK', style: 'default'}],
+        );
+      }
+    }
+  }, []);
 
   // Existing submitRequest function
   const submitRequest = async () => {
@@ -596,7 +770,10 @@ const openMaps = useCallback(async (placeName: string) => {
   };
 
   // New components for approved request views
-  const InfoRow: React.FC<{label: string; value: string}> = ({label, value}) => (
+  const InfoRow: React.FC<{label: string; value: string}> = ({
+    label,
+    value,
+  }) => (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue}>{value}</Text>
@@ -617,7 +794,7 @@ const openMaps = useCallback(async (placeName: string) => {
             activeOpacity={0.6}>
             <Text style={styles.inlineTestButtonText}>Driver</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.inlineTestButton, styles.memberButton]}
             onPress={() => simulateRoleSwitch('member')}
@@ -629,35 +806,54 @@ const openMaps = useCallback(async (placeName: string) => {
     );
   };
 
-  // REDUCED Driver View
+  // ENHANCED Driver View with real API data
   const DriverView: React.FC = () => {
     if (!rideMatch?.member) return null;
+
+    const scheduledTime = rideMatch.scheduledTime || getFajrTime();
+    const prayersText = rideMatch.prayers.map(formatPrayerName).join(', ');
+    const daysText = rideMatch.days.map(formatDayName).join(', ');
 
     return (
       <View style={styles.approvedContent}>
         <Text style={styles.approvedTitle}>Member Pickup Details</Text>
-        
+
         {/* Test Controls inside view */}
         <InlineTestControls />
-        
+
         <View style={styles.detailsCard}>
           <InfoRow label="Member Name" value={rideMatch.member.name} />
           <InfoRow label="Phone Number" value={rideMatch.member.phone} />
-          <InfoRow label="Pickup Location" value={rideMatch.member.pickupLocation} />
+          <InfoRow
+            label="Pickup Location"
+            value={rideMatch.member.pickupLocation}
+          />
+          <InfoRow label="Scheduled Time" value={scheduledTime} />
+          <InfoRow label="Prayer Times" value={prayersText} />
+          <InfoRow label="Available Days" value={daysText} />
+          {rideMatch.member.specialInstructions && (
+            <InfoRow 
+              label="Special Instructions" 
+              value={rideMatch.member.specialInstructions} 
+            />
+          )}
         </View>
 
         <TouchableOpacity
           style={styles.navigateButton}
           onPress={() => openMaps(rideMatch.member.pickupLocation)}
           activeOpacity={0.7}>
-          <Text style={styles.navigateButtonText}>Navigate with Google Maps</Text>
+          <Text style={styles.navigateButtonText}>
+            Navigate with Google Maps
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>🚗 Driver Instructions</Text>
           <Text style={styles.infoText}>
-            • Arrive 5-10 minutes before scheduled time{'\n'}
-            • Call if running late or can't find location{'\n'}
+            • Arrive 5-10 minutes before scheduled time ({scheduledTime}){'\n'}
+            • Call member if running late or can't find location{'\n'}
+            • Follow any special instructions provided{'\n'}
             • Contact mosque emergency: +1 (555) 123-4567
           </Text>
         </View>
@@ -665,20 +861,38 @@ const openMaps = useCallback(async (placeName: string) => {
     );
   };
 
-  // REDUCED Member View
+  // ENHANCED Member View with real API data
   const MemberView: React.FC = () => {
     if (!rideMatch) return null;
 
+    const scheduledTime = rideMatch.scheduledTime || getFajrTime();
+    const prayersText = rideMatch.prayers.map(formatPrayerName).join(', ');
+    const daysText = rideMatch.days.map(formatDayName).join(', ');
+
     return (
       <View style={styles.approvedContent}>
-        <Text style={styles.approvedTitle}>Your Driver Details</Text>
-        
+        <Text style={styles.approvedTitle}>Your Pickup Details</Text>
+
         {/* Test Controls inside view */}
         <InlineTestControls />
-        
+
+        <View style={styles.detailsCard}>
+          <InfoRow label="Pickup Location" value={rideMatch.member.pickupLocation} />
+          <InfoRow label="Scheduled Time" value={scheduledTime} />
+          <InfoRow label="Prayer Times" value={prayersText} />
+          <InfoRow label="Available Days" value={daysText} />
+          {rideMatch.member.specialInstructions && (
+            <InfoRow 
+              label="Your Instructions" 
+              value={rideMatch.member.specialInstructions} 
+            />
+          )}
+        </View>
+
         {rideMatch.driver ? (
           <>
             <View style={styles.detailsCard}>
+              <Text style={[styles.infoTitle, {marginBottom: spacing.md}]}>🚗 Your Driver</Text>
               <InfoRow label="Driver Name" value={rideMatch.driver.name} />
               <InfoRow label="Phone Number" value={rideMatch.driver.phone} />
               <InfoRow label="Vehicle" value={rideMatch.driver.vehicle} />
@@ -687,8 +901,8 @@ const openMaps = useCallback(async (placeName: string) => {
             <View style={styles.infoCard}>
               <Text style={styles.infoTitle}>📱 Pickup Instructions</Text>
               <Text style={styles.infoText}>
-                • Be ready 5 minutes before pickup time{'\n'}
-                • Wait at your specified location{'\n'}
+                • Be ready 5 minutes before pickup time ({scheduledTime}){'\n'}
+                • Wait at your specified pickup location{'\n'}
                 • Verify driver's name and vehicle before getting in{'\n'}
                 • Emergency contact: +1 (555) 123-4567
               </Text>
@@ -698,7 +912,7 @@ const openMaps = useCallback(async (placeName: string) => {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>🔍 Finding Driver</Text>
             <Text style={styles.infoText}>
-              We are looking for an available driver in your area. You'll see their contact details here once someone accepts your request.
+              We are looking for an available driver in your area. You'll receive driver contact details once someone accepts your pickup request.
             </Text>
           </View>
         )}
@@ -737,7 +951,11 @@ const openMaps = useCallback(async (placeName: string) => {
             settings.reviewDate
               ? new Date(settings.reviewDate).toLocaleDateString()
               : 'Unknown date'
-          }. ${userRole ? 'See details below.' : 'Loading driver/member information...'}`}
+          }. ${
+            userRole
+              ? 'See details below.'
+              : 'Loading driver/member information...'
+          }`}
         {settings.status === 'rejected' &&
           `Your request needs revision. ${
             settings.reviewNotes ||
@@ -754,7 +972,7 @@ const openMaps = useCallback(async (placeName: string) => {
     return (
       <View style={styles.testControls}>
         <Text style={styles.testTitle}>🧪 Test Controls</Text>
-        
+
         <TouchableOpacity
           style={styles.testButton}
           onPress={simulateApproval}
@@ -781,8 +999,9 @@ const openMaps = useCallback(async (placeName: string) => {
       <Switch
         value={value}
         onValueChange={value => {
-          const isPendingOrApproved = settings.status === 'pending' || settings.status === 'approved';
-          
+          const isPendingOrApproved =
+            settings.status === 'pending' || settings.status === 'approved';
+
           if (!value && isPendingOrApproved) {
             setModalConfig({
               title: 'Cannot Disable',
@@ -846,7 +1065,10 @@ const openMaps = useCallback(async (placeName: string) => {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleBack}
+            style={styles.backButton}
+            activeOpacity={0.7}>
             <SvgIcon name="backBtn" size={24} color="#333" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Pickup Assistance Request</Text>
@@ -868,25 +1090,29 @@ const openMaps = useCallback(async (placeName: string) => {
             style={styles.content}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContentContainer}>
-            
             {/* Main Test Controls */}
-            {/* <MainTestControls /> */}
-            
+            <MainTestControls />
+
             {/* Status Card - Always show */}
             <StatusCard />
 
             {/* If request is approved, show role-specific view */}
-            {settings.status === 'approved' && userRole && rideMatch && !isLoadingRoleData && (
-              <>
-                {userRole === 'driver' && <DriverView />}
-                {userRole === 'member' && <MemberView />}
-              </>
-            )}
+            {settings.status === 'approved' &&
+              userRole &&
+              rideMatch &&
+              !isLoadingRoleData && (
+                <>
+                  {userRole === 'driver' && <DriverView />}
+                  {userRole === 'member' && <MemberView />}
+                </>
+              )}
 
             {/* If request is approved but still loading role data */}
             {settings.status === 'approved' && isLoadingRoleData && (
               <View style={styles.loadingRoleContainer}>
-                <Text style={styles.loadingRoleText}>Loading driver/member information...</Text>
+                <Text style={styles.loadingRoleText}>
+                  Loading driver/member information...
+                </Text>
               </View>
             )}
 
@@ -899,8 +1125,10 @@ const openMaps = useCallback(async (placeName: string) => {
                     description="Request help with transportation to and from mosque"
                     value={settings.enabled}
                     onValueChange={value => {
-                      const isPendingOrApproved = settings.status === 'pending' || settings.status === 'approved';
-                      
+                      const isPendingOrApproved =
+                        settings.status === 'pending' ||
+                        settings.status === 'approved';
+
                       if (!value && isPendingOrApproved) {
                         setModalConfig({
                           title: 'Cannot Disable',
@@ -927,7 +1155,9 @@ const openMaps = useCallback(async (placeName: string) => {
 
                     {/* Contact Information */}
                     <View style={styles.settingSection}>
-                      <Text style={styles.sectionTitle}>Contact Information</Text>
+                      <Text style={styles.sectionTitle}>
+                        Contact Information
+                      </Text>
                       <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>
                           Emergency Contact Number
@@ -936,7 +1166,8 @@ const openMaps = useCallback(async (placeName: string) => {
                           style={[
                             styles.textInput,
                             !canEditRequest() && styles.inputDisabled,
-                            fieldErrors.emergencyContact && styles.textInputError,
+                            fieldErrors.emergencyContact &&
+                              styles.textInputError,
                           ]}
                           value={settings.emergencyContact}
                           onChangeText={value => {
@@ -944,7 +1175,10 @@ const openMaps = useCallback(async (placeName: string) => {
                               ...prev,
                               emergencyContact: value,
                             }));
-                            const error = validateField('emergencyContact', value);
+                            const error = validateField(
+                              'emergencyContact',
+                              value,
+                            );
                             setFieldErrors(prev => ({
                               ...prev,
                               emergencyContact: error,
@@ -973,7 +1207,8 @@ const openMaps = useCallback(async (placeName: string) => {
                           style={[
                             styles.textInput,
                             !canEditRequest() && styles.inputDisabled,
-                            fieldErrors.specificLocation && styles.textInputError,
+                            fieldErrors.specificLocation &&
+                              styles.textInputError,
                           ]}
                           value={settings.specificLocation}
                           onChangeText={value => {
@@ -981,7 +1216,10 @@ const openMaps = useCallback(async (placeName: string) => {
                               ...prev,
                               specificLocation: value,
                             }));
-                            const error = validateField('specificLocation', value);
+                            const error = validateField(
+                              'specificLocation',
+                              value,
+                            );
                             setFieldErrors(prev => ({
                               ...prev,
                               specificLocation: error,
@@ -1019,7 +1257,9 @@ const openMaps = useCallback(async (placeName: string) => {
                           editable={canEditRequest()}
                         />
                         {fieldErrors.notes && (
-                          <Text style={styles.errorText}>{fieldErrors.notes}</Text>
+                          <Text style={styles.errorText}>
+                            {fieldErrors.notes}
+                          </Text>
                         )}
                       </View>
                     </View>
@@ -1060,13 +1300,15 @@ const openMaps = useCallback(async (placeName: string) => {
                         !settings.enabled
                       }
                       activeOpacity={0.8}>
-                      <Text style={styles.saveButtonText}>{getButtonText()}</Text>
+                      <Text style={styles.saveButtonText}>
+                        {getButtonText()}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 )}
               </>
             )}
-            
+
             {/* Bottom padding */}
             <View style={{height: 60}} />
           </ScrollView>
@@ -1125,7 +1367,7 @@ const styles = StyleSheet.create({
   scrollContentContainer: {
     paddingBottom: spacing.xl,
   },
-  
+
   // IMPROVED Test Control Styles
   testControls: {
     backgroundColor: '#FFF3CD',
@@ -1152,7 +1394,6 @@ const styles = StyleSheet.create({
   testButtonText: {
     color: '#FFF',
     fontSize: 14,
-    fontWeight: '600',
     textAlign: 'center',
   },
 
@@ -1192,7 +1433,6 @@ const styles = StyleSheet.create({
   inlineTestButtonText: {
     color: '#FFF',
     fontSize: 12,
-    fontWeight: '600',
   },
 
   initialLoadingContainer: {
@@ -1215,7 +1455,7 @@ const styles = StyleSheet.create({
     height: 560,
     marginBottom: spacing.md,
   },
-  
+
   statusCard: {
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
@@ -1241,7 +1481,7 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
   },
-  
+
   // Approved views - NO NESTED SCROLLVIEW
   approvedContent: {
     paddingHorizontal: spacing.lg,
@@ -1374,7 +1614,6 @@ const styles = StyleSheet.create({
   },
   dayButtonTextActive: {
     color: '#FFF',
-    fontWeight: '600',
   },
   inputContainer: {
     marginBottom: spacing.md,

@@ -514,12 +514,10 @@ const styles = StyleSheet.create({
   buttonText: {
     ...typography.button,
     color: 'white',
-    fontWeight: '600',
   },
   endCallButtonText: {
     ...typography.button,
     color: 'white',
-    fontWeight: '600',
   },
   callEndedText: {
     ...typography.h3,
