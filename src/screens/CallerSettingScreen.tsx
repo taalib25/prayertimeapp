@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Switch,
-  SafeAreaView,
   StatusBar,
   Alert,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
@@ -323,20 +323,41 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
     );
   };
 
+  const insets = useSafeAreaInsets();
   if (state.isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
+            paddingLeft: insets.left,
+            paddingRight: insets.right,
+          },
+        ]}>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading settings...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const previewTime = calculatePreviewTime();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -403,7 +424,7 @@ const CallerSettingScreen: React.FC<CallerSettingScreenProps> = ({
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

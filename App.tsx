@@ -1,8 +1,18 @@
 import React, {useState, useEffect} from 'react';
-import {SafeAreaView, StatusBar, View, useColorScheme, StyleSheet, AppState} from 'react-native';
+import {
+  StatusBar,
+  View,
+  useColorScheme,
+  StyleSheet,
+  AppState,
+} from 'react-native';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
+import {
+  NavigationContainer,
+  NavigationContainerRef,
+} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 // Screens
@@ -48,7 +58,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Navigation helpers
-export const navigationRef = React.createRef<NavigationContainerRef<RootStackParamList>>();
+export const navigationRef =
+  React.createRef<NavigationContainerRef<RootStackParamList>>();
 
 export function navigate(name: keyof RootStackParamList, params?: any) {
   navigationRef.current?.navigate(name as any, params);
@@ -59,7 +70,21 @@ export function goBack() {
 }
 
 // Loading component
-const LoadingScreen = () => <View style={styles.loadingContainer} />;
+const LoadingScreen = () => {
+  const insets = useSafeAreaInsets();
+  
+  return (
+    <View style={[
+      styles.loadingContainer,
+      {
+        // Only apply bottom safe area, no top padding
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }
+    ]} />
+  );
+};
 
 // Main App Navigator Component
 function AppNavigator() {
@@ -89,22 +114,21 @@ function AppNavigator() {
   const initializeApp = async () => {
     try {
       console.log(`📱 App launched at ${new Date().toLocaleString()}`);
-
       // Check onboarding status
       const onboardingValue = await AsyncStorage.getItem('hasSeenOnboarding');
       const hasSeenOnboarding = onboardingValue === 'true';
-      
+
       setAppState(prev => ({
         ...prev,
         hasSeenOnboarding,
       }));
-      
+
       // Check auth state
       await checkAuthState();
-      
+
       // 🚀 Initialize Prayer Notification Service with enhanced logic
       await initializePrayerNotifications();
-      
+
       setAppState(prev => ({
         ...prev,
         showingSplash: false,
@@ -124,14 +148,19 @@ function AppNavigator() {
   const initializePrayerNotifications = async () => {
     try {
       // 🔍 Smart initialization - check if notifications are properly set up
-      const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
-      
+      const isProperlySetup =
+        await PrayerTimeService.checkAndEnsureNotifications();
+
       if (!isProperlySetup) {
-        console.log('🔧 Prayers not properly set up, initializing complete chain...');
+        console.log(
+          '🔧 Prayers not properly set up, initializing complete chain...',
+        );
         const count = await PrayerTimeService.setupPerpetualChain();
         setScheduledCount(count);
-        console.log(`✅ Prayer notifications initialized with ${count} notifications`);
-        
+        console.log(
+          `✅ Prayer notifications initialized with ${count} notifications`,
+        );
+
         // Log what was scheduled for debugging
         const remaining = await NotificationService.getScheduledNotifications();
         const todayCount = remaining.filter(n => {
@@ -139,8 +168,12 @@ function AppNavigator() {
           const today = new Date();
           return notifDate.toDateString() === today.toDateString();
         }).length;
-        console.log(`📅 Scheduled: ${todayCount} for today, ${count - todayCount} for future days`);
-        
+
+        console.log(
+          `📅 Scheduled: ${todayCount} for today, ${
+            count - todayCount
+          } for future days`,
+        );
       } else {
         console.log('✅ Prayer notifications already properly set up');
         const existing = await NotificationService.getScheduledNotifications();
@@ -151,7 +184,6 @@ function AppNavigator() {
         ...prev,
         isNotificationInitialized: true,
       }));
-
     } catch (error) {
       console.error('❌ Prayer notification initialization failed:', error);
       // Try fallback initialization
@@ -163,7 +195,9 @@ function AppNavigator() {
           ...prev,
           isNotificationInitialized: true,
         }));
-        console.log(`✅ Fallback initialization successful: ${count} notifications`);
+        console.log(
+          `✅ Fallback initialization successful: ${count} notifications`,
+        );
       } catch (fallbackError) {
         console.error('❌ Fallback initialization also failed:', fallbackError);
       }
@@ -175,10 +209,9 @@ function AppNavigator() {
       console.log('🔧 Initializing authenticated user services');
       // Initialize existing background tasks with delay to avoid conflicts
       setTimeout(() => {
-            // 1. Initialize permissions first
-            const permissionInitializer = PermissionInitializer.getInstance();
-            permissionInitializer.initializeAppPermissions();
-        
+        // 1. Initialize permissions first
+        const permissionInitializer = PermissionInitializer.getInstance();
+        permissionInitializer.initializeAppPermissions();
       }, 500);
     } catch (error) {
       console.error('❌ Failed to initialize authenticated services:', error);
@@ -191,30 +224,37 @@ function AppNavigator() {
       if (nextAppState === 'active' && appState.isNotificationInitialized) {
         try {
           console.log('📱 App became active, checking prayer notifications...');
-          
           // Smart check - only refresh if notifications are not properly set up
-          const isProperlySetup = await PrayerTimeService.checkAndEnsureNotifications();
-          
+          const isProperlySetup =
+            await PrayerTimeService.checkAndEnsureNotifications();
+
           if (!isProperlySetup) {
-            console.log('🔄 Auto-refreshing due to missing/insufficient notifications');
+            console.log(
+              '🔄 Auto-refreshing due to missing/insufficient notifications',
+            );
             const count = await PrayerTimeService.setupPerpetualChain();
             setScheduledCount(count);
             console.log(`✅ Refreshed with ${count} notifications`);
           } else {
             // Just update the count for display
-            const remaining = await NotificationService.getScheduledNotifications();
+            const remaining =
+              await NotificationService.getScheduledNotifications();
             setScheduledCount(remaining.length);
-            console.log(`✅ Notifications properly set up: ${remaining.length} total`);
+            console.log(
+              `✅ Notifications properly set up: ${remaining.length} total`,
+            );
           }
-
         } catch (error) {
           console.error('❌ Error during app state refresh:', error);
         }
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+
     // Return cleanup function
     return () => {
       subscription?.remove();
@@ -259,10 +299,9 @@ function AppNavigator() {
   return (
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={screenOptions}>
-       
         {!appState.hasSeenOnboarding ? (
-          <Stack.Screen 
-            name="Onboarding" 
+          <Stack.Screen
+            name="Onboarding"
             options={{gestureEnabled: false}}
             children={({navigation}) => (
               <OnboardingScreen
@@ -274,12 +313,36 @@ function AppNavigator() {
         ) : isAuthenticated ? (
           <>
             <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-            <Stack.Screen name="Feeds" component={FeedsScreen} options={modalScreenOptions} />
-            <Stack.Screen name="NotificationScreen" component={NotificationScreen} options={modalScreenOptions} />
-            <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} options={modalScreenOptions} />
-            <Stack.Screen name="CallerSettings" component={CallerSettingScreen} options={modalScreenOptions} />
-            <Stack.Screen name="PickupSettings" component={PickupSettingsScreen} options={modalScreenOptions} />
-            <Stack.Screen name="DatabaseScreen" component={DatabaseScreen} options={modalScreenOptions} />
+            <Stack.Screen
+              name="Feeds"
+              component={FeedsScreen}
+              options={modalScreenOptions}
+            />
+            <Stack.Screen
+              name="NotificationScreen"
+              component={NotificationScreen}
+              options={modalScreenOptions}
+            />
+            <Stack.Screen
+              name="EditProfileScreen"
+              component={EditProfileScreen}
+              options={modalScreenOptions}
+            />
+            <Stack.Screen
+              name="CallerSettings"
+              component={CallerSettingScreen}
+              options={modalScreenOptions}
+            />
+            <Stack.Screen
+              name="PickupSettings"
+              component={PickupSettingsScreen}
+              options={modalScreenOptions}
+            />
+            <Stack.Screen
+              name="DatabaseScreen"
+              component={DatabaseScreen}
+              options={modalScreenOptions}
+            />
             <Stack.Screen
               name="FakeCallScreen"
               component={FakeCallScreen}
@@ -307,18 +370,39 @@ function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <DatabaseProvider>
-      <AuthProvider>
-        <SafeAreaView style={styles.container}>
-          <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor="transparent"
-            translucent
-          />
-          <AppNavigator />
-        </SafeAreaView>
-      </AuthProvider>
-    </DatabaseProvider>
+    <SafeAreaProvider>
+      <DatabaseProvider>
+        <AuthProvider>
+          <SafeAreaContent />
+        </AuthProvider>
+      </DatabaseProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function SafeAreaContent() {
+  const insets = useSafeAreaInsets();
+  const isDarkMode = useColorScheme() === 'dark';
+
+  return (
+    <View style={[
+      styles.container,
+      {
+        // Apply only bottom, left, and right safe area - NO TOP
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        // Explicitly set paddingTop to 0 to remove top safe area
+        paddingTop: 0,
+      }
+    ]}>
+      <StatusBar
+        barStyle={'light-content'}
+        backgroundColor="transparent"
+        translucent
+      />
+      <AppNavigator />
+    </View>
   );
 }
 
