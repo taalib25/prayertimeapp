@@ -621,15 +621,11 @@ class PrayerAppAPI {
   /**
    * Get user's pickup requests
    */
-  async getPickupRequests(): Promise<
-    ApiResponse<{data: PickupRequestResponse[]}>
-  > {
+  async getPickupRequests(): Promise<ApiResponse<any>> {
     try {
       console.log('📡 API: Fetching pickup requests...');
 
-      const response = await this.apiService.get<{
-        data: PickupRequestResponse[];
-      }>('/pickup-requests');
+      const response = await this.apiService.get<any>('/pickup-requests/all');
 
       if (response.success) {
         console.log('✅ API: Pickup requests fetched successfully');
