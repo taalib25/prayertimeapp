@@ -507,35 +507,6 @@ class PrayerAppAPI {
       // Fetch real feeds from API
       const response = await this.apiService.get<FeedsResponse>('/feeds');
       if (response.success && response.data) {
-        // Create mock items to prepend
-        const mockItems: FeedItem[] = [
-          {
-            id: 213123, // Negative ID to avoid conflicts
-            title: 'Welcome to Prayer App',
-            content:
-              'Stay connected with your spiritual journey. Get reminders for prayer times, track your daily activities, and stay updated with community announcements.',
-            image_url:
-              'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=400&h=300&fit=crop&q=80', // Beautiful mosque architecture
-            priority: 'high',
-            created_at: new Date().toISOString(),
-            expires_at: null,
-            author_name: 'Prayer App Team',
-            mosque_name: 'Community',
-          },
-          {
-            id: 2132131, // Negative ID to avoid conflicts
-            title: 'Daily Reminder',
-            content:
-              'Remember to maintain your daily prayers and spiritual activities. Every small step counts towards your spiritual growth.',
-            image_url: null, // No image for this text-only card
-            priority: 'medium',
-            created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-            expires_at: null,
-            author_name: 'Islamic Center',
-            mosque_name: 'Local Mosque',
-          },
-        ];
-
         // Handle the actual API response structure where feeds are at response.data (not response.data.data)
         const feedsArray = response.data.data || response.data; // Support both structures
         const cleanedFeeds = feedsArray.map((item: any) => {
@@ -544,6 +515,7 @@ class PrayerAppAPI {
             title: item.title,
             content: item.content,
             image_url: item.image_url,
+            youtube_url: item.video_url || null,
             priority: item.priority,
             created_at: item.created_at,
             expires_at: item.expires_at,
@@ -553,12 +525,9 @@ class PrayerAppAPI {
           return cleanItem;
         });
 
-        // Prepend mock items to real data
-        const combinedData: FeedItem[] = [...mockItems, ...cleanedFeeds];
-
         return {
           success: true,
-          data: {data: combinedData},
+          data: {data: cleanedFeeds},
           error: undefined,
         };
       }
@@ -573,7 +542,6 @@ class PrayerAppAPI {
     }
   }
 
- 
   /**
    * Get feeds from API (legacy method - use fetchFeeds instead)
    * @deprecated Use fetchFeeds() instead
@@ -846,7 +814,7 @@ class PrayerAppAPI {
     this.apiService.setLogging(enabled);
   }
 
-   /**
+  /**
    * Get list of areas
    */
   async getAreas(): Promise<ApiResponse<{data: string[]}>> {
@@ -861,7 +829,6 @@ class PrayerAppAPI {
       };
     }
   }
-
 }
 
 export default PrayerAppAPI;

@@ -485,6 +485,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     paddingTop: 28, // Added for status bar margin
+    marginBottom : 60,
   },
   header: {
     flexDirection: 'row',

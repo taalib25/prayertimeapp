@@ -216,12 +216,14 @@ class ApiTaskServices {
           Array.isArray(feedsArray) ? feedsArray.length : 'not an array',
         );
 
+        // Only real feeds, no mock/demo items
         const realFeeds = feedsArray.map((item: any) => {
           const cleanItem: FeedItem = {
             id: item.id,
             title: item.title,
             content: item.content,
             image_url: item.image_url,
+            youtube_url: item.video_url || null,
             priority: item.priority,
             created_at: item.created_at,
             expires_at: item.expires_at,
@@ -229,93 +231,15 @@ class ApiTaskServices {
             mosque_name: item.mosque_name,
           };
           return cleanItem;
-        }); // Prepend 2 demo mock items as requested
-        const mockFeeds: FeedItem[] = [
-          {
-            id: -2,
-            title: 'Prayer Times & Daily Reminders',
-            content:
-              'Never miss a prayer with our automated reminders and accurate prayer time calculations based on your location.',
-            image_url:
-              'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?w=400&h=300&fit=crop&q=80', // Prayer beads and spiritual reflection
-            priority: 'medium',
-            created_at: new Date(
-              Date.now() - 24 * 60 * 60 * 1000,
-            ).toISOString(), // Yesterday
-            expires_at: null,
-            author_name: 'Prayer Admin',
-            mosque_name: 'Demo Mosque',
-          },
-          {
-            id: -3,
-            title: 'Learn Five Daily Prayers',
-            content:
-              'Watch this tutorial on how to perform the five daily prayers correctly.',
-            youtube_url: 'https://www.youtube.com/watch?v=rofORqYGFE4',
-            priority: 'high',
-            created_at: new Date(
-              Date.now() - 12 * 60 * 60 * 1000,
-            ).toISOString(), // 12 hours ago
-            expires_at: null,
-            author_name: 'Islamic Education',
-            mosque_name: 'Community Center',
-          },
-        ];
-
-        // Combine mock items with real feeds (mock items first)
-        return [...mockFeeds, ...realFeeds];
+        });
+        return realFeeds;
       } else {
-        console.log('⚠️ API: No feeds from backend, using mock data only');
-        throw new Error('No real feeds available');
+        console.log('⚠️ API: No feeds from backend, returning empty array');
+        return [];
       }
     } catch (error) {
-      console.error(
-        '❌ API: Error fetching feeds, falling back to mock data:',
-        error,
-      ); // Return only mock demo items if API fails
-      const mockFeeds: FeedItem[] = [
-        {
-          id: -4,
-          title: 'Daily Duas for Muslims',
-          content:
-            'Collection of essential daily duas every Muslim should know.',
-          youtube_url: 'https://www.youtube.com/watch?v=n5SJc4ROWZY',
-          image_url: null,
-          priority: 'medium',
-          created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          expires_at: null,
-          author_name: 'Dua Collection',
-          mosque_name: 'Islamic Center',
-        },
-        {
-          id: -3,
-          title: 'Understanding the Importance of Prayer',
-          content:
-            'Learn about the significance of prayer in Islam from this educational video. https://www.youtube.com/watch?v=RK1K2bCg4J8',
-          youtube_url: 'https://www.youtube.com/watch?v=RK1K2bCg4J8',
-          image_url: null,
-          priority: 'high',
-          created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-          expires_at: null,
-          author_name: 'Islamic Learning Channel',
-          mosque_name: 'Global Islamic Center',
-        },
-        {
-          id: -2,
-          title: 'Prayer Times & Daily Reminders',
-          content:
-            'Never miss a prayer with our automated reminders and accurate prayer time calculations based on your location.',
-          image_url:
-            'https://images.unsplash.com/photo-1552728089-57bdde30beb3?w=400&h=300&fit=crop&q=80', // Prayer beads and spiritual reflection
-          priority: 'medium',
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
-          expires_at: null,
-          author_name: 'Prayer Admin',
-          mosque_name: 'Demo Mosque',
-        },
-      ];
-
-      return mockFeeds;
+      console.error('❌ API: Error fetching feeds:', error);
+      return [];
     }
   }
 
@@ -578,14 +502,13 @@ class ApiTaskServices {
         return { success: true, data: response.data };
       } else {
         console.log('❌ API: Failed to fetch areas:', response.error);
-        return { success: false, error: response.error };
+        return {success: false, error: response.error};
       }
     } catch (error) {
       console.error('❌ API: Error fetching areas:', error);
-      return { success: false, error: 'Network error occurred' };
+      return {success: false, error: 'Network error occurred'};
     }
   }
-  
 }
 
 export default ApiTaskServices;
