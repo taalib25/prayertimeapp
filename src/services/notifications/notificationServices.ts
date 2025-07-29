@@ -4,7 +4,7 @@ import notifee, {
   AuthorizationStatus,
   Trigger
 } from '@notifee/react-native';
-import { NOTIFICATION_CHANNELS, PRAYER_DISPLAY_NAMES, formatTime } from '../../utils/helpers';
+import { NOTIFICATION_CHANNELS, PRAYER_DISPLAY_NAMES, formatDateYMD, formatTime } from '../../utils/helpers';
 import { PrayerNotification, PrayerName } from '../../utils/types';
 import { Platform } from 'react-native';
 
@@ -34,8 +34,6 @@ class NotificationService {
         const batteryOptimizationEnabled = await notifee.isBatteryOptimizationEnabled();
         if (batteryOptimizationEnabled) {
           console.warn('⚠️ Battery optimization enabled - may affect notifications');
-          // Optionally guide user to disable battery optimization
-          // await notifee.openBatteryOptimizationSettings();
         }
       }
 
@@ -51,13 +49,13 @@ class NotificationService {
 
   private static async createChannels(): Promise<void> {
     try {
-      // Prayer reminders channel - FIXED: Removed custom sound and icon references
+      // Prayer reminders channel
       this.prayerChannelId = await notifee.createChannel({
         id: NOTIFICATION_CHANNELS.PRAYER_REMINDERS,
         name: 'Prayer Time Reminders',
         description: 'Notifications for prayer times',
         importance: AndroidImportance.HIGH,
-        sound: 'default', // Use system default sound
+        sound: 'default',
         vibration: true,
         vibrationPattern: [300, 500, 300, 500],
         lights: true,
@@ -80,73 +78,95 @@ class NotificationService {
     }
   }
 
-  static async scheduleNotification(notification: PrayerNotification): Promise<void> {
-    try {
-      const { id, prayer, originalTime, notificationTime, date } = notification;
+  // In scheduleNotification method, add explicit verification:
 
-      // Validate notification time is in the future
-      const now = new Date();
-      if (notificationTime.getTime() <= now.getTime()) {
-        console.warn(`⚠️ Skipping past notification: ${id} scheduled for ${notificationTime}`);
-        return;
-      }
+static async scheduleNotification(notification: PrayerNotification): Promise<void> {
+  try {
+    const { id, prayer, originalTime, notificationTime, date } = notification;
+    const now = new Date();
 
-      // FIXED: Simplified notification without custom resources
-      await notifee.createTriggerNotification(
-        {
-          id,
-          title: ` ${PRAYER_DISPLAY_NAMES[prayer as PrayerName]}`,
-          body: `Prayer time in 15 minutes • ${formatTime(originalTime)}`,
-          android: {
-            channelId: this.prayerChannelId!,
-            color: '#2E7D32',
-            vibrationPattern: [300, 500, 300, 500],
-            showTimestamp: true,
-            timestamp: notificationTime.getTime(),
-            autoCancel: true,
-            ongoing: false,
-            // Add priority for better delivery
-            importance: AndroidImportance.HIGH,
-          },
-          ios: {
-            sound: "default", // Use default system sound
-            critical: false,
-            categoryId: 'prayer-reminder',
-          },
-        },
-        {
-          type: TriggerType.TIMESTAMP,
-          timestamp: notificationTime.getTime(),
-          // Add repeat options if needed
-          // repeatFrequency: RepeatFrequency.DAILY,
-        } as Trigger
-      );
-
-      console.log(`📝 Scheduled notification: ${id} for ${notificationTime.toISOString()}`);
-    } catch (error) {
-      console.error('❌ Failed to schedule notification:', error, { 
-        notificationId: notification.id,
-        scheduledTime: notification.notificationTime.toISOString() 
-      });
-      throw error;
+    if (originalTime.getTime() <= now.getTime()) {
+      console.warn(`⚠️ Skipping notification for past prayer: ${id}`);
+      return;
     }
+
+    let scheduledTime = notificationTime;
+    if (scheduledTime.getTime() <= now.getTime()) {
+      scheduledTime = new Date(now.getTime() + 5 * 1000);
+      console.log(`⚡ Adjusted notification time to immediate for ${id}`);
+    }
+
+    const triggerTimestamp = scheduledTime.getTime();
+
+    await notifee.createTriggerNotification(
+      {
+        id,
+        title: `🕌 ${PRAYER_DISPLAY_NAMES[prayer as PrayerName]}`,
+        body: `Prayer time in 15 minutes • ${formatTime(originalTime)}`,
+        android: {
+          channelId: this.prayerChannelId!,
+          color: '#2E7D32',
+          vibrationPattern: [300, 500, 300, 500],
+          showTimestamp: true,
+          timestamp: triggerTimestamp,
+          autoCancel: true,
+          ongoing: false,
+          importance: AndroidImportance.HIGH,
+        },
+        ios: {
+          sound: "default",
+          critical: false,
+          categoryId: 'prayer-reminder',
+        },
+      },
+      {
+        type: TriggerType.TIMESTAMP,
+        timestamp: triggerTimestamp,
+      } as Trigger
+    );
+
+    // CRITICAL DEBUG: Log actual scheduled notification details
+    console.log(`📝 SCHEDULED: ${id}`);
+    console.log(`   Timestamp: ${triggerTimestamp}`);
+    console.log(`   Date: ${new Date(triggerTimestamp).toLocaleString()}`);
+    console.log(`   Prayer Date ID: ${formatDateYMD(date)}`);
+
+    // VERIFICATION: Immediately check if it was actually scheduled
+    setTimeout(async () => {
+      const scheduled = await notifee.getTriggerNotifications();
+      const found = scheduled.find(n => n.notification.id === id);
+      if (found) {
+        console.log(`✅ VERIFIED: ${id} is in system with timestamp ${found.trigger.timestamp}`);
+      } else {
+        console.error(`❌ MISSING: ${id} not found in scheduled notifications!`);
+      }
+    }, 100);
+
+  } catch (error) {
+    console.error('❌ Failed to schedule notification:', error, { 
+      notificationId: notification.id,
+      scheduledTime: notification.notificationTime.toISOString() 
+    });
+    throw error;
   }
+}
+
 
   static async batchScheduleNotifications(notifications: PrayerNotification[]): Promise<number> {
     try {
       console.log(`📅 Scheduling ${notifications.length} prayer notifications...`);
       
-      // Filter out past notifications
+      // FIXED: Filter by originalTime (prayer time) instead of notificationTime
       const now = new Date();
       const futureNotifications = notifications.filter(
-        notif => notif.notificationTime.getTime() > now.getTime()
+        notif => notif.originalTime.getTime() > now.getTime()
       );
 
       if (futureNotifications.length !== notifications.length) {
-        console.warn(`⚠️ Filtered out ${notifications.length - futureNotifications.length} past notifications`);
+        console.warn(`⚠️ Filtered out ${notifications.length - futureNotifications.length} past prayers`);
       }
 
-      const batchSize = 20; // Reduced batch size for better stability
+      const batchSize = 20;
       let scheduledCount = 0;
       let errorCount = 0;
 
@@ -170,7 +190,7 @@ class NotificationService {
           }
         });
 
-        // Longer delay between batches for stability
+        // Delay between batches
         if (i + batchSize < futureNotifications.length) {
           await new Promise(resolve => setTimeout(resolve, 250));
         }
@@ -217,7 +237,6 @@ class NotificationService {
       let errorCount = 0;
 
       for (const notification of existingNotifications) {
-        // Don't change this logic as requested
         if (notification.trigger.timestamp < cutoffDate.getTime()) {
           try {
             await notifee.cancelNotification(notification.notification.id!);
@@ -254,7 +273,7 @@ class NotificationService {
             ongoing: false,
             autoCancel: true,
             showTimestamp: false,
-            visibility: 0, // Private
+            visibility: 0,
             importance: AndroidImportance.LOW,
           },
           ios: {
@@ -264,11 +283,12 @@ class NotificationService {
         },
         {
           type: TriggerType.TIMESTAMP,
-          timestamp,
+          timestamp, // Local timestamp
         } as Trigger
       );
 
-      console.log(`📝 Scheduled system trigger: ${id} for ${new Date(timestamp).toISOString()}`);
+      const triggerLocal = new Date(timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' });
+      console.log(`📝 Scheduled system trigger: ${id} for ${triggerLocal} (Sri Lanka)`);
     } catch (error) {
       console.error('❌ Failed to schedule system trigger:', error);
       throw error;
@@ -283,6 +303,16 @@ class NotificationService {
       );
 
       console.log(`📊 Found ${prayerNotifications.length} scheduled prayer notifications`);
+      
+      // Debug: Log scheduled notifications with local times
+      if (prayerNotifications.length > 0) {
+        console.log('📋 Currently Scheduled Notifications (Sri Lanka Time):');
+        prayerNotifications.forEach(notif => {
+          const triggerTime = new Date(notif.trigger.timestamp).toLocaleString('en-LK', { timeZone: 'Asia/Colombo' });
+          console.log(`   ${notif.notification.id}: ${triggerTime}`);
+        });
+      }
+      
       return prayerNotifications;
     } catch (error) {
       console.error('❌ Failed to get scheduled notifications:', error);
@@ -290,24 +320,64 @@ class NotificationService {
     }
   }
 
-  // ADDED: Debug method to help troubleshoot
+  // Test method specifically for Sri Lanka timezone
+  static async testSriLankaNotification(): Promise<void> {
+    try {
+      console.log('🧪 === Testing Sri Lanka Timezone Notification ===');
+      
+      await this.initialize();
+      
+      const now = new Date();
+      const testTime = new Date(now.getTime() + 10 * 1000); // 10 seconds from now
+      const prayerTime = new Date(now.getTime() + 20 * 60 * 1000); // 20 min from now
+      
+      console.log(`⏰ Current time (Sri Lanka): ${now.toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })}`);
+      console.log(`📅 Test notification scheduled for: ${testTime.toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })}`);
+      console.log(`🕌 Mock prayer time: ${prayerTime.toLocaleString('en-LK', { timeZone: 'Asia/Colombo' })}`);
+      
+      const testNotification: PrayerNotification = {
+        id: `test-sri-lanka-${Date.now()}`,
+        prayer: 'fajr' as PrayerName,
+        originalTime: prayerTime,
+        notificationTime: testTime,
+        date: new Date()
+      };
+
+      await this.scheduleNotification(testNotification);
+      
+      console.log('✅ Sri Lanka timezone test notification scheduled!');
+      console.log('📱 Watch for notification in 10 seconds...');
+      
+      // Clean up after 15 seconds
+      setTimeout(async () => {
+        try {
+          await notifee.cancelNotification(testNotification.id);
+          console.log('🧹 Cleaned up test notification');
+        } catch (error) {
+          console.error('⚠️ Failed to clean up test notification:', error);
+        }
+      }, 15000);
+      
+    } catch (error) {
+      console.error('❌ Sri Lanka test notification failed:', error);
+      throw error;
+    }
+  }
+
+  // Keep your existing debug and test methods...
   static async debugNotificationStatus(): Promise<void> {
     try {
       console.log('🔍 === Notification Debug Info ===');
       
-      // Check permissions
       const settings = await notifee.getNotificationSettings();
       console.log('Permission status:', settings.authorizationStatus);
       
-      // Check channels
       const channels = await notifee.getChannels();
       console.log('Available channels:', channels.map(c => ({ id: c.id, name: c.name })));
       
-      // Check scheduled notifications
       const scheduled = await notifee.getTriggerNotifications();
       console.log('Scheduled notifications count:', scheduled.length);
       
-      // Check battery optimization (Android only)
       if (Platform.OS === 'android') {
         const batteryOptEnabled = await notifee.isBatteryOptimizationEnabled();
         console.log('Battery optimization enabled:', batteryOptEnabled);
@@ -319,82 +389,12 @@ class NotificationService {
     }
   }
 
-  
-  // ADDED: Test function to schedule notification in 5 seconds
-  static async testNotificationIn5Seconds(): Promise<void> {
-    try {
-      console.log('🧪 === Starting 5-Second Notification Test ===');
-      
-      // First, ensure the service is initialized
-      await this.initialize();
-      
-      // Show debug info
-      await this.debugNotificationStatus();
-      
-      // Create test notification 5 seconds from now
-      const testTime = new Date(Date.now() + 5000); // 5 seconds from now
-      const originalTime = new Date(Date.now() + 20 * 60 * 1000); // Mock original prayer time (20 min from now)
-      
-      const testNotification: PrayerNotification = {
-        id: `test-prayer-${Date.now()}`,
-        prayer: 'fajr' as PrayerName,
-        originalTime: originalTime,
-        notificationTime: testTime,
-        date: new Date()
-      };
-
-      console.log(`📅 Scheduling test notification for: ${testTime.toLocaleTimeString()}`);
-      console.log(`⏰ Current time: ${new Date().toLocaleTimeString()}`);
-      
-      // Schedule the test notification
-      await this.scheduleNotification(testNotification);
-      
-      // Verify it was scheduled
-      const scheduledNotifications = await this.getScheduledNotifications();
-      const testNotif = scheduledNotifications.find(n => n.notification.id === testNotification.id);
-      
-      if (testNotif) {
-        console.log('✅ Test notification scheduled successfully!');
-        console.log(`📱 Watch for notification in 5 seconds: "${testNotif.notification.title}"`);
-        console.log(`🔔 Notification body: "${testNotif.notification.body}"`);
-        
-        // Set a timeout to check if notification triggered (this won't catch the actual trigger, but helps with logging)
-        setTimeout(async () => {
-          console.log('⏰ 5 seconds passed - notification should have triggered!');
-          console.log('💡 If you didn\'t see the notification, check:');
-          console.log('   - App notifications are enabled in system settings');
-          console.log('   - Battery optimization is disabled for this app');
-          console.log('   - Do Not Disturb is not blocking notifications');
-          
-          // Clean up test notification
-          try {
-            await notifee.cancelNotification(testNotification.id);
-            console.log('🧹 Cleaned up test notification');
-          } catch (error) {
-            console.error('⚠️ Failed to clean up test notification:', error);
-          }
-        }, 6000);
-        
-      } else {
-        console.error('❌ Test notification was not found in scheduled notifications!');
-      }
-      
-      console.log('🧪 === Test Setup Complete ===');
-      
-    } catch (error) {
-      console.error('❌ Test notification failed:', error);
-      throw error;
-    }
-  }
-
-  // ADDED: Immediate test notification (shows instantly)
   static async testImmediateNotification(): Promise<void> {
     try {
       console.log('🧪 Testing immediate notification...');
       
       await this.initialize();
       
-      // Show immediate notification (not scheduled)
       await notifee.displayNotification({
         id: `immediate-test-${Date.now()}`,
         title: '🧪 Immediate Test Notification',
@@ -407,7 +407,7 @@ class NotificationService {
           autoCancel: true,
         },
         ios: {
-          sound: "default", // Use default system sound
+          sound: "default",
         },
       });
       
@@ -419,9 +419,5 @@ class NotificationService {
     }
   }
 }
-
-
-
-
 
 export default NotificationService;
