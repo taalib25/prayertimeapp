@@ -5,7 +5,6 @@ export function getTodayDateString(): string {
   const year = today.getFullYear();
   const month = (today.getMonth() + 1).toString().padStart(2, '0');
   const day = today.getDate().toString().padStart(2, '0');
-
   return `${year}-${month}-${day}`;
 }
 
@@ -15,7 +14,6 @@ export function getTomorrowDateString(): string {
   const year = tomorrow.getFullYear();
   const month = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
   const day = tomorrow.getDate().toString().padStart(2, '0');
-
   return `${year}-${month}-${day}`;
 }
 
@@ -23,18 +21,11 @@ export function formatDateString(date: Date): string {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
-
   return `${year}-${month}-${day}`;
 }
 
 export const PRAYER_NAMES = ['fajr','luhr','asr','magrib','isha'];
 export const ADVANCE_WARNING_MINUTES = 15;
-
-export const NOTIFICATION_CHANNEL = {
-  PRAYER_REMINDERS: 'prayer-reminders',
-  PRAYER_SYSTEM:    'prayer-system'
-};
-
 
 export const NOTIFICATION_CHANNELS = {
   PRAYER_REMINDERS: 'prayer-reminders',
@@ -54,16 +45,24 @@ export const PRAYER_DISPLAY_NAMES: Record<PrayerName, string> = {
   isha: 'Isha',
 };
 
-
 export const parseDate = (dateStr: string, year: number): Date => {
   const [day, month] = dateStr.split('-');
-  return new Date(year, MONTH_NAMES[month], parseInt(day, 10));
+  const parsedDate = new Date(year, MONTH_NAMES[month], parseInt(day, 10));
+  return parsedDate;
 };
+
 
 export const createPrayerDateTime = (baseDate: Date, timeStr: string): Date => {
   const [hours, minutes] = timeStr.split(':').map(Number);
-  const dateTime = new Date(baseDate);
-  dateTime.setHours(hours, minutes, 0, 0);
+  const dateTime = new Date(
+    baseDate.getFullYear(), 
+    baseDate.getMonth(), 
+    baseDate.getDate(), 
+    hours, 
+    minutes, 
+    0, 
+    0
+  );
   return dateTime;
 };
 
@@ -74,7 +73,7 @@ export const addDays = (date: Date, days: number): Date => {
 };
 
 export const formatTime = (date: Date): string => {
-  return date.toLocaleTimeString([], {
+  return date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true
@@ -82,9 +81,25 @@ export const formatTime = (date: Date): string => {
 };
 
 export const formatDate = (date: Date): string => {
-  return date.toLocaleDateString([], {
+  return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
   });
+};
+
+export const formatDateYMD = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const debugTimestamp = (date: Date, label: string = '') => {
+  console.log(`🕐 ${label} Debug:`);
+  console.log(`   Local time: ${date.toLocaleString()}`);
+  console.log(`   ISO string: ${date.toISOString()}`);
+  console.log(`   Timestamp: ${date.getTime()}`);
+  console.log(`   Date only: ${formatDateYMD(date)}`);
+  console.log(`   Timezone offset: ${date.getTimezoneOffset()} minutes`);
 };

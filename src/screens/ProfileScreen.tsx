@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
+  Platform,
 } from 'react-native';
 import BadgeCard from '../components/BadgeCard';
 import MenuButton from '../components/MenuButton';
@@ -346,6 +347,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </Pressable>
         </View>
         <View style={{height: 120}} />
+         {/* Subtle app version at the bottom */}
+        <View style={styles.versionContainer}>
+          <Text style={styles.versionText}>
+            v{require('../../package.json').version} {Platform.OS === 'ios' ? 'iOS' : 'Android'}
+          </Text>
+        </View>
       </ScrollView>
       <AlertModal
         visible={showLogoutModal}
@@ -362,6 +369,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  versionContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: -100,
+    opacity: 0.5,
+  },
+  versionText: {
+    fontSize: 13,
+    color: '#888',
+    letterSpacing: 0.5,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#FFF',
