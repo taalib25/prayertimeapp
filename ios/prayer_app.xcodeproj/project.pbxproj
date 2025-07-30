@@ -7,10 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1051C9A00A2BB3DFD8F61AE9 /* libPods-prayer_app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 854E4646C2BE29FF0EED91A3 /* libPods-prayer_app.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		1C7FA45F97014924B3BFC1D3 /* Sora-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 464BF9C5B4EA4C39BB18F176 /* Sora-Thin.ttf */; };
 		2918BE20BD8340209504C5E9 /* Sora-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4F5A504B39FC48E69DEF6E41 /* Sora-ExtraBold.ttf */; };
 		4606B34A6B834D70800CDEE7 /* Sora-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 55BF1762263147FDB4DDC7BB /* Sora-ExtraLight.ttf */; };
+		49D188AD2E37C1DD00F25388 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 49D188AC2E37C1DD00F25388 /* assets */; };
+		49D188B12E38B14200F25388 /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 49D188B02E38B14200F25388 /* main.jsbundle */; };
 		50C81F8331E948E5BC565C49 /* Sora-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D90936CBF92A4B138E0532EC /* Sora-SemiBold.ttf */; };
 		6D9D4865CF054A498946C771 /* Sora-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1E8C9BE0316146C3A58EEB29 /* Sora-Regular.ttf */; };
 		7404DF19D0168806945F4420 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
@@ -18,7 +21,6 @@
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		915D5FCD4BF5467FA4788CCC /* Sora-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DA2BE8A9286542689C0F9593 /* Sora-Light.ttf */; };
 		A1B4BC109E044C35A41961FC /* Sora-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D3EB392289DF4D5BACB26AE6 /* Sora-Medium.ttf */; };
-		D74E96A9F674F9606EAC7AD4 /* libPods-prayer_app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C1FE835718241FE715668A06 /* libPods-prayer_app.a */; };
 		EF721DD6E49149359D0717F0 /* Sora-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1508179BA9E4B348C9F271E /* Sora-Bold.ttf */; };
 /* End PBXBuildFile section */
 
@@ -28,15 +30,19 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = prayer_app/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = prayer_app/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1E8C9BE0316146C3A58EEB29 /* Sora-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Regular.ttf"; path = "../src/assets/fonts/Sora-Regular.ttf"; sourceTree = "<group>"; };
-		237A2723366B6DAB001B823F /* Pods-prayer_app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.debug.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.debug.xcconfig"; sourceTree = "<group>"; };
 		464BF9C5B4EA4C39BB18F176 /* Sora-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Thin.ttf"; path = "../src/assets/fonts/Sora-Thin.ttf"; sourceTree = "<group>"; };
+		49D1887E2E37B25200F25388 /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		49D188AC2E37C1DD00F25388 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
+		49D188AE2E37C20500F25388 /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		49D188B02E38B14200F25388 /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		4E19F345550EB8A5D85F5B31 /* Pods-prayer_app.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.debug.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.debug.xcconfig"; sourceTree = "<group>"; };
 		4F5A504B39FC48E69DEF6E41 /* Sora-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-ExtraBold.ttf"; path = "../src/assets/fonts/Sora-ExtraBold.ttf"; sourceTree = "<group>"; };
 		55BF1762263147FDB4DDC7BB /* Sora-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-ExtraLight.ttf"; path = "../src/assets/fonts/Sora-ExtraLight.ttf"; sourceTree = "<group>"; };
-		6FEE390A55127DBE1072D535 /* Pods-prayer_app.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.release.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.release.xcconfig"; sourceTree = "<group>"; };
+		661C43FAC89C8CB64FA9F598 /* Pods-prayer_app.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-prayer_app.release.xcconfig"; path = "Target Support Files/Pods-prayer_app/Pods-prayer_app.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = prayer_app/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = prayer_app/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		854E4646C2BE29FF0EED91A3 /* libPods-prayer_app.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayer_app.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1508179BA9E4B348C9F271E /* Sora-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Bold.ttf"; path = "../src/assets/fonts/Sora-Bold.ttf"; sourceTree = "<group>"; };
-		C1FE835718241FE715668A06 /* libPods-prayer_app.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-prayer_app.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EB392289DF4D5BACB26AE6 /* Sora-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Medium.ttf"; path = "../src/assets/fonts/Sora-Medium.ttf"; sourceTree = "<group>"; };
 		D90936CBF92A4B138E0532EC /* Sora-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-SemiBold.ttf"; path = "../src/assets/fonts/Sora-SemiBold.ttf"; sourceTree = "<group>"; };
 		DA2BE8A9286542689C0F9593 /* Sora-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Sora-Light.ttf"; path = "../src/assets/fonts/Sora-Light.ttf"; sourceTree = "<group>"; };
@@ -48,7 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D74E96A9F674F9606EAC7AD4 /* libPods-prayer_app.a in Frameworks */,
+				1051C9A00A2BB3DFD8F61AE9 /* libPods-prayer_app.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,7 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				C1FE835718241FE715668A06 /* libPods-prayer_app.a */,
+				854E4646C2BE29FF0EED91A3 /* libPods-prayer_app.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -86,6 +92,10 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				49D188AE2E37C20500F25388 /* main.jsbundle */,
+				49D188B02E38B14200F25388 /* main.jsbundle */,
+				49D188AC2E37C1DD00F25388 /* assets */,
+				49D1887E2E37B25200F25388 /* main.jsbundle */,
 				13B07FAE1A68108700A75B9A /* prayer_app */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -124,8 +134,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				237A2723366B6DAB001B823F /* Pods-prayer_app.debug.xcconfig */,
-				6FEE390A55127DBE1072D535 /* Pods-prayer_app.release.xcconfig */,
+				4E19F345550EB8A5D85F5B31 /* Pods-prayer_app.debug.xcconfig */,
+				661C43FAC89C8CB64FA9F598 /* Pods-prayer_app.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -137,12 +147,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "prayer_app" */;
 			buildPhases = (
-				FF9D0B1B66F26ED8820FEE55 /* [CP] Check Pods Manifest.lock */,
+				395236491EB2332845CBAEFC /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				C4CCDC23AF0A86A9F5559895 /* [CP] Copy Pods Resources */,
+				5EAFB4AB62C130D3327A6C88 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -189,6 +199,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				49D188B12E38B14200F25388 /* main.jsbundle in Resources */,
+				49D188AD2E37C1DD00F25388 /* assets in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				EF721DD6E49149359D0717F0 /* Sora-Bold.ttf in Resources */,
@@ -222,28 +234,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		C4CCDC23AF0A86A9F5559895 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		FF9D0B1B66F26ED8820FEE55 /* [CP] Check Pods Manifest.lock */ = {
+		395236491EB2332845CBAEFC /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -265,6 +256,27 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		5EAFB4AB62C130D3327A6C88 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			inputPaths = (
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-prayer_app/Pods-prayer_app-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -281,11 +293,11 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 237A2723366B6DAB001B823F /* Pods-prayer_app.debug.xcconfig */;
+			baseConfigurationReference = 4E19F345550EB8A5D85F5B31 /* Pods-prayer_app.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = P75CNUJ586;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
@@ -313,11 +325,11 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 6FEE390A55127DBE1072D535 /* Pods-prayer_app.release.xcconfig */;
+			baseConfigurationReference = 661C43FAC89C8CB64FA9F598 /* Pods-prayer_app.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = P75CNUJ586;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
 				INFOPLIST_FILE = prayer_app/Info.plist;
@@ -501,7 +513,7 @@
 				13B07F951A680F5B00A75B9A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "prayer_app" */ = {
 			isa = XCConfigurationList;
@@ -510,7 +522,7 @@
 				83CBBA211A601CBA00E9B192 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
