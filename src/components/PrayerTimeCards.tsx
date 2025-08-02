@@ -13,62 +13,26 @@ import AttendanceSelectionModal, {
 } from './AttendanceSelectionModal';
 import {getTodayDateString, formatDateString} from '../utils/helpers';
 import {updatePrayerStatus} from '../services/db/dailyTaskServices';
-import UserService from '../services/UserService';
-import { PrayerTime } from '../utils/types';
-
+import {PrayerTime} from '../utils/types';
 
 interface PrayerTimeCardsProps {
   selectedDate?: string;
   dailyTasks: DailyTasksModel[];
+  prayers: PrayerTime[];
+  isLoading: boolean;
+  onPrayersLoad?: () => void;
 }
 
 const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
   selectedDate,
   dailyTasks,
+  prayers,
+  isLoading,
+  onPrayersLoad,
 }) => {
-  const [prayers, setPrayers] = useState<PrayerTime[]>([]);
-  const [loading, setLoading] = useState(true);
   const [attendancePopupVisible, setAttendancePopupVisible] = useState(false);
   const [selectedPrayerForAttendance, setSelectedPrayerForAttendance] =
-    useState<PrayerTime | null>(null);
-
-  const userService = UserService.getInstance();
-
-     const loadPrayerTimes = async () => {
-      try {
-        setLoading(true);
-        const prayerTimesData = await userService.getPrayerTimesForDate(selectedDate!);
-
-        if (prayerTimesData) {
-          const formattedPrayers: PrayerTime[] = [
-            {name: 'fajr', displayName: 'Fajr', time: prayerTimesData.fajr},
-            {name: 'dhuhr', displayName: 'Dhuhr', time: prayerTimesData.dhuhr},
-            {name: 'asr', displayName: 'Asr', time: prayerTimesData.asr},
-            {
-              name: 'maghrib',
-              displayName: 'Maghrib',
-              time: prayerTimesData.maghrib,
-            },
-            {name: 'isha', displayName: 'Isha', time: prayerTimesData.isha},
-          ];
-          setPrayers(formattedPrayers);
-        } else {
-          console.warn(`No prayer times found for date: ${selectedDate}`);
-          setPrayers([]);
-        }
-      } catch (error) {
-        console.error('Error loading prayer times:', error);
-        setPrayers([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-  // Get prayer times for the selected date using UserService
-  useEffect(() => {
-    loadPrayerTimes();
-  }, [selectedDate, userService]);
-
-  // Use reactive dailyTasks prop instead of hook
+    useState<PrayerTime | null>(null); // Use reactive dailyTasks prop instead of hook
 
   const isToday = useMemo(() => {
     const today = getTodayDateString();
@@ -201,7 +165,7 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
     <>
       {/* Prayer Cards Container */}
       <View style={styles.container}>
-        {loading ? (
+        {isLoading ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>Loading prayer times...</Text>
           </View>
@@ -284,7 +248,6 @@ const PrayerTimeCards: React.FC<PrayerTimeCardsProps> = ({
                               <Text style={styles.crossmark}>✕</Text>
                             </View>
                           )}
-                          {/* We don't show any indicator when prayerStatus is null */}
                         </>
                       )}
                     </View>

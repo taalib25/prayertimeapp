@@ -17,18 +17,16 @@ import {
   createDailyTasks,
 } from '../../services/db/dailyTaskServices';
 import {DAILY_SPECIAL_TASKS} from './specialTasks';
-import {usePrayerTimes} from '../../hooks/usePrayerTimes';
+import {PrayerTime} from '../../utils/types';
 
 // ✅ PROPER REACTIVE: Component using withObservables HOC pattern
 interface DailyTasksSelectorProps {
   dailyTasks: DailyTasksModel[];
+  prayerTimes?: PrayerTime[];
 }
 
 const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
-  ({dailyTasks}) => {
-    // ✅ PRAYER TIMES: Get today's prayer times for filtering
-    const {prayerTimes} = usePrayerTimes(getTodayDateString());
-
+  ({dailyTasks, prayerTimes = []}) => {
     // ✅ PRAYER TIME CHECK: Function to determine if prayer time has arrived
     const isPrayerTimeArrived = useCallback(
       (prayerName: string, date: string): boolean => {
@@ -41,7 +39,7 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
 
         // Find the prayer time for this prayer
         const prayer = prayerTimes.find(
-          p => p.name.toLowerCase() === prayerName.toLowerCase(),
+          (p: PrayerTime) => p.name.toLowerCase() === prayerName.toLowerCase(),
         );
         if (!prayer) {
           // If no prayer time found, show the task (fallback behavior)
@@ -271,18 +269,8 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
         }
       });
 
-      console.log(
-        `📅 Generated data for ${
-          dailyTasksData.length
-        } days (${requiredDates.join(', ')})`,
-      );
-      console.log(
-        `📝 Editability: ${dailyTasksData
-          .map(d => `${d.date}:${d.isEditable}`)
-          .join(', ')}`,
-      );
       return transformDailyData(dailyTasksData, isPrayerTimeArrived);
-    }, [dailyTasks, isPrayerTimeArrived]); // Now reactive to withObservables prop and prayer times
+    }, [dailyTasks, isPrayerTimeArrived]);
 
     // ✅ SIMPLE: Find today's page with better fallback
     const initialPage = useMemo(() => {
@@ -297,9 +285,6 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
       const targetPage =
         todayIndex >= 0 ? todayIndex : transformedDailyData.length - 1;
 
-      console.log(
-        `📅 Daily tasks: ${transformedDailyData.length} days, today at index ${todayIndex}, showing page ${targetPage}`,
-      );
       return targetPage;
     }, [transformedDailyData]);
 
@@ -391,7 +376,7 @@ const DailyTasksSelector: React.FC<DailyTasksSelectorProps> = React.memo(
 );
 
 // ✅ BRUTE FORCE: Maximum reactive configuration - observe ALL database changes
-const enhance = withObservables([], () => ({
+const enhance = withObservables(['prayerTimes'], () => ({
   dailyTasks: database
     .get<DailyTasksModel>('daily_tasks')
     .query(Q.sortBy('date', Q.desc))
