@@ -195,8 +195,6 @@ const AttendanceSelectionModal: React.FC<AttendanceSelectionModalProps> = ({
           ]}>
           {option.description}
         </Text>
-        {/* Show cross symbol when "No" is selected */}
-        {isNone && isSelected && <Text style={styles.crossSymbol}>✖</Text>}
       </TouchableOpacity>
     );
   };
@@ -281,13 +279,12 @@ const styles = StyleSheet.create({
     ...typography.caption,
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
-    fontStyle: 'italic',
+
   },
   futureWarning: {
-    ...typography.caption,
+    ...typography.h3,
     fontSize: 14,
     color: '#FFD700',
-    fontStyle: 'italic',
     marginTop: 4,
   },
   optionsContainer: {
@@ -333,7 +330,6 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 20,
-    fontWeight: '700',
     marginBottom: 2,
   },
   selectedYesText: {
@@ -376,7 +372,6 @@ const styles = StyleSheet.create({
   statusDisplayText: {
     ...typography.caption,
     color: '#666',
-    fontStyle: 'italic',
   },
   crossSymbol: {
     fontSize: 24,

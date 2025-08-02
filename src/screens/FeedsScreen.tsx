@@ -308,7 +308,7 @@ const FeedsScreen: React.FC = () => {
               <SvgIcon name="backBtn" size={25} color="#333" />
             </View> */}
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>All Feeds</Text>
+          <Text style={styles.headerTitle}>FEED</Text>
           {/* <TouchableOpacity style={styles.iconButton}>
             <View style={styles.squareIconContainer}>
               <SvgIcon name="search" size={25} color="#333" />

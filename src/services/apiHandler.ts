@@ -106,16 +106,13 @@ class ApiTaskServices {
       console.log(`📡 API: Updating ${prayerName} to ${status} for ${date}`);
 
       // Convert internal status to API format
-      const apiStatus = this.convertPrayerStatusToApi(status);
-      const location = status === 'mosque' ? 'mosque' : 'home';
-
+      const apiStatus = status === 'mosque';
       const response = await this.api.updatePrayer({
         prayer_type:
           prayerName.charAt(0).toUpperCase() +
           prayerName.slice(1).toLowerCase(),
         prayer_date: date,
         status: apiStatus,
-        location: location,
       });
 
       if (!response.success) {
@@ -174,22 +171,7 @@ class ApiTaskServices {
     }
   }
 
-  /**
-   * Convert internal prayer status to API format
-   */ private convertPrayerStatusToApi(status: PrayerStatus): string {
-    switch (status) {
-      case 'mosque':
-        return 'prayed';
-      case 'home':
-        return 'none';
-      case 'none':
-        return 'missed';
-      case null:
-        return 'unset'; // Null represents unset status
-      default:
-        return 'unset';
-    }
-  }
+
 
   /**
    * Fetch feeds from API with fallback to mock data
@@ -499,7 +481,7 @@ class ApiTaskServices {
       const response = await this.api.getAreas();
       if (response.success) {
         console.log('✅ API: Areas fetched successfully');
-        return { success: true, data: response.data };
+        return { success: true, data: response.data?.data };
       } else {
         console.log('❌ API: Failed to fetch areas:', response.error);
         return {success: false, error: response.error};
