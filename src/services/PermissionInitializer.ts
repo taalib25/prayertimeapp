@@ -3,7 +3,8 @@
  * Handles early permission requests for the app
  */
 
-import UnifiedNotificationService from './CallerServices';
+import UnifiedNotificationService from "./notifications/CallerServices";
+
 
 class PermissionInitializer {
   private static instance: PermissionInitializer;

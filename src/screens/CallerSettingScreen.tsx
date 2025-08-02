@@ -13,9 +13,9 @@ import SvgIcon from '../components/SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import {useUser} from '../hooks/useUser';
-import UnifiedNotificationService from '../services/CallerServices';
 import {getTomorrowDateString} from '../utils/helpers';
 import UserService from '../services/UserService';
+import UnifiedNotificationService from '../services/notifications/CallerServices';
 
 interface CallerSettingScreenProps {
   navigation: any;

@@ -4,8 +4,8 @@ import SvgIcon from './SvgIcon';
 import {colors} from '../utils/theme';
 import {typography} from '../utils/typography';
 import UserService from '../services/UserService';
-import UnifiedNotificationService from '../services/CallerServices';
 import {getTomorrowDateString} from '../utils/helpers';
+import UnifiedNotificationService from '../services/notifications/CallerServices';
 
 interface CallWidgetProps {
   onCallPreferenceSet: (needsCall: boolean) => void;

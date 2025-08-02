@@ -6,7 +6,10 @@ import {
   StyleSheet,
   AppState,
 } from 'react-native';
-import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {
@@ -37,6 +40,7 @@ import {colors} from './src/utils/theme';
 import PrayerTimeService from './src/services/notifications/prayerTimeService';
 import NotificationService from './src/services/notifications/notificationServices';
 import PermissionInitializer from './src/services/PermissionInitializer';
+import NotifeeIOSOptimizedPrayerCallService from './src/services/AltCallerServices';
 
 // Types
 export type RootStackParamList = {
@@ -72,17 +76,19 @@ export function goBack() {
 // Loading component
 const LoadingScreen = () => {
   const insets = useSafeAreaInsets();
-  
+
   return (
-    <View style={[
-      styles.loadingContainer,
-      {
-        // Only apply bottom safe area, no top padding
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-      }
-    ]} />
+    <View
+      style={[
+        styles.loadingContainer,
+        {
+          // Only apply bottom safe area, no top padding
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    />
   );
 };
 
@@ -128,7 +134,6 @@ function AppNavigator() {
 
       // 🚀 Initialize Prayer Notification Service with enhanced logic
       await initializePrayerNotifications();
-
       setAppState(prev => ({
         ...prev,
         showingSplash: false,
@@ -385,17 +390,18 @@ function SafeAreaContent() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <View style={[
-      styles.container,
-      {
-        // Apply only bottom, left, and right safe area - NO TOP
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-        // Explicitly set paddingTop to 0 to remove top safe area
-        paddingTop: 0,
-      }
-    ]}>
+    <View
+      style={[
+        styles.container,
+        {
+          // Apply only bottom, left, and right safe area - NO TOP
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+          // Explicitly set paddingTop to 0 to remove top safe area
+          paddingTop: 0,
+        },
+      ]}>
       <StatusBar
         barStyle={'light-content'}
         backgroundColor="transparent"
