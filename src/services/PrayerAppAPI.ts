@@ -78,10 +78,25 @@ export interface UpdateProfileRequest {
   phoneNumber?: string;
 }
 
+// NEW: Combined prayer request interface for the unified endpoint
+export interface CombinedPrayerRequest {
+  prayer_date: string;
+  // Prayer fields - can set any of the 5 daily prayers
+  fajr?: boolean;
+  dhuhr?: boolean;
+  asr?: boolean;
+  maghrib?: boolean;
+  isha?: boolean;
+  // Daily activity fields
+  zikr_count?: number;
+  quran_minutes?: number;
+}
+
+// Legacy interfaces maintained for compatibility
 export interface UpdatePrayerRequest {
   prayer_type: string;
   prayer_date: string;
-  status: string;
+  status: boolean;
   location?: string;
   notes?: string;
 }
@@ -94,7 +109,6 @@ export interface PrayerRecord {
   location?: string;
   notes?: string;
   userId: string;
-
   createdAt: string;
   updatedAt: string;
 }
@@ -104,7 +118,7 @@ export interface FeedItem {
   title: string;
   content: string;
   image_url?: string | null;
-  youtube_url?: string | null; // Added YouTube URL support
+  youtube_url?: string | null;
   priority: string;
   created_at: string;
   expires_at?: string | null;
@@ -122,7 +136,7 @@ export interface CreateMemberRequest {
   email: string;
   password: string;
   phone?: string;
-  dateOfBirth?: string; // YYYY-MM-DD
+  dateOfBirth?: string;
   address?: string;
   area?: string;
 }
@@ -143,10 +157,10 @@ export interface CreateMemberResponse {
 
 export interface PickupRequest {
   pickup_location: string;
-  days: string[]; // ["monday", "tuesday", "wednesday"]
+  days: string[];
   contact_number: string;
   special_instructions?: string;
-  prayers?: string[]; // ["fajr", "dhuhr", "asr", "maghrib", "isha"]
+  prayers?: string[];
 }
 
 export interface PickupRequestResponse {
@@ -164,9 +178,9 @@ export interface PickupRequestResponse {
 export interface WakeUpCallRequest {
   username: string;
   call_response: 'accepted' | 'declined';
-  response_time: string; // ISO timestamp
-  call_date: string; // YYYY-MM-DD format
-  call_time: string; // HH:MM format
+  response_time: string;
+  call_date: string;
+  call_time: string;
 }
 
 export interface WakeUpCallResponse {
@@ -217,41 +231,26 @@ class PrayerAppAPI {
 
   // ========== AUTHENTICATION ENDPOINTS ==========
 
-  /**
-   * User Login
-   */
   async login(data: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     return this.apiService.post<LoginResponse>('/login', data);
   }
 
-  /**
-   * Send OTP to phone number
-   */
   async sendOTP(
     data: SendOTPRequest,
   ): Promise<ApiResponse<{expiresIn: number}>> {
     return this.apiService.post('/auth/send-otp', data);
   }
 
-  /**
-   * Verify OTP and complete authentication
-   */
   async verifyOTP(
     data: VerifyOTPRequest,
   ): Promise<ApiResponse<VerifyOTPResponse>> {
     return this.apiService.post<VerifyOTPResponse>('/auth/verify-otp', data);
   }
 
-  /**
-   * Logout user
-   */
   async logout(): Promise<ApiResponse<{message: string}>> {
     return this.apiService.post('/auth/logout');
   }
 
-  /**
-   * Create new member
-   */
   async createMember(
     data: CreateMemberRequest,
   ): Promise<ApiResponse<CreateMemberResponse>> {
@@ -286,18 +285,12 @@ class PrayerAppAPI {
 
   // ========== PRAYER TIMES ENDPOINTS ==========
 
-  /**
-   * Get prayer times for a specific date
-   */
   async getPrayerTimes(
     date: string,
   ): Promise<ApiResponse<PrayerTimesResponse>> {
     return this.apiService.get<PrayerTimesResponse>(`/prayer-times/${date}`);
   }
 
-  /**
-   * Get prayer times for a date range
-   */
   async getPrayerTimesRange(
     startDate: string,
     endDate: string,
@@ -314,10 +307,6 @@ class PrayerAppAPI {
     return this.apiService.get<PrayerTimesResponse[]>('/prayer-times', params);
   }
 
-  //get council sessoiins
-  /**
-   * Get council sessions
-   */
   async getCouncilSessions(
     params?: Record<string, any>,
   ): Promise<ApiResponse<any>> {
@@ -349,18 +338,12 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Create or update prayer times for a specific date
-   */
   async createPrayerTimes(
     data: Omit<PrayerTimesResponse, 'sunrise'>,
   ): Promise<ApiResponse<PrayerTimesResponse>> {
     return this.apiService.post<PrayerTimesResponse>('/prayer-times', data);
   }
 
-  /**
-   * Bulk import prayer times
-   */
   async bulkImportPrayerTimes(
     prayerTimes: Omit<PrayerTimesResponse, 'sunrise'>[],
   ): Promise<ApiResponse<{imported: number; failed: number; errors: any[]}>> {
@@ -369,57 +352,41 @@ class PrayerAppAPI {
 
   // ========== USER MANAGEMENT ENDPOINTS ==========
 
-  /**
-   * Get user profile
-   */
   async getUserProfile(): Promise<ApiResponse<UserProfile>> {
     return this.apiService.get<UserProfile>('/user/profile');
   }
 
-  /**
-   * Update user profile
-   */
   async updateUserProfile(
     data: UpdateProfileRequest,
   ): Promise<ApiResponse<UserProfile>> {
     return this.apiService.put<UserProfile>('/users/profile', data);
   }
+
+  // ========== CORE UNIFIED PRAYER/ACTIVITY METHOD ==========
+
   /**
-   * Update prayer record
+   * Core method that calls the new unified /prayer endpoint
    */
-  async updatePrayer(
-    data: UpdatePrayerRequest,
-  ): Promise<ApiResponse<PrayerRecord>> {
-    // Force enable logging for debugging
+  private async callUnifiedPrayerEndpoint(
+    data: CombinedPrayerRequest,
+  ): Promise<ApiResponse<any>> {
     this.apiService.setLogging(true);
 
     try {
-      console.log(
-        '🔐 updatePrayer - Checking auth token via UnifiedUserService...',
-      );
-
-      // Check if auth token exists using UnifiedUserService
+      console.log('🔐 Checking auth token via UserService...');
+      
       const token = await this.userService.getAuthToken();
       console.log('🔐 Auth token exists:', !!token);
 
-      console.log('🌐 Making API call to /prayers with data:', data);
-      console.log(
-        '🌐 Full URL will be:',
-        this.apiService.getConfig().baseURL + '/prayers',
-      );
+      console.log('🌐 Making API call to /prayer with data:', data);
 
-      const response = await this.apiService.post<PrayerRecord>(
-        '/prayers',
-        data,
-      );
-      console.log('✅ Prayer updated successfully:', response);
+      const response = await this.apiService.post<any>('/prayers', data);
+      
+      console.log('✅ Unified prayer endpoint called successfully:', response);
       return response;
     } catch (error: any) {
-      console.error('❌ updatePrayer error details:');
+      console.error('❌ Unified prayer endpoint error:');
       console.error('   Status:', error.response?.status);
-      console.error('   URL:', error.config?.url);
-      console.error('   Full URL:', error.config?.baseURL + error.config?.url);
-      console.error('   Headers:', error.config?.headers);
       console.error('   Response data:', error.response?.data);
 
       return {
@@ -430,10 +397,70 @@ class PrayerAppAPI {
     }
   }
 
-  // ========== DAILY ACTIVITIES ENDPOINTS ==========
+  // ========== LEGACY METHOD IMPLEMENTATIONS (using new endpoint) ==========
 
   /**
-   * Update daily activity (Quran or Zikr)
+   * Update prayer record - COMPLETELY REPLACED with new implementation
+   */
+  async updatePrayer(
+    data: UpdatePrayerRequest,
+  ): Promise<ApiResponse<PrayerRecord>> {
+    try {
+      // Convert legacy prayer request to new unified format
+      const prayerType = data.prayer_type.toLowerCase() as 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
+      const completed = data.status;
+      
+      const unifiedRequest: CombinedPrayerRequest = {
+        prayer_date: data.prayer_date,
+        [prayerType]: completed,
+      };
+
+      console.log(`📡 Converting legacy prayer request to unified format:`, {
+        legacy: data,
+        unified: unifiedRequest
+      });
+
+      // Call the new unified endpoint
+      const response = await this.callUnifiedPrayerEndpoint(unifiedRequest);
+      
+      if (response.success) {
+        // Convert response back to legacy format for compatibility
+        const legacyResponse: PrayerRecord = {
+          id: response.data?.id || 'unified-prayer-id',
+          prayer_type: data.prayer_type,
+          prayer_date: data.prayer_date,
+          status: data.status.toString(),
+          location: data.location,
+          notes: data.notes,
+          userId: response.data?.userId,
+          createdAt: response.data?.createdAt || new Date().toISOString(),
+          updatedAt: response.data?.updatedAt || new Date().toISOString(),
+        };
+        
+        return {
+          success: true,
+          data: legacyResponse,
+          error: undefined,
+        };
+      }
+      
+      return {
+        success: false,
+        error: response.error,
+        data: undefined,
+      };
+    } catch (error: any) {
+      console.error('❌ updatePrayer legacy method error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to update prayer',
+        data: undefined,
+      };
+    }
+  }
+
+  /**
+   * Update daily activity - COMPLETELY REPLACED with new implementation
    */
   async updateDailyActivity(
     date: string,
@@ -441,74 +468,150 @@ class PrayerAppAPI {
     value: number,
   ): Promise<ApiResponse<{message: string}>> {
     try {
-      // Prepare request body based on activity type
-      const requestBody = {
-        activity_date: date,
-        activity_type: activityType,
-        ...(activityType === 'quran'
-          ? {minutes_value: value}
-          : {count_value: value}),
-      };
+      let unifiedRequest: CombinedPrayerRequest;
+      
+      if (activityType === 'quran') {
+        unifiedRequest = {
+          prayer_date: date,
+          quran_minutes: value,
+        };
+      } else {
+        unifiedRequest = {
+          prayer_date: date,
+          zikr_count: value,
+        };
+      }
 
-      console.log(
-        `📡 API: Updating ${activityType} to ${value} ${
-          activityType === 'quran' ? 'minutes' : 'count'
-        } for ${date}`,
-      );
+      console.log(`📡 Converting legacy ${activityType} request to unified format:`, {
+        activityType,
+        value,
+        unified: unifiedRequest
+      });
 
-      const response = await this.apiService.post<{message: string}>(
-        '/daily-activities',
-        requestBody,
-      );
-
-      console.log(
-        `✅ API: ${activityType} ${
-          activityType === 'quran' ? 'minutes' : 'count'
-        } updated successfully`,
-      );
-
-      return response;
-    } catch (error: any) {
-      console.error(`❌ API: Error updating ${activityType}:`, error);
+      // Call the new unified endpoint
+      const response = await this.callUnifiedPrayerEndpoint(unifiedRequest);
+      
+      if (response.success) {
+        return {
+          success: true,
+          data: {message: `${activityType} updated successfully`},
+          error: undefined,
+        };
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: response.error,
+        data: undefined,
+      };
+    } catch (error: any) {
+      console.error(`❌ updateDailyActivity legacy method error for ${activityType}:`, error);
+      return {
+        success: false,
+        error: error.message || `Failed to update ${activityType}`,
         data: undefined,
       };
     }
   }
 
   /**
-   * Update Quran minutes via API
+   * Update Quran minutes - COMPLETELY REPLACED with new implementation
    */
   async updateQuranMinutes(
     date: string,
     minutes: number,
   ): Promise<ApiResponse<{message: string}>> {
-    return this.updateDailyActivity(date, 'quran', minutes);
+    const unifiedRequest: CombinedPrayerRequest = {
+      prayer_date: date,
+      quran_minutes: minutes,
+    };
+
+    console.log(`📡 Updating Quran minutes via unified endpoint for ${date}:`, minutes);
+    
+    const response = await this.callUnifiedPrayerEndpoint(unifiedRequest);
+    
+    if (response.success) {
+      return {
+        success: true,
+        data: {message: 'Quran minutes updated successfully'},
+        error: undefined,
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error,
+      data: undefined,
+    };
   }
+
   /**
-   * Update Zikr count via API
+   * Update Zikr count - COMPLETELY REPLACED with new implementation
    */
   async updateZikrCount(
     date: string,
     count: number,
   ): Promise<ApiResponse<{message: string}>> {
-    return this.updateDailyActivity(date, 'zikr', count);
+    const unifiedRequest: CombinedPrayerRequest = {
+      prayer_date: date,
+      zikr_count: count,
+    };
+
+    console.log(`📡 Updating Zikr count via unified endpoint for ${date}:`, count);
+    
+    const response = await this.callUnifiedPrayerEndpoint(unifiedRequest);
+    
+    if (response.success) {
+      return {
+        success: true,
+        data: {message: 'Zikr count updated successfully'},
+        error: undefined,
+      };
+    }
+    
+    return {
+      success: false,
+      error: response.error,
+      data: undefined,
+    };
   }
-  // ========== FEEDS ENDPOINTS ==========
+
+  // ========== NEW CONVENIENT METHODS ==========
 
   /**
-   * Fetch feeds with mock items prepended
-   * Returns real data from /feeds endpoint with 2 mock items at the start
+   * Update specific daily prayer using unified endpoint
    */
+  async updateDailyPrayer(
+    date: string,
+    prayerType: 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha',
+    completed: boolean = true,
+  ): Promise<ApiResponse<any>> {
+    const unifiedRequest: CombinedPrayerRequest = {
+      prayer_date: date,
+      [prayerType]: completed,
+    };
+
+    console.log(`📡 Updating ${prayerType} prayer via unified endpoint for ${date}:`, completed);
+    return this.callUnifiedPrayerEndpoint(unifiedRequest);
+  }
+
+  /**
+   * Update multiple prayers and activities in one call
+   */
+  async updateMultipleActivities(
+    data: CombinedPrayerRequest,
+  ): Promise<ApiResponse<any>> {
+    console.log('📡 Updating multiple activities via unified endpoint:', data);
+    return this.callUnifiedPrayerEndpoint(data);
+  }
+
+  // ========== FEEDS ENDPOINTS ==========
+
   async fetchFeeds(): Promise<ApiResponse<FeedsResponse>> {
     try {
-      // Fetch real feeds from API
       const response = await this.apiService.get<FeedsResponse>('/feeds');
       if (response.success && response.data) {
-        // Handle the actual API response structure where feeds are at response.data (not response.data.data)
-        const feedsArray = response.data.data || response.data; // Support both structures
+        const feedsArray = response.data.data || response.data;
         const cleanedFeeds = feedsArray.map((item: any) => {
           const cleanItem: FeedItem = {
             id: item.id,
@@ -542,19 +645,12 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Get feeds from API (legacy method - use fetchFeeds instead)
-   * @deprecated Use fetchFeeds() instead
-   */
   async getFeeds(): Promise<ApiResponse<FeedsResponse>> {
     return this.fetchFeeds();
   }
 
   // ========== PICKUP REQUESTS ENDPOINTS ==========
 
-  /**
-   * Submit a pickup request
-   */
   async submitPickupRequest(
     data: PickupRequest,
   ): Promise<ApiResponse<PickupRequest>> {
@@ -586,9 +682,6 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Get user's pickup requests
-   */
   async getPickupRequests(): Promise<ApiResponse<any>> {
     try {
       console.log('📡 API: Fetching pickup requests...');
@@ -611,9 +704,7 @@ class PrayerAppAPI {
       };
     }
   }
-  /**
-   * Update an existing pickup request
-   */
+
   async updatePickupRequest(
     requestId: string,
     data: Partial<PickupRequest>,
@@ -646,9 +737,6 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Delete a pickup request
-   */
   async deletePickupRequest(
     requestId: string,
   ): Promise<ApiResponse<{message: string}>> {
@@ -677,9 +765,7 @@ class PrayerAppAPI {
   }
 
   // ========== WAKE-UP CALL ENDPOINTS ==========
-  /**
-   * Record wake-up call response (accepted/rejected)
-   */
+
   async recordWakeUpCallResponse(
     data: WakeUpCallRequest,
   ): Promise<ApiResponse<WakeUpCallResponse>> {
@@ -707,9 +793,6 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Get counselling sessions (optimized for GET response)
-   */
   async getCounsellingSessions(
     params?: Record<string, any>,
   ): Promise<ApiResponse<any>> {
@@ -741,9 +824,6 @@ class PrayerAppAPI {
     }
   }
 
-  /**
-   * Update counselling session status and notes
-   */
   async updateCounsellingSession(
     data: UpdateCounsellingSessionRequest,
   ): Promise<ApiResponse<UpdateCounsellingSessionResponse>> {
@@ -784,39 +864,25 @@ class PrayerAppAPI {
   }
 
   // ========== HELPER METHODS ==========
-  /**
-   * Set authentication token
-   */
+
   async setAuthToken(token: string): Promise<void> {
     await this.userService.setAuthToken(token);
     return this.apiService.setAuthToken(token);
   }
 
-  /**
-   * Clear authentication token
-   */
   async clearAuthToken(): Promise<void> {
     await this.userService.clearAuthToken();
     return this.apiService.clearAuthToken();
   }
 
-  /**
-   * Update API base URL
-   */
   updateBaseURL(baseURL: string): void {
     this.apiService.updateBaseURL(baseURL);
   }
 
-  /**
-   * Enable/disable API logging
-   */
   setLogging(enabled: boolean): void {
     this.apiService.setLogging(enabled);
   }
 
-  /**
-   * Get list of areas
-   */
   async getAreas(): Promise<ApiResponse<{data: string[]}>> {
     try {
       const response = await this.apiService.get<{data: string[]}>('/areas');
